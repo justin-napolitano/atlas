@@ -2,6 +2,10 @@
 
 A lightweight, static React frontend for the public research graph. It runs without an API server, database, API credentials, or third-party runtime calls. Vite builds ordinary static assets, so the `dist/` output can be hosted on Vercel or any static host.
 
+## Interface
+
+A plain black-and-white research index: system type for navigation, Georgia for reading, numbered contents, and ruled lists. Light mode is the default. The light/dark switch saves the palette in this browser and applies it before rendering. The graph uses the same monochrome palette; record types remain available through labels and the type filter. Harvest details are available under “Snapshot & harvest log” on the contents page.
+
 ## Run locally
 
 ```sh
