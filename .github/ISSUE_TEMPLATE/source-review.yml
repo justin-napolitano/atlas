@@ -1,0 +1,66 @@
+name: Source review
+description: Add or assess a source and its relevance to a question.
+title: "Source: "
+labels: ["type: source"]
+body:
+  - type: markdown
+    attributes:
+      value: "Record bibliographic details and what the source can support. OpenAlex metadata is a discovery signal, not a quality rating."
+  - type: input
+    id: author
+    attributes:
+      label: Author or attributed author
+    validations:
+      required: true
+  - type: input
+    id: title
+    attributes:
+      label: Title
+    validations:
+      required: true
+  - type: dropdown
+    id: role
+    attributes:
+      label: Source role
+      options:
+        - Primary text or historical source
+        - Specialist scholarly interpretation
+        - Reference or overview
+        - Comparative source
+        - Empirical data
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: edition
+    attributes:
+      label: Edition, translator, publisher, or journal
+  - type: input
+    id: identifier
+    attributes:
+      label: DOI, ISBN, catalog ID, or stable URL
+  - type: input
+    id: openalex
+    attributes:
+      label: OpenAlex Work ID or URL (optional)
+  - type: input
+    id: citations
+    attributes:
+      label: OpenAlex citation count and retrieval date (optional)
+      description: Do not treat citation count as source quality or representativeness.
+  - type: textarea
+    id: relevance
+    attributes:
+      label: Relevance and scope
+      description: Which question does it inform, and what is its scope?
+    validations:
+      required: true
+  - type: textarea
+    id: claims
+    attributes:
+      label: Located claims or passages
+      description: Include precise page, verse, section, or dataset locators. Do not present paraphrases as quotations.
+  - type: textarea
+    id: limitations
+    attributes:
+      label: Limitations and counter-perspectives

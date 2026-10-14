@@ -1,0 +1,62 @@
+name: Hypothesis
+description: Propose a scoped claim and a way to assess it.
+title: "Hypothesis: "
+labels: ["type: hypothesis"]
+body:
+  - type: markdown
+    attributes:
+      value: "Keep metaphysical or normative positions distinct from empirically testable claims."
+  - type: textarea
+    id: proposition
+    attributes:
+      label: Proposition
+      description: State one bounded claim.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Define texts, authors, traditions, periods, and limits.
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Claim kind
+      options:
+        - Historical
+        - Empirical
+        - Interpretive
+        - Philosophical
+        - Theological
+        - Normative
+        - Mixed
+    validations:
+      required: true
+  - type: textarea
+    id: mechanism
+    attributes:
+      label: Mechanism and assumptions
+  - type: textarea
+    id: implications
+    attributes:
+      label: What should we observe if this holds?
+    validations:
+      required: true
+  - type: textarea
+    id: disconfirmation
+    attributes:
+      label: What could count against it?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and counterevidence
+  - type: textarea
+    id: method
+    attributes:
+      label: Method and sources needed
+    validations:
+      required: true

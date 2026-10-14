@@ -1,0 +1,11 @@
+# Copy into graph/research.ttl and replace the example ID and labels.
+# Concepts organize topics; attribute definitions or label them provisional.
+@prefix : <https://islam-research.local/id/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+:concept-example a skos:Concept ;
+    skos:inScheme :islam-research-concepts ;
+    skos:prefLabel "example preferred label"@en ;
+    skos:altLabel "example alternate label"@en ;
+    skos:definition "Example definition; replace with an attributed or explicitly provisional definition."@en ;
+    skos:related :revelation .

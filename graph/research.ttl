@@ -1,0 +1,84 @@
+@prefix : <https://islam-research.local/id/> .
+@prefix ir: <https://islam-research.local/vocab/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+ir:ResearcherPosition a rdfs:Class ; rdfs:label "Researcher position"@en .
+ir:ResearchQuestion a rdfs:Class ; rdfs:label "Research question"@en .
+ir:EvidenceRecord a rdfs:Class ; rdfs:label "Evidence record"@en .
+ir:SourceRecord a rdfs:Class ; rdfs:label "Source record"@en .
+ir:proposition a rdf:Property ; rdfs:label "proposition"@en .
+ir:epistemicStatus a rdf:Property ; rdfs:label "epistemic status"@en .
+ir:about a rdf:Property ; rdfs:label "about concept"@en .
+ir:scope a rdf:Property ; rdfs:label "scope"@en .
+ir:repositoryPath a rdf:Property ; rdfs:label "repository path"@en .
+ir:source a rdf:Property ; rdfs:label "source record"@en .
+ir:locator a rdf:Property ; rdfs:label "source locator"@en .
+ir:evidenceKind a rdf:Property ; rdfs:label "evidence kind"@en .
+ir:stance a rdf:Property ; rdfs:label "stance toward proposition"@en .
+ir:paraphrase a rdf:Property ; rdfs:label "attributed paraphrase"@en .
+
+# Local starter vocabulary: SKOS handles concepts; PROV-O records derivation.
+# Claims remain attributed and provisional until evidence records are added.
+
+:project a prov:Entity ;
+    rdfs:label "Islam research graph"@en ;
+    dct:description "A literature-grounded inquiry into Islamic traditions and the researcher's evolving understanding."@en .
+
+:starting-reading-list a prov:Entity ;
+    rdfs:label "Starting reading list workbook"@en ;
+    ir:repositoryPath "sources/original/starting-reading-list.xlsx" ;
+    prov:wasAttributedTo :researcher ;
+    dct:description "Seed workbook; bibliographic records remain to be verified."@en .
+
+:researcher a prov:Agent ;
+    rdfs:label "Researcher"@en .
+
+:islam-research-concepts a skos:ConceptScheme ;
+    skos:prefLabel "Islam research concepts (provisional)"@en ;
+    dct:description "A working concept scheme for organizing this inquiry, not a definitive account of Islamic traditions."@en .
+
+:revelation a skos:Concept ;
+    skos:inScheme :islam-research-concepts ;
+    skos:prefLabel "revelation"@en ;
+    skos:altLabel "waḥy"@ar-Latn ;
+    skos:definition "A research topic. Definitions and uses must be attributed to particular texts, authors, communities, and periods."@en .
+
+:prophetic-authority a skos:Concept ;
+    skos:inScheme :islam-research-concepts ;
+    skos:prefLabel "prophetic authority"@en ;
+    skos:related :revelation .
+
+:divine-unity a skos:Concept ;
+    skos:inScheme :islam-research-concepts ;
+    skos:prefLabel "divine unity"@en ;
+    skos:altLabel "tawḥīd"@ar-Latn .
+
+:ethics a skos:Concept ;
+    skos:inScheme :islam-research-concepts ;
+    skos:prefLabel "ethics"@en .
+
+:human-responsibility a skos:Concept ;
+    skos:inScheme :islam-research-concepts ;
+    skos:prefLabel "human responsibility"@en ;
+    skos:broader :ethics .
+
+:init-epistemology a ir:ResearcherPosition, prov:Entity ;
+    rdfs:label "Initial position on revelation and epistemic authority"@en ;
+    ir:proposition "No person receives automatic epistemic privilege by claiming revelation; all human interpretation remains fallible."@en ;
+    ir:epistemicStatus "proposed" ;
+    prov:wasDerivedFrom :starting-reading-list ;
+    prov:wasAttributedTo :researcher ;
+    ir:about :revelation, :prophetic-authority .
+
+:initial-authority-question a ir:ResearchQuestion, prov:Entity ;
+    rdfs:label "How do accounts of prophetic and scholarly authority vary?"@en ;
+    ir:scope "Selected Sunni and Shi'i theological, legal, philosophical, and mystical sources across specified periods."@en ;
+    prov:wasDerivedFrom :starting-reading-list ;
+    prov:wasAttributedTo :researcher ;
+    ir:epistemicStatus "proposed" ;
+    ir:about :revelation, :prophetic-authority .

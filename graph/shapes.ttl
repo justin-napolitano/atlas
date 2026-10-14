@@ -1,0 +1,27 @@
+@prefix : <https://islam-research.local/id/> .
+@prefix ir: <https://islam-research.local/vocab/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+ir:ResearcherPositionShape a sh:NodeShape ;
+    sh:targetClass ir:ResearcherPosition ;
+    sh:property [ sh:path ir:proposition ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:Literal ] ;
+    sh:property [ sh:path ir:epistemicStatus ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ( "proposed" "under_review" "supported_in_scope" "challenged" "revised" "retired" ) ] ;
+    sh:property [ sh:path <http://www.w3.org/ns/prov#wasAttributedTo> ; sh:minCount 1 ] .
+
+ir:ResearchQuestionShape a sh:NodeShape ;
+    sh:targetClass ir:ResearchQuestion ;
+    sh:property [ sh:path <http://www.w3.org/2000/01/rdf-schema#label> ; sh:minCount 1 ] ;
+    sh:property [ sh:path ir:scope ; sh:minCount 1 ] ;
+    sh:property [ sh:path ir:epistemicStatus ; sh:minCount 1 ] .
+
+ir:EvidenceShape a sh:NodeShape ;
+    sh:targetClass ir:EvidenceRecord ;
+    sh:property [ sh:path ir:source ; sh:minCount 1 ] ;
+    sh:property [ sh:path ir:locator ; sh:minCount 1 ] ;
+    sh:property [ sh:path ir:evidenceKind ; sh:minCount 1 ; sh:in ( "quotation" "paraphrase" "data" "bibliographic" ) ] ;
+    sh:property [ sh:path <http://www.w3.org/ns/prov#wasDerivedFrom> ; sh:minCount 1 ] .
+
+ir:SourceShape a sh:NodeShape ;
+    sh:targetClass ir:SourceRecord ;
+    sh:property [ sh:path <http://www.w3.org/2000/01/rdf-schema#label> ; sh:minCount 1 ] ;
+    sh:property [ sh:path <http://purl.org/dc/terms/creator> ; sh:minCount 1 ] .

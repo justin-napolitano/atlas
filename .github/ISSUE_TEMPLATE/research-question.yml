@@ -1,0 +1,43 @@
+name: Research question
+description: Open or refine a scoped research question.
+title: "Question: "
+labels: ["type: question"]
+body:
+  - type: markdown
+    attributes:
+      value: "Use this for a question that needs evidence gathering. Keep the question open to revision."
+  - type: textarea
+    id: question
+    attributes:
+      label: Research question
+      description: State one focused question.
+      placeholder: How do selected Qur'anic passages frame revelation and prophetic authority?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Specify text, people/traditions, period, place, and genre.
+    validations:
+      required: true
+  - type: textarea
+    id: assumptions
+    attributes:
+      label: Starting assumptions
+      description: Separate the researcher's assumptions from source claims.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence to seek
+      description: Name primary texts, scholarship, or data needed.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative interpretations
+      description: Which disagreements or counter-readings should be represented?
+  - type: textarea
+    id: done
+    attributes:
+      label: What would answer this for now?
+      description: Define a bounded, reviewable outcome.
