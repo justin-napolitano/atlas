@@ -14,7 +14,7 @@ Create a production build with `npm run build`; preview it locally with `npm run
 
 ## Public data boundary
 
-The app reads `public/data/public-graph.json` at runtime. The static JSON keeps nightly literature updates out of the JavaScript bundle. Refresh it locally with:
+The app reads `public/data/projects.json` and each project's graph snapshot at runtime. Static JSON keeps nightly literature updates out of the JavaScript bundle. The project manifest includes only real, configured workspaces; add a project only when it has a public data source. Refresh a graph snapshot locally with:
 
 ```sh
 python3 -m pip install -e '.[graph]'
@@ -25,11 +25,13 @@ The exporter reads the committed canonical `graph/research.ttl` plus one selecte
 
 Discovery records remain separate from the curated RDF graph. Their search query and provider ranks show how they were found; they do not imply relevance, quality, scholarly support, or consensus. Review candidates before adding sources, claims, or edges to the canonical graph. The map only displays relationships authored in `graph/research.ttl`. The public index retains up to 5,000 recent leads and merges provider provenance between builds.
 
+Candidate screening controls save relevant, not relevant, and read-later decisions in this browser's local storage. Those decisions are not uploaded or included in public snapshots. Clearing browser storage clears the screening decisions.
+
 Before refreshing or deploying a new data snapshot, inspect the generated JSON diff and confirm every exported field is public-safe. Never point the exporter at a private corpus or add unreviewed material to `graph/research.ttl` merely to make the visualization denser.
 
 ## Daily harvesting and nightly builds
 
-`.github/workflows/nightly-research.yml` runs the 48-query seed plan daily at 05:17 UTC. The providers are queried sequentially with a 60-second per-host cooldown; one run can take several hours. It exports only the public allowlist, builds the static site, and commits a changed `web/public/data/public-graph.json` to `main`. A Git-connected Vercel project then deploys that commit automatically. The workflow needs the repository's default `GITHUB_TOKEN` with `contents: write`; it does not need literature-provider secrets. Run it manually from the Actions tab with `workflow_dispatch`.
+`.github/workflows/nightly-research.yml` runs the 48-query seed plan daily at 05:17 UTC. The providers are queried sequentially with a 60-second per-host cooldown; one run can take several hours. It exports only the public allowlist and a small health summary (provider success, zero-result, and error counts; new and repeated lead counts; last full run), tests and builds the site, then commits changed public data to `main`. When a harvest completes with provider errors, it retains the existing lead index while reporting the attempted run status and last successful run. A Git-connected Vercel project then deploys that commit automatically. The workflow needs the repository's default `GITHUB_TOKEN` with `contents: write`; it does not need literature-provider secrets. Run it manually from the Actions tab with `workflow_dispatch`.
 
 The harvested queue and screening files stay ephemeral on the GitHub runner. Only the sanitized, bounded public snapshot is committed. Search candidates remain unreviewed and are never converted to curated graph claims by automation.
 

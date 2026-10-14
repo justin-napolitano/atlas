@@ -49,10 +49,14 @@ def main() -> int:
 
     manifest_path = cli.LIBRARY / "searches" / run_id / "run.json"
     manifest = cli.read_json(manifest_path)
-    successes = sum(row.get("status") == "complete" for row in manifest.get("queries", []))
-    if not successes:
-        print(f"No provider query succeeded; preserving run {run_id} without refreshing the public site.", file=sys.stderr)
-        return search_status or 1
+    responded = sum(
+        row.get("status") == "complete"
+        or ("No results were retrieved" in str(row.get("stderr") or "")
+            and not any(marker in str(row.get("stderr") or "") for marker in ("HTTP ", "Source returned", "Could not reach")))
+        for row in manifest.get("queries", [])
+    )
+    if not responded:
+        print(f"::warning::No provider returned a valid response; publishing health status while retaining the last public lead index.", file=sys.stderr)
 
     cli.candidates(SimpleNamespace(run_id=run_id, limit=0))
     export = subprocess.run([
@@ -61,7 +65,7 @@ def main() -> int:
     ], text=True)
     if export.returncode:
         return export.returncode
-    print(f"Nightly harvest {run_id}: {successes}/{len(manifest.get('queries', []))} provider queries succeeded; run status={manifest.get('status')}")
+    print(f"Nightly harvest {run_id}: {responded}/{len(manifest.get('queries', []))} provider queries returned a valid response; run status={manifest.get('status')}; public leads remain unreviewed")
     return 0
 
 

@@ -1,6 +1,6 @@
 {
   "snapshot_id": "20261014T155152Z-080d85",
-  "generated_at": "2026-10-14T20:26:19+00:00",
+  "generated_at": "2026-10-14T20:54:45+00:00",
   "curated_graph": "canonical_rdf",
   "nodes": [
     {
@@ -334,129 +334,9 @@
   ],
   "edges": [
     {
-      "from": "https://islam-research.local/id/initial-authority-question",
-      "to": "https://islam-research.local/id/starting-reading-list",
-      "label": "wasDerivedFrom"
-    },
-    {
-      "from": "https://islam-research.local/id/tabari-interpretation-claim",
-      "to": "https://islam-research.local/id/tabari-tafsir-4-59",
-      "label": "attributedTo"
-    },
-    {
-      "from": "https://islam-research.local/id/sirry-historical-claim",
-      "to": "https://islam-research.local/id/sirry-diversity-evidence",
-      "label": "wasDerivedFrom"
-    },
-    {
-      "from": "https://islam-research.local/id/human-responsibility",
-      "to": "https://islam-research.local/id/ethics",
-      "label": "broader"
-    },
-    {
-      "from": "https://islam-research.local/id/revelation",
-      "to": "https://islam-research.local/id/islam-research-concepts",
-      "label": "inScheme"
-    },
-    {
       "from": "https://islam-research.local/id/q4-59-translation-observation",
-      "to": "https://islam-research.local/id/qurancom-sahih-4-59",
-      "label": "wasDerivedFrom"
-    },
-    {
-      "from": "https://islam-research.local/id/q4-59-translation-observation",
-      "to": "https://islam-research.local/id/qurancom-sahih-4-59",
-      "label": "source"
-    },
-    {
-      "from": "https://islam-research.local/id/tabatabai-ulul-amr-evidence",
-      "to": "https://islam-research.local/id/tabatabai-almizan-4-59",
-      "label": "source"
-    },
-    {
-      "from": "https://islam-research.local/id/divine-unity",
-      "to": "https://islam-research.local/id/islam-research-concepts",
-      "label": "inScheme"
-    },
-    {
-      "from": "https://islam-research.local/id/tabari-interpretation-claim",
-      "to": "https://islam-research.local/id/pilot-question",
-      "label": "addressesQuestion"
-    },
-    {
-      "from": "https://islam-research.local/id/sirry-historical-claim",
-      "to": "https://islam-research.local/id/sirry-diversity-evidence",
-      "label": "evidence"
-    },
-    {
-      "from": "https://islam-research.local/id/tabatabai-interpretation-claim",
-      "to": "https://islam-research.local/id/pilot-question",
-      "label": "addressesQuestion"
-    },
-    {
-      "from": "https://islam-research.local/id/prophetic-authority",
-      "to": "https://islam-research.local/id/revelation",
-      "label": "related"
-    },
-    {
-      "from": "https://islam-research.local/id/tabari-interpretation-claim",
-      "to": "https://islam-research.local/id/tabari-ulul-amr-evidence",
-      "label": "evidence"
-    },
-    {
-      "from": "https://islam-research.local/id/tabari-ulul-amr-evidence",
-      "to": "https://islam-research.local/id/tabari-tafsir-4-59",
-      "label": "source"
-    },
-    {
-      "from": "https://islam-research.local/id/prophetic-authority",
-      "to": "https://islam-research.local/id/islam-research-concepts",
-      "label": "inScheme"
-    },
-    {
-      "from": "https://islam-research.local/id/initial-authority-question",
-      "to": "https://islam-research.local/id/revelation",
-      "label": "about"
-    },
-    {
-      "from": "https://islam-research.local/id/tabatabai-interpretation-claim",
-      "to": "https://islam-research.local/id/tabatabai-almizan-4-59",
-      "label": "attributedTo"
-    },
-    {
-      "from": "https://islam-research.local/id/sirry-diversity-evidence",
-      "to": "https://islam-research.local/id/sirry-2021-ulul-amr",
-      "label": "wasDerivedFrom"
-    },
-    {
-      "from": "https://islam-research.local/id/initial-authority-question",
-      "to": "https://islam-research.local/id/prophetic-authority",
-      "label": "about"
-    },
-    {
-      "from": "https://islam-research.local/id/q4-59-translation-claim",
-      "to": "https://islam-research.local/id/initial-authority-question",
-      "label": "addressesQuestion"
-    },
-    {
-      "from": "https://islam-research.local/id/tabatabai-interpretation-claim",
-      "to": "https://islam-research.local/id/tabatabai-ulul-amr-evidence",
-      "label": "wasDerivedFrom"
-    },
-    {
-      "from": "https://islam-research.local/id/q4-59-translation-claim",
-      "to": "https://islam-research.local/id/researcher",
-      "label": "wasAttributedTo"
-    },
-    {
-      "from": "https://islam-research.local/id/init-epistemology",
-      "to": "https://islam-research.local/id/starting-reading-list",
-      "label": "wasDerivedFrom"
-    },
-    {
-      "from": "https://islam-research.local/id/human-responsibility",
-      "to": "https://islam-research.local/id/islam-research-concepts",
-      "label": "inScheme"
+      "to": "https://islam-research.local/id/pilot-metadata-review-2026-10-14",
+      "label": "wasGeneratedBy"
     },
     {
       "from": "https://islam-research.local/id/pilot-metadata-review-2026-10-14",
@@ -464,24 +344,14 @@
       "label": "wasAssociatedWith"
     },
     {
-      "from": "https://islam-research.local/id/starting-reading-list",
-      "to": "https://islam-research.local/id/researcher",
-      "label": "wasAttributedTo"
-    },
-    {
       "from": "https://islam-research.local/id/q4-59-translation-claim",
-      "to": "https://islam-research.local/id/q4-59-translation-observation",
-      "label": "evidence"
+      "to": "https://islam-research.local/id/qurancom-sahih-4-59",
+      "label": "attributedTo"
     },
     {
-      "from": "https://islam-research.local/id/tabari-interpretation-claim",
-      "to": "https://islam-research.local/id/tabari-ulul-amr-evidence",
-      "label": "wasDerivedFrom"
-    },
-    {
-      "from": "https://islam-research.local/id/sirry-historical-claim",
-      "to": "https://islam-research.local/id/pilot-question",
-      "label": "addressesQuestion"
+      "from": "https://islam-research.local/id/initial-authority-question",
+      "to": "https://islam-research.local/id/prophetic-authority",
+      "label": "about"
     },
     {
       "from": "https://islam-research.local/id/sirry-diversity-evidence",
@@ -489,19 +359,14 @@
       "label": "source"
     },
     {
-      "from": "https://islam-research.local/id/init-epistemology",
-      "to": "https://islam-research.local/id/revelation",
-      "label": "about"
+      "from": "https://islam-research.local/id/revelation",
+      "to": "https://islam-research.local/id/islam-research-concepts",
+      "label": "inScheme"
     },
     {
-      "from": "https://islam-research.local/id/init-epistemology",
-      "to": "https://islam-research.local/id/prophetic-authority",
-      "label": "about"
-    },
-    {
-      "from": "https://islam-research.local/id/sirry-historical-claim",
-      "to": "https://islam-research.local/id/sirry-2021-ulul-amr",
-      "label": "attributedTo"
+      "from": "https://islam-research.local/id/human-responsibility",
+      "to": "https://islam-research.local/id/islam-research-concepts",
+      "label": "inScheme"
     },
     {
       "from": "https://islam-research.local/id/init-epistemology",
@@ -509,19 +374,74 @@
       "label": "wasAttributedTo"
     },
     {
-      "from": "https://islam-research.local/id/tabatabai-interpretation-claim",
-      "to": "https://islam-research.local/id/tabatabai-ulul-amr-evidence",
-      "label": "evidence"
+      "from": "https://islam-research.local/id/q4-59-translation-observation",
+      "to": "https://islam-research.local/id/qurancom-sahih-4-59",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/sirry-historical-claim",
+      "to": "https://islam-research.local/id/sirry-2021-ulul-amr",
+      "label": "attributedTo"
+    },
+    {
+      "from": "https://islam-research.local/id/tabari-interpretation-claim",
+      "to": "https://islam-research.local/id/tabari-ulul-amr-evidence",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/q4-59-translation-claim",
+      "to": "https://islam-research.local/id/initial-authority-question",
+      "label": "addressesQuestion"
+    },
+    {
+      "from": "https://islam-research.local/id/tabari-interpretation-claim",
+      "to": "https://islam-research.local/id/pilot-question",
+      "label": "addressesQuestion"
+    },
+    {
+      "from": "https://islam-research.local/id/initial-authority-question",
+      "to": "https://islam-research.local/id/starting-reading-list",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/prophetic-authority",
+      "to": "https://islam-research.local/id/islam-research-concepts",
+      "label": "inScheme"
     },
     {
       "from": "https://islam-research.local/id/q4-59-translation-observation",
-      "to": "https://islam-research.local/id/pilot-metadata-review-2026-10-14",
-      "label": "wasGeneratedBy"
+      "to": "https://islam-research.local/id/qurancom-sahih-4-59",
+      "label": "source"
     },
     {
       "from": "https://islam-research.local/id/q4-59-translation-claim",
       "to": "https://islam-research.local/id/q4-59-translation-observation",
-      "label": "wasDerivedFrom"
+      "label": "evidence"
+    },
+    {
+      "from": "https://islam-research.local/id/init-epistemology",
+      "to": "https://islam-research.local/id/prophetic-authority",
+      "label": "about"
+    },
+    {
+      "from": "https://islam-research.local/id/tabatabai-interpretation-claim",
+      "to": "https://islam-research.local/id/pilot-question",
+      "label": "addressesQuestion"
+    },
+    {
+      "from": "https://islam-research.local/id/sirry-historical-claim",
+      "to": "https://islam-research.local/id/sirry-diversity-evidence",
+      "label": "evidence"
+    },
+    {
+      "from": "https://islam-research.local/id/init-epistemology",
+      "to": "https://islam-research.local/id/revelation",
+      "label": "about"
+    },
+    {
+      "from": "https://islam-research.local/id/initial-authority-question",
+      "to": "https://islam-research.local/id/revelation",
+      "label": "about"
     },
     {
       "from": "https://islam-research.local/id/tabari-ulul-amr-evidence",
@@ -529,9 +449,29 @@
       "label": "wasDerivedFrom"
     },
     {
-      "from": "https://islam-research.local/id/q4-59-translation-claim",
-      "to": "https://islam-research.local/id/qurancom-sahih-4-59",
-      "label": "attributedTo"
+      "from": "https://islam-research.local/id/divine-unity",
+      "to": "https://islam-research.local/id/islam-research-concepts",
+      "label": "inScheme"
+    },
+    {
+      "from": "https://islam-research.local/id/human-responsibility",
+      "to": "https://islam-research.local/id/ethics",
+      "label": "broader"
+    },
+    {
+      "from": "https://islam-research.local/id/sirry-historical-claim",
+      "to": "https://islam-research.local/id/sirry-diversity-evidence",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/starting-reading-list",
+      "to": "https://islam-research.local/id/researcher",
+      "label": "wasAttributedTo"
+    },
+    {
+      "from": "https://islam-research.local/id/qurancom-sahih-4-59",
+      "to": "https://islam-research.local/id/pilot-metadata-review-2026-10-14",
+      "label": "wasGeneratedBy"
     },
     {
       "from": "https://islam-research.local/id/ethics",
@@ -539,8 +479,13 @@
       "label": "inScheme"
     },
     {
-      "from": "https://islam-research.local/id/tabatabai-ulul-amr-evidence",
-      "to": "https://islam-research.local/id/tabatabai-almizan-4-59",
+      "from": "https://islam-research.local/id/tabatabai-interpretation-claim",
+      "to": "https://islam-research.local/id/tabatabai-ulul-amr-evidence",
+      "label": "evidence"
+    },
+    {
+      "from": "https://islam-research.local/id/q4-59-translation-claim",
+      "to": "https://islam-research.local/id/q4-59-translation-observation",
       "label": "wasDerivedFrom"
     },
     {
@@ -549,9 +494,64 @@
       "label": "wasAttributedTo"
     },
     {
-      "from": "https://islam-research.local/id/qurancom-sahih-4-59",
-      "to": "https://islam-research.local/id/pilot-metadata-review-2026-10-14",
-      "label": "wasGeneratedBy"
+      "from": "https://islam-research.local/id/sirry-diversity-evidence",
+      "to": "https://islam-research.local/id/sirry-2021-ulul-amr",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/tabari-ulul-amr-evidence",
+      "to": "https://islam-research.local/id/tabari-tafsir-4-59",
+      "label": "source"
+    },
+    {
+      "from": "https://islam-research.local/id/tabatabai-ulul-amr-evidence",
+      "to": "https://islam-research.local/id/tabatabai-almizan-4-59",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/q4-59-translation-claim",
+      "to": "https://islam-research.local/id/researcher",
+      "label": "wasAttributedTo"
+    },
+    {
+      "from": "https://islam-research.local/id/tabatabai-interpretation-claim",
+      "to": "https://islam-research.local/id/tabatabai-ulul-amr-evidence",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/tabatabai-ulul-amr-evidence",
+      "to": "https://islam-research.local/id/tabatabai-almizan-4-59",
+      "label": "source"
+    },
+    {
+      "from": "https://islam-research.local/id/tabari-interpretation-claim",
+      "to": "https://islam-research.local/id/tabari-tafsir-4-59",
+      "label": "attributedTo"
+    },
+    {
+      "from": "https://islam-research.local/id/sirry-historical-claim",
+      "to": "https://islam-research.local/id/pilot-question",
+      "label": "addressesQuestion"
+    },
+    {
+      "from": "https://islam-research.local/id/init-epistemology",
+      "to": "https://islam-research.local/id/starting-reading-list",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/prophetic-authority",
+      "to": "https://islam-research.local/id/revelation",
+      "label": "related"
+    },
+    {
+      "from": "https://islam-research.local/id/tabatabai-interpretation-claim",
+      "to": "https://islam-research.local/id/tabatabai-almizan-4-59",
+      "label": "attributedTo"
+    },
+    {
+      "from": "https://islam-research.local/id/tabari-interpretation-claim",
+      "to": "https://islam-research.local/id/tabari-ulul-amr-evidence",
+      "label": "evidence"
     }
   ],
   "candidates": [
@@ -7660,5 +7660,50 @@
       "discovered_at": "2026-10-14T19:51:53+00:00",
       "last_seen_at": "2026-10-14T19:51:53+00:00"
     }
-  ]
+  ],
+  "build_summary": {
+    "latest_run_id": "20261014T155152Z-080d85",
+    "latest_run_status": "partial_failure",
+    "generated_at": "2026-10-14T20:54:45+00:00",
+    "query_total": 25,
+    "query_complete": 21,
+    "query_attempted": 25,
+    "provider_counts": {
+      "openalex": {
+        "successful": 5,
+        "no_results": 0,
+        "errors": 0,
+        "total": 5
+      },
+      "crossref": {
+        "successful": 5,
+        "no_results": 0,
+        "errors": 0,
+        "total": 5
+      },
+      "semantic_scholar": {
+        "successful": 0,
+        "no_results": 1,
+        "errors": 4,
+        "total": 5
+      },
+      "openaire": {
+        "successful": 0,
+        "no_results": 5,
+        "errors": 0,
+        "total": 5
+      },
+      "datacite": {
+        "successful": 1,
+        "no_results": 4,
+        "errors": 0,
+        "total": 5
+      }
+    },
+    "new_leads": 0,
+    "repeated_leads": 196,
+    "public_lead_total": 196,
+    "last_successful_run_id": null,
+    "last_successful_at": null
+  }
 }

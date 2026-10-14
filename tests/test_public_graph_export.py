@@ -1,5 +1,7 @@
 import importlib.util
+import json
 from pathlib import Path
+import tempfile
 import unittest
 
 
@@ -33,6 +35,51 @@ class PublicCandidateMergeTests(unittest.TestCase):
     def test_merge_applies_public_candidate_limit(self):
         records = [{"id": str(index), "last_seen_at": f"2026-10-{index + 1:02d}"} for index in range(5)]
         self.assertEqual(len(EXPORTER.merge_public_candidates([], records, limit=3)), 3)
+
+    def test_public_build_summary_distinguishes_empty_searches_and_preserves_last_success(self):
+        manifest = {
+            "status": "partial_failure",
+            "progress": {"completed_provider_queries": 1, "total_provider_queries": 3},
+            "private_path": "/Users/private/research-library",
+            "queries": [
+                {"provider": "openalex", "status": "complete"},
+                {"provider": "datacite", "status": "partial_failure", "stderr": "No results were retrieved."},
+                {"provider": "crossref", "status": "partial_failure", "stderr": "HTTP 429 private response. No results were retrieved."},
+            ],
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "run.json"
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+            summary = EXPORTER.export_build_summary(
+                path, "run-new", {"last_successful_run_id": "run-old", "last_successful_at": "2026-10-01"},
+                {"seen"}, [{"id": "seen"}, {"id": "new"}], "2026-10-14T00:00:00Z",
+            )
+        self.assertEqual(summary["provider_counts"]["datacite"]["no_results"], 1)
+        self.assertEqual(summary["provider_counts"]["crossref"]["errors"], 1)
+        self.assertEqual(summary["query_complete"], 2)
+        self.assertEqual(summary["query_attempted"], 3)
+        self.assertEqual(summary["new_leads"], 1)
+        self.assertEqual(summary["repeated_leads"], 1)
+        self.assertEqual(summary["last_successful_run_id"], "run-old")
+        self.assertNotIn("private_path", json.dumps(summary))
+        self.assertNotIn("HTTP 429", json.dumps(summary))
+
+    def test_zero_result_provider_responses_still_count_as_a_successful_run(self):
+        manifest = {
+            "status": "partial_failure",
+            "progress": {"completed_provider_queries": 0, "total_provider_queries": 2},
+            "queries": [
+                {"provider": "datacite", "status": "partial_failure", "stderr": "No results were retrieved."},
+                {"provider": "crossref", "status": "partial_failure", "stderr": "No results were retrieved."},
+            ],
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "run.json"
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+            summary = EXPORTER.export_build_summary(path, "empty-run", {}, set(), [], "2026-10-14T00:00:00Z")
+        self.assertEqual(summary["latest_run_status"], "complete")
+        self.assertEqual(summary["query_complete"], 2)
+        self.assertEqual(summary["last_successful_run_id"], "empty-run")
 
 
 if __name__ == "__main__":
