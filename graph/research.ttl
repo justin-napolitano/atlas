@@ -92,6 +92,100 @@ ir:accessedAt a rdf:Property ; rdfs:label "accessed at"@en .
     ir:epistemicStatus "proposed" ;
     ir:about :revelation, :prophetic-authority .
 
+# Bounded pilot: selected interpretations of Q 4:59, with no claim to represent
+# all Sunni or Shi'i scholarship. Primary text and tafsir remain distinguished.
+:pilot-question a ir:ResearchQuestion, prov:Entity ;
+    rdfs:label "How have selected exegetes interpreted ulū al-amr in Q 4:59?"@en ;
+    ir:scope "A bounded comparison of al-Tabari's early tafsir, al-Tabataba'i's Twelver Shi'i al-Mizan commentary, and Mun'im Sirry's modern study of early Sunni and Shi'i exegesis. This sample does not represent all Muslim traditions or later legal, philosophical, and mystical debates."@en ;
+    ir:epistemicStatus "under_review" .
+
+:tabari-tafsir-4-59 a ir:SourceRecord, prov:Entity ;
+    rdfs:label "Al-Tabari, Jami' al-bayan, commentary on Q 4:59"@en ;
+    dct:creator "Muhammad ibn Jarir al-Tabari" ;
+    dct:source <https://quran.ksu.edu.sa/tafseer/tabary/sura4-aya59.html> ;
+    dct:language "ar" ;
+    ir:sourceRole "classical tafsir; primary source for al-Tabari's interpretation" ;
+    ir:reviewStatus "text_and_locator_verified" ;
+    ir:accessedAt "2026-10-14"^^xsd:date .
+
+:tabatabai-almizan-4-59 a ir:SourceRecord, prov:Entity ;
+    rdfs:label "Al-Tabataba'i, Al-Mizan, commentary on Q 4:59"@en ;
+    dct:creator "Sayyid Muhammad Husayn Tabataba'i" ;
+    dct:contributor "Translated by Sayyid Sa'eed Akhtar Rizvi" ;
+    dct:source <https://al-islam.org/who-are-ulul-amr-sayyid-muhammad-husayn-tabatabai/who-are-ulul-amr> ;
+    dct:language "en" ;
+    ir:sourceRole "modern Twelver Shi'i tafsir in English translation; primary source for the author's interpretation" ;
+    ir:reviewStatus "text_and_locator_verified; print edition details not yet verified" ;
+    ir:accessedAt "2026-10-14"^^xsd:date .
+
+:sirry-2021-ulul-amr a ir:SourceRecord, prov:Entity ;
+    rdfs:label "Sirry, 'Who Are Those in Authority?' (2021)"@en ;
+    dct:creator "Mun'im Sirry" ;
+    dct:title "Who Are Those in Authority? Early Muslim Exegesis of the Qur'anic Ulū'l-Amr"@en ;
+    dct:bibliographicCitation "Religions 12, no. 7 (2021): 483. https://doi.org/10.3390/rel12070483" ;
+    dct:source <https://www.mdpi.com/2077-1444/12/7/483> ;
+    dct:language "en" ;
+    ir:sourceRole "peer-reviewed historical study of early Sunni and Shi'i tafsir" ;
+    ir:reviewStatus "metadata_and_abstract_verified; full argument requires section-level review" ;
+    ir:accessedAt "2026-10-14"^^xsd:date .
+
+:tabari-ulul-amr-evidence a ir:EvidenceRecord, prov:Entity ;
+    rdfs:label "Al-Tabari surveys and selects readings of ulū al-amr"@en ;
+    ir:source :tabari-tafsir-4-59 ;
+    ir:locator "Commentary on Q 4:59; paragraphs beginning 'واختلف أهل التأويل' and 'وأولى الأقوال' (online text, accessed 2026-10-14)" ;
+    ir:evidenceKind "paraphrase" ;
+    ir:stance "interprets" ;
+    ir:paraphrase "Al-Tabari reports readings including commanders/rulers, scholars and jurists, Companions, and Abu Bakr and Umar. He selects rulers and those appointed over Muslims, with obedience limited to commands consistent with obedience to God and the community's welfare."@en ;
+    prov:wasDerivedFrom :tabari-tafsir-4-59 .
+
+:tabatabai-ulul-amr-evidence a ir:EvidenceRecord, prov:Entity ;
+    rdfs:label "Al-Tabataba'i argues that Q 4:59 implies infallible authority"@en ;
+    ir:source :tabatabai-almizan-4-59 ;
+    ir:locator "Commentary 'O You Who Believe! Obey Allah And Obey The Messenger', especially argument at paragraphs 106-128 and conclusion at 279 (web text, accessed 2026-10-14)" ;
+    ir:evidenceKind "paraphrase" ;
+    ir:stance "interprets" ;
+    ir:paraphrase "Al-Tabataba'i argues that because Q 4:59 commands obedience to the Messenger and those vested with authority without an explicit condition, the latter must be protected from sin and error; he identifies this reading with the Imams."@en ;
+    prov:wasDerivedFrom :tabatabai-almizan-4-59 .
+
+:sirry-diversity-evidence a ir:EvidenceRecord, prov:Entity ;
+    rdfs:label "Sirry's study describes internal diversity and historical development"@en ;
+    ir:source :sirry-2021-ulul-amr ;
+    ir:locator "Abstract and Introduction, especially scope and stated argument; accessed 2026-10-14" ;
+    ir:evidenceKind "paraphrase" ;
+    ir:stance "contextualizes" ;
+    ir:paraphrase "Sirry's study traces interpretations of Q 4:59 and 4:83 in selected Sunni and Shi'i tafsir across the first six centuries of Islamic history, arguing that interpretation developed over time and that disagreement also occurred within each broad tradition."@en ;
+    prov:wasDerivedFrom :sirry-2021-ulul-amr .
+
+:tabari-interpretation-claim a ir:Claim, prov:Entity ;
+    rdfs:label "Al-Tabari's preferred reading of ulū al-amr"@en ;
+    ir:claimText "In his commentary on Q 4:59, al-Tabari prefers identifying ulū al-amr with rulers and those appointed over Muslims, whose commands are obeyed when they do not involve disobedience to God and serve communal welfare."@en ;
+    ir:addressesQuestion :pilot-question ;
+    ir:interpretationType "scholarly_interpretation" ;
+    ir:reviewStatus "human_reviewed" ;
+    ir:attributedTo :tabari-tafsir-4-59 ;
+    ir:evidence :tabari-ulul-amr-evidence ;
+    prov:wasDerivedFrom :tabari-ulul-amr-evidence .
+
+:tabatabai-interpretation-claim a ir:Claim, prov:Entity ;
+    rdfs:label "Al-Tabataba'i's Twelver reading of ulū al-amr"@en ;
+    ir:claimText "Al-Tabataba'i argues that Q 4:59's unqualified command to obey ulū al-amr entails their protection from sin and error, and interprets them as the Imams."@en ;
+    ir:addressesQuestion :pilot-question ;
+    ir:interpretationType "scholarly_interpretation" ;
+    ir:reviewStatus "human_reviewed" ;
+    ir:attributedTo :tabatabai-almizan-4-59 ;
+    ir:evidence :tabatabai-ulul-amr-evidence ;
+    prov:wasDerivedFrom :tabatabai-ulul-amr-evidence .
+
+:sirry-historical-claim a ir:Claim, prov:Entity ;
+    rdfs:label "Sirry's account of diversity in early exegesis"@en ;
+    ir:claimText "Sirry argues that selected Sunni and Shi'i interpretations of ulū al-amr developed historically and that interpretive disagreement existed within both traditions."@en ;
+    ir:addressesQuestion :pilot-question ;
+    ir:interpretationType "scholarly_interpretation" ;
+    ir:reviewStatus "human_reviewed" ;
+    ir:attributedTo :sirry-2021-ulul-amr ;
+    ir:evidence :sirry-diversity-evidence ;
+    prov:wasDerivedFrom :sirry-diversity-evidence .
+
 # Small pilot record: a located observation from one named English translation.
 # It is not a claim about all translations, Muslim interpretation, or the Arabic text.
 :qurancom-sahih-4-59 a ir:SourceRecord, prov:Entity ;

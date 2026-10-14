@@ -15,6 +15,7 @@ The research should understand traditions in context before evaluating them. “
 - `hypotheses/README.md` — how to formulate and evaluate hypotheses.
 - `graph/schema.md` — node and edge model.
 - `graph/research.ttl` — canonical RDF graph using SKOS and PROV-O.
+- `reports/pilot-ulul-amr-quran-4-59.md` — first bounded, source-linked interpretation comparison; the graph carries its attributed claim and evidence records.
 - `graph/shapes.ttl` — SHACL validation constraints.
 - `templates/` — reusable source, claim, evidence, concept, hypothesis, and AIF-style argument templates.
 - `methods/programmatic-workflow.md` — repeatable literature search and local document triage.
