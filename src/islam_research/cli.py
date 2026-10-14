@@ -377,6 +377,57 @@ def export_graph(args) -> int:
     return 0
 
 
+def visualize_graph(args) -> int:
+    """Generate an offline, interactive radial view of the canonical RDF graph."""
+    try:
+        from rdflib import Graph, Namespace, RDF, RDFS
+    except ImportError:
+        print("Graph visualization needs RDFLib. Install with: python3 -m pip install -e '.[graph]'", file=sys.stderr)
+        return 2
+
+    graph = Graph().parse(str(args.graph), format="turtle")
+    ir = Namespace("https://islam-research.local/vocab/")
+    skos = Namespace("http://www.w3.org/2004/02/skos/core#")
+    prov = Namespace("http://www.w3.org/ns/prov#")
+    dct = Namespace("http://purl.org/dc/terms/")
+    local = "https://islam-research.local/id/"
+    type_names = {
+        ir.SourceRecord: "source", ir.Claim: "claim", ir.EvidenceRecord: "evidence",
+        ir.ResearchQuestion: "question", ir.ResearcherPosition: "hypothesis",
+        skos.Concept: "concept", prov.Agent: "person",
+    }
+    subjects = {s for s in graph.subjects() if str(s).startswith(local)}
+    nodes = []
+    for subject in subjects:
+        label = graph.value(subject, RDFS.label) or graph.value(subject, skos.prefLabel) or subject
+        types = [type_names[t] for t in graph.objects(subject, RDF.type) if t in type_names]
+        details = [f"Type: {', '.join(types) or 'record'}"]
+        for predicate, caption in ((ir.claimText, "Claim"), (ir.paraphrase, "Evidence note"), (dct.description, "Description"), (ir.scope, "Scope"), (dct.source, "Source URL"), (ir.locator, "Locator"), (ir.reviewStatus, "Review status")):
+            for value in graph.objects(subject, predicate):
+                details.append(f"{caption}: {value}")
+        nodes.append({"id": str(subject), "label": str(label), "type": types[0] if types else "record", "details": details})
+    node_ids = {node["id"] for node in nodes}
+    excluded = {RDF.type, RDFS.label, RDFS.comment, skos.prefLabel, skos.definition}
+    edges = []
+    for source, predicate, target in graph:
+        if source in subjects and str(target) in node_ids and predicate not in excluded:
+            edges.append({"source": str(source), "target": str(target), "label": str(predicate).rsplit("/", 1)[-1].rsplit("#", 1)[-1]})
+    payload = json.dumps({"nodes": sorted(nodes, key=lambda n: n["id"]), "edges": edges}, ensure_ascii=False).replace("<", "\\u003c")
+    template = '''<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research graph wheel</title><style>
+*{box-sizing:border-box}body{margin:0;background:#101722;color:#e8edf4;font:15px system-ui,sans-serif}header{padding:16px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #293546}h1{font-size:20px;margin:0 12px 0 0}input,select{background:#1b2736;color:#e8edf4;border:1px solid #40516a;border-radius:7px;padding:9px}#layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;min-height:calc(100vh - 65px)}svg{width:100%;height:calc(100vh - 66px);min-height:580px}.panel{padding:18px;border-left:1px solid #293546;background:#141e2b;overflow:auto}.panel h2{font-size:18px}.muted{color:#a7b5c8;font-size:13px}.link{stroke:#8797aa;stroke-opacity:.28;stroke-width:1.2}.link.focus{stroke:#f4c66a;stroke-opacity:.9;stroke-width:2.5}.node circle{stroke:#101722;stroke-width:2;cursor:pointer}.node text{fill:#dce5ef;font-size:11px;pointer-events:none}.node.dim{opacity:.13}.node.selected circle{stroke:#fff;stroke-width:4}.legend{display:flex;gap:12px;flex-wrap:wrap;color:#b8c4d2;font-size:12px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
+@media(max-width:800px){#layout{grid-template-columns:1fr}.panel{border-left:0;border-top:1px solid #293546}svg{height:65vh;min-height:450px}}
+</style><header><h1>Research graph wheel</h1><input id="search" placeholder="Find a node…"><select id="filter"><option value="">All node types</option></select><span class="muted" id="count"></span><span class="legend" id="legend"></span></header>
+<div id="layout"><svg viewBox="0 0 1200 850" role="img" aria-label="Interactive radial research graph"><g id="links"></g><g id="nodes"></g></svg><aside class="panel" id="panel"><h2>Explore the graph</h2><p class="muted">Select a node to highlight its direct connections. This view displays recorded relationships; proximity and line count do not indicate importance or truth.</p></aside></div>
+<script>const data=__DATA__, colors={question:'#f4c66a',concept:'#55c6a9',source:'#83a8ff',evidence:'#c28af0',claim:'#ff8c78',hypothesis:'#f17ab4',person:'#9aa9b9',record:'#93a2b4'};function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}const svg=document.querySelector('svg'),lg=document.querySelector('#links'),ng=document.querySelector('#nodes'),filter=document.querySelector('#filter'),search=document.querySelector('#search');const types=[...new Set(data.nodes.map(n=>n.type))].sort();types.forEach(t=>{let o=document.createElement('option');o.value=t;o.textContent=t;filter.append(o);document.querySelector('#legend').insertAdjacentHTML('beforeend',`<span><i class="dot" style="background:${colors[t]||colors.record}"></i>${t}</span>`)});document.querySelector('#count').textContent=`${data.nodes.length} nodes · ${data.edges.length} relations`;const cx=600,cy=420,R=310,byType={};types.forEach(t=>byType[t]=data.nodes.filter(n=>n.type===t));const pos={};let k=0;types.forEach(t=>byType[t].forEach((n,i)=>{const angle=(k++/data.nodes.length)*Math.PI*2-Math.PI/2;pos[n.id]={x:cx+R*Math.cos(angle),y:cy+R*Math.sin(angle)}}));const edgeEls=[];data.edges.forEach(e=>{const a=pos[e.source],b=pos[e.target];if(!a||!b)return;const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('x1',a.x);line.setAttribute('y1',a.y);line.setAttribute('x2',b.x);line.setAttribute('y2',b.y);line.setAttribute('class','link');line.dataset.a=e.source;line.dataset.b=e.target;line.addEventListener('mouseenter',()=>{document.querySelector('#panel').innerHTML=`<h2>${esc(e.label)}</h2><p class="muted">Relationship: ${esc(e.label)}</p>`});lg.append(line);edgeEls.push(line)});const nodeEls=[],nodeElementById=new Map();data.nodes.forEach(n=>{const p=pos[n.id],g=document.createElementNS('http://www.w3.org/2000/svg','g');g.setAttribute('class','node');g.dataset.type=n.type;g.dataset.search=(n.label+' '+n.type).toLowerCase();const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',p.x);c.setAttribute('cy',p.y);c.setAttribute('r',n.type==='question'?11:8);c.setAttribute('fill',colors[n.type]||colors.record);const text=document.createElementNS('http://www.w3.org/2000/svg','text');text.setAttribute('x',p.x+12);text.setAttribute('y',p.y+4);text.textContent=n.label.length>30?n.label.slice(0,28)+'…':n.label;g.append(c,text);g.addEventListener('click',()=>select(n,g));ng.append(g);nodeEls.push(g);nodeElementById.set(n.id,g)});function select(n,g){nodeEls.forEach(el=>el.classList.remove('selected'));g.classList.add('selected');const connected=new Set([n.id]);edgeEls.forEach(e=>{let hit=e.dataset.a===n.id||e.dataset.b===n.id;e.classList.toggle('focus',hit);if(hit){connected.add(e.dataset.a);connected.add(e.dataset.b)}});nodeEls.forEach((el,i)=>el.classList.toggle('dim',!connected.has(data.nodes[i].id)));document.querySelector('#panel').innerHTML=`<h2>${esc(n.label)}</h2>${n.details.map(d=>`<p>${esc(d)}</p>`).join('')}<p class="muted">${connected.size-1} directly connected node(s)</p>`}function apply(){const q=search.value.toLowerCase(),t=filter.value;nodeEls.forEach(el=>el.style.display=(!t||el.dataset.type===t)&&el.dataset.search.includes(q)?'':'none');edgeEls.forEach(e=>{const a=nodeElementById.get(e.dataset.a),b=nodeElementById.get(e.dataset.b);e.style.display=a&&b&&a.style.display!=='none'&&b.style.display!=='none'?'':'none'})}filter.addEventListener('change',apply);search.addEventListener('input',apply);</script></html>'''
+    output = args.output.expanduser()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(template.replace("__DATA__", payload), encoding="utf-8")
+    print(f"Offline graph wheel: {output} ({len(nodes)} nodes, {len(edges)} relations)")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="islam-research", description=__doc__)
     sub = parser.add_subparsers(required=True)
@@ -429,6 +480,10 @@ def build_parser() -> argparse.ArgumentParser:
     export.add_argument("--output-dir", type=Path, default=LIBRARY / "exports")
     export.add_argument("--check", action="store_true", help="fail if generated outputs differ or are missing")
     export.set_defaults(func=export_graph)
+    visualize = sub.add_parser("visualize", help="generate an offline interactive radial graph view")
+    visualize.add_argument("--graph", type=Path, default=ROOT / "graph/research.ttl")
+    visualize.add_argument("--output", type=Path, default=LIBRARY / "reports/research-graph-wheel.html")
+    visualize.set_defaults(func=visualize_graph)
     return parser
 
 

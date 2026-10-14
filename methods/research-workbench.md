@@ -60,11 +60,12 @@ The output uses W3C Web Annotation JSON-LD with a `SpecificResource` and `TextQu
 islam-research validate
 islam-research export
 islam-research export --check
+islam-research visualize --output research-library/reports/research-graph-wheel.html
 islam-research report initial-authority-question \
   --output research-library/reports/initial-authority-question.md
 ```
 
-Validation parses Turtle and runs SHACL. GitHub Actions runs the same validation when graph files change. Export generates CSV node/edge/evidence indexes and JSON-LD from canonical RDF; `--check` detects missing or stale outputs. Exports default to ignored `research-library/exports/` so they cannot silently overwrite the curated CSV inputs. Reports are generated from canonical RDF and list evidence gaps; they do not determine truth or scholarly consensus. The optional `--graph` argument supports alternate graphs.
+Validation parses Turtle and runs SHACL. GitHub Actions runs the same validation when graph files change. Export generates CSV node/edge/evidence indexes and JSON-LD from canonical RDF; `--check` detects missing or stale outputs. Exports default to ignored `research-library/exports/` so they cannot silently overwrite the curated CSV inputs. `visualize` creates a self-contained, offline HTML radial graph view with search, type filters, and neighbor highlighting. Reports are generated from canonical RDF and list evidence gaps; they do not determine truth or scholarly consensus. The optional `--graph` argument supports alternate graphs.
 
 ## Record states
 
