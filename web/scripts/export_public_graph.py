@@ -76,7 +76,9 @@ def export_candidates(queue_path: Path):
                 "id": str(item.get("candidate_id") or item.get("record_id") or item.get("doi") or item.get("provider_id") or ""),
                 "title": str(item.get("title") or "Untitled metadata record"),
                 "providers": [str(v) for v in item.get("providers", [])],
-                "provider_ids": [str(item.get("provider_id"))] if item.get("provider_id") else [],
+                "provider_ids": [str(value) for value in (item.get("provider_ids_by_provider") or {}).values()]
+                    or ([str(item.get("provider_id"))] if item.get("provider_id") else []),
+                "provider_ids_by_provider": {str(k): str(v) for k, v in (item.get("provider_ids_by_provider") or {}).items()},
                 "doi": str(item.get("doi")) if item.get("doi") else "",
                 "authors": [str(a.get("name") or "") if isinstance(a, dict) else str(a) for a in item.get("authors", [])],
                 "year": item.get("year"),
@@ -84,6 +86,10 @@ def export_candidates(queue_path: Path):
                 "work_type": str(item.get("work_type") or ""),
                 "landing_url": str(item.get("landing_page") or ""),
                 "provider_ranks": {str(k): v for k, v in (item.get("provider_ranks") or {}).items()},
+                "provider_ranks_by_query": {
+                    str(query): {str(provider): rank for provider, rank in (ranks or {}).items()}
+                    for query, ranks in (item.get("provider_ranks_by_query") or {}).items()
+                },
                 "queries": [str(q) for q in item.get("queries", [])],
                 "retrieved_at": str(item.get("retrieved_at") or ""),
                 "review_status": "candidate_unreviewed",

@@ -333,169 +333,14 @@
   ],
   "edges": [
     {
-      "from": "https://islam-research.local/id/tabatabai-interpretation-claim",
-      "to": "https://islam-research.local/id/pilot-question",
-      "label": "addressesQuestion"
-    },
-    {
-      "from": "https://islam-research.local/id/initial-authority-question",
-      "to": "https://islam-research.local/id/revelation",
-      "label": "about"
-    },
-    {
-      "from": "https://islam-research.local/id/pilot-metadata-review-2026-10-14",
-      "to": "https://islam-research.local/id/researcher",
-      "label": "wasAssociatedWith"
-    },
-    {
-      "from": "https://islam-research.local/id/sirry-historical-claim",
-      "to": "https://islam-research.local/id/pilot-question",
-      "label": "addressesQuestion"
-    },
-    {
-      "from": "https://islam-research.local/id/q4-59-translation-claim",
-      "to": "https://islam-research.local/id/q4-59-translation-observation",
-      "label": "wasDerivedFrom"
-    },
-    {
-      "from": "https://islam-research.local/id/initial-authority-question",
-      "to": "https://islam-research.local/id/researcher",
-      "label": "wasAttributedTo"
-    },
-    {
-      "from": "https://islam-research.local/id/q4-59-translation-observation",
-      "to": "https://islam-research.local/id/pilot-metadata-review-2026-10-14",
-      "label": "wasGeneratedBy"
-    },
-    {
-      "from": "https://islam-research.local/id/tabatabai-ulul-amr-evidence",
-      "to": "https://islam-research.local/id/tabatabai-almizan-4-59",
-      "label": "source"
-    },
-    {
-      "from": "https://islam-research.local/id/divine-unity",
-      "to": "https://islam-research.local/id/islam-research-concepts",
-      "label": "inScheme"
-    },
-    {
-      "from": "https://islam-research.local/id/qurancom-sahih-4-59",
-      "to": "https://islam-research.local/id/pilot-metadata-review-2026-10-14",
-      "label": "wasGeneratedBy"
-    },
-    {
-      "from": "https://islam-research.local/id/init-epistemology",
-      "to": "https://islam-research.local/id/starting-reading-list",
-      "label": "wasDerivedFrom"
-    },
-    {
       "from": "https://islam-research.local/id/starting-reading-list",
       "to": "https://islam-research.local/id/researcher",
       "label": "wasAttributedTo"
     },
     {
-      "from": "https://islam-research.local/id/human-responsibility",
-      "to": "https://islam-research.local/id/ethics",
-      "label": "broader"
-    },
-    {
-      "from": "https://islam-research.local/id/tabatabai-interpretation-claim",
-      "to": "https://islam-research.local/id/tabatabai-ulul-amr-evidence",
-      "label": "evidence"
-    },
-    {
-      "from": "https://islam-research.local/id/q4-59-translation-claim",
-      "to": "https://islam-research.local/id/initial-authority-question",
-      "label": "addressesQuestion"
-    },
-    {
-      "from": "https://islam-research.local/id/prophetic-authority",
-      "to": "https://islam-research.local/id/revelation",
-      "label": "related"
-    },
-    {
-      "from": "https://islam-research.local/id/tabari-interpretation-claim",
-      "to": "https://islam-research.local/id/tabari-ulul-amr-evidence",
-      "label": "evidence"
-    },
-    {
-      "from": "https://islam-research.local/id/sirry-diversity-evidence",
-      "to": "https://islam-research.local/id/sirry-2021-ulul-amr",
-      "label": "source"
-    },
-    {
-      "from": "https://islam-research.local/id/human-responsibility",
-      "to": "https://islam-research.local/id/islam-research-concepts",
-      "label": "inScheme"
-    },
-    {
-      "from": "https://islam-research.local/id/tabatabai-interpretation-claim",
-      "to": "https://islam-research.local/id/tabatabai-almizan-4-59",
-      "label": "attributedTo"
-    },
-    {
-      "from": "https://islam-research.local/id/q4-59-translation-claim",
-      "to": "https://islam-research.local/id/qurancom-sahih-4-59",
-      "label": "attributedTo"
-    },
-    {
-      "from": "https://islam-research.local/id/q4-59-translation-observation",
-      "to": "https://islam-research.local/id/qurancom-sahih-4-59",
-      "label": "wasDerivedFrom"
-    },
-    {
-      "from": "https://islam-research.local/id/init-epistemology",
-      "to": "https://islam-research.local/id/researcher",
-      "label": "wasAttributedTo"
-    },
-    {
-      "from": "https://islam-research.local/id/q4-59-translation-claim",
-      "to": "https://islam-research.local/id/q4-59-translation-observation",
-      "label": "evidence"
-    },
-    {
-      "from": "https://islam-research.local/id/sirry-historical-claim",
-      "to": "https://islam-research.local/id/sirry-diversity-evidence",
-      "label": "evidence"
-    },
-    {
-      "from": "https://islam-research.local/id/q4-59-translation-claim",
-      "to": "https://islam-research.local/id/researcher",
-      "label": "wasAttributedTo"
-    },
-    {
-      "from": "https://islam-research.local/id/tabari-ulul-amr-evidence",
-      "to": "https://islam-research.local/id/tabari-tafsir-4-59",
-      "label": "source"
-    },
-    {
-      "from": "https://islam-research.local/id/tabatabai-interpretation-claim",
-      "to": "https://islam-research.local/id/tabatabai-ulul-amr-evidence",
-      "label": "wasDerivedFrom"
-    },
-    {
-      "from": "https://islam-research.local/id/tabari-interpretation-claim",
-      "to": "https://islam-research.local/id/pilot-question",
-      "label": "addressesQuestion"
-    },
-    {
-      "from": "https://islam-research.local/id/tabatabai-ulul-amr-evidence",
-      "to": "https://islam-research.local/id/tabatabai-almizan-4-59",
-      "label": "wasDerivedFrom"
-    },
-    {
       "from": "https://islam-research.local/id/sirry-diversity-evidence",
       "to": "https://islam-research.local/id/sirry-2021-ulul-amr",
       "label": "wasDerivedFrom"
-    },
-    {
-      "from": "https://islam-research.local/id/prophetic-authority",
-      "to": "https://islam-research.local/id/islam-research-concepts",
-      "label": "inScheme"
-    },
-    {
-      "from": "https://islam-research.local/id/init-epistemology",
-      "to": "https://islam-research.local/id/prophetic-authority",
-      "label": "about"
     },
     {
       "from": "https://islam-research.local/id/ethics",
@@ -503,34 +348,94 @@
       "label": "inScheme"
     },
     {
-      "from": "https://islam-research.local/id/initial-authority-question",
-      "to": "https://islam-research.local/id/starting-reading-list",
-      "label": "wasDerivedFrom"
+      "from": "https://islam-research.local/id/pilot-metadata-review-2026-10-14",
+      "to": "https://islam-research.local/id/researcher",
+      "label": "wasAssociatedWith"
     },
     {
-      "from": "https://islam-research.local/id/q4-59-translation-observation",
+      "from": "https://islam-research.local/id/q4-59-translation-claim",
+      "to": "https://islam-research.local/id/initial-authority-question",
+      "label": "addressesQuestion"
+    },
+    {
+      "from": "https://islam-research.local/id/qurancom-sahih-4-59",
+      "to": "https://islam-research.local/id/pilot-metadata-review-2026-10-14",
+      "label": "wasGeneratedBy"
+    },
+    {
+      "from": "https://islam-research.local/id/q4-59-translation-claim",
       "to": "https://islam-research.local/id/qurancom-sahih-4-59",
-      "label": "source"
+      "label": "attributedTo"
     },
     {
       "from": "https://islam-research.local/id/sirry-historical-claim",
-      "to": "https://islam-research.local/id/sirry-diversity-evidence",
-      "label": "wasDerivedFrom"
+      "to": "https://islam-research.local/id/pilot-question",
+      "label": "addressesQuestion"
     },
     {
-      "from": "https://islam-research.local/id/initial-authority-question",
-      "to": "https://islam-research.local/id/prophetic-authority",
-      "label": "about"
+      "from": "https://islam-research.local/id/tabari-interpretation-claim",
+      "to": "https://islam-research.local/id/pilot-question",
+      "label": "addressesQuestion"
     },
     {
-      "from": "https://islam-research.local/id/revelation",
+      "from": "https://islam-research.local/id/prophetic-authority",
       "to": "https://islam-research.local/id/islam-research-concepts",
       "label": "inScheme"
+    },
+    {
+      "from": "https://islam-research.local/id/q4-59-translation-claim",
+      "to": "https://islam-research.local/id/q4-59-translation-observation",
+      "label": "evidence"
+    },
+    {
+      "from": "https://islam-research.local/id/divine-unity",
+      "to": "https://islam-research.local/id/islam-research-concepts",
+      "label": "inScheme"
+    },
+    {
+      "from": "https://islam-research.local/id/init-epistemology",
+      "to": "https://islam-research.local/id/prophetic-authority",
+      "label": "about"
     },
     {
       "from": "https://islam-research.local/id/tabari-interpretation-claim",
       "to": "https://islam-research.local/id/tabari-ulul-amr-evidence",
       "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/tabatabai-interpretation-claim",
+      "to": "https://islam-research.local/id/pilot-question",
+      "label": "addressesQuestion"
+    },
+    {
+      "from": "https://islam-research.local/id/init-epistemology",
+      "to": "https://islam-research.local/id/starting-reading-list",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/tabatabai-interpretation-claim",
+      "to": "https://islam-research.local/id/tabatabai-almizan-4-59",
+      "label": "attributedTo"
+    },
+    {
+      "from": "https://islam-research.local/id/tabari-ulul-amr-evidence",
+      "to": "https://islam-research.local/id/tabari-tafsir-4-59",
+      "label": "source"
+    },
+    {
+      "from": "https://islam-research.local/id/q4-59-translation-observation",
+      "to": "https://islam-research.local/id/pilot-metadata-review-2026-10-14",
+      "label": "wasGeneratedBy"
+    },
+    {
+      "from": "https://islam-research.local/id/prophetic-authority",
+      "to": "https://islam-research.local/id/revelation",
+      "label": "related"
+    },
+    {
+      "from": "https://islam-research.local/id/human-responsibility",
+      "to": "https://islam-research.local/id/ethics",
+      "label": "broader"
     },
     {
       "from": "https://islam-research.local/id/sirry-historical-claim",
@@ -548,9 +453,104 @@
       "label": "attributedTo"
     },
     {
+      "from": "https://islam-research.local/id/human-responsibility",
+      "to": "https://islam-research.local/id/islam-research-concepts",
+      "label": "inScheme"
+    },
+    {
+      "from": "https://islam-research.local/id/tabatabai-ulul-amr-evidence",
+      "to": "https://islam-research.local/id/tabatabai-almizan-4-59",
+      "label": "source"
+    },
+    {
+      "from": "https://islam-research.local/id/sirry-historical-claim",
+      "to": "https://islam-research.local/id/sirry-diversity-evidence",
+      "label": "evidence"
+    },
+    {
+      "from": "https://islam-research.local/id/sirry-historical-claim",
+      "to": "https://islam-research.local/id/sirry-diversity-evidence",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/sirry-diversity-evidence",
+      "to": "https://islam-research.local/id/sirry-2021-ulul-amr",
+      "label": "source"
+    },
+    {
+      "from": "https://islam-research.local/id/initial-authority-question",
+      "to": "https://islam-research.local/id/prophetic-authority",
+      "label": "about"
+    },
+    {
+      "from": "https://islam-research.local/id/initial-authority-question",
+      "to": "https://islam-research.local/id/starting-reading-list",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/init-epistemology",
+      "to": "https://islam-research.local/id/researcher",
+      "label": "wasAttributedTo"
+    },
+    {
       "from": "https://islam-research.local/id/init-epistemology",
       "to": "https://islam-research.local/id/revelation",
       "label": "about"
+    },
+    {
+      "from": "https://islam-research.local/id/tabatabai-interpretation-claim",
+      "to": "https://islam-research.local/id/tabatabai-ulul-amr-evidence",
+      "label": "evidence"
+    },
+    {
+      "from": "https://islam-research.local/id/q4-59-translation-claim",
+      "to": "https://islam-research.local/id/q4-59-translation-observation",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/tabari-interpretation-claim",
+      "to": "https://islam-research.local/id/tabari-ulul-amr-evidence",
+      "label": "evidence"
+    },
+    {
+      "from": "https://islam-research.local/id/initial-authority-question",
+      "to": "https://islam-research.local/id/revelation",
+      "label": "about"
+    },
+    {
+      "from": "https://islam-research.local/id/tabatabai-ulul-amr-evidence",
+      "to": "https://islam-research.local/id/tabatabai-almizan-4-59",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/q4-59-translation-observation",
+      "to": "https://islam-research.local/id/qurancom-sahih-4-59",
+      "label": "source"
+    },
+    {
+      "from": "https://islam-research.local/id/revelation",
+      "to": "https://islam-research.local/id/islam-research-concepts",
+      "label": "inScheme"
+    },
+    {
+      "from": "https://islam-research.local/id/tabatabai-interpretation-claim",
+      "to": "https://islam-research.local/id/tabatabai-ulul-amr-evidence",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/q4-59-translation-claim",
+      "to": "https://islam-research.local/id/researcher",
+      "label": "wasAttributedTo"
+    },
+    {
+      "from": "https://islam-research.local/id/q4-59-translation-observation",
+      "to": "https://islam-research.local/id/qurancom-sahih-4-59",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/initial-authority-question",
+      "to": "https://islam-research.local/id/researcher",
+      "label": "wasAttributedTo"
     }
   ],
   "candidates": [
@@ -563,6 +563,9 @@
       "provider_ids": [
         "10.67133/jepg7802"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.67133/jepg7802"
+      },
       "doi": "10.67133/jepg7802",
       "authors": [
         "Charles Schulz"
@@ -573,6 +576,11 @@
       "landing_url": "https://doi.org/10.67133/jepg7802",
       "provider_ranks": {
         "Crossref": 15
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 15
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -589,6 +597,9 @@
       "provider_ids": [
         "10.33367/al-karim.v4i1.8495"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.33367/al-karim.v4i1.8495"
+      },
       "doi": "10.33367/al-karim.v4i1.8495",
       "authors": [
         "Muh Hidayatullah"
@@ -599,6 +610,11 @@
       "landing_url": "https://doi.org/10.33367/al-karim.v4i1.8495",
       "provider_ranks": {
         "Crossref": 2
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 2
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -615,6 +631,9 @@
       "provider_ids": [
         "https://openalex.org/W7144015315"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7144015315"
+      },
       "doi": "10.58404/uq.v6i1.703",
       "authors": [
         "Muhammad Nurul Widad",
@@ -629,6 +648,11 @@
       "provider_ranks": {
         "OpenAlex": 16
       },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 16
+        }
+      },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
       ],
@@ -639,11 +663,17 @@
       "id": "doi:10.23917/qist.v5i2.17137",
       "title": "Gender Relations in Urban-Popular Qur'anic Exegesis: Repackaging Patriarchal Authority in Ahmad Sarwat's Tafsir Al-Mahfuzh",
       "providers": [
-        "Crossref"
+        "Crossref",
+        "OpenAlex"
       ],
       "provider_ids": [
-        "10.23917/qist.v5i2.17137"
+        "10.23917/qist.v5i2.17137",
+        "https://openalex.org/W7163362235"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.23917/qist.v5i2.17137",
+        "OpenAlex": "https://openalex.org/W7163362235"
+      },
       "doi": "10.23917/qist.v5i2.17137",
       "authors": [
         "Seri Asmita Harahap",
@@ -656,7 +686,14 @@
       "work_type": "journal-article",
       "landing_url": "https://doi.org/10.23917/qist.v5i2.17137",
       "provider_ranks": {
-        "Crossref": 20
+        "Crossref": 20,
+        "OpenAlex": 6
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 20,
+          "OpenAlex": 6
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -673,6 +710,9 @@
       "provider_ids": [
         "10.65358/haqqiyyah.v1i1.208"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.65358/haqqiyyah.v1i1.208"
+      },
       "doi": "10.65358/haqqiyyah.v1i1.208",
       "authors": [
         "Zulfirman Manik",
@@ -684,6 +724,11 @@
       "landing_url": "https://doi.org/10.65358/haqqiyyah.v1i1.208",
       "provider_ranks": {
         "Crossref": 10
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 10
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -700,6 +745,9 @@
       "provider_ids": [
         "https://openalex.org/W7214064346"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7214064346"
+      },
       "doi": "10.21009/jsq.22.2.07",
       "authors": [
         "Fazi Gulzar"
@@ -710,6 +758,11 @@
       "landing_url": "https://doi.org/10.21009/jsq.22.2.07",
       "provider_ranks": {
         "OpenAlex": 4
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 4
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -726,6 +779,9 @@
       "provider_ids": [
         "https://openalex.org/W7213591856"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7213591856"
+      },
       "doi": "10.21203/rs.3.rs-11069744/v1",
       "authors": [
         "AHMED Arar ALATAWNA"
@@ -736,6 +792,11 @@
       "landing_url": "https://doi.org/10.21203/rs.3.rs-11069744/v1",
       "provider_ranks": {
         "OpenAlex": 11
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 11
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -752,6 +813,9 @@
       "provider_ids": [
         "10.17576/islamiyyat-2026-4801-14"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.17576/islamiyyat-2026-4801-14"
+      },
       "doi": "10.17576/islamiyyat-2026-4801-14",
       "authors": [
         "MUHAMMAD ZAID HARITHAH AZEMAN"
@@ -762,6 +826,11 @@
       "landing_url": "https://doi.org/10.17576/islamiyyat-2026-4801-14",
       "provider_ranks": {
         "Crossref": 5
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 5
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -778,6 +847,9 @@
       "provider_ids": [
         "10.33367/al-karim.v4i1.8404"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.33367/al-karim.v4i1.8404"
+      },
       "doi": "10.33367/al-karim.v4i1.8404",
       "authors": [
         "Diva Queen Berliana"
@@ -788,6 +860,11 @@
       "landing_url": "https://doi.org/10.33367/al-karim.v4i1.8404",
       "provider_ranks": {
         "Crossref": 4
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 4
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -804,6 +881,9 @@
       "provider_ids": [
         "10.5281/zenodo.18726603"
       ],
+      "provider_ids_by_provider": {
+        "DataCite": "10.5281/zenodo.18726603"
+      },
       "doi": "10.5281/zenodo.18726603",
       "authors": [
         "JALALI, SEYED RASOUL"
@@ -814,6 +894,11 @@
       "landing_url": "https://zenodo.org/doi/10.5281/zenodo.18726603",
       "provider_ranks": {
         "DataCite": 1
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "DataCite": 1
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -830,6 +915,9 @@
       "provider_ids": [
         "10.5281/zenodo.18726602"
       ],
+      "provider_ids_by_provider": {
+        "DataCite": "10.5281/zenodo.18726602"
+      },
       "doi": "10.5281/zenodo.18726602",
       "authors": [
         "JALALI, SEYED RASOUL"
@@ -840,6 +928,11 @@
       "landing_url": "https://zenodo.org/doi/10.5281/zenodo.18726602",
       "provider_ranks": {
         "DataCite": 2
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "DataCite": 2
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -856,6 +949,9 @@
       "provider_ids": [
         "https://openalex.org/W7215133075"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7215133075"
+      },
       "doi": "10.58485/elrusyd.v11i1.807",
       "authors": [
         "Triya Marselina .",
@@ -867,6 +963,11 @@
       "landing_url": "https://doi.org/10.58485/elrusyd.v11i1.807",
       "provider_ranks": {
         "OpenAlex": 2
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 2
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -883,6 +984,9 @@
       "provider_ids": [
         "https://openalex.org/W7218327646"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7218327646"
+      },
       "doi": "",
       "authors": [
         "Ikhsan Nur"
@@ -893,6 +997,11 @@
       "landing_url": "https://journal.ar-raniry.ac.id/index.php/El-Sunan/article/view/10729",
       "provider_ranks": {
         "OpenAlex": 2
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 2
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -909,6 +1018,9 @@
       "provider_ids": [
         "https://openalex.org/W7167018487"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7167018487"
+      },
       "doi": "10.32678/aqlania.v17i1.240",
       "authors": [
         "Mohamad Hudaeri",
@@ -925,6 +1037,11 @@
       "provider_ranks": {
         "OpenAlex": 6
       },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 6
+        }
+      },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
       ],
@@ -940,6 +1057,9 @@
       "provider_ids": [
         "10.1111/rirt.70073"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1111/rirt.70073"
+      },
       "doi": "10.1111/rirt.70073",
       "authors": [
         "Muhammad Misbah"
@@ -950,6 +1070,11 @@
       "landing_url": "https://doi.org/10.1111/rirt.70073",
       "provider_ranks": {
         "Crossref": 10
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 10
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -966,6 +1091,9 @@
       "provider_ids": [
         "https://openalex.org/W7204955501"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7204955501"
+      },
       "doi": "10.66277/uijifla.1.1.7",
       "authors": [
         "Mukhammad Khabibulloh Idris",
@@ -977,6 +1105,11 @@
       "landing_url": "https://doi.org/10.66277/uijifla.1.1.7",
       "provider_ranks": {
         "OpenAlex": 16
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 16
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -993,6 +1126,9 @@
       "provider_ids": [
         "https://openalex.org/W7216394912"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7216394912"
+      },
       "doi": "10.29300/iz.v3i1.12087",
       "authors": [
         "Rega Agustian"
@@ -1003,6 +1139,11 @@
       "landing_url": "https://ejournal.uinfasbengkulu.ac.id/index.php/imtaz/article/view/12087",
       "provider_ranks": {
         "OpenAlex": 3
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 3
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -1019,6 +1160,9 @@
       "provider_ids": [
         "https://openalex.org/W7221305750"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7221305750"
+      },
       "doi": "",
       "authors": [
         "Septiana Meliani",
@@ -1030,6 +1174,11 @@
       "landing_url": "https://journal.zmsadra.or.id/index.php/jois/article/view/321",
       "provider_ranks": {
         "OpenAlex": 19
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 19
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -1046,6 +1195,9 @@
       "provider_ids": [
         "10.19109/jsq.v6i1.34233"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.19109/jsq.v6i1.34233"
+      },
       "doi": "10.19109/jsq.v6i1.34233",
       "authors": [
         "M. Sofiyulloh",
@@ -1057,6 +1209,11 @@
       "landing_url": "https://doi.org/10.19109/jsq.v6i1.34233",
       "provider_ranks": {
         "Crossref": 14
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 14
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -1073,6 +1230,9 @@
       "provider_ids": [
         "https://openalex.org/W7167365537"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7167365537"
+      },
       "doi": "10.70177/jnis.v3i2.3568",
       "authors": [
         "Taufik Setyaudin",
@@ -1085,6 +1245,11 @@
       "landing_url": "https://doi.org/10.70177/jnis.v3i2.3568",
       "provider_ranks": {
         "OpenAlex": 3
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 3
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -1101,6 +1266,9 @@
       "provider_ids": [
         "https://openalex.org/W7215834729"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7215834729"
+      },
       "doi": "10.30762/asalibuna.v10i01.7850",
       "authors": [
         "Agil Husein Al Munawar",
@@ -1112,6 +1280,11 @@
       "landing_url": "https://doi.org/10.30762/asalibuna.v10i01.7850",
       "provider_ranks": {
         "OpenAlex": 8
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 8
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -1128,6 +1301,9 @@
       "provider_ids": [
         "https://openalex.org/W7163139709"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7163139709"
+      },
       "doi": "10.18623/rvd.v23.6837",
       "authors": [
         "Ahmed Amer Ramadan"
@@ -1138,6 +1314,11 @@
       "landing_url": "https://doi.org/10.18623/rvd.v23.6837",
       "provider_ranks": {
         "OpenAlex": 6
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 6
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -1154,6 +1335,9 @@
       "provider_ids": [
         "10.66556/2786-586x.55.yermakova-h"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.66556/2786-586x.55.yermakova-h"
+      },
       "doi": "10.66556/2786-586x.55.yermakova-h",
       "authors": [
         "Hanna S. Yermakova"
@@ -1164,6 +1348,11 @@
       "landing_url": "https://doi.org/10.66556/2786-586x.55.yermakova-h",
       "provider_ranks": {
         "Crossref": 11
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 11
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -1180,6 +1369,9 @@
       "provider_ids": [
         "https://openalex.org/W7170251887"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7170251887"
+      },
       "doi": "10.62159/ghaitsa.v7i1.2564",
       "authors": [
         "Lili Kuswanti",
@@ -1192,6 +1384,11 @@
       "landing_url": "https://doi.org/10.62159/ghaitsa.v7i1.2564",
       "provider_ranks": {
         "OpenAlex": 11
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 11
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -1208,6 +1405,9 @@
       "provider_ids": [
         "10.19109/jsq.v6i1"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.19109/jsq.v6i1"
+      },
       "doi": "10.19109/jsq.v6i1",
       "authors": [],
       "year": 2026,
@@ -1216,6 +1416,11 @@
       "landing_url": "https://doi.org/10.19109/jsq.v6i1",
       "provider_ranks": {
         "Crossref": 17
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 17
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -1232,6 +1437,9 @@
       "provider_ids": [
         "https://openalex.org/W4416938149"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4416938149"
+      },
       "doi": "10.29240/jhi.v10i2.11132",
       "authors": [
         "Renti Yasmar",
@@ -1246,6 +1454,11 @@
       "landing_url": "https://doi.org/10.29240/jhi.v10i2.11132",
       "provider_ranks": {
         "OpenAlex": 12
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 12
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -1262,6 +1475,9 @@
       "provider_ids": [
         "10.30868/at.v10i01.8294"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.30868/at.v10i01.8294"
+      },
       "doi": "10.30868/at.v10i01.8294",
       "authors": [
         "Hasanuddin Hasanuddin",
@@ -1274,6 +1490,11 @@
       "landing_url": "https://doi.org/10.30868/at.v10i01.8294",
       "provider_ranks": {
         "Crossref": 8
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 8
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -1290,6 +1511,9 @@
       "provider_ids": [
         "https://openalex.org/W4416223624"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4416223624"
+      },
       "doi": "10.47772/ijriss.2025.910000426",
       "authors": [
         "Muhammad Afif Fansuri",
@@ -1301,6 +1525,11 @@
       "landing_url": "https://doi.org/10.47772/ijriss.2025.910000426",
       "provider_ranks": {
         "OpenAlex": 14
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 14
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -1317,6 +1546,9 @@
       "provider_ids": [
         "https://openalex.org/W4417026262"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4417026262"
+      },
       "doi": "10.15642/juit.2025.3.1.37-64",
       "authors": [
         "Rika Leli Dewi Khusaila Rosalnia"
@@ -1327,6 +1559,11 @@
       "landing_url": "https://doi.org/10.15642/juit.2025.3.1.37-64",
       "provider_ranks": {
         "OpenAlex": 2
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 2
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -1343,6 +1580,9 @@
       "provider_ids": [
         "10.2139/ssrn.5755883"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.2139/ssrn.5755883"
+      },
       "doi": "10.2139/ssrn.5755883",
       "authors": [
         "Mark Edward Chard"
@@ -1353,6 +1593,11 @@
       "landing_url": "https://doi.org/10.2139/ssrn.5755883",
       "provider_ranks": {
         "Crossref": 14
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 14
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -1369,6 +1614,9 @@
       "provider_ids": [
         "10.33367/al-karim.v3i2.7950"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.33367/al-karim.v3i2.7950"
+      },
       "doi": "10.33367/al-karim.v3i2.7950",
       "authors": [
         "Aan Andesra",
@@ -1380,6 +1628,11 @@
       "landing_url": "https://doi.org/10.33367/al-karim.v3i2.7950",
       "provider_ranks": {
         "Crossref": 6
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 6
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -1396,6 +1649,9 @@
       "provider_ids": [
         "https://openalex.org/W4409877942"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4409877942"
+      },
       "doi": "10.35878/islamicreview.v14i1.1584",
       "authors": [
         "Siti Khodijah",
@@ -1407,6 +1663,11 @@
       "landing_url": "https://doi.org/10.35878/islamicreview.v14i1.1584",
       "provider_ranks": {
         "OpenAlex": 19
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 19
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -1423,6 +1684,9 @@
       "provider_ids": [
         "https://openalex.org/W4417026250"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4417026250"
+      },
       "doi": "10.15642/juit.2025.3.1.65-97",
       "authors": [
         "Nopriani Hasibuan",
@@ -1435,6 +1699,11 @@
       "landing_url": "https://doi.org/10.15642/juit.2025.3.1.65-97",
       "provider_ranks": {
         "OpenAlex": 5
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 5
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -1451,6 +1720,9 @@
       "provider_ids": [
         "https://openalex.org/W4414446832"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4414446832"
+      },
       "doi": "10.35931/aq.v19i5.4840",
       "authors": [
         "Abdul Halim"
@@ -1461,6 +1733,11 @@
       "landing_url": "https://doi.org/10.35931/aq.v19i5.4840",
       "provider_ranks": {
         "OpenAlex": 15
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 15
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -1477,6 +1754,9 @@
       "provider_ids": [
         "10.24035/ijit.28.2025.334"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.24035/ijit.28.2025.334"
+      },
       "doi": "10.24035/ijit.28.2025.334",
       "authors": [],
       "year": 2025,
@@ -1485,6 +1765,11 @@
       "landing_url": "https://doi.org/10.24035/ijit.28.2025.334",
       "provider_ranks": {
         "Crossref": 20
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 20
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -1501,6 +1786,9 @@
       "provider_ids": [
         "https://openalex.org/W7169540128"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7169540128"
+      },
       "doi": "10.58352/tis.v50i1.972",
       "authors": [
         "Najmul Sahar Ilyas",
@@ -1514,6 +1802,11 @@
       "provider_ranks": {
         "OpenAlex": 13
       },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 13
+        }
+      },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
       ],
@@ -1524,11 +1817,17 @@
       "id": "doi:10.67295/jis.v4i3.112",
       "title": "FROM REVELATION TO INTERPRETATION: THE NECESSITY OF THE PROPHETIC TRADITIONS IN QURANIC EXEGESIS",
       "providers": [
-        "Crossref"
+        "Crossref",
+        "OpenAlex"
       ],
       "provider_ids": [
-        "10.67295/jis.v4i3.112"
+        "10.67295/jis.v4i3.112",
+        "https://openalex.org/W7172132452"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.67295/jis.v4i3.112",
+        "OpenAlex": "https://openalex.org/W7172132452"
+      },
       "doi": "10.67295/jis.v4i3.112",
       "authors": [
         "Yasir Hussain",
@@ -1539,7 +1838,16 @@
       "work_type": "journal-article",
       "landing_url": "https://doi.org/10.67295/jis.v4i3.112",
       "provider_ranks": {
-        "Crossref": 3
+        "Crossref": 3,
+        "OpenAlex": 9
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 3
+        },
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 9
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation",
@@ -1557,6 +1865,9 @@
       "provider_ids": [
         "https://openalex.org/W4415137146"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4415137146"
+      },
       "doi": "10.24260/mafatih.v4i2.4141",
       "authors": [
         "Gaes Rizka Nugraha",
@@ -1568,6 +1879,11 @@
       "landing_url": "https://doi.org/10.24260/mafatih.v4i2.4141",
       "provider_ranks": {
         "OpenAlex": 18
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 18
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -1584,6 +1900,9 @@
       "provider_ids": [
         "10.19109/jsq.v5i2.30159"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.19109/jsq.v5i2.30159"
+      },
       "doi": "10.19109/jsq.v5i2.30159",
       "authors": [
         "Rizka Amanda Wulandari",
@@ -1596,6 +1915,11 @@
       "landing_url": "https://doi.org/10.19109/jsq.v5i2.30159",
       "provider_ranks": {
         "Crossref": 3
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 3
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -1612,6 +1936,9 @@
       "provider_ids": [
         "https://openalex.org/W7117879478"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7117879478"
+      },
       "doi": "10.23917/qist.v4i3.14840",
       "authors": [
         "Salisa Wardah Kumala",
@@ -1623,6 +1950,11 @@
       "landing_url": "https://doi.org/10.23917/qist.v4i3.14840",
       "provider_ranks": {
         "OpenAlex": 14
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 14
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -1639,6 +1971,9 @@
       "provider_ids": [
         "https://openalex.org/W4414520621"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4414520621"
+      },
       "doi": "10.59525/ijois.v6i1.986",
       "authors": [
         "Erlin Ermawati",
@@ -1651,6 +1986,11 @@
       "landing_url": "https://doi.org/10.59525/ijois.v6i1.986",
       "provider_ranks": {
         "OpenAlex": 10
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 10
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -1667,6 +2007,9 @@
       "provider_ids": [
         "https://openalex.org/W7216979123"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7216979123"
+      },
       "doi": "",
       "authors": [
         "Muhammad Furqon",
@@ -1679,6 +2022,11 @@
       "landing_url": "https://academicinspired.com/jised/article/view/3332",
       "provider_ranks": {
         "OpenAlex": 1
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 1
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -1695,6 +2043,9 @@
       "provider_ids": [
         "https://openalex.org/W4413339634"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4413339634"
+      },
       "doi": "10.24252/al-daulah.v14i1.56526",
       "authors": [
         "Ahmad Nabil Amir",
@@ -1706,6 +2057,11 @@
       "landing_url": "https://doi.org/10.24252/al-daulah.v14i1.56526",
       "provider_ranks": {
         "OpenAlex": 13
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 13
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -1722,6 +2078,9 @@
       "provider_ids": [
         "10.17576/turath-2025-1002-07"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.17576/turath-2025-1002-07"
+      },
       "doi": "10.17576/turath-2025-1002-07",
       "authors": [],
       "year": 2025,
@@ -1730,6 +2089,11 @@
       "landing_url": "https://doi.org/10.17576/turath-2025-1002-07",
       "provider_ranks": {
         "Crossref": 10
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 10
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -1746,6 +2110,9 @@
       "provider_ids": [
         "https://openalex.org/W4412474845"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4412474845"
+      },
       "doi": "10.21580/teo.2025.36.1.26623",
       "authors": [
         "Danish Nabi",
@@ -1757,6 +2124,11 @@
       "landing_url": "https://doi.org/10.21580/teo.2025.36.1.26623",
       "provider_ranks": {
         "OpenAlex": 17
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 17
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -1773,6 +2145,9 @@
       "provider_ids": [
         "https://openalex.org/W4410887220"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4410887220"
+      },
       "doi": "10.62032/aijqh.v3i1.80",
       "authors": [
         "Nurul Qomariya"
@@ -1783,6 +2158,11 @@
       "landing_url": "https://doi.org/10.62032/aijqh.v3i1.80",
       "provider_ranks": {
         "OpenAlex": 12
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 12
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -1799,6 +2179,9 @@
       "provider_ids": [
         "https://openalex.org/W4413835529"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4413835529"
+      },
       "doi": "10.24252/jad.v25i1a6",
       "authors": [
         "Mukhtar Mukhtar",
@@ -1815,6 +2198,11 @@
       "provider_ranks": {
         "OpenAlex": 1
       },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 1
+        }
+      },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
       ],
@@ -1830,6 +2218,9 @@
       "provider_ids": [
         "https://openalex.org/W4417026249"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4417026249"
+      },
       "doi": "10.15642/juit.2025.3.1.98-129",
       "authors": [
         "Ahmad Yahya",
@@ -1841,6 +2232,11 @@
       "landing_url": "https://doi.org/10.15642/juit.2025.3.1.98-129",
       "provider_ranks": {
         "OpenAlex": 9
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 9
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -1857,6 +2253,9 @@
       "provider_ids": [
         "https://openalex.org/W7220156613"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7220156613"
+      },
       "doi": "",
       "authors": [
         "Muhammad Inayat Ullah",
@@ -1869,6 +2268,11 @@
       "landing_url": "https://islamicreligious.com/index.php/Journal/article/view/125",
       "provider_ranks": {
         "OpenAlex": 9
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 9
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -1885,6 +2289,9 @@
       "provider_ids": [
         "https://openalex.org/W4417312740"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4417312740"
+      },
       "doi": "10.19109/jia.v26i2.30515",
       "authors": [
         "Elfa Virni Yuniafirta",
@@ -1897,6 +2304,11 @@
       "landing_url": "https://doi.org/10.19109/jia.v26i2.30515",
       "provider_ranks": {
         "OpenAlex": 19
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 19
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -1913,6 +2325,9 @@
       "provider_ids": [
         "https://openalex.org/W4416290777"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4416290777"
+      },
       "doi": "10.52152/406xvv59",
       "authors": [
         "Md. Memon Ali",
@@ -1924,6 +2339,11 @@
       "landing_url": "https://doi.org/10.52152/406xvv59",
       "provider_ranks": {
         "OpenAlex": 13
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 13
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -1940,6 +2360,9 @@
       "provider_ids": [
         "https://openalex.org/W4414002308"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4414002308"
+      },
       "doi": "10.20944/preprints202509.0339.v1",
       "authors": [
         "Khandaker Mursheda Farhana"
@@ -1950,6 +2373,11 @@
       "landing_url": "https://doi.org/10.20944/preprints202509.0339.v1",
       "provider_ranks": {
         "OpenAlex": 12
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 12
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -1966,6 +2394,9 @@
       "provider_ids": [
         "https://openalex.org/W7220271961"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7220271961"
+      },
       "doi": "",
       "authors": [
         "Romesa Maryam",
@@ -1977,6 +2408,11 @@
       "landing_url": "https://islamicreligious.com/index.php/Journal/article/view/198",
       "provider_ranks": {
         "OpenAlex": 8
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 8
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -1993,6 +2429,9 @@
       "provider_ids": [
         "https://openalex.org/W7217216712"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7217216712"
+      },
       "doi": "",
       "authors": [
         "DR. NIZAR SMIDA DR. BASSEM JEMAL"
@@ -2003,6 +2442,11 @@
       "landing_url": "https://tpmap.org/submission/index.php/tpm/article/view/3194",
       "provider_ranks": {
         "OpenAlex": 18
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 18
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -2019,6 +2463,9 @@
       "provider_ids": [
         "https://openalex.org/W4414738450"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4414738450"
+      },
       "doi": "10.23917/qist.v4i2.10863",
       "authors": [
         "N Nusaibah",
@@ -2030,6 +2477,11 @@
       "landing_url": "https://doi.org/10.23917/qist.v4i2.10863",
       "provider_ranks": {
         "OpenAlex": 17
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 17
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -2046,6 +2498,9 @@
       "provider_ids": [
         "https://openalex.org/W4409711501"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4409711501"
+      },
       "doi": "10.33754/miyah.v21i01.1270",
       "authors": [
         "Yuviandze Bafri Zulliandi",
@@ -2058,6 +2513,11 @@
       "landing_url": "https://doi.org/10.33754/miyah.v21i01.1270",
       "provider_ranks": {
         "OpenAlex": 11
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 11
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -2074,6 +2534,9 @@
       "provider_ids": [
         "https://openalex.org/W7117736013"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7117736013"
+      },
       "doi": "10.64768/rjitc.v3i2.2754",
       "authors": [
         "Valmire Batatına Krasnıqı"
@@ -2084,6 +2547,11 @@
       "landing_url": "https://doi.org/10.64768/rjitc.v3i2.2754",
       "provider_ranks": {
         "OpenAlex": 19
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 19
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -2100,6 +2568,9 @@
       "provider_ids": [
         "https://openalex.org/W4407828123"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4407828123"
+      },
       "doi": "10.1080/23311983.2025.2465938",
       "authors": [
         "Suzan Saleh Shan",
@@ -2112,6 +2583,11 @@
       "landing_url": "https://doi.org/10.1080/23311983.2025.2465938",
       "provider_ranks": {
         "OpenAlex": 10
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 10
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -2128,6 +2604,9 @@
       "provider_ids": [
         "10.19109/jsq.v5i1"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.19109/jsq.v5i1"
+      },
       "doi": "10.19109/jsq.v5i1",
       "authors": [],
       "year": 2025,
@@ -2136,6 +2615,11 @@
       "landing_url": "https://doi.org/10.19109/jsq.v5i1",
       "provider_ranks": {
         "Crossref": 12
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 12
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -2152,6 +2636,9 @@
       "provider_ids": [
         "10.19109/jsq.v5i2"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.19109/jsq.v5i2"
+      },
       "doi": "10.19109/jsq.v5i2",
       "authors": [],
       "year": 2025,
@@ -2160,6 +2647,11 @@
       "landing_url": "https://doi.org/10.19109/jsq.v5i2",
       "provider_ranks": {
         "Crossref": 15
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 15
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -2176,6 +2668,9 @@
       "provider_ids": [
         "https://openalex.org/W7135309971"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7135309971"
+      },
       "doi": "",
       "authors": [
         "Said Hassan",
@@ -2188,6 +2683,11 @@
       "landing_url": "https://philolinginvestigations.com/index.php/journal/article/view/550",
       "provider_ranks": {
         "OpenAlex": 3
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 3
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -2204,6 +2704,9 @@
       "provider_ids": [
         "10.31234/osf.io/de4ax"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.31234/osf.io/de4ax"
+      },
       "doi": "10.31234/osf.io/de4ax",
       "authors": [
         "Ejaz Shaikh"
@@ -2214,6 +2717,11 @@
       "landing_url": "https://doi.org/10.31234/osf.io/de4ax",
       "provider_ranks": {
         "Crossref": 9
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 9
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -2230,6 +2738,9 @@
       "provider_ids": [
         "10.5040/9781350418295.0011"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.5040/9781350418295.0011"
+      },
       "doi": "10.5040/9781350418295.0011",
       "authors": [],
       "year": 2024,
@@ -2238,6 +2749,11 @@
       "landing_url": "https://doi.org/10.5040/9781350418295.0011",
       "provider_ranks": {
         "Crossref": 14
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 14
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -2254,6 +2770,9 @@
       "provider_ids": [
         "https://openalex.org/W4403892302"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4403892302"
+      },
       "doi": "10.2991/978-2-38476-299-6_9",
       "authors": [
         "Maemunah Sa’diyah",
@@ -2266,6 +2785,11 @@
       "landing_url": "https://doi.org/10.2991/978-2-38476-299-6_9",
       "provider_ranks": {
         "OpenAlex": 13
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 13
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -2282,6 +2806,9 @@
       "provider_ids": [
         "10.20377/rpb-331"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.20377/rpb-331"
+      },
       "doi": "10.20377/rpb-331",
       "authors": [
         "Fahimah Ulfat"
@@ -2292,6 +2819,11 @@
       "landing_url": "https://doi.org/10.20377/rpb-331",
       "provider_ranks": {
         "Crossref": 8
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 8
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -2308,6 +2840,9 @@
       "provider_ids": [
         "https://openalex.org/W4394580886"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4394580886"
+      },
       "doi": "10.3390/rel15040461",
       "authors": [
         "Halim Calis"
@@ -2318,6 +2853,11 @@
       "landing_url": "https://doi.org/10.3390/rel15040461",
       "provider_ranks": {
         "OpenAlex": 4
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 4
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -2334,6 +2874,9 @@
       "provider_ids": [
         "https://openalex.org/W7152454998"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7152454998"
+      },
       "doi": "10.15642/mutawatir.2024.14.2.265-294",
       "authors": [
         "Ali Nurdin",
@@ -2346,6 +2889,11 @@
       "landing_url": "https://doi.org/10.15642/mutawatir.2024.14.2.265-294",
       "provider_ranks": {
         "OpenAlex": 18
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 18
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -2362,6 +2910,9 @@
       "provider_ids": [
         "https://openalex.org/W4394851362"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4394851362"
+      },
       "doi": "10.58355/maqolat.v2i2.67",
       "authors": [
         "Furhan Zubairi",
@@ -2374,6 +2925,11 @@
       "landing_url": "https://doi.org/10.58355/maqolat.v2i2.67",
       "provider_ranks": {
         "OpenAlex": 17
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 17
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -2390,6 +2946,9 @@
       "provider_ids": [
         "10.1515/rmo.32613683"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1515/rmo.32613683"
+      },
       "doi": "10.1515/rmo.32613683",
       "authors": [
         "Knut S. Vikør"
@@ -2400,6 +2959,11 @@
       "landing_url": "https://doi.org/10.1515/rmo.32613683",
       "provider_ranks": {
         "Crossref": 1
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 1
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -2416,6 +2980,9 @@
       "provider_ids": [
         "10.1177/00209643241244454"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1177/00209643241244454"
+      },
       "doi": "10.1177/00209643241244454",
       "authors": [
         "Roger Sneed"
@@ -2426,6 +2993,11 @@
       "landing_url": "https://doi.org/10.1177/00209643241244454",
       "provider_ranks": {
         "Crossref": 16
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 16
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -2442,6 +3014,9 @@
       "provider_ids": [
         "10.19109/jsq.v4i1.22622"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.19109/jsq.v4i1.22622"
+      },
       "doi": "10.19109/jsq.v4i1.22622",
       "authors": [
         "Ahmad Bastari"
@@ -2452,6 +3027,11 @@
       "landing_url": "https://doi.org/10.19109/jsq.v4i1.22622",
       "provider_ranks": {
         "Crossref": 1
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 1
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -2468,6 +3048,9 @@
       "provider_ids": [
         "https://openalex.org/W7113237852"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7113237852"
+      },
       "doi": "",
       "authors": [
         "Nasrullah, Iklil"
@@ -2478,6 +3061,11 @@
       "landing_url": "https://eprints.walisongo.ac.id/id/eprint/28112/1/Skripsi_2004026099_Iklil_Nasrullah.pdf",
       "provider_ranks": {
         "OpenAlex": 12
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 12
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -2494,6 +3082,9 @@
       "provider_ids": [
         "https://openalex.org/W7153622486"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7153622486"
+      },
       "doi": "10.66362/iji.v1i3.12",
       "authors": [
         "Zulfiqar Ali Shah"
@@ -2504,6 +3095,11 @@
       "landing_url": "https://doi.org/10.66362/iji.v1i3.12",
       "provider_ranks": {
         "OpenAlex": 15
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 15
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -2520,6 +3116,9 @@
       "provider_ids": [
         "https://openalex.org/W4412362307"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4412362307"
+      },
       "doi": "10.33754/jadid.v4i02.1285",
       "authors": [
         "Yuviandze Bafri Zulliandi"
@@ -2530,6 +3129,11 @@
       "landing_url": "https://doi.org/10.33754/jadid.v4i02.1285",
       "provider_ranks": {
         "OpenAlex": 5
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 5
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -2546,6 +3150,9 @@
       "provider_ids": [
         "10.19109/jsq.v4i2"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.19109/jsq.v4i2"
+      },
       "doi": "10.19109/jsq.v4i2",
       "authors": [],
       "year": 2024,
@@ -2554,6 +3161,11 @@
       "landing_url": "https://doi.org/10.19109/jsq.v4i2",
       "provider_ranks": {
         "Crossref": 13
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 13
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -2570,6 +3182,9 @@
       "provider_ids": [
         "10.19109/1nkhd727"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.19109/1nkhd727"
+      },
       "doi": "10.19109/1nkhd727",
       "authors": [],
       "year": 2024,
@@ -2578,6 +3193,11 @@
       "landing_url": "https://doi.org/10.19109/1nkhd727",
       "provider_ranks": {
         "Crossref": 20
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 20
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -2594,6 +3214,9 @@
       "provider_ids": [
         "10.30965/9783657791637_017"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.30965/9783657791637_017"
+      },
       "doi": "10.30965/9783657791637_017",
       "authors": [
         "Tobias Nicklas"
@@ -2604,6 +3227,11 @@
       "landing_url": "https://doi.org/10.30965/9783657791637_017",
       "provider_ranks": {
         "Crossref": 19
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 19
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -2620,6 +3248,9 @@
       "provider_ids": [
         "https://openalex.org/W4391622406"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4391622406"
+      },
       "doi": "10.21580/tos.v12i2.18889",
       "authors": [
         "Agus Imam Kharomen",
@@ -2633,6 +3264,11 @@
       "landing_url": "http://dx.doi.org/10.21580/tos.v12i2.18889",
       "provider_ranks": {
         "OpenAlex": 2
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 2
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -2649,6 +3285,9 @@
       "provider_ids": [
         "https://openalex.org/W4388045314"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4388045314"
+      },
       "doi": "10.59373/drs.v1i2.16",
       "authors": [
         "Salman Faris"
@@ -2659,6 +3298,11 @@
       "landing_url": "http://dx.doi.org/10.59373/drs.v1i2.16",
       "provider_ranks": {
         "OpenAlex": 14
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 14
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -2675,6 +3319,9 @@
       "provider_ids": [
         "https://openalex.org/W4389176961"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4389176961"
+      },
       "doi": "",
       "authors": [
         "Dıdık Andrıawan"
@@ -2685,6 +3332,11 @@
       "landing_url": "https://dergipark.org.tr/tr/pub/nisar/issue/81144/1398730",
       "provider_ranks": {
         "OpenAlex": 1
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 1
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -2701,6 +3353,9 @@
       "provider_ids": [
         "10.30863/alwajid.v4i1.5690"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.30863/alwajid.v4i1.5690"
+      },
       "doi": "10.30863/alwajid.v4i1.5690",
       "authors": [
         "Dini Tri Hidayatus Sya'dyya"
@@ -2711,6 +3366,11 @@
       "landing_url": "https://doi.org/10.30863/alwajid.v4i1.5690",
       "provider_ranks": {
         "Crossref": 18
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 18
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -2727,6 +3387,9 @@
       "provider_ids": [
         "https://openalex.org/W4318476885"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4318476885"
+      },
       "doi": "10.3390/rel14020176",
       "authors": [
         "Ezra Tzfadya"
@@ -2737,6 +3400,11 @@
       "landing_url": "https://doi.org/10.3390/rel14020176",
       "provider_ranks": {
         "OpenAlex": 16
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 16
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -2753,6 +3421,9 @@
       "provider_ids": [
         "10.2307/jj.8275990.6"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.2307/jj.8275990.6"
+      },
       "doi": "10.2307/jj.8275990.6",
       "authors": [
         "Mohammad Fadel"
@@ -2763,6 +3434,11 @@
       "landing_url": "https://doi.org/10.2307/jj.8275990.6",
       "provider_ranks": {
         "Crossref": 5
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 5
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -2779,6 +3455,9 @@
       "provider_ids": [
         "10.5149/northcarolina/9781469677262.003.0004"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.5149/northcarolina/9781469677262.003.0004"
+      },
       "doi": "10.5149/northcarolina/9781469677262.003.0004",
       "authors": [
         "Michael Muhammad Knight"
@@ -2789,6 +3468,11 @@
       "landing_url": "https://doi.org/10.5149/northcarolina/9781469677262.003.0004",
       "provider_ranks": {
         "Crossref": 7
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 7
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -2805,6 +3489,9 @@
       "provider_ids": [
         "10.15575/mjiat.v2i2.25302"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.15575/mjiat.v2i2.25302"
+      },
       "doi": "10.15575/mjiat.v2i2.25302",
       "authors": [
         "Sandi Nugraha",
@@ -2816,6 +3503,11 @@
       "landing_url": "https://doi.org/10.15575/mjiat.v2i2.25302",
       "provider_ranks": {
         "Crossref": 6
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 6
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -2832,6 +3524,9 @@
       "provider_ids": [
         "https://openalex.org/W4362611411"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4362611411"
+      },
       "doi": "10.3390/rel14040499",
       "authors": [
         "Muhammad Fawwaz Muhammad Yusoff",
@@ -2843,6 +3538,11 @@
       "landing_url": "https://doi.org/10.3390/rel14040499",
       "provider_ranks": {
         "OpenAlex": 8
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 8
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -2859,6 +3559,9 @@
       "provider_ids": [
         "https://openalex.org/W4388977506"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4388977506"
+      },
       "doi": "10.1080/09596410.2023.2282842",
       "authors": [
         "Alina Isac Alak"
@@ -2869,6 +3572,11 @@
       "landing_url": "http://dx.doi.org/10.1080/09596410.2023.2282842",
       "provider_ranks": {
         "OpenAlex": 14
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 14
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -2885,6 +3593,9 @@
       "provider_ids": [
         "https://openalex.org/W7220095332"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7220095332"
+      },
       "doi": "10.5281/zenodo.23352471",
       "authors": [
         "Mehrdad Yasrebi",
@@ -2896,6 +3607,11 @@
       "landing_url": "https://islamtodayjournal.org/index.php/itj/article/view/4",
       "provider_ranks": {
         "OpenAlex": 16
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 16
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -2912,6 +3628,9 @@
       "provider_ids": [
         "10.19109/jsq.v3i2"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.19109/jsq.v3i2"
+      },
       "doi": "10.19109/jsq.v3i2",
       "authors": [],
       "year": 2023,
@@ -2920,6 +3639,11 @@
       "landing_url": "https://doi.org/10.19109/jsq.v3i2",
       "provider_ranks": {
         "Crossref": 11
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 11
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -2936,6 +3660,9 @@
       "provider_ids": [
         "10.19109/jsq.v3i1"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.19109/jsq.v3i1"
+      },
       "doi": "10.19109/jsq.v3i1",
       "authors": [],
       "year": 2023,
@@ -2944,6 +3671,11 @@
       "landing_url": "https://doi.org/10.19109/jsq.v3i1",
       "provider_ranks": {
         "Crossref": 19
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 19
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -2960,6 +3692,9 @@
       "provider_ids": [
         "https://openalex.org/W4225304404"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4225304404"
+      },
       "doi": "10.31826/9781463243586-021",
       "authors": [
         "Derin Terzı̇oğlu"
@@ -2970,6 +3705,11 @@
       "landing_url": "https://doi.org/10.31826/9781463243586-021",
       "provider_ranks": {
         "OpenAlex": 6
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 6
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -2986,6 +3726,9 @@
       "provider_ids": [
         "10.1080/10477845.2021.1946948"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1080/10477845.2021.1946948"
+      },
       "doi": "10.1080/10477845.2021.1946948",
       "authors": [
         "Muhammad Azizan Sabjan"
@@ -2996,6 +3739,11 @@
       "landing_url": "https://doi.org/10.1080/10477845.2021.1946948",
       "provider_ranks": {
         "Crossref": 3
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 3
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -3012,6 +3760,9 @@
       "provider_ids": [
         "10.55057/ijarih.2022.4.1.4"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.55057/ijarih.2022.4.1.4"
+      },
       "doi": "10.55057/ijarih.2022.4.1.4",
       "authors": [],
       "year": 2022,
@@ -3020,6 +3771,11 @@
       "landing_url": "https://doi.org/10.55057/ijarih.2022.4.1.4",
       "provider_ranks": {
         "Crossref": 2
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 2
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -3036,6 +3792,9 @@
       "provider_ids": [
         "https://openalex.org/W4311011758"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4311011758"
+      },
       "doi": "10.23917/qist.v2i1.1208",
       "authors": [
         "Ridho Adiansyah",
@@ -3047,6 +3806,11 @@
       "landing_url": "https://doi.org/10.23917/qist.v2i1.1208",
       "provider_ranks": {
         "OpenAlex": 7
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 7
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -3063,6 +3827,9 @@
       "provider_ids": [
         "https://openalex.org/W4293771040"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4293771040"
+      },
       "doi": "10.30821/jcims.v6i1.9058",
       "authors": [
         "Muhammad Syahrial Razali Ibrahim"
@@ -3074,6 +3841,11 @@
       "provider_ranks": {
         "OpenAlex": 5
       },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 5
+        }
+      },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
       ],
@@ -3084,11 +3856,17 @@
       "id": "doi:10.55831/ajis.v7i1.469",
       "title": "Obedience to ‘Political Authority’ (Ulū Al-Amr)",
       "providers": [
-        "Crossref"
+        "Crossref",
+        "OpenAlex"
       ],
       "provider_ids": [
-        "10.55831/ajis.v7i1.469"
+        "10.55831/ajis.v7i1.469",
+        "https://openalex.org/W4391190571"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.55831/ajis.v7i1.469",
+        "OpenAlex": "https://openalex.org/W4391190571"
+      },
       "doi": "10.55831/ajis.v7i1.469",
       "authors": [
         "Owais Manzoor Dar"
@@ -3098,7 +3876,14 @@
       "work_type": "journal-article",
       "landing_url": "https://doi.org/10.55831/ajis.v7i1.469",
       "provider_ranks": {
-        "Crossref": 2
+        "Crossref": 2,
+        "OpenAlex": 3
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 2,
+          "OpenAlex": 3
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -3115,6 +3900,9 @@
       "provider_ids": [
         "10.55831/ajis.v7i1.669"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.55831/ajis.v7i1.669"
+      },
       "doi": "10.55831/ajis.v7i1.669",
       "authors": [
         "Owais Manzoor Dar"
@@ -3125,6 +3913,11 @@
       "landing_url": "https://doi.org/10.55831/ajis.v7i1.669",
       "provider_ranks": {
         "Crossref": 3
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 3
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -3141,6 +3934,9 @@
       "provider_ids": [
         "https://openalex.org/W4294716837"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4294716837"
+      },
       "doi": "10.33650/mushaf.v2i1.3397",
       "authors": [
         "Faris Maulana Akbar"
@@ -3151,6 +3947,11 @@
       "landing_url": "https://doi.org/10.33650/mushaf.v2i1.3397",
       "provider_ranks": {
         "OpenAlex": 11
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 11
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -3167,6 +3968,9 @@
       "provider_ids": [
         "https://openalex.org/W4378084885"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4378084885"
+      },
       "doi": "10.15642/jpai.2022.10.2.129-148",
       "authors": [
         "Al Qudus Nofiandri Eko Sucipto Dwijo",
@@ -3181,6 +3985,11 @@
       "landing_url": "http://dx.doi.org/10.15642/jpai.2022.10.2.129-148",
       "provider_ranks": {
         "OpenAlex": 15
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 15
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -3197,6 +4006,9 @@
       "provider_ids": [
         "https://openalex.org/W4379184276"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4379184276"
+      },
       "doi": "10.24239/jsi.v19i1.664",
       "authors": [
         "Leddy Humaira Sakova",
@@ -3208,6 +4020,11 @@
       "landing_url": "https://doi.org/10.24239/jsi.v19i1.664",
       "provider_ranks": {
         "OpenAlex": 9
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 9
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -3224,6 +4041,9 @@
       "provider_ids": [
         "10.19109/jsq.v2i2"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.19109/jsq.v2i2"
+      },
       "doi": "10.19109/jsq.v2i2",
       "authors": [],
       "year": 2022,
@@ -3232,6 +4052,11 @@
       "landing_url": "https://doi.org/10.19109/jsq.v2i2",
       "provider_ranks": {
         "Crossref": 14
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 14
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -3248,6 +4073,9 @@
       "provider_ids": [
         "10.19109/jsq.v2i1"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.19109/jsq.v2i1"
+      },
       "doi": "10.19109/jsq.v2i1",
       "authors": [],
       "year": 2022,
@@ -3256,6 +4084,11 @@
       "landing_url": "https://doi.org/10.19109/jsq.v2i1",
       "provider_ranks": {
         "Crossref": 16
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 16
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -3272,6 +4105,9 @@
       "provider_ids": [
         "10.23943/princeton/9780691204314.003.0008"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.23943/princeton/9780691204314.003.0008"
+      },
       "doi": "10.23943/princeton/9780691204314.003.0008",
       "authors": [
         "Ismail Fajrie Alatas"
@@ -3282,6 +4118,11 @@
       "landing_url": "https://doi.org/10.23943/princeton/9780691204314.003.0008",
       "provider_ranks": {
         "Crossref": 9
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 9
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -3298,6 +4139,9 @@
       "provider_ids": [
         "https://openalex.org/W4200264942"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4200264942"
+      },
       "doi": "10.1080/09637494.2021.1996178",
       "authors": [
         "Mieke Groeninck"
@@ -3308,6 +4152,11 @@
       "landing_url": "https://doi.org/10.1080/09637494.2021.1996178",
       "provider_ranks": {
         "OpenAlex": 20
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 20
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -3324,6 +4173,9 @@
       "provider_ids": [
         "https://openalex.org/W3124897250"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W3124897250"
+      },
       "doi": "10.1177/2050303220986975",
       "authors": [
         "Christian Lange"
@@ -3334,6 +4186,11 @@
       "landing_url": "https://doi.org/10.1177/2050303220986975",
       "provider_ranks": {
         "OpenAlex": 7
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 7
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -3350,6 +4207,9 @@
       "provider_ids": [
         "https://openalex.org/W3126835738"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W3126835738"
+      },
       "doi": "10.14421/qh.2021.2201-07",
       "authors": [
         "Ahmad Syaifuddin Amin",
@@ -3361,6 +4221,11 @@
       "landing_url": "https://doi.org/10.14421/qh.2021.2201-07",
       "provider_ranks": {
         "OpenAlex": 7
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 7
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -3377,6 +4242,9 @@
       "provider_ids": [
         "https://openalex.org/W3034863443"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W3034863443"
+      },
       "doi": "10.1111/1467-9809.12727",
       "authors": [
         "Margrit Pernau",
@@ -3388,6 +4256,11 @@
       "landing_url": "https://doi.org/10.1111/1467-9809.12727",
       "provider_ranks": {
         "OpenAlex": 15
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 15
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -3404,6 +4277,9 @@
       "provider_ids": [
         "https://openalex.org/W3198468542"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W3198468542"
+      },
       "doi": "10.3390/rel12090718",
       "authors": [
         "Mohammad Syifa Amin Widigdo",
@@ -3415,6 +4291,11 @@
       "landing_url": "https://doi.org/10.3390/rel12090718",
       "provider_ranks": {
         "OpenAlex": 16
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 16
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -3431,6 +4312,9 @@
       "provider_ids": [
         "https://openalex.org/W4226256829"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4226256829"
+      },
       "doi": "",
       "authors": [
         "Nahide Bozkurt"
@@ -3441,6 +4325,11 @@
       "landing_url": "https://dergipark.org.tr/tr/pub/siyer/issue/67058/978061",
       "provider_ranks": {
         "OpenAlex": 10
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 10
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -3457,6 +4346,9 @@
       "provider_ids": [
         "10.19109/jsq.v1i2"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.19109/jsq.v1i2"
+      },
       "doi": "10.19109/jsq.v1i2",
       "authors": [],
       "year": 2021,
@@ -3465,6 +4357,11 @@
       "landing_url": "https://doi.org/10.19109/jsq.v1i2",
       "provider_ranks": {
         "Crossref": 7
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 7
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -3481,6 +4378,9 @@
       "provider_ids": [
         "10.23943/princeton/9780691204314.001.0001"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.23943/princeton/9780691204314.001.0001"
+      },
       "doi": "10.23943/princeton/9780691204314.001.0001",
       "authors": [
         "Ismail Fajrie Alatas"
@@ -3491,6 +4391,11 @@
       "landing_url": "https://doi.org/10.23943/princeton/9780691204314.001.0001",
       "provider_ranks": {
         "Crossref": 13
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 13
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -3507,6 +4412,9 @@
       "provider_ids": [
         "https://openalex.org/W4285074747"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4285074747"
+      },
       "doi": "10.1515/9781474423229-005",
       "authors": [
         "Elizabeth Urban"
@@ -3517,6 +4425,11 @@
       "landing_url": "https://doi.org/10.1515/9781474423229-005",
       "provider_ranks": {
         "OpenAlex": 10
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 10
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -3533,6 +4446,9 @@
       "provider_ids": [
         "10.12987/9780300158953-007"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.12987/9780300158953-007"
+      },
       "doi": "10.12987/9780300158953-007",
       "authors": [],
       "year": 2020,
@@ -3541,6 +4457,11 @@
       "landing_url": "https://doi.org/10.12987/9780300158953-007",
       "provider_ranks": {
         "Crossref": 11
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 11
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -3557,6 +4478,9 @@
       "provider_ids": [
         "10.5622/illinois/9780252043017.003.0005"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.5622/illinois/9780252043017.003.0005"
+      },
       "doi": "10.5622/illinois/9780252043017.003.0005",
       "authors": [
         "Michael Hubbard MacKay"
@@ -3567,6 +4491,11 @@
       "landing_url": "https://doi.org/10.5622/illinois/9780252043017.003.0005",
       "provider_ranks": {
         "Crossref": 17
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 17
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -3583,6 +4512,9 @@
       "provider_ids": [
         "https://openalex.org/W3036119907"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W3036119907"
+      },
       "doi": "10.18415/ijmmu.v7i4.1543",
       "authors": [
         "احمد زارع زردینی",
@@ -3596,6 +4528,11 @@
       "landing_url": "http://ijmmu.com/index.php/ijmmu/article/view/1543",
       "provider_ranks": {
         "OpenAlex": 20
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 20
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -3612,6 +4549,9 @@
       "provider_ids": [
         "https://openalex.org/W3035084631"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W3035084631"
+      },
       "doi": "10.1163/9789004440296",
       "authors": [
         "Tijana Krstić",
@@ -3623,6 +4563,11 @@
       "landing_url": "https://doi.org/10.1163/9789004440296",
       "provider_ranks": {
         "OpenAlex": 2
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 2
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -3639,6 +4584,9 @@
       "provider_ids": [
         "10.58438/alkarima.v2i1.83"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.58438/alkarima.v2i1.83"
+      },
       "doi": "10.58438/alkarima.v2i1.83",
       "authors": [
         "Siti Munawaroh"
@@ -3649,6 +4597,11 @@
       "landing_url": "https://doi.org/10.58438/alkarima.v2i1.83",
       "provider_ranks": {
         "Crossref": 9
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 9
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -3665,6 +4618,9 @@
       "provider_ids": [
         "10.26226/morressier.5cf632b9af72dec2b05545c4"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.26226/morressier.5cf632b9af72dec2b05545c4"
+      },
       "doi": "10.26226/morressier.5cf632b9af72dec2b05545c4",
       "authors": [
         "Bernard Gangloff"
@@ -3675,6 +4631,11 @@
       "landing_url": "https://doi.org/10.26226/morressier.5cf632b9af72dec2b05545c4",
       "provider_ranks": {
         "Crossref": 18
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 18
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -3691,6 +4652,9 @@
       "provider_ids": [
         "https://openalex.org/W3027356271"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W3027356271"
+      },
       "doi": "",
       "authors": [
         "Alexander Abichou"
@@ -3701,6 +4665,11 @@
       "landing_url": "https://etheses.durham.ac.uk/id/eprint/13544/1/Abichou000662901.pdf",
       "provider_ranks": {
         "OpenAlex": 9
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 9
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -3717,6 +4686,9 @@
       "provider_ids": [
         "10.5622/illinois/9780252043017.003.0002"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.5622/illinois/9780252043017.003.0002"
+      },
       "doi": "10.5622/illinois/9780252043017.003.0002",
       "authors": [
         "Michael Hubbard MacKay"
@@ -3727,6 +4699,11 @@
       "landing_url": "https://doi.org/10.5622/illinois/9780252043017.003.0002",
       "provider_ranks": {
         "Crossref": 2
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 2
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -3743,6 +4720,9 @@
       "provider_ids": [
         "10.5406/j.ctvzgb7g7.5"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.5406/j.ctvzgb7g7.5"
+      },
       "doi": "10.5406/j.ctvzgb7g7.5",
       "authors": [],
       "year": 2020,
@@ -3751,6 +4731,11 @@
       "landing_url": "https://doi.org/10.5406/j.ctvzgb7g7.5",
       "provider_ranks": {
         "Crossref": 8
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 8
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -3767,6 +4752,9 @@
       "provider_ids": [
         "10.12987/yale/9780300140910.003.0006"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.12987/yale/9780300140910.003.0006"
+      },
       "doi": "10.12987/yale/9780300140910.003.0006",
       "authors": [
         "Moshe Halbertal"
@@ -3777,6 +4765,11 @@
       "landing_url": "https://doi.org/10.12987/yale/9780300140910.003.0006",
       "provider_ranks": {
         "Crossref": 20
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 20
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -3793,6 +4786,9 @@
       "provider_ids": [
         "https://openalex.org/W3116335989"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W3116335989"
+      },
       "doi": "10.24252/jad.v20i2a1",
       "authors": [
         "Muhammad Yusuf",
@@ -3805,6 +4801,11 @@
       "landing_url": "https://doi.org/10.24252/jad.v20i2a1",
       "provider_ranks": {
         "OpenAlex": 8
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 8
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -3821,6 +4822,9 @@
       "provider_ids": [
         "10.5149/northcarolina/9781469658919.003.0005"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.5149/northcarolina/9781469658919.003.0005"
+      },
       "doi": "10.5149/northcarolina/9781469658919.003.0005",
       "authors": [
         "Michael Muhammad Knight"
@@ -3831,6 +4835,11 @@
       "landing_url": "https://doi.org/10.5149/northcarolina/9781469658919.003.0005",
       "provider_ranks": {
         "Crossref": 19
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 19
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -3847,6 +4856,9 @@
       "provider_ids": [
         "10.1111/nbfr.12546"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1111/nbfr.12546"
+      },
       "doi": "10.1111/nbfr.12546",
       "authors": [
         "Mary McCaughey"
@@ -3857,6 +4869,11 @@
       "landing_url": "https://doi.org/10.1111/nbfr.12546",
       "provider_ranks": {
         "Crossref": 5
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 5
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -3873,6 +4890,9 @@
       "provider_ids": [
         "https://openalex.org/W2979916878"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W2979916878"
+      },
       "doi": "",
       "authors": [
         "Yaser Mirdamadi"
@@ -3883,6 +4903,11 @@
       "landing_url": "http://hdl.handle.net/1842/36189",
       "provider_ranks": {
         "OpenAlex": 5
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 5
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -3899,6 +4924,9 @@
       "provider_ids": [
         "https://openalex.org/W2988616945"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W2988616945"
+      },
       "doi": "10.23917/jtl.v1i1.8797",
       "authors": [
         "Kelik Wardiono"
@@ -3909,6 +4937,11 @@
       "landing_url": "https://doi.org/10.23917/jtl.v1i1.8797",
       "provider_ranks": {
         "OpenAlex": 20
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 20
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -3925,6 +4958,9 @@
       "provider_ids": [
         "10.28918/jupe.v15i1.1632"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.28918/jupe.v15i1.1632"
+      },
       "doi": "10.28918/jupe.v15i1.1632",
       "authors": [
         "Helmi Yudha"
@@ -3935,6 +4971,11 @@
       "landing_url": "https://doi.org/10.28918/jupe.v15i1.1632",
       "provider_ranks": {
         "Crossref": 19
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 19
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -3951,6 +4992,9 @@
       "provider_ids": [
         "10.5149/northcarolina/9781469643168.001.0001"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.5149/northcarolina/9781469643168.001.0001"
+      },
       "doi": "10.5149/northcarolina/9781469643168.001.0001",
       "authors": [
         "Gary R. Bunt"
@@ -3961,6 +5005,11 @@
       "landing_url": "https://doi.org/10.5149/northcarolina/9781469643168.001.0001",
       "provider_ranks": {
         "Crossref": 16
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 16
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -3977,6 +5026,9 @@
       "provider_ids": [
         "10.5040/9781350989672.ch-001"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.5040/9781350989672.ch-001"
+      },
       "doi": "10.5040/9781350989672.ch-001",
       "authors": [],
       "year": 2018,
@@ -3985,6 +5037,11 @@
       "landing_url": "https://doi.org/10.5040/9781350989672.ch-001",
       "provider_ranks": {
         "Crossref": 17
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 17
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -4001,6 +5058,9 @@
       "provider_ids": [
         "https://openalex.org/W2919856718"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W2919856718"
+      },
       "doi": "10.1163/24685542-12340017",
       "authors": [
         "Mulki Al‐Sharmani"
@@ -4011,6 +5071,11 @@
       "landing_url": "https://doi.org/10.1163/24685542-12340017",
       "provider_ranks": {
         "OpenAlex": 6
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "OpenAlex": 6
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -4027,6 +5092,9 @@
       "provider_ids": [
         "10.1002/9781118527719.ch10"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1002/9781118527719.ch10"
+      },
       "doi": "10.1002/9781118527719.ch10",
       "authors": [
         "Bruce Fudge"
@@ -4037,6 +5105,11 @@
       "landing_url": "https://doi.org/10.1002/9781118527719.ch10",
       "provider_ranks": {
         "Crossref": 12
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 12
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -4053,6 +5126,9 @@
       "provider_ids": [
         "https://openalex.org/W2900297778"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W2900297778"
+      },
       "doi": "",
       "authors": [
         "Lia Fatra Senorita Kamalina"
@@ -4063,6 +5139,11 @@
       "landing_url": "http://etheses.uin-malang.ac.id/12002/1/14110234.pdf",
       "provider_ranks": {
         "OpenAlex": 14
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 14
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -4079,6 +5160,9 @@
       "provider_ids": [
         "https://openalex.org/W4410891099"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4410891099"
+      },
       "doi": "10.61335/1551-3432.1026",
       "authors": [
         "Mohammed Rustom"
@@ -4089,6 +5173,11 @@
       "landing_url": "https://doi.org/10.61335/1551-3432.1026",
       "provider_ranks": {
         "OpenAlex": 4
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 4
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -4105,6 +5194,9 @@
       "provider_ids": [
         "10.1093/oso/9780190634346.003.0006"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1093/oso/9780190634346.003.0006"
+      },
       "doi": "10.1093/oso/9780190634346.003.0006",
       "authors": [
         "Kristian Petersen"
@@ -4115,6 +5207,11 @@
       "landing_url": "https://doi.org/10.1093/oso/9780190634346.003.0006",
       "provider_ranks": {
         "Crossref": 2
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 2
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -4131,6 +5228,9 @@
       "provider_ids": [
         "10.4324/9781912282524"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.4324/9781912282524"
+      },
       "doi": "10.4324/9781912282524",
       "authors": [],
       "year": 2017,
@@ -4139,6 +5239,11 @@
       "landing_url": "https://doi.org/10.4324/9781912282524",
       "provider_ranks": {
         "Crossref": 4
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 4
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -4155,6 +5260,9 @@
       "provider_ids": [
         "10.1093/oso/9780198808244.003.0004"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1093/oso/9780198808244.003.0004"
+      },
       "doi": "10.1093/oso/9780198808244.003.0004",
       "authors": [
         "Brian FitzGerald"
@@ -4165,6 +5273,11 @@
       "landing_url": "https://doi.org/10.1093/oso/9780198808244.003.0004",
       "provider_ranks": {
         "Crossref": 20
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 20
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -4181,6 +5294,9 @@
       "provider_ids": [
         "https://openalex.org/W2789557971"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W2789557971"
+      },
       "doi": "10.14421/jpi.2017.62.371-396",
       "authors": [
         "Robingun Suyud El Syam"
@@ -4191,6 +5307,11 @@
       "landing_url": "https://doi.org/10.14421/jpi.2017.62.371-396",
       "provider_ranks": {
         "OpenAlex": 4
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 4
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -4207,6 +5328,9 @@
       "provider_ids": [
         "https://openalex.org/W2774710310"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W2774710310"
+      },
       "doi": "10.21580/ahkam.2017.27.2.1600",
       "authors": [
         "Musahadi Ham"
@@ -4217,6 +5341,11 @@
       "landing_url": "https://doi.org/10.21580/ahkam.2017.27.2.1600",
       "provider_ranks": {
         "OpenAlex": 20
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 20
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -4233,6 +5362,9 @@
       "provider_ids": [
         "https://openalex.org/W2776695006"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W2776695006"
+      },
       "doi": "10.19109/td.v22i1.1621",
       "authors": [
         "Kemas Abdul Hai"
@@ -4243,6 +5375,11 @@
       "landing_url": "https://doi.org/10.19109/td.v22i1.1621",
       "provider_ranks": {
         "OpenAlex": 3
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 3
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -4259,6 +5396,9 @@
       "provider_ids": [
         "https://openalex.org/W2786140414"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W2786140414"
+      },
       "doi": "10.15408/sdi.v24i3.5187",
       "authors": [
         "Norbani B. Ismail"
@@ -4269,6 +5409,11 @@
       "landing_url": "https://doi.org/10.15408/sdi.v24i3.5187",
       "provider_ranks": {
         "OpenAlex": 5
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 5
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -4285,6 +5430,9 @@
       "provider_ids": [
         "10.3726/978-1-4539-1641-4/14"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.3726/978-1-4539-1641-4/14"
+      },
       "doi": "10.3726/978-1-4539-1641-4/14",
       "authors": [],
       "year": 2016,
@@ -4293,6 +5441,11 @@
       "landing_url": "https://doi.org/10.3726/978-1-4539-1641-4/14",
       "provider_ranks": {
         "Crossref": 17
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 17
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -4309,6 +5462,9 @@
       "provider_ids": [
         "10.3726/978-1-4539-1641-4/13"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.3726/978-1-4539-1641-4/13"
+      },
       "doi": "10.3726/978-1-4539-1641-4/13",
       "authors": [],
       "year": 2016,
@@ -4317,6 +5473,11 @@
       "landing_url": "https://doi.org/10.3726/978-1-4539-1641-4/13",
       "provider_ranks": {
         "Crossref": 19
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 19
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -4333,6 +5494,9 @@
       "provider_ids": [
         "10.4324/9781315604091-13"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.4324/9781315604091-13"
+      },
       "doi": "10.4324/9781315604091-13",
       "authors": [],
       "year": 2016,
@@ -4341,6 +5505,11 @@
       "landing_url": "https://doi.org/10.4324/9781315604091-13",
       "provider_ranks": {
         "Crossref": 15
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 15
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -4357,6 +5526,9 @@
       "provider_ids": [
         "10.5040/9780567675293.ch-001"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.5040/9780567675293.ch-001"
+      },
       "doi": "10.5040/9780567675293.ch-001",
       "authors": [],
       "year": 2016,
@@ -4364,7 +5536,15 @@
       "work_type": "book-chapter",
       "landing_url": "https://doi.org/10.5040/9780567675293.ch-001",
       "provider_ranks": {
-        "Crossref": 13
+        "Crossref": 1
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 13
+        },
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 1
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation",
@@ -4382,6 +5562,9 @@
       "provider_ids": [
         "https://openalex.org/W2562570824"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W2562570824"
+      },
       "doi": "",
       "authors": [
         "Christiane Shaker"
@@ -4392,6 +5575,11 @@
       "landing_url": "https://scholarship.shu.edu/dissertations/2220",
       "provider_ranks": {
         "OpenAlex": 17
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 17
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -4408,6 +5596,9 @@
       "provider_ids": [
         "10.1093/acprof:oso/9780199685097.003.0002"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1093/acprof:oso/9780199685097.003.0002"
+      },
       "doi": "10.1093/acprof:oso/9780199685097.003.0002",
       "authors": [
         "Başak Çalı"
@@ -4418,6 +5609,11 @@
       "landing_url": "https://doi.org/10.1093/acprof:oso/9780199685097.003.0002",
       "provider_ranks": {
         "Crossref": 17
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 17
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -4434,6 +5630,9 @@
       "provider_ids": [
         "10.1093/acprof:oso/9780198755326.003.0006"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1093/acprof:oso/9780198755326.003.0006"
+      },
       "doi": "10.1093/acprof:oso/9780198755326.003.0006",
       "authors": [
         "Stephen Mulhall"
@@ -4444,6 +5643,11 @@
       "landing_url": "https://doi.org/10.1093/acprof:oso/9780198755326.003.0006",
       "provider_ranks": {
         "Crossref": 15
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 15
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -4460,6 +5664,9 @@
       "provider_ids": [
         "10.5040/9780300288278.ch-003"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.5040/9780300288278.ch-003"
+      },
       "doi": "10.5040/9780300288278.ch-003",
       "authors": [],
       "year": 2015,
@@ -4468,6 +5675,11 @@
       "landing_url": "https://doi.org/10.5040/9780300288278.ch-003",
       "provider_ranks": {
         "Crossref": 8
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 8
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -4484,6 +5696,9 @@
       "provider_ids": [
         "10.2307/j.ctvggx3zd.9"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.2307/j.ctvggx3zd.9"
+      },
       "doi": "10.2307/j.ctvggx3zd.9",
       "authors": [],
       "year": 2015,
@@ -4492,6 +5707,11 @@
       "landing_url": "https://doi.org/10.2307/j.ctvggx3zd.9",
       "provider_ranks": {
         "Crossref": 10
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 10
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -4508,6 +5728,9 @@
       "provider_ids": [
         "https://openalex.org/W1535651825"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W1535651825"
+      },
       "doi": "10.5901/mjss.2015.v6n4s1p454",
       "authors": [
         "Ahamad Ahmadi Sakat",
@@ -4524,6 +5747,11 @@
       "provider_ranks": {
         "OpenAlex": 11
       },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 11
+        }
+      },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
       ],
@@ -4539,6 +5767,9 @@
       "provider_ids": [
         "10.1057/9781137548665_4"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1057/9781137548665_4"
+      },
       "doi": "10.1057/9781137548665_4",
       "authors": [
         "Rick Elgendy"
@@ -4549,6 +5780,11 @@
       "landing_url": "https://doi.org/10.1057/9781137548665_4",
       "provider_ranks": {
         "Crossref": 13
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 13
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -4565,6 +5801,9 @@
       "provider_ids": [
         "10.1017/cbo9781139014847.006"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1017/cbo9781139014847.006"
+      },
       "doi": "10.1017/cbo9781139014847.006",
       "authors": [],
       "year": 2015,
@@ -4573,6 +5812,11 @@
       "landing_url": "https://doi.org/10.1017/cbo9781139014847.006",
       "provider_ranks": {
         "Crossref": 18
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 18
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -4589,6 +5833,9 @@
       "provider_ids": [
         "10.12816/0018056"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.12816/0018056"
+      },
       "doi": "10.12816/0018056",
       "authors": [
         "عبد السلام بن صالح الجار الله"
@@ -4599,6 +5846,11 @@
       "landing_url": "https://doi.org/10.12816/0018056",
       "provider_ranks": {
         "Crossref": 18
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 18
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -4615,6 +5867,9 @@
       "provider_ids": [
         "https://openalex.org/W834908848"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W834908848"
+      },
       "doi": "",
       "authors": [
         "Hadia Mubarak"
@@ -4625,6 +5880,11 @@
       "landing_url": "http://hdl.handle.net/10822/712424",
       "provider_ranks": {
         "OpenAlex": 7
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 7
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -4641,6 +5901,9 @@
       "provider_ids": [
         "https://openalex.org/W2162190853"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W2162190853"
+      },
       "doi": "",
       "authors": [
         "Jennifer Thea Gordon"
@@ -4651,6 +5914,11 @@
       "landing_url": "http://nrs.harvard.edu/urn-3:HUL.InstRepos:12274278",
       "provider_ranks": {
         "OpenAlex": 4
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 4
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -4667,6 +5935,9 @@
       "provider_ids": [
         "10.31826/9781463234898-016"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.31826/9781463234898-016"
+      },
       "doi": "10.31826/9781463234898-016",
       "authors": [
         "B. Todd Lawson"
@@ -4677,6 +5948,11 @@
       "landing_url": "https://doi.org/10.31826/9781463234898-016",
       "provider_ranks": {
         "Crossref": 12
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 12
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -4693,6 +5969,9 @@
       "provider_ids": [
         "10.1057/9781137078957.0014"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1057/9781137078957.0014"
+      },
       "doi": "10.1057/9781137078957.0014",
       "authors": [],
       "year": 2013,
@@ -4701,6 +5980,11 @@
       "landing_url": "https://doi.org/10.1057/9781137078957.0014",
       "provider_ranks": {
         "Crossref": 14
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 14
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -4717,6 +6001,9 @@
       "provider_ids": [
         "10.1017/cbo9780511973062.008"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1017/cbo9780511973062.008"
+      },
       "doi": "10.1017/cbo9780511973062.008",
       "authors": [],
       "year": 2012,
@@ -4725,6 +6012,11 @@
       "landing_url": "https://doi.org/10.1017/cbo9780511973062.008",
       "provider_ranks": {
         "Crossref": 7
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 7
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -4741,6 +6033,9 @@
       "provider_ids": [
         "10.1007/springerreference_302080"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1007/springerreference_302080"
+      },
       "doi": "10.1007/springerreference_302080",
       "authors": [],
       "year": 2012,
@@ -4749,6 +6044,11 @@
       "landing_url": "https://doi.org/10.1007/springerreference_302080",
       "provider_ranks": {
         "Crossref": 5
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 5
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -4765,6 +6065,9 @@
       "provider_ids": [
         "10.2307/26421433"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.2307/26421433"
+      },
       "doi": "10.2307/26421433",
       "authors": [
         "Christopher R. J. Holmes"
@@ -4775,6 +6078,11 @@
       "landing_url": "https://doi.org/10.2307/26421433",
       "provider_ranks": {
         "Crossref": 4
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 4
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -4791,6 +6099,9 @@
       "provider_ids": [
         "https://openalex.org/W1585289231"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W1585289231"
+      },
       "doi": "",
       "authors": [
         "Jaime Lenninger McLellan"
@@ -4801,6 +6112,11 @@
       "landing_url": "https://hdl.handle.net/1808/10678",
       "provider_ranks": {
         "OpenAlex": 13
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 13
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -4817,6 +6133,9 @@
       "provider_ids": [
         "10.1177/0040571x11411540"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1177/0040571x11411540"
+      },
       "doi": "10.1177/0040571x11411540",
       "authors": [
         "William Franke"
@@ -4827,6 +6146,11 @@
       "landing_url": "https://doi.org/10.1177/0040571x11411540",
       "provider_ranks": {
         "Crossref": 16
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 16
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -4843,6 +6167,9 @@
       "provider_ids": [
         "10.3726/978-1-4539-0455-8"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.3726/978-1-4539-0455-8"
+      },
       "doi": "10.3726/978-1-4539-0455-8",
       "authors": [
         "Gregory Vanderbilt"
@@ -4853,6 +6180,11 @@
       "landing_url": "https://doi.org/10.3726/978-1-4539-0455-8",
       "provider_ranks": {
         "Crossref": 7
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 7
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -4869,6 +6201,9 @@
       "provider_ids": [
         "10.1163/ej.9789004178908.i-420.29"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1163/ej.9789004178908.i-420.29"
+      },
       "doi": "10.1163/ej.9789004178908.i-420.29",
       "authors": [
         "C. Jacobsen"
@@ -4879,6 +6214,11 @@
       "landing_url": "https://doi.org/10.1163/ej.9789004178908.i-420.29",
       "provider_ranks": {
         "Crossref": 5
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 5
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -4895,6 +6235,9 @@
       "provider_ids": [
         "10.1163/ej.9789004180468.i-270.12"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1163/ej.9789004180468.i-270.12"
+      },
       "doi": "10.1163/ej.9789004180468.i-270.12",
       "authors": [
         "H. Najman"
@@ -4905,6 +6248,11 @@
       "landing_url": "https://doi.org/10.1163/ej.9789004180468.i-270.12",
       "provider_ranks": {
         "Crossref": 11
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 11
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -4921,6 +6269,9 @@
       "provider_ids": [
         "https://openalex.org/W1497018417"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W1497018417"
+      },
       "doi": "",
       "authors": [
         "Jonathon Case Henderson"
@@ -4931,6 +6282,11 @@
       "landing_url": "https://corescholar.libraries.wright.edu/etd_all/338",
       "provider_ranks": {
         "OpenAlex": 10
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 10
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -4947,6 +6303,9 @@
       "provider_ids": [
         "10.4135/9781446269336.n5"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.4135/9781446269336.n5"
+      },
       "doi": "10.4135/9781446269336.n5",
       "authors": [],
       "year": 2009,
@@ -4955,6 +6314,11 @@
       "landing_url": "https://doi.org/10.4135/9781446269336.n5",
       "provider_ranks": {
         "Crossref": 12
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 12
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -4971,6 +6335,9 @@
       "provider_ids": [
         "10.1093/acprof:oso/9780199566976.003.0002"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1093/acprof:oso/9780199566976.003.0002"
+      },
       "doi": "10.1093/acprof:oso/9780199566976.003.0002",
       "authors": [
         "Roman Cholij"
@@ -4981,6 +6348,11 @@
       "landing_url": "https://doi.org/10.1093/acprof:oso/9780199566976.003.0002",
       "provider_ranks": {
         "Crossref": 11
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 11
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -4997,6 +6369,9 @@
       "provider_ids": [
         "10.2986/tren.001-1022"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.2986/tren.001-1022"
+      },
       "doi": "10.2986/tren.001-1022",
       "authors": [
         "Hyeoggyun KWEON"
@@ -5007,6 +6382,11 @@
       "landing_url": "https://doi.org/10.2986/tren.001-1022",
       "provider_ranks": {
         "Crossref": 1
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 1
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -5023,6 +6403,9 @@
       "provider_ids": [
         "https://openalex.org/W128846826"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W128846826"
+      },
       "doi": "",
       "authors": [
         "Michael P. Bufano"
@@ -5033,6 +6416,11 @@
       "landing_url": "https://tigerprints.clemson.edu/all_theses/331",
       "provider_ranks": {
         "OpenAlex": 1
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 1
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -5049,6 +6437,9 @@
       "provider_ids": [
         "https://openalex.org/W591600960"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W591600960"
+      },
       "doi": "",
       "authors": [
         "Aisha Geissinger"
@@ -5059,6 +6450,17 @@
       "landing_url": "http://proquest.umi.com/pqdlink?did=1659965101=4=2=12520=309=PQD",
       "provider_ranks": {
         "OpenAlex": 1
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 1
+        },
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "OpenAlex": 18
+        },
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 12
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59",
@@ -5077,6 +6479,9 @@
       "provider_ids": [
         "10.1037/e537272009-012"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1037/e537272009-012"
+      },
       "doi": "10.1037/e537272009-012",
       "authors": [
         "Ian Nicholson"
@@ -5087,6 +6492,11 @@
       "landing_url": "https://doi.org/10.1037/e537272009-012",
       "provider_ranks": {
         "Crossref": 16
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 16
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -5103,6 +6513,9 @@
       "provider_ids": [
         "10.2307/j.ctvpj764q.9"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.2307/j.ctvpj764q.9"
+      },
       "doi": "10.2307/j.ctvpj764q.9",
       "authors": [],
       "year": 2008,
@@ -5111,6 +6524,11 @@
       "landing_url": "https://doi.org/10.2307/j.ctvpj764q.9",
       "provider_ranks": {
         "Crossref": 15
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 15
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -5127,6 +6545,9 @@
       "provider_ids": [
         "https://openalex.org/W564786575"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W564786575"
+      },
       "doi": "",
       "authors": [
         "Todd J. Harris"
@@ -5137,6 +6558,11 @@
       "landing_url": "https://scholarsarchive.byu.edu/etd/1176",
       "provider_ranks": {
         "OpenAlex": 7
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "OpenAlex": 7
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -5153,6 +6579,9 @@
       "provider_ids": [
         "https://openalex.org/W7137625785"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7137625785"
+      },
       "doi": "",
       "authors": [],
       "year": 2007,
@@ -5161,6 +6590,11 @@
       "landing_url": "https://directory.doabooks.org/handle/20.500.12854/29378",
       "provider_ranks": {
         "OpenAlex": 17
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 17
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -5177,6 +6611,9 @@
       "provider_ids": [
         "https://openalex.org/W4238087492"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W4238087492"
+      },
       "doi": "10.1515/9783839404911",
       "authors": [
         "Jóhann Páll Árnason 1940-",
@@ -5189,6 +6626,11 @@
       "landing_url": "https://doi.org/10.1515/9783839404911",
       "provider_ranks": {
         "OpenAlex": 18
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 18
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -5205,6 +6647,9 @@
       "provider_ids": [
         "10.1017/cbo9780511818783.006"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1017/cbo9780511818783.006"
+      },
       "doi": "10.1017/cbo9780511818783.006",
       "authors": [],
       "year": 2004,
@@ -5213,6 +6658,11 @@
       "landing_url": "https://doi.org/10.1017/cbo9780511818783.006",
       "provider_ranks": {
         "Crossref": 18
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 18
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -5229,6 +6679,9 @@
       "provider_ids": [
         "https://openalex.org/W783727726"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W783727726"
+      },
       "doi": "",
       "authors": [
         "Wahbie Long"
@@ -5239,6 +6692,11 @@
       "landing_url": "http://hdl.handle.net/10019.1/53478",
       "provider_ranks": {
         "OpenAlex": 15
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 15
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -5255,6 +6713,9 @@
       "provider_ids": [
         "10.1017/cbo9780511495557.005"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1017/cbo9780511495557.005"
+      },
       "doi": "10.1017/cbo9780511495557.005",
       "authors": [],
       "year": 2001,
@@ -5263,6 +6724,11 @@
       "landing_url": "https://doi.org/10.1017/cbo9780511495557.005",
       "provider_ranks": {
         "Crossref": 12
+      },
+      "provider_ranks_by_query": {
+        "Quranic hermeneutics religious authority Islamic legal and theological traditions": {
+          "Crossref": 12
+        }
       },
       "queries": [
         "Quranic hermeneutics religious authority Islamic legal and theological traditions"
@@ -5279,6 +6745,9 @@
       "provider_ids": [
         "https://openalex.org/W1504153824"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W1504153824"
+      },
       "doi": "",
       "authors": [
         "Asma Barlas"
@@ -5289,6 +6758,11 @@
       "landing_url": "https://digitalcommons.macalester.edu/macintl/vol10/iss1/15",
       "provider_ranks": {
         "OpenAlex": 8
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "OpenAlex": 8
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -5305,6 +6779,9 @@
       "provider_ids": [
         "10.1163/157007499x00053"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1163/157007499x00053"
+      },
       "doi": "10.1163/157007499x00053",
       "authors": [
         "Veli-Matti Kärkkäinen"
@@ -5315,6 +6792,11 @@
       "landing_url": "https://doi.org/10.1163/157007499x00053",
       "provider_ranks": {
         "Crossref": 9
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 9
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"
@@ -5331,6 +6813,9 @@
       "provider_ids": [
         "https://openalex.org/W7161961936"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W7161961936"
+      },
       "doi": "10.82308/10674",
       "authors": [
         "Shin. Nomoto"
@@ -5341,6 +6826,11 @@
       "landing_url": "https://escholarship.mcgill.ca/concern/theses/6969z261n",
       "provider_ranks": {
         "OpenAlex": 20
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 20
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -5357,6 +6847,9 @@
       "provider_ids": [
         "10.4324/9781410602022-6"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.4324/9781410602022-6"
+      },
       "doi": "10.4324/9781410602022-6",
       "authors": [],
       "year": 1999,
@@ -5365,6 +6858,11 @@
       "landing_url": "https://doi.org/10.4324/9781410602022-6",
       "provider_ranks": {
         "Crossref": 13
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 13
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -5381,6 +6879,9 @@
       "provider_ids": [
         "10.4324/9781410602022"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.4324/9781410602022"
+      },
       "doi": "10.4324/9781410602022",
       "authors": [],
       "year": 1999,
@@ -5389,6 +6890,11 @@
       "landing_url": "https://doi.org/10.4324/9781410602022",
       "provider_ranks": {
         "Crossref": 6
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 6
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -5405,6 +6911,9 @@
       "provider_ids": [
         "10.4324/9781410602022-11"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.4324/9781410602022-11"
+      },
       "doi": "10.4324/9781410602022-11",
       "authors": [],
       "year": 1999,
@@ -5413,6 +6922,11 @@
       "landing_url": "https://doi.org/10.4324/9781410602022-11",
       "provider_ranks": {
         "Crossref": 10
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 10
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -5429,6 +6943,9 @@
       "provider_ids": [
         "10.4324/9781410602022-8"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.4324/9781410602022-8"
+      },
       "doi": "10.4324/9781410602022-8",
       "authors": [],
       "year": 1999,
@@ -5437,6 +6954,11 @@
       "landing_url": "https://doi.org/10.4324/9781410602022-8",
       "provider_ranks": {
         "Crossref": 8
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 8
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -5453,6 +6975,9 @@
       "provider_ids": [
         "10.1080/00393389808600227"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1080/00393389808600227"
+      },
       "doi": "10.1080/00393389808600227",
       "authors": [
         "Niels Christian Hvidt"
@@ -5463,6 +6988,11 @@
       "landing_url": "https://doi.org/10.1080/00393389808600227",
       "provider_ranks": {
         "Crossref": 7
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 7
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -5479,6 +7009,9 @@
       "provider_ids": [
         "https://openalex.org/W216853126"
       ],
+      "provider_ids_by_provider": {
+        "OpenAlex": "https://openalex.org/W216853126"
+      },
       "doi": "",
       "authors": [
         "Christopher A Lamb"
@@ -5489,6 +7022,11 @@
       "landing_url": "http://etheses.bham.ac.uk/5623/3/Lamb1987PhD_Final.pdf",
       "provider_ranks": {
         "OpenAlex": 19
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "OpenAlex": 19
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -5505,6 +7043,9 @@
       "provider_ids": [
         "10.5040/9780567690241.ch-002"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.5040/9780567690241.ch-002"
+      },
       "doi": "10.5040/9780567690241.ch-002",
       "authors": [],
       "year": 1995,
@@ -5513,6 +7054,11 @@
       "landing_url": "https://doi.org/10.5040/9780567690241.ch-002",
       "provider_ranks": {
         "Crossref": 3
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 3
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -5529,6 +7075,9 @@
       "provider_ids": [
         "10.1177/0040571x9409700525"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1177/0040571x9409700525"
+      },
       "doi": "10.1177/0040571x9409700525",
       "authors": [
         "David Hill"
@@ -5539,6 +7088,11 @@
       "landing_url": "https://doi.org/10.1177/0040571x9409700525",
       "provider_ranks": {
         "Crossref": 6
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 6
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -5555,6 +7109,9 @@
       "provider_ids": [
         "10.1017/cbo9780511819858.007"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1017/cbo9780511819858.007"
+      },
       "doi": "10.1017/cbo9780511819858.007",
       "authors": [],
       "year": 1993,
@@ -5563,6 +7120,11 @@
       "landing_url": "https://doi.org/10.1017/cbo9780511819858.007",
       "provider_ranks": {
         "Crossref": 4
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 4
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -5579,6 +7141,9 @@
       "provider_ids": [
         "10.1515/9783112312827-001"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1515/9783112312827-001"
+      },
       "doi": "10.1515/9783112312827-001",
       "authors": [],
       "year": 1974,
@@ -5587,6 +7152,11 @@
       "landing_url": "https://doi.org/10.1515/9783112312827-001",
       "provider_ranks": {
         "Crossref": 1
+      },
+      "provider_ranks_by_query": {
+        "Quran obedience messenger authority exegesis 4:59": {
+          "Crossref": 1
+        }
       },
       "queries": [
         "Quran obedience messenger authority exegesis 4:59"
@@ -5603,6 +7173,9 @@
       "provider_ids": [
         "10.19109/jsq.v2i1.11222"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.19109/jsq.v2i1.11222"
+      },
       "doi": "10.19109/jsq.v2i1.11222",
       "authors": [
         "Alfian Dhany Misbakhuddin",
@@ -5614,6 +7187,11 @@
       "landing_url": "https://doi.org/10.19109/jsq.v2i1.11222",
       "provider_ranks": {
         "Crossref": 4
+      },
+      "provider_ranks_by_query": {
+        "Quran ask people of remembrance interpretation 16:43 tafsir": {
+          "Crossref": 4
+        }
       },
       "queries": [
         "Quran ask people of remembrance interpretation 16:43 tafsir"
@@ -5630,6 +7208,9 @@
       "provider_ids": [
         "10.1177/0040571x5605943015"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1177/0040571x5605943015"
+      },
       "doi": "10.1177/0040571x5605943015",
       "authors": [
         "R. Gregor Smith"
@@ -5640,6 +7221,11 @@
       "landing_url": "https://doi.org/10.1177/0040571x5605943015",
       "provider_ranks": {
         "Crossref": 9
+      },
+      "provider_ranks_by_query": {
+        "Islamic theology revelation prophecy authority Sunni Shi'i scholarship": {
+          "Crossref": 9
+        }
       },
       "queries": [
         "Islamic theology revelation prophecy authority Sunni Shi'i scholarship"
@@ -5656,6 +7242,9 @@
       "provider_ids": [
         "10.1177/002096434800200201"
       ],
+      "provider_ids_by_provider": {
+        "Crossref": "10.1177/002096434800200201"
+      },
       "doi": "10.1177/002096434800200201",
       "authors": [
         "R. B. Y. Scott"
@@ -5666,6 +7255,11 @@
       "landing_url": "https://doi.org/10.1177/002096434800200201",
       "provider_ranks": {
         "Crossref": 6
+      },
+      "provider_ranks_by_query": {
+        "Qur'an revelation prophetic authority Muhammad interpretation": {
+          "Crossref": 6
+        }
       },
       "queries": [
         "Qur'an revelation prophetic authority Muhammad interpretation"

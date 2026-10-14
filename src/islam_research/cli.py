@@ -85,12 +85,12 @@ def candidates(args) -> int:
     manifest_path = run_dir / "run.json"
     if not manifest_path.is_file():
         raise ValueError(f"No search run found: {args.run_id}")
+    manifest = read_json(manifest_path)
     existing_queue = run_dir / "candidates.jsonl"
-    if existing_queue.is_file():
+    if existing_queue.is_file() and str(manifest.get("plan_id", "")).startswith("local-"):
         count = sum(1 for line in existing_queue.read_text(encoding="utf-8").splitlines() if line.strip())
         print(f"Candidate queue: {existing_queue}\n{count} candidates; all remain unreviewed")
         return 0
-    manifest = read_json(manifest_path)
     merged = {}
     for row in manifest["queries"]:
         snapshot = ROOT / row["output"]
@@ -102,11 +102,28 @@ def candidates(args) -> int:
             if not key:
                 continue
             if key not in merged:
-                merged[key] = {**record, "candidate_id": key, "queries": [], "provider_ranks_by_query": {}}
+                merged[key] = {**record, "candidate_id": key, "queries": [], "providers": [],
+                    "provider_ids_by_provider": {}, "provider_ranks": {}, "provider_ranks_by_query": {}}
             current = merged[key]
             if row["query"] not in current["queries"]:
                 current["queries"].append(row["query"])
-            current["provider_ranks_by_query"][row["query"]] = record.get("provider_ranks", {})
+            providers = record.get("providers") or ([record["provider"]] if record.get("provider") else [])
+            provider_ids = record.get("provider_ids_by_provider") or {}
+            if record.get("provider_id") and record.get("provider"):
+                provider_ids.setdefault(record["provider"], record["provider_id"])
+            ranks = record.get("provider_ranks") or {}
+            if not ranks and record.get("provider") and record.get("provider_rank") is not None:
+                ranks[record["provider"]] = record["provider_rank"]
+            for provider in providers:
+                if provider not in current["providers"]:
+                    current["providers"].append(provider)
+                if provider in provider_ids:
+                    current["provider_ids_by_provider"][provider] = provider_ids[provider]
+            per_query = current["provider_ranks_by_query"].setdefault(row["query"], {})
+            per_query.update(ranks)
+            for provider, rank in ranks.items():
+                current["provider_ranks"][provider] = min(current["provider_ranks"].get(provider, rank), rank)
+            current["providers"].sort(key=str.casefold)
     output = run_dir / "candidates.jsonl"
     with output.open("w", encoding="utf-8") as stream:
         ordered = sorted(merged.values(), key=lambda item: (not bool(item.get("title")), (item.get("title") or "").casefold(), str(item.get("year") or "")))
