@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { layoutCommunities } from './graphLayout.js';
+import { detectCommunities } from './graphLayout.js';
+import GraphMap from './GraphMap.jsx';
 import './style.css';
 
 const tabs = ['Overview', 'Map', 'Sources', 'Arguments', 'Discovery'];
-const colors = Object.fromEntries(['concept', 'source', 'evidence', 'claim', 'question', 'hypothesis', 'person', 'project', 'record'].map(type => [type, 'var(--ink)']));
 const types = ['concept', 'source', 'evidence', 'claim', 'question', 'hypothesis', 'person', 'project', 'record'];
 const pretty = value => String(value || '').replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
 const shortId = id => id?.split('/').at(-1)?.replaceAll('-', ' ') || 'Record';
@@ -19,7 +19,8 @@ function App() {
   const [graph, setGraph] = useState(null);
   const [projects, setProjects] = useState([]);
   const [loadError, setLoadError] = useState('');
-  const [tab, setTab] = useState('Overview');
+  const [tab, setTab] = useState(() => tabs.find(t => t.toLowerCase() === location.hash.slice(1)) || 'Overview');
+  useEffect(() => { history.replaceState(null, '', `${location.pathname}${location.search}#${tab.toLowerCase()}`); }, [tab]);
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState('all');
   const [providerFilter, setProviderFilter] = useState('all');
@@ -33,7 +34,6 @@ function App() {
   const [selected, setSelected] = useState(null);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [mobilePanel, setMobilePanel] = useState(false);
-  const [hovered, setHovered] = useState(null);
   useEffect(() => {
     let active = true;
     const loadJson = async path => {
@@ -66,17 +66,12 @@ function App() {
   }), [query, providerFilter, yearFilter, reviewFilter, reviews, candidates]);
   const candidateProviders = [...new Set(candidates.flatMap(c => c.providers))].sort();
   const candidateYears = [...new Set(candidates.map(c => c.year).filter(Boolean))].sort((a, b) => b - a);
-  const visibleIds = new Set(filtered.map(n => n.id));
+  const visibleIds = useMemo(() => new Set(filtered.map(n => n.id)), [filtered]);
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
   const selectedNode = selected ? nodeMap.get(selected) : null;
   const related = selected ? edges.filter(e => e.from === selected || e.to === selected) : [];
-  const connected = new Set(related.flatMap(e => [e.from, e.to]));
-  const width = 1050, height = 650;
-  const layout = useMemo(() => layoutCommunities(nodes, edges, width, height), [nodes, edges]);
-  const { groups, positions, groupById, degree } = layout;
-  const mapVisibleIds = new Set([...visibleIds].filter(id => communityFilter === 'all' || groupById.get(id) === communityFilter));
-  const typeCounts = types.map(type => ({ type, count: nodes.filter(node => node.type === type).length })).filter(item => item.count);
-  const hubs = [...nodes].sort((a, b) => (degree.get(b.id) || 0) - (degree.get(a.id) || 0)).slice(0, 4);
+  const groups = useMemo(() => detectCommunities(nodes, edges), [nodes, edges]);
+  const mapVisibleIds = useMemo(() => new Set([...visibleIds].filter(id => communityFilter === 'all' || groups.find(g => g.id === communityFilter)?.nodes.some(n => n.id === id))), [visibleIds, communityFilter, groups]);
 
   function openNode(node) {
     setSelected(node.id);
@@ -127,26 +122,18 @@ function App() {
         {tab === 'Discovery' ? <><select aria-label="Filter by provider" value={providerFilter} onChange={e => setProviderFilter(e.target.value)}><option value="all">All providers</option>{candidateProviders.map(p => <option key={p}>{p}</option>)}</select><select aria-label="Filter candidates by year" value={yearFilter} onChange={e => setYearFilter(e.target.value)}><option value="all">All years</option>{candidateYears.map(y => <option key={y}>{y}</option>)}</select><select aria-label="Filter by review status" value={reviewFilter} onChange={e => setReviewFilter(e.target.value)}><option value="all">All review states</option><option value="unreviewed">Unreviewed ({reviewCounts.unreviewed || 0})</option><option value="relevant">Relevant ({reviewCounts.relevant || 0})</option><option value="not_relevant">Not relevant ({reviewCounts.not_relevant || 0})</option><option value="read_later">Read later ({reviewCounts.read_later || 0})</option></select></> : tab === 'Map' ? <><select aria-label="Filter by record type" value={kind} onChange={e => setKind(e.target.value)}><option value="all">All record types</option>{types.map(t => <option key={t} value={t}>{pretty(t)}</option>)}</select><select aria-label="Focus a graph community" value={communityFilter} onChange={e => setCommunityFilter(e.target.value)}><option value="all">All communities ({groups.length})</option>{groups.map(group => <option key={group.id} value={group.id}>Community {group.id.split('-')[1]} · {group.nodes.length} records</option>)}</select></> : tab !== 'Overview' && <select aria-label="Filter by record type" value={kind} onChange={e => setKind(e.target.value)}><option value="all">All record types</option>{types.map(t => <option key={t} value={t}>{pretty(t)}</option>)}</select>}
         {tab !== 'Overview' && <span className="result-count">{tab === 'Discovery' ? `${filteredCandidates.length} discovery leads` : `${filtered.length} of ${nodes.length} records`}</span>}
       </div>
-      <div className={`workspace ${tab === 'Overview' ? 'overview-workspace' : ''}`}>
+      <div className={`workspace ${tab === 'Overview' ? 'overview-workspace' : tab === 'Map' ? 'map-workspace' : ''}`}>
         <div className="mainview" id="research-content" tabIndex={-1}>
           {tab === 'Overview' && <Overview projects={projects} nodes={nodes} candidates={candidates} buildSummary={graph.build_summary} generatedAt={graph.generated_at} onOpen={setTab} onOpenQuestion={node => { setTab('Arguments'); openNode(node); }}/>}
-          {tab === 'Map' && <div className="map-wrap">
-            <div className="map-label"><div><span>RELATIONSHIP MAP</span><small>Communities follow recorded links · node size shows connection count</small></div><span>Groups show network structure, not schools or consensus.</span></div>
-            <div className="map-canvas"><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`Interactive network with ${nodes.length} records and ${edges.length} relationships`}>
-              <defs><marker id="edge-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--muted)"/></marker></defs>
-              <g className="community-labels">{groups.map(group => {const memberPoints = group.nodes.map(node => positions.get(node.id)).filter(Boolean);if (!memberPoints.length)return null;const x=memberPoints.reduce((sum,p)=>sum+p.x,0)/memberPoints.length;const y=Math.max(22,Math.min(...memberPoints.map(p=>p.y))-25);return <text key={group.id} x={x} y={y} textAnchor="middle">COMMUNITY {group.id.split('-')[1]} · {group.nodes.length} RECORDS</text>;})}</g>
-              <g>{edges.map((edge, i) => { const a = positions.get(edge.from), b = positions.get(edge.to); if (!a || !b) return null; const visible = mapVisibleIds.has(edge.from) && mapVisibleIds.has(edge.to); const focus = !selected || (connected.has(edge.from) && connected.has(edge.to)); return <line key={`${i}-${edge.from}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} markerEnd="url(#edge-arrow)" className={`edge ${visible ? '' : 'hidden'} ${focus ? '' : 'faded'} ${selected && (edge.from === selected || edge.to === selected) ? 'edge-selected' : ''}`} />; })}</g>
-              <g>{nodes.map(n => { const p = positions.get(n.id); if (!p) return null; const active = mapVisibleIds.has(n.id); const focus = !selected || connected.has(n.id); const degreeCount = degree.get(n.id) || 0; return <g key={n.id} transform={`translate(${p.x} ${p.y})`} className={`map-node ${active ? '' : 'hidden'} ${focus ? '' : 'faded'} ${selected === n.id ? 'chosen' : ''}`} tabIndex={active ? 0 : -1} role="button" aria-label={`${n.type}: ${n.label}, ${degreeCount} recorded connections`} onMouseEnter={() => setHovered(n.id)} onMouseLeave={() => setHovered(null)} onFocus={() => setHovered(n.id)} onBlur={() => setHovered(null)} onClick={() => openNode(n)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openNode(n); } }}><circle r={6 + Math.min(7, degreeCount * 1.2)} fill={colors[n.type] || colors.record}/><text className={selected === n.id || hovered === n.id || degreeCount >= 3 ? 'label-on' : ''} x="12" y="4">{n.label.length > 31 ? `${n.label.slice(0, 29)}…` : n.label}</text></g>; })}</g>
-            </svg></div>
-            <p className="map-key">Select a record to read its type, sources, and connections. Larger points have more recorded connections.</p>
-            <div className="community-caveat">Network communities are computed from graph links. Their short labels use a highly connected member as an anchor; they do not assert a shared subject, tradition, or interpretation.</div>
-            <section className="map-insights"><div className="community-card"><span className="eyebrow">NETWORK COMMUNITIES</span>{groups.map(group => <button className={communityFilter === group.id ? 'selected-community' : ''} key={group.id} onClick={() => setCommunityFilter(communityFilter === group.id ? 'all' : group.id)}><span><b>Community {group.id.split('-')[1]}</b><small>Anchor: {group.label}</small></span><strong>{group.nodes.length}<small>records</small></strong></button>)}</div><div className="concentration-card"><span className="eyebrow">RECORD TYPES</span>{typeCounts.map(item => <div className="mix-row" key={item.type}><span>{pretty(item.type)}</span><div><i style={{width: `${Math.max(5, item.count / nodes.length * 100)}%`, background: colors[item.type]}}/></div><b>{item.count}</b></div>)}</div><div className="hub-card"><span className="eyebrow">MOST CONNECTED RECORDS</span>{hubs.map(node => <button key={node.id} onClick={() => openNode(node)}><span className="hub-dot" style={{background: colors[node.type]}}/><span>{node.label}</span><b>{degree.get(node.id) || 0}</b></button>)}</div></section>
-          </div>}
+          {tab === 'Map' && <GraphMap nodes={nodes} edges={edges} visibleIds={mapVisibleIds} selected={selected}
+            onSelect={node => { setSelected(node.id); setSelectedCandidate(null); }}
+            onReadNotes={node => { openNode(node); requestAnimationFrame(() => document.getElementById('record-notes')?.scrollIntoView({ block: 'start', behavior: 'instant' })); }}
+            onResetFilters={() => { setQuery(''); setKind('all'); setCommunityFilter('all'); }}/>}
           {tab === 'Sources' && <div className="list-view"><div className="view-heading"><div><span className="eyebrow">BIBLIOGRAPHY</span><h2>Sources in the graph</h2></div><span>{filtered.filter(n => n.type === 'source').length} visible</span></div><div className="source-list">{filtered.filter(n => n.type === 'source').map(n => <RecordRow key={n.id} node={n} onClick={() => openNode(n)}/>)}</div></div>}
           {tab === 'Arguments' && <div className="list-view"><div className="view-heading"><div><span className="eyebrow">ATTRIBUTED RECORDS</span><h2>Interpretations & questions</h2></div><span>Claims stay attached to their sources</span></div><div className="source-list">{filtered.filter(n => ['claim', 'evidence', 'question', 'hypothesis'].includes(n.type)).map(n => <RecordRow key={n.id} node={n} onClick={() => openNode(n)}/>)}</div></div>}
           {tab === 'Discovery' && <div className="list-view"><div className="view-heading"><div><span className="eyebrow">LITERATURE DISCOVERY</span><h2>Review discovery leads</h2><small className="private-review-note">Screening decisions are saved only in this browser. They are not uploaded or published.</small></div><div className="discovery-heading-actions"><span>{filteredCandidates.length} of {candidates.length} leads</span>{Object.keys(reviews).length > 0 && <button onClick={clearCandidateReviews}>Clear local reviews</button>}</div></div><div className="discovery-note"><b>Discovery is not evaluation.</b> These {candidates.length.toLocaleString()} records are bibliographic leads returned by literature discovery services. Search matching and rank are provenance only; they do not establish relevance, scholarly quality, support for a claim, or consensus.</div><div className="source-list">{filteredCandidates.map(c => <CandidateRow key={c.id} candidate={c} reviewStatus={reviews[c.id] || 'unreviewed'} onClick={() => openCandidate(c)}/>)}</div></div>}
         </div>
-        <aside className={`details ${mobilePanel ? 'mobile-open' : ''}`}>
+        <aside id="record-notes" className={`details ${mobilePanel ? 'mobile-open' : ''}`}>
           <button className="close-panel" onClick={() => setMobilePanel(false)} aria-label="Close details">×</button>
           {selectedNode ? <Detail node={selectedNode} related={related} nodeMap={nodeMap} onSelect={id => setSelected(id)}/> : selectedCandidate ? <CandidateDetail candidate={candidates.find(c => c.id === selectedCandidate)} reviewStatus={reviews[selectedCandidate] || 'unreviewed'} onReview={decision => saveCandidateReview(selectedCandidate, decision)}/> : <><h2>Record notes</h2><p className="body-copy">Select a record to read its description, source references, and connections.</p></>}
         </aside>

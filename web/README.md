@@ -4,7 +4,11 @@ A lightweight, static React frontend for the public research graph. It runs with
 
 ## Interface
 
-A plain black-and-white research index: system type for navigation, Georgia for reading, numbered contents, and ruled lists. Light mode is the default. The light/dark switch saves the palette in this browser and applies it before rendering. The graph uses the same monochrome palette; record types remain available through labels and the type filter. Harvest details are available under “Snapshot & harvest log” on the contents page.
+A plain research index with red editorial accents: system type for navigation, Georgia for reading, numbered contents, and ruled lists. Light mode is the default. The light/dark switch saves the palette in this browser and applies it before rendering. Harvest details are under “Snapshot & harvest log” on the contents page.
+
+The map starts with a question and its recorded incoming/outgoing connections. Follow a labeled record, choose one from “Jump to a record,” or use “Read notes” to inspect provenance. Red marks the current thread, not truth, review status, or confidence. The full-network view groups records by recorded links; at overview scale it aggregates inter-group links with exact counts, and opening a group or zooming in reveals individual records. Group anchors name a member; they do not assert a common topic or scholarly consensus.
+
+Drag the graph background to pan, use the +/− and Fit controls to zoom, or focus the diagram and use arrow keys, +/−, and 0 (fit). Record buttons work with Enter/Space. Mobile starts at a readable scale and provides a connected-record list below the diagram. A text connection list is available on every screen size. “Copy link” saves the current root and view in the URL. The map uses native SVG with deterministic local geometry and no running simulation or new dependencies.
 
 ## Run locally
 
