@@ -44,4 +44,6 @@ Build a source-grounded, revisable map of Islam and of the researcher's evolving
 5. Link evidence, counterevidence, uncertainty, and methods in the graph.
 6. Update `README.md` and the relevant indexes when the project structure changes.
 
+For literature discovery, use `scripts/literature_search.py` to query OpenAlex and/or Crossref and retain the dated JSONL snapshot locally. For document triage, use `scripts/review_document.py` to extract local text and deterministic metadata hints. These tools support human review; they do not establish scholarly quality, truth, or interpretive meaning. Keep licensed documents and extracted text in the git-ignored `research-library/` unless redistribution is permitted.
+
 Start with `README.md`, `methods/source-evaluation.md`, and `graph/schema.md`.

@@ -1,0 +1,35 @@
+name: Programmatic source search
+description: Run or refine a reproducible literature search.
+title: "Search: "
+labels: ["type: search"]
+body:
+  - type: input
+    id: query
+    attributes:
+      label: Search query
+      placeholder: Qur'an revelation prophetic authority tafsir
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Research question and scope
+    validations:
+      required: true
+  - type: checkboxes
+    id: providers
+    attributes:
+      label: Search services
+      options:
+        - label: OpenAlex
+        - label: Crossref
+  - type: textarea
+    id: inclusion
+    attributes:
+      label: Inclusion and exclusion criteria
+      description: State work types, languages, date ranges, and relevant traditions.
+  - type: textarea
+    id: review
+    attributes:
+      label: Human review notes
+      description: Record relevance, source role, edition, limitations, and why a result was retained or excluded.

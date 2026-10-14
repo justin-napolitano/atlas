@@ -17,6 +17,9 @@ The research should understand traditions in context before evaluating them. “
 - `graph/research.ttl` — canonical RDF graph using SKOS and PROV-O.
 - `graph/shapes.ttl` — SHACL validation constraints.
 - `templates/` — reusable source, claim, evidence, concept, hypothesis, and AIF-style argument templates.
+- `methods/programmatic-workflow.md` — repeatable literature search and local document triage.
+- `scripts/literature_search.py` — query OpenAlex and Crossref, deduplicate metadata, save a local JSONL snapshot.
+- `scripts/review_document.py` — extract text from PDF, DOCX, Markdown, TXT, HTML, or CSV and produce a deterministic review aid.
 - `methods/source-evaluation.md` — source evaluation and note-taking method.
 - `questions/open-questions.md` — initial question map.
 
@@ -49,3 +52,7 @@ The graph uses RDF/Turtle with SKOS concept schemes and PROV-O derivation/attrib
 ## Issue tracker
 
 Use GitHub Issues to track research questions, source reviews, and hypotheses. Forms in `.github/ISSUE_TEMPLATE/` collect scope, evidence, alternatives, and limitations. Issues are an intake and discussion layer; verified, located claims and provenance belong in the repository graph and source notes. Keep private account data and copyrighted source text out of issues.
+
+## Programmatic research tools
+
+Run `python3 scripts/literature_search.py "Qur'an revelation prophetic authority" --provider both --limit 20` for OpenAlex and Crossref metadata discovery. Results are saved under git-ignored `research-library/searches/`; no abstracts or PDFs are downloaded. Run `python3 scripts/review_document.py /path/to/article.pdf` to extract a local document and create a review checklist. PDF extraction uses Apple's PDFKit through the included Swift helper; it extracts selectable text and does not OCR scanned pages. See `methods/programmatic-workflow.md` for limits and review steps.
