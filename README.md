@@ -24,7 +24,9 @@ The research should understand traditions in context before evaluating them. “
 - `docs/adr/0001-research-platform-standards.md` — standards and storage decisions before expanding the tooling.
 - `research-plans/revelation-prophetic-authority.json` — first versioned multi-query research plan.
 - `src/islam_research/` — modular local workflow CLI; `scripts/research.py` runs it directly from a checkout.
-- `scripts/literature_search.py` — query OpenAlex and Crossref, deduplicate metadata, save a local JSONL snapshot.
+- `scripts/literature_search.py` — query OpenAlex, Crossref, Semantic Scholar, OpenAIRE, DataCite, and CORE; deduplicate metadata and save a local JSONL snapshot.
+- `scripts/source_search.py` and `scripts/source_fetch.py` — search local OpenITI/QAC/Fihrist/IIIF data, resolve Corpus Coranicum references, and fetch exact Qur'an/hadith references when credentials are configured.
+- `src/islam_research/net.py` — sequential per-host request pacing persisted across runs, with a default two-second cooldown and bounded retry/backoff.
 - `scripts/review_document.py` — extract text from PDF, DOCX, Markdown, TXT, HTML, or CSV and produce a deterministic review aid.
 - `methods/source-evaluation.md` — source evaluation and note-taking method.
 - `questions/open-questions.md` — initial question map.
@@ -61,6 +63,6 @@ Use GitHub Issues to track research questions, source reviews, and hypotheses. F
 
 ## Programmatic research tools
 
-Run `python3 scripts/literature_search.py "Qur'an revelation prophetic authority" --provider both --limit 20` for OpenAlex and Crossref metadata discovery. Results are saved under git-ignored `research-library/searches/`; no abstracts or PDFs are downloaded. Run `python3 scripts/review_document.py /path/to/article.pdf` to extract a local document and create a review checklist. PDF extraction uses Apple's PDFKit through the included Swift helper; it extracts selectable text and does not OCR scanned pages. See `methods/programmatic-workflow.md` for limits and review steps.
+Run `python3 scripts/literature_search.py "Qur'an revelation prophetic authority" --provider both --limit 20` for OpenAlex and Crossref metadata discovery. Results are saved under git-ignored `research-library/searches/`; no abstracts or PDFs are downloaded. Run `python3 scripts/review_document.py /path/to/article.pdf` to extract a local document and create a review checklist. PDF extraction uses Apple's PDFKit through the included Swift helper; it extracts selectable text and does not OCR scanned pages. Saved plans rotate provider order across queries, and network requests share a persistent per-host cooldown. See `methods/programmatic-workflow.md` and `methods/research-workbench.md` for limits, source-specific setup, and review steps.
 
 For the unified flow, install the optional RDF tooling with `python3 -m pip install -e '.[graph]'`, then run `islam-research search research-plans/revelation-prophetic-authority.json`, `islam-research candidates RUN_ID`, `islam-research intake /path/to/document.pdf`, `islam-research annotate --help`, `islam-research validate`, `islam-research export`, or `islam-research report initial-authority-question`. Search, screening, local intake, and annotation are available without the optional graph dependencies. See `methods/research-workbench.md`.

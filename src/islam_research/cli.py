@@ -35,14 +35,22 @@ def run_plan(args) -> int:
     plan = read_json(plan_path)
     if not isinstance(plan.get("queries"), list) or not plan["queries"]:
         raise ValueError("Search plan must contain a non-empty queries array.")
-    providers = plan.get("providers", ["both"])
+    configured = plan.get("providers", ["both"])
+    providers = []
+    for provider in configured:
+        providers.extend(("openalex", "crossref") if provider == "both" else (provider,))
+    if not providers:
+        raise ValueError("Search plan must configure at least one provider.")
     started_at = utc_now()
     run_id = dt.datetime.now().strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:6]
     run_dir = LIBRARY / "searches" / run_id
     run_dir.mkdir(parents=True, exist_ok=False)
     records = []
     for query_index, query in enumerate(plan["queries"], 1):
-        for provider in providers:
+        # Rotate the first provider for each query. All requests remain sequential.
+        offset = (query_index - 1) % len(providers)
+        query_providers = providers[offset:] + providers[:offset]
+        for provider in query_providers:
             output = run_dir / f"q{query_index:02d}-{provider}.jsonl"
             command = [sys.executable, str(ROOT / "scripts/literature_search.py"), query["text"], "--provider", provider, "--limit", str(int(query.get("limit", plan.get("limit", 20)))), "--output", str(output)]
             result = subprocess.run(command, text=True, capture_output=True)
@@ -59,6 +67,7 @@ def run_plan(args) -> int:
         "purpose": plan.get("purpose"),
         "started_at": started_at,
         "providers": providers,
+        "request_policy": {"mode": "sequential_round_robin", "persistent_per_host_cooldown_seconds": "ISLAM_RESEARCH_MIN_INTERVAL (default 2)"},
         "filters": plan.get("filters", {}),
         "queries": records,
         "status": "complete" if all(row["status"] == "complete" for row in records) else "partial_failure",
@@ -76,6 +85,11 @@ def candidates(args) -> int:
     manifest_path = run_dir / "run.json"
     if not manifest_path.is_file():
         raise ValueError(f"No search run found: {args.run_id}")
+    existing_queue = run_dir / "candidates.jsonl"
+    if existing_queue.is_file():
+        count = sum(1 for line in existing_queue.read_text(encoding="utf-8").splitlines() if line.strip())
+        print(f"Candidate queue: {existing_queue}\n{count} candidates; all remain unreviewed")
+        return 0
     manifest = read_json(manifest_path)
     merged = {}
     for row in manifest["queries"]:
@@ -162,6 +176,87 @@ def intake(args) -> int:
     if result.returncode:
         print(result.stderr.strip(), file=sys.stderr)
     return result.returncode
+
+
+def source_search(args) -> int:
+    """Search a local historical-text/catalog corpus or resolve a Coranicum verse."""
+    command = [sys.executable, str(ROOT / "scripts/source_search.py"), args.source, args.query, "--limit", str(args.limit)]
+    if args.path:
+        command.extend(("--path", str(args.path.expanduser().resolve())))
+    if args.output:
+        command.extend(("--output", str(args.output.expanduser())))
+    result = subprocess.run(command, text=True, capture_output=True)
+    if result.stdout:
+        print(result.stdout.strip())
+    if result.stderr:
+        print(result.stderr.strip(), file=sys.stderr)
+    return result.returncode
+
+
+def source_fetch(args) -> int:
+    command = [sys.executable, str(ROOT / "scripts/source_fetch.py"), args.source, args.reference]
+    if args.translation:
+        command.extend(("--translation", args.translation))
+    result = subprocess.run(command, text=True, capture_output=True)
+    if result.stdout:
+        print(result.stdout.strip())
+    if result.stderr:
+        print(result.stderr.strip(), file=sys.stderr)
+    return result.returncode
+
+
+def graph_import_candidates(args) -> int:
+    try:
+        from rdflib import Graph, Literal, Namespace, RDF, RDFS, URIRef
+        from rdflib.namespace import DCTERMS, PROV, XSD
+    except ImportError:
+        print("Candidate graph import needs RDFLib. Install with: python3 -m pip install -e '.[graph]'", file=sys.stderr)
+        return 2
+    run_dir = LIBRARY / "searches" / args.run_id
+    queue = run_dir / "candidates.jsonl"
+    if not queue.is_file():
+        raise ValueError(f"No candidate queue found for run {args.run_id}")
+    ir = Namespace("https://islam-research.local/vocab/")
+    ns = Namespace("https://islam-research.local/id/")
+    graph = Graph()
+    graph.bind("ir", ir)
+    graph.bind("prov", PROV)
+    graph.bind("dct", DCTERMS)
+    activity = ns["candidate-harvest-" + args.run_id]
+    graph.add((activity, RDF.type, PROV.Activity))
+    graph.add((activity, RDFS.label, Literal("Programmatic candidate discovery; no claims accepted")))
+    graph.add((activity, ir.reviewStatus, Literal("candidate_unreviewed")))
+    count = 0
+    for line in queue.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        item = json.loads(line)
+        identity = str(item.get("record_id") or item.get("candidate_id") or item.get("provider_id") or item.get("title") or line)
+        digest = hashlib.sha256(identity.encode()).hexdigest()[:24]
+        node = ns["candidate-source-" + digest]
+        graph.add((node, RDF.type, ir.SourceRecord))
+        graph.add((node, RDFS.label, Literal(item.get("title") or "Untitled source candidate")))
+        for author in item.get("authors", []):
+            name = author.get("name") if isinstance(author, dict) else str(author)
+            if name:
+                graph.add((node, DCTERMS.creator, Literal(name)))
+        if not list(graph.objects(node, DCTERMS.creator)):
+            graph.add((node, DCTERMS.creator, Literal("Unknown; candidate metadata omitted author")))
+        graph.add((node, ir.reviewStatus, Literal("candidate_unreviewed")))
+        graph.add((node, ir.sourceRole, Literal(item.get("work_type") or "unclassified source candidate")))
+        graph.add((node, DCTERMS.identifier, Literal(item.get("provider_id") or identity)))
+        graph.add((node, DCTERMS.source, URIRef(item["landing_page"]) if str(item.get("landing_page", "")).startswith(("http://", "https://")) else Literal(item.get("landing_page", ""))))
+        if item.get("doi"):
+            graph.add((node, DCTERMS.identifier, Literal("doi:" + str(item["doi"]))))
+        graph.add((node, PROV.wasGeneratedBy, activity))
+        if item.get("locator"):
+            graph.add((node, ir.locator, Literal(item["locator"])))
+        count += 1
+    output = args.output.expanduser() if args.output else LIBRARY / "imports" / f"{args.run_id}-candidates.ttl"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    graph.serialize(destination=str(output), format="turtle")
+    print(f"Candidate-only RDF graph: {output}\n{count} source candidates; no claims were created")
+    return 0
 
 
 def annotate(args) -> int:
@@ -453,6 +548,22 @@ def build_parser() -> argparse.ArgumentParser:
     document = sub.add_parser("intake", help="intake a local document with a checksum and activity record")
     document.add_argument("document", type=Path)
     document.set_defaults(func=intake)
+    source_search_cmd = sub.add_parser("source-search", help="search local OpenITI/QAC/Fihrist/IIIF data or resolve a Coranicum verse")
+    source_search_cmd.add_argument("source", choices=("openiti", "qac", "fihrist", "iiif", "corpus-coranicum"))
+    source_search_cmd.add_argument("query", help="Text query or Quran reference such as 4:59")
+    source_search_cmd.add_argument("--path", type=Path, help="Local corpus directory or data file; not needed for Corpus Coranicum")
+    source_search_cmd.add_argument("--limit", type=int, default=20)
+    source_search_cmd.add_argument("--output", type=Path)
+    source_search_cmd.set_defaults(func=source_search)
+    source_fetch_cmd = sub.add_parser("source-fetch", help="fetch a Quran verse or exact hadith reference for review")
+    source_fetch_cmd.add_argument("source", choices=("quran-verse", "sunnah-reference"))
+    source_fetch_cmd.add_argument("reference", help="Quran verse key (4:59) or collection:hadith number")
+    source_fetch_cmd.add_argument("--translation", help="Quran Foundation translation resource ID")
+    source_fetch_cmd.set_defaults(func=source_fetch)
+    graph_import = sub.add_parser("graph-import", help="write a provenance-linked RDF graph of unreviewed source candidates")
+    graph_import.add_argument("run_id")
+    graph_import.add_argument("--output", type=Path)
+    graph_import.set_defaults(func=graph_import_candidates)
     annotation = sub.add_parser("annotate", help="record a passage using W3C Web Annotation JSON-LD")
     annotation.add_argument("--source", required=True, help="Source IRI (HTTP(S) URL or URN)")
     annotation.add_argument("--locator", required=True, help="Edition-specific locator, such as surah:verse or page")
