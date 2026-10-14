@@ -7,6 +7,7 @@ Never serialize the complete private run manifest or candidate JSONL rows.
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 import re
 from pathlib import Path
@@ -92,6 +93,8 @@ def export_candidates(queue_path: Path):
                 },
                 "queries": [str(q) for q in item.get("queries", [])],
                 "retrieved_at": str(item.get("retrieved_at") or ""),
+                "discovered_at": str(item.get("retrieved_at") or ""),
+                "last_seen_at": str(item.get("retrieved_at") or ""),
                 "review_status": "candidate_unreviewed",
             }
             if not safe["id"]:
@@ -102,18 +105,59 @@ def export_candidates(queue_path: Path):
     return sorted(candidates, key=lambda item: ((item["year"] is None), -(item["year"] or 0), item["title"].casefold()))
 
 
+def merge_public_candidates(previous, latest, limit=5000):
+    """Keep a bounded rolling public index while combining safe discovery provenance."""
+    merged = {item["id"]: dict(item) for item in previous if item.get("id")}
+    for current in latest:
+        item_id = current.get("id")
+        if not item_id:
+            continue
+        old = merged.get(item_id)
+        if not old:
+            merged[item_id] = dict(current)
+            continue
+        combined = {**old, **current}
+        combined["providers"] = sorted(set(old.get("providers", [])) | set(current.get("providers", [])))
+        combined["provider_ids"] = sorted(set(old.get("provider_ids", [])) | set(current.get("provider_ids", [])))
+        combined["provider_ids_by_provider"] = {**old.get("provider_ids_by_provider", {}), **current.get("provider_ids_by_provider", {})}
+        combined["provider_ranks"] = {**old.get("provider_ranks", {}), **current.get("provider_ranks", {})}
+        ranks_by_query = {query: dict(ranks) for query, ranks in old.get("provider_ranks_by_query", {}).items()}
+        for query, ranks in current.get("provider_ranks_by_query", {}).items():
+            ranks_by_query.setdefault(query, {}).update(ranks)
+        combined["provider_ranks_by_query"] = ranks_by_query
+        combined["queries"] = sorted(set(old.get("queries", [])) | set(current.get("queries", [])))
+        combined["discovered_at"] = min(filter(None, (old.get("discovered_at"), current.get("discovered_at"))), default="")
+        combined["last_seen_at"] = max(old.get("last_seen_at", ""), current.get("last_seen_at", ""))
+        combined["retrieved_at"] = combined["last_seen_at"]
+        combined["review_status"] = "candidate_unreviewed"
+        merged[item_id] = combined
+    ordered = sorted(merged.values(), key=lambda item: (item.get("last_seen_at", ""), item.get("year") or 0, item.get("title", "").casefold()), reverse=True)
+    return ordered[:limit]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-id", default=DEFAULT_RUN, help="Harvest queue under research-library/searches (never copied wholesale)")
-    parser.add_argument("--output", type=Path, default=ROOT / "web/src/data/public-graph.json")
+    parser.add_argument("--output", type=Path, default=ROOT / "web/public/data/public-graph.json")
+    parser.add_argument("--max-candidates", type=int, default=5000, help="maximum rolling public candidate records (default: 5000)")
     args = parser.parse_args()
+    if args.max_candidates < 1:
+        parser.error("--max-candidates must be positive")
     graph_path = ROOT / "graph/research.ttl"
     queue = ROOT / "research-library" / "searches" / args.run_id / "candidates.jsonl"
     if not graph_path.is_file() or not queue.is_file():
         parser.error(f"required input missing: {graph_path if not graph_path.is_file() else queue}")
     nodes, edges = export_curated(graph_path)
     candidates = export_candidates(queue)
-    payload = {"snapshot_id": args.run_id, "curated_graph": "canonical_rdf", "nodes": nodes, "edges": edges, "candidates": candidates}
+    previous = []
+    if args.output.is_file():
+        try:
+            previous = json.loads(args.output.read_text(encoding="utf-8")).get("candidates", [])
+        except (OSError, json.JSONDecodeError, AttributeError):
+            previous = []
+    candidates = merge_public_candidates(previous, candidates, args.max_candidates)
+    payload = {"snapshot_id": args.run_id, "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+        "curated_graph": "canonical_rdf", "nodes": nodes, "edges": edges, "candidates": candidates}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"Wrote public-safe snapshot: {args.output} ({len(nodes)} curated records, {len(candidates)} unreviewed candidates)")

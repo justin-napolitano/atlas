@@ -1,0 +1,80 @@
+{
+  "id": "background-question-seeds-v1",
+  "purpose": "A broad, repeatable discovery queue for the local literature pipeline. Searches produce bibliographic leads only; they do not classify relevance, establish consensus, or create graph claims.",
+  "providers": ["openalex", "crossref", "datacite"],
+  "limit": 10,
+  "filters": {
+    "language": ["English queries; provider results may include other languages"],
+    "source_roles": ["primary_text", "historical_source", "classical_interpretation", "modern_scholarship", "comparative"],
+    "tradition_coverage": ["Sunni", "Shi'i", "Ibadi", "Sufi", "philosophical", "other perspectives when relevant"],
+    "screening_required": true,
+    "warning": "These are search targets, not provider-enforced filters or conclusions about Islamic traditions."
+  },
+  "questions": [
+    {"id": "revelation", "question": "How have Muslim thinkers understood revelation, prophecy, and the authority of the Qur'an?", "scope": "Qur'anic text, kalam, philosophy, tafsir, and modern scholarship across periods and communities."},
+    {"id": "interpretation", "question": "How do methods and communities shape Qur'anic interpretation?", "scope": "Classical and modern tafsir, language, context, legal interpretation, and hermeneutics."},
+    {"id": "prophetic-tradition", "question": "How are Muhammad's authority, Sunna, and hadith transmission understood and evaluated?", "scope": "Prophetic authority, hadith criticism, legal use, devotional life, and Sunni, Shi'i, and other approaches."},
+    {"id": "theology", "question": "How do Islamic theological and philosophical traditions explain God, human agency, and the unseen?", "scope": "Divine attributes, tawhid, kalam schools, falsafa, Sufism, and debates about predestination and responsibility."},
+    {"id": "law-authority", "question": "How have Islamic legal methods and institutions developed authority and interpretive change?", "scope": "Usul al-fiqh, madhhabs, juristic disagreement, legal institutions, reform, and modern state law."},
+    {"id": "ethics", "question": "How do Islamic traditions reason about moral responsibility, justice, and virtue?", "scope": "Kalam, philosophy, law, Qur'anic ethics, maqasid, and lived moral practice."},
+    {"id": "pluralism", "question": "How have Muslim scholars and communities understood religious difference and pluralism?", "scope": "Qur'anic interpretation, theology, law, political history, and interreligious encounter."},
+    {"id": "historical-diversity", "question": "How did Islamic traditions, institutions, and communities become historically diverse?", "scope": "Early and later history, regional traditions, sectarian formation, scholarship, and social practice."}
+  ],
+  "queries": [
+    {"question_id": "revelation", "question": "How have Muslim thinkers understood revelation, prophecy, and the authority of the Qur'an?", "text": "Qur'an revelation prophecy authority Islamic theology classical modern scholarship"},
+    {"question_id": "revelation", "question": "How have Muslim thinkers understood revelation, prophecy, and the authority of the Qur'an?", "text": "nubuwwa revelation prophetic knowledge Islamic kalam falsafa"},
+    {"question_id": "revelation", "question": "How have Muslim thinkers understood revelation, prophecy, and the authority of the Qur'an?", "text": "Qur'an created uncreated word of God Islamic theological debate"},
+    {"question_id": "revelation", "question": "How have Muslim thinkers understood revelation, prophecy, and the authority of the Qur'an?", "text": "divine speech revelation Qur'an Ashari Maturidi Mu'tazili theology"},
+    {"question_id": "revelation", "question": "How have Muslim thinkers understood revelation, prophecy, and the authority of the Qur'an?", "text": "Qur'an as guidance authority Muslim modern thought revelation"},
+    {"question_id": "revelation", "question": "How have Muslim thinkers understood revelation, prophecy, and the authority of the Qur'an?", "text": "philosophy of prophecy Ibn Sina al Farabi Islamic philosophy revelation"},
+
+    {"question_id": "interpretation", "question": "How do methods and communities shape Qur'anic interpretation?", "text": "tafsir Qur'an interpretation history classical Muslim exegesis"},
+    {"question_id": "interpretation", "question": "How do methods and communities shape Qur'anic interpretation?", "text": "Qur'anic hermeneutics context language interpretation Islamic studies"},
+    {"question_id": "interpretation", "question": "How do methods and communities shape Qur'anic interpretation?", "text": "Sunni Shi'i tafsir comparative Qur'an commentary authority"},
+    {"question_id": "interpretation", "question": "How do methods and communities shape Qur'anic interpretation?", "text": "modern Qur'anic exegesis reform gender context interpretation"},
+    {"question_id": "interpretation", "question": "How do methods and communities shape Qur'anic interpretation?", "text": "ta'wil esoteric interpretation Qur'an Sufi Ismaili scholarship"},
+    {"question_id": "interpretation", "question": "How do methods and communities shape Qur'anic interpretation?", "text": "occasion of revelation asbab al nuzul Qur'anic interpretation"},
+
+    {"question_id": "prophetic-tradition", "question": "How are Muhammad's authority, Sunna, and hadith transmission understood and evaluated?", "text": "prophetic authority Muhammad Qur'an Sunna Islamic scholarship"},
+    {"question_id": "prophetic-tradition", "question": "How are Muhammad's authority, Sunna, and hadith transmission understood and evaluated?", "text": "hadith criticism authenticity transmission Islamic historiography"},
+    {"question_id": "prophetic-tradition", "question": "How are Muhammad's authority, Sunna, and hadith transmission understood and evaluated?", "text": "Sunni Shi'i hadith collections authority comparative study"},
+    {"question_id": "prophetic-tradition", "question": "How are Muhammad's authority, Sunna, and hadith transmission understood and evaluated?", "text": "Sunna legal authority usul al fiqh hadith Islamic law"},
+    {"question_id": "prophetic-tradition", "question": "How are Muhammad's authority, Sunna, and hadith transmission understood and evaluated?", "text": "sira Muhammad early Islamic sources historical method"},
+    {"question_id": "prophetic-tradition", "question": "How are Muhammad's authority, Sunna, and hadith transmission understood and evaluated?", "text": "hadith and Qur'an interpretation prophetic tradition Islamic theology"},
+
+    {"question_id": "theology", "question": "How do Islamic theological and philosophical traditions explain God, human agency, and the unseen?", "text": "Islamic theology divine attributes tawhid Ashari Maturidi Mu'tazili"},
+    {"question_id": "theology", "question": "How do Islamic theological and philosophical traditions explain God, human agency, and the unseen?", "text": "qadar free will human agency Islamic theology history"},
+    {"question_id": "theology", "question": "How do Islamic theological and philosophical traditions explain God, human agency, and the unseen?", "text": "Islamic philosophy God being existence Ibn Sina Ibn Rushd"},
+    {"question_id": "theology", "question": "How do Islamic theological and philosophical traditions explain God, human agency, and the unseen?", "text": "Sufi metaphysics divine names being wahdat al wujud scholarship"},
+    {"question_id": "theology", "question": "How do Islamic theological and philosophical traditions explain God, human agency, and the unseen?", "text": "theodicy suffering justice Islamic theology philosophy"},
+    {"question_id": "theology", "question": "How do Islamic theological and philosophical traditions explain God, human agency, and the unseen?", "text": "Imami Shi'i theology divine justice imamate Islamic thought"},
+
+    {"question_id": "law-authority", "question": "How have Islamic legal methods and institutions developed authority and interpretive change?", "text": "usul al fiqh Islamic legal theory authority interpretation history"},
+    {"question_id": "law-authority", "question": "How have Islamic legal methods and institutions developed authority and interpretive change?", "text": "madhhab legal schools disagreement Islamic jurisprudence"},
+    {"question_id": "law-authority", "question": "How have Islamic legal methods and institutions developed authority and interpretive change?", "text": "taqlid ijtihad Islamic law authority legal change"},
+    {"question_id": "law-authority", "question": "How have Islamic legal methods and institutions developed authority and interpretive change?", "text": "Shi'i jurisprudence marja taqlid legal authority development"},
+    {"question_id": "law-authority", "question": "How have Islamic legal methods and institutions developed authority and interpretive change?", "text": "Islamic law modern state codification colonial reform history"},
+    {"question_id": "law-authority", "question": "How have Islamic legal methods and institutions developed authority and interpretive change?", "text": "maqasid al sharia Islamic legal theory ethics contemporary scholarship"},
+
+    {"question_id": "ethics", "question": "How do Islamic traditions reason about moral responsibility, justice, and virtue?", "text": "Islamic ethics moral responsibility human action theology philosophy"},
+    {"question_id": "ethics", "question": "How do Islamic traditions reason about moral responsibility, justice, and virtue?", "text": "justice adl Islamic theology Mu'tazili Ashari moral philosophy"},
+    {"question_id": "ethics", "question": "How do Islamic traditions reason about moral responsibility, justice, and virtue?", "text": "Qur'anic ethics virtue character moral philosophy Islam"},
+    {"question_id": "ethics", "question": "How do Islamic traditions reason about moral responsibility, justice, and virtue?", "text": "Islamic political thought justice authority ethics historical"},
+    {"question_id": "ethics", "question": "How do Islamic traditions reason about moral responsibility, justice, and virtue?", "text": "Islamic bioethics moral reasoning maqasid scholarly review"},
+    {"question_id": "ethics", "question": "How do Islamic traditions reason about moral responsibility, justice, and virtue?", "text": "Sufi ethics virtue adab Islamic moral formation"},
+
+    {"question_id": "pluralism", "question": "How have Muslim scholars and communities understood religious difference and pluralism?", "text": "Qur'an religious pluralism People of the Book Islamic interpretation"},
+    {"question_id": "pluralism", "question": "How have Muslim scholars and communities understood religious difference and pluralism?", "text": "Islamic theology salvation non Muslims religious diversity"},
+    {"question_id": "pluralism", "question": "How have Muslim scholars and communities understood religious difference and pluralism?", "text": "Muslim Christian Jewish relations historical interreligious encounter"},
+    {"question_id": "pluralism", "question": "How have Muslim scholars and communities understood religious difference and pluralism?", "text": "Islamic law religious minorities dhimmi historical context"},
+    {"question_id": "pluralism", "question": "How have Muslim scholars and communities understood religious difference and pluralism?", "text": "Islam religious pluralism modern Muslim thought comparative scholarship"},
+    {"question_id": "pluralism", "question": "How have Muslim scholars and communities understood religious difference and pluralism?", "text": "Qur'anic verses religious difference interpretation al Baqara 2:62"},
+
+    {"question_id": "historical-diversity", "question": "How did Islamic traditions, institutions, and communities become historically diverse?", "text": "early Islam origins historiography sectarian formation scholarly debate"},
+    {"question_id": "historical-diversity", "question": "How did Islamic traditions, institutions, and communities become historically diverse?", "text": "Sunni Shi'i Islam historical formation early Muslim community"},
+    {"question_id": "historical-diversity", "question": "How did Islamic traditions, institutions, and communities become historically diverse?", "text": "Ibadi Islam history theology community scholarly study"},
+    {"question_id": "historical-diversity", "question": "How did Islamic traditions, institutions, and communities become historically diverse?", "text": "Sufism Islamic history institutions practice regional diversity"},
+    {"question_id": "historical-diversity", "question": "How did Islamic traditions, institutions, and communities become historically diverse?", "text": "Islamic intellectual history regional scholarly networks madrasas"},
+    {"question_id": "historical-diversity", "question": "How did Islamic traditions, institutions, and communities become historically diverse?", "text": "Muslim societies lived religion anthropology diversity history"}
+  ]
+}

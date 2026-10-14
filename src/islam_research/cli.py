@@ -7,9 +7,11 @@ import csv
 import datetime as dt
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
+import time
 import uuid
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -41,42 +43,109 @@ def run_plan(args) -> int:
         providers.extend(("openalex", "crossref") if provider == "both" else (provider,))
     if not providers:
         raise ValueError("Search plan must configure at least one provider.")
-    started_at = utc_now()
-    run_id = dt.datetime.now().strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:6]
-    run_dir = LIBRARY / "searches" / run_id
-    run_dir.mkdir(parents=True, exist_ok=False)
-    records = []
-    for query_index, query in enumerate(plan["queries"], 1):
-        # Rotate the first provider for each query. All requests remain sequential.
-        offset = (query_index - 1) % len(providers)
-        query_providers = providers[offset:] + providers[:offset]
-        for provider in query_providers:
-            output = run_dir / f"q{query_index:02d}-{provider}.jsonl"
-            command = [sys.executable, str(ROOT / "scripts/literature_search.py"), query["text"], "--provider", provider, "--limit", str(int(query.get("limit", plan.get("limit", 20)))), "--output", str(output)]
-            result = subprocess.run(command, text=True, capture_output=True)
-            provider_errors = [line for line in result.stderr.splitlines() if "Could not reach" in line or "HTTP " in line]
-            row_status = "partial_failure" if result.returncode or provider_errors else "complete"
-            records.append({"query": query["text"], "provider": provider, "output": str(output.relative_to(ROOT)), "exit_code": result.returncode, "stderr": result.stderr.strip(), "provider_errors": provider_errors, "status": row_status})
-            if result.returncode:
-                print(result.stderr.strip(), file=sys.stderr)
-    manifest = {
-        "run_id": run_id,
-        "plan_id": plan.get("id", plan_path.stem),
-        "plan_path": str(plan_path),
-        "question": plan.get("question"),
-        "purpose": plan.get("purpose"),
-        "started_at": started_at,
-        "providers": providers,
-        "request_policy": {"mode": "sequential_round_robin", "persistent_per_host_cooldown_seconds": "ISLAM_RESEARCH_MIN_INTERVAL (default 2)"},
-        "filters": plan.get("filters", {}),
-        "queries": records,
-        "status": "complete" if all(row["status"] == "complete" for row in records) else "partial_failure",
-        "review_status": "candidate_unreviewed",
-    }
+    min_interval = getattr(args, "min_interval", None)
+    if min_interval is not None:
+        if min_interval < 0:
+            raise ValueError("--min-interval must be zero or greater.")
+        os.environ["ISLAM_RESEARCH_MIN_INTERVAL"] = str(min_interval)
+    interval_label = os.environ.get("ISLAM_RESEARCH_MIN_INTERVAL", "2")
+    max_hours = getattr(args, "max_hours", None)
+    if max_hours is not None and max_hours <= 0:
+        raise ValueError("--max-hours must be greater than zero.")
+    resume_id = getattr(args, "resume", None)
+    if resume_id:
+        run_id = resume_id
+        run_dir = LIBRARY / "searches" / run_id
+        manifest_path = run_dir / "run.json"
+        if not manifest_path.is_file():
+            raise ValueError(f"No resumable search run found: {run_id}")
+        manifest = read_json(manifest_path)
+        if manifest.get("plan_id") != plan.get("id", plan_path.stem):
+            raise ValueError("Resume plan ID does not match the saved run.")
+        if manifest.get("query_count") != len(plan["queries"]):
+            raise ValueError("Resume plan query count differs from the saved run.")
+        records = manifest.get("queries", [])
+        manifest["status"] = "running"
+        manifest["resumed_at"] = utc_now()
+        manifest["request_policy"]["persistent_per_host_cooldown_seconds"] = interval_label
+    else:
+        started_at = utc_now()
+        run_id = dt.datetime.now().strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:6]
+        run_dir = LIBRARY / "searches" / run_id
+        run_dir.mkdir(parents=True, exist_ok=False)
+        records = []
+        manifest = {
+            "run_id": run_id,
+            "plan_id": plan.get("id", plan_path.stem),
+            "plan_path": str(plan_path),
+            "question": plan.get("question"),
+            "questions": plan.get("questions", []),
+            "purpose": plan.get("purpose"),
+            "started_at": started_at,
+            "providers": providers,
+            "query_count": len(plan["queries"]),
+            "request_policy": {"mode": "sequential_round_robin", "persistent_per_host_cooldown_seconds": interval_label},
+            "filters": plan.get("filters", {}),
+            "queries": records,
+            "status": "running",
+            "review_status": "candidate_unreviewed",
+        }
+    total = len(plan["queries"]) * len(providers)
+    completed = {(row.get("query_index"), row["provider"]) for row in records if row.get("status") == "complete" and row.get("query_index") is not None}
+    deadline = time.monotonic() + max_hours * 3600 if max_hours is not None else None
+    manifest["progress"] = {"completed_provider_queries": len(completed), "total_provider_queries": total}
     write_json(run_dir / "run.json", manifest)
-    print(f"Run manifest: {run_dir / 'run.json'}")
-    print(f"Status: {manifest['status']}; candidates remain unreviewed")
-    return 0 if manifest["status"] == "complete" else 1
+    paused = False
+    try:
+        for query_index, query in enumerate(plan["queries"], 1):
+            # Rotate the first provider for each query. All requests remain sequential.
+            offset = (query_index - 1) % len(providers)
+            query_providers = providers[offset:] + providers[:offset]
+            for provider in query_providers:
+                if (query_index, provider) in completed:
+                    continue
+                if deadline is not None and time.monotonic() >= deadline:
+                    paused = True
+                    break
+                output = run_dir / f"q{query_index:02d}-{provider}.jsonl"
+                command = [sys.executable, str(ROOT / "scripts/literature_search.py"), query["text"], "--provider", provider, "--limit", str(int(query.get("limit", plan.get("limit", 20)))), "--output", str(output)]
+                result = subprocess.run(command, text=True, capture_output=True)
+                provider_errors = [line for line in result.stderr.splitlines() if "Could not reach" in line or "HTTP " in line]
+                row_status = "partial_failure" if result.returncode or provider_errors else "complete"
+                row = {"query_index": query_index, "query": query["text"], "question_id": query.get("question_id"),
+                    "research_question": query.get("question"), "provider": provider,
+                    "output": str(output.relative_to(ROOT)), "exit_code": result.returncode,
+                    "stderr": result.stderr.strip(), "provider_errors": provider_errors, "status": row_status}
+                records = [existing for existing in records if (existing.get("query_index"), existing["provider"]) != (query_index, provider)]
+                records.append(row)
+                records.sort(key=lambda existing: (existing.get("query_index", 0), providers.index(existing["provider"]) if existing["provider"] in providers else len(providers)))
+                if row_status == "complete":
+                    completed.add((query_index, provider))
+                manifest["queries"] = records
+                manifest["progress"] = {"completed_provider_queries": len(completed), "total_provider_queries": total}
+                manifest["status"] = "running"
+                write_json(run_dir / "run.json", manifest)
+                print(f"Progress: {len(completed)}/{total} provider queries; q{query_index:02d}/{len(plan['queries'])} {provider}: {row_status}", flush=True)
+                if result.returncode:
+                    print(result.stderr.strip(), file=sys.stderr, flush=True)
+            if paused:
+                break
+    except KeyboardInterrupt:
+        manifest["queries"] = records
+        manifest["status"] = "interrupted"
+        manifest["interrupted_at"] = utc_now()
+        manifest["progress"] = {"completed_provider_queries": len(completed), "total_provider_queries": total}
+        write_json(run_dir / "run.json", manifest)
+        print(f"Interrupted at {len(completed)}/{total}. Resume with: islam-research search {plan_path} --resume {run_id}", file=sys.stderr)
+        return 130
+    manifest["queries"] = records
+    manifest["status"] = "paused" if paused else ("complete" if len(completed) == total else "partial_failure")
+    manifest["progress"] = {"completed_provider_queries": len(completed), "total_provider_queries": total}
+    manifest["finished_at"] = utc_now() if not paused else None
+    write_json(run_dir / "run.json", manifest)
+    print(f"Run ID: {run_id}\nRun manifest: {run_dir / 'run.json'}")
+    print(f"Status: {manifest['status']} ({len(completed)}/{total} provider queries); candidates remain unreviewed")
+    return 75 if paused else (0 if manifest["status"] == "complete" else 1)
 
 
 def candidates(args) -> int:
@@ -107,6 +176,9 @@ def candidates(args) -> int:
             current = merged[key]
             if row["query"] not in current["queries"]:
                 current["queries"].append(row["query"])
+            question_ref = {field: row[field] for field in ("question_id", "research_question", "query") if row.get(field)}
+            if question_ref and question_ref not in current.setdefault("question_refs", []):
+                current["question_refs"].append(question_ref)
             providers = record.get("providers") or ([record["provider"]] if record.get("provider") else [])
             provider_ids = record.get("provider_ids_by_provider") or {}
             if record.get("provider_id") and record.get("provider"):
@@ -545,6 +617,9 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(required=True)
     search = sub.add_parser("search", help="run a saved JSON search plan")
     search.add_argument("plan", type=Path)
+    search.add_argument("--resume", metavar="RUN_ID", help="resume an interrupted or paused run from its manifest")
+    search.add_argument("--min-interval", type=float, help="minimum seconds between requests to the same host; also persists between runs")
+    search.add_argument("--max-hours", type=float, help="pause after this many hours and resume later with --resume")
     search.set_defaults(func=run_plan)
     candidate_queue = sub.add_parser("candidates", help="merge query results into a unique human screening queue")
     candidate_queue.add_argument("run_id")
