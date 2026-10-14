@@ -6,9 +6,11 @@ A lightweight, static React frontend for the public research graph. It runs with
 
 A plain research index with red editorial accents: system type for navigation, Georgia for reading, numbered contents, and ruled lists. Light mode is the default. The light/dark switch saves the palette in this browser and applies it before rendering. Harvest details are under “Snapshot & harvest log” on the contents page.
 
-The map starts with a question and its recorded incoming/outgoing connections. Follow a labeled record, choose one from “Jump to a record,” or use “Read notes” to inspect provenance. Red marks the current thread, not truth, review status, or confidence. The full-network view groups records by recorded links; at overview scale it aggregates inter-group links with exact counts, and opening a group or zooming in reveals individual records. Group anchors name a member; they do not assert a common topic or scholarly consensus.
+The map starts with a list of actual research questions. Clicking a record inspects it without changing the graph center or camera. The notes panel's “Explore connections” action explicitly moves to that record. Back and breadcrumb buttons restore the prior camera, selection, filters, and reading position. The graph stays mounted when switching tabs so returning keeps your place.
 
-Drag the graph background to pan, use the +/− and Fit controls to zoom, or focus the diagram and use arrow keys, +/−, and 0 (fit). Record buttons work with Enter/Space. Mobile starts at a readable scale and provides a connected-record list below the diagram. A text connection list is available on every screen size. “Copy link” saves the current root and view in the URL. The map uses native SVG with deterministic local geometry and no running simulation or new dependencies.
+Desktop notes sit beside the graph with a draggable, keyboard-accessible divider; the width preference is saved locally. Mobile notes use a collapsible bottom sheet that preserves the selected record. Search returns typed records and short descriptions without filtering away the surrounding graph. Advanced filters and sharing live under Options, while pan/zoom controls sit inside the canvas. Red identifies the active thread, not truth, confidence, or review status.
+
+The full-network view groups records by recorded links. At overview scale, inter-group links carry exact recorded-edge counts; opening a group reveals individual records. Group anchors name a member without asserting a common topic or scholarly consensus. Connected-record buttons and a text connection list provide alternatives to using the diagram. Native SVG and deterministic local geometry keep the map lightweight without a running simulation or new dependencies.
 
 ## Run locally
 

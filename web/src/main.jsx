@@ -1,12 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { detectCommunities } from './graphLayout.js';
 import GraphMap from './GraphMap.jsx';
 import './style.css';
 
 const tabs = ['Overview', 'Map', 'Sources', 'Arguments', 'Discovery'];
 const types = ['concept', 'source', 'evidence', 'claim', 'question', 'hypothesis', 'person', 'project', 'record'];
-const pretty = value => String(value || '').replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+const pretty = value => String(value || '').replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
 const shortId = id => id?.split('/').at(-1)?.replaceAll('-', ' ') || 'Record';
 
 function App() {
@@ -26,7 +25,7 @@ function App() {
   const [providerFilter, setProviderFilter] = useState('all');
   const [yearFilter, setYearFilter] = useState('all');
   const [reviewFilter, setReviewFilter] = useState('all');
-  const [communityFilter, setCommunityFilter] = useState('all');
+  const [mapEntry, setMapEntry] = useState(null);
   const [reviews, setReviews] = useState(() => {
     try { return JSON.parse(localStorage.getItem('islam-research:candidate-reviews:v1') || '{}'); }
     catch { return {}; }
@@ -66,12 +65,9 @@ function App() {
   }), [query, providerFilter, yearFilter, reviewFilter, reviews, candidates]);
   const candidateProviders = [...new Set(candidates.flatMap(c => c.providers))].sort();
   const candidateYears = [...new Set(candidates.map(c => c.year).filter(Boolean))].sort((a, b) => b - a);
-  const visibleIds = useMemo(() => new Set(filtered.map(n => n.id)), [filtered]);
   const nodeMap = new Map(nodes.map(n => [n.id, n]));
   const selectedNode = selected ? nodeMap.get(selected) : null;
   const related = selected ? edges.filter(e => e.from === selected || e.to === selected) : [];
-  const groups = useMemo(() => detectCommunities(nodes, edges), [nodes, edges]);
-  const mapVisibleIds = useMemo(() => new Set([...visibleIds].filter(id => communityFilter === 'all' || groups.find(g => g.id === communityFilter)?.nodes.some(n => n.id === id))), [visibleIds, communityFilter, groups]);
 
   function openNode(node) {
     setSelected(node.id);
@@ -118,22 +114,20 @@ function App() {
     </section>
     <section className="workbench">
       <div className="toolbar">
-        {tab !== 'Overview' && <div className="searchbox"><span>⌕</span><input aria-label={tab === 'Discovery' ? 'Search discovery leads' : 'Search research records'} value={query} onChange={e => setQuery(e.target.value)} placeholder="Search sources, concepts, claims…"/></div>}
-        {tab === 'Discovery' ? <><select aria-label="Filter by provider" value={providerFilter} onChange={e => setProviderFilter(e.target.value)}><option value="all">All providers</option>{candidateProviders.map(p => <option key={p}>{p}</option>)}</select><select aria-label="Filter candidates by year" value={yearFilter} onChange={e => setYearFilter(e.target.value)}><option value="all">All years</option>{candidateYears.map(y => <option key={y}>{y}</option>)}</select><select aria-label="Filter by review status" value={reviewFilter} onChange={e => setReviewFilter(e.target.value)}><option value="all">All review states</option><option value="unreviewed">Unreviewed ({reviewCounts.unreviewed || 0})</option><option value="relevant">Relevant ({reviewCounts.relevant || 0})</option><option value="not_relevant">Not relevant ({reviewCounts.not_relevant || 0})</option><option value="read_later">Read later ({reviewCounts.read_later || 0})</option></select></> : tab === 'Map' ? <><select aria-label="Filter by record type" value={kind} onChange={e => setKind(e.target.value)}><option value="all">All record types</option>{types.map(t => <option key={t} value={t}>{pretty(t)}</option>)}</select><select aria-label="Focus a graph community" value={communityFilter} onChange={e => setCommunityFilter(e.target.value)}><option value="all">All communities ({groups.length})</option>{groups.map(group => <option key={group.id} value={group.id}>Community {group.id.split('-')[1]} · {group.nodes.length} records</option>)}</select></> : tab !== 'Overview' && <select aria-label="Filter by record type" value={kind} onChange={e => setKind(e.target.value)}><option value="all">All record types</option>{types.map(t => <option key={t} value={t}>{pretty(t)}</option>)}</select>}
-        {tab !== 'Overview' && <span className="result-count">{tab === 'Discovery' ? `${filteredCandidates.length} discovery leads` : `${filtered.length} of ${nodes.length} records`}</span>}
+        {tab !== 'Overview' && tab !== 'Map' && <div className="searchbox"><span>⌕</span><input aria-label={tab === 'Discovery' ? 'Search discovery leads' : 'Search research records'} value={query} onChange={e => setQuery(e.target.value)} placeholder="Search sources, concepts, claims…"/></div>}
+        {tab === 'Discovery' ? <><select aria-label="Filter by provider" value={providerFilter} onChange={e => setProviderFilter(e.target.value)}><option value="all">All providers</option>{candidateProviders.map(p => <option key={p}>{p}</option>)}</select><select aria-label="Filter candidates by year" value={yearFilter} onChange={e => setYearFilter(e.target.value)}><option value="all">All years</option>{candidateYears.map(y => <option key={y}>{y}</option>)}</select><select aria-label="Filter by review status" value={reviewFilter} onChange={e => setReviewFilter(e.target.value)}><option value="all">All review states</option><option value="unreviewed">Unreviewed ({reviewCounts.unreviewed || 0})</option><option value="relevant">Relevant ({reviewCounts.relevant || 0})</option><option value="not_relevant">Not relevant ({reviewCounts.not_relevant || 0})</option><option value="read_later">Read later ({reviewCounts.read_later || 0})</option></select></> : tab !== 'Overview' && tab !== 'Map' && <select aria-label="Filter by record type" value={kind} onChange={e => setKind(e.target.value)}><option value="all">All record types</option>{types.map(t => <option key={t} value={t}>{pretty(t)}</option>)}</select>}
+        {tab !== 'Overview' && tab !== 'Map' && <span className="result-count">{tab === 'Discovery' ? `${filteredCandidates.length} discovery leads` : `${filtered.length} of ${nodes.length} records`}</span>}
       </div>
       <div className={`workspace ${tab === 'Overview' ? 'overview-workspace' : tab === 'Map' ? 'map-workspace' : ''}`}>
         <div className="mainview" id="research-content" tabIndex={-1}>
-          {tab === 'Overview' && <Overview projects={projects} nodes={nodes} candidates={candidates} buildSummary={graph.build_summary} generatedAt={graph.generated_at} onOpen={setTab} onOpenQuestion={node => { setTab('Arguments'); openNode(node); }}/>}
-          {tab === 'Map' && <GraphMap nodes={nodes} edges={edges} visibleIds={mapVisibleIds} selected={selected}
-            onSelect={node => { setSelected(node.id); setSelectedCandidate(null); }}
-            onReadNotes={node => { openNode(node); requestAnimationFrame(() => document.getElementById('record-notes')?.scrollIntoView({ block: 'start', behavior: 'instant' })); }}
-            onResetFilters={() => { setQuery(''); setKind('all'); setCommunityFilter('all'); }}/>}
+          {tab === 'Overview' && <Overview projects={projects} nodes={nodes} candidates={candidates} buildSummary={graph.build_summary} generatedAt={graph.generated_at} onOpen={setTab} onOpenQuestion={node => { setMapEntry({ id: node.id, at: Date.now() }); setTab('Map'); }}/>}
+          <div hidden={tab !== 'Map'}><GraphMap nodes={nodes} edges={edges} active={tab === 'Map'} entryRequest={mapEntry}
+            renderNotes={(node, inspect) => <Detail node={node} related={edges.filter(e => e.from === node.id || e.to === node.id)} nodeMap={nodeMap} onSelect={id => inspect(nodeMap.get(id))}/>}/></div>
           {tab === 'Sources' && <div className="list-view"><div className="view-heading"><div><span className="eyebrow">BIBLIOGRAPHY</span><h2>Sources in the graph</h2></div><span>{filtered.filter(n => n.type === 'source').length} visible</span></div><div className="source-list">{filtered.filter(n => n.type === 'source').map(n => <RecordRow key={n.id} node={n} onClick={() => openNode(n)}/>)}</div></div>}
           {tab === 'Arguments' && <div className="list-view"><div className="view-heading"><div><span className="eyebrow">ATTRIBUTED RECORDS</span><h2>Interpretations & questions</h2></div><span>Claims stay attached to their sources</span></div><div className="source-list">{filtered.filter(n => ['claim', 'evidence', 'question', 'hypothesis'].includes(n.type)).map(n => <RecordRow key={n.id} node={n} onClick={() => openNode(n)}/>)}</div></div>}
           {tab === 'Discovery' && <div className="list-view"><div className="view-heading"><div><span className="eyebrow">LITERATURE DISCOVERY</span><h2>Review discovery leads</h2><small className="private-review-note">Screening decisions are saved only in this browser. They are not uploaded or published.</small></div><div className="discovery-heading-actions"><span>{filteredCandidates.length} of {candidates.length} leads</span>{Object.keys(reviews).length > 0 && <button onClick={clearCandidateReviews}>Clear local reviews</button>}</div></div><div className="discovery-note"><b>Discovery is not evaluation.</b> These {candidates.length.toLocaleString()} records are bibliographic leads returned by literature discovery services. Search matching and rank are provenance only; they do not establish relevance, scholarly quality, support for a claim, or consensus.</div><div className="source-list">{filteredCandidates.map(c => <CandidateRow key={c.id} candidate={c} reviewStatus={reviews[c.id] || 'unreviewed'} onClick={() => openCandidate(c)}/>)}</div></div>}
         </div>
-        <aside id="record-notes" className={`details ${mobilePanel ? 'mobile-open' : ''}`}>
+        <aside id="record-notes" hidden={tab === 'Map'} className={`details ${mobilePanel ? 'mobile-open' : ''}`}>
           <button className="close-panel" onClick={() => setMobilePanel(false)} aria-label="Close details">×</button>
           {selectedNode ? <Detail node={selectedNode} related={related} nodeMap={nodeMap} onSelect={id => setSelected(id)}/> : selectedCandidate ? <CandidateDetail candidate={candidates.find(c => c.id === selectedCandidate)} reviewStatus={reviews[selectedCandidate] || 'unreviewed'} onReview={decision => saveCandidateReview(selectedCandidate, decision)}/> : <><h2>Record notes</h2><p className="body-copy">Select a record to read its description, source references, and connections.</p></>}
         </aside>
