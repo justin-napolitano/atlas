@@ -1,0 +1,19 @@
+{
+  "id": "revelation-prophetic-authority-v1",
+  "question": "What kinds of authority do selected Quranic passages assign to revelation, Muhammad, and human interpreters, and how do interpreters and scholars differ in explaining that authority?",
+  "purpose": "Bounded pilot for the local literature discovery and source-screening workflow; results are candidates, not accepted evidence.",
+  "providers": ["both"],
+  "limit": 30,
+  "filters": {
+    "language": ["English", "Arabic when discoverable"],
+    "source_roles": ["primary_text", "classical_interpretation", "modern_scholarship"],
+    "tradition_coverage": ["Sunni", "Shi'i", "other perspectives when directly relevant"],
+    "screening_required": true
+  },
+  "queries": [
+    {"text": "Qur'an revelation prophetic authority Muhammad interpretation", "limit": 30},
+    {"text": "Quran obedience messenger authority exegesis 4:59", "limit": 20},
+    {"text": "Quran ask people of remembrance interpretation 16:43 tafsir", "limit": 20},
+    {"text": "Islamic theology revelation prophecy authority Sunni Shi'i scholarship", "limit": 30}
+  ]
+}

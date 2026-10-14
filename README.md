@@ -18,6 +18,10 @@ The research should understand traditions in context before evaluating them. “
 - `graph/shapes.ttl` — SHACL validation constraints.
 - `templates/` — reusable source, claim, evidence, concept, hypothesis, and AIF-style argument templates.
 - `methods/programmatic-workflow.md` — repeatable literature search and local document triage.
+- `methods/research-workbench.md` — unified CLI for saved search plans, screening, document intake, passage annotations, graph validation, and reports.
+- `docs/adr/0001-research-platform-standards.md` — standards and storage decisions before expanding the tooling.
+- `research-plans/revelation-prophetic-authority.json` — first versioned multi-query research plan.
+- `src/islam_research/` — modular local workflow CLI; `scripts/research.py` runs it directly from a checkout.
 - `scripts/literature_search.py` — query OpenAlex and Crossref, deduplicate metadata, save a local JSONL snapshot.
 - `scripts/review_document.py` — extract text from PDF, DOCX, Markdown, TXT, HTML, or CSV and produce a deterministic review aid.
 - `methods/source-evaluation.md` — source evaluation and note-taking method.
@@ -56,3 +60,5 @@ Use GitHub Issues to track research questions, source reviews, and hypotheses. F
 ## Programmatic research tools
 
 Run `python3 scripts/literature_search.py "Qur'an revelation prophetic authority" --provider both --limit 20` for OpenAlex and Crossref metadata discovery. Results are saved under git-ignored `research-library/searches/`; no abstracts or PDFs are downloaded. Run `python3 scripts/review_document.py /path/to/article.pdf` to extract a local document and create a review checklist. PDF extraction uses Apple's PDFKit through the included Swift helper; it extracts selectable text and does not OCR scanned pages. See `methods/programmatic-workflow.md` for limits and review steps.
+
+For the unified flow, install the optional RDF tooling with `python3 -m pip install -e '.[graph]'`, then run `islam-research search research-plans/revelation-prophetic-authority.json`, `islam-research candidates RUN_ID`, `islam-research intake /path/to/document.pdf`, `islam-research annotate --help`, `islam-research validate`, `islam-research export`, or `islam-research report initial-authority-question`. Search, screening, local intake, and annotation are available without the optional graph dependencies. See `methods/research-workbench.md`.

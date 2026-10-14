@@ -46,4 +46,6 @@ Build a source-grounded, revisable map of Islam and of the researcher's evolving
 
 For literature discovery, use `scripts/literature_search.py` to query OpenAlex and/or Crossref and retain the dated JSONL snapshot locally. For document triage, use `scripts/review_document.py` to extract local text and deterministic metadata hints. These tools support human review; they do not establish scholarly quality, truth, or interpretive meaning. Keep licensed documents and extracted text in the git-ignored `research-library/` unless redistribution is permitted.
 
+The unified CLI is in `src/islam_research/cli.py`; run it with the `islam-research` entry point after installation or `python3 scripts/research.py` from a checkout. Keep machine candidate and extraction states distinct from human-reviewed records. Standards mapping and storage decisions are recorded in `docs/adr/0001-research-platform-standards.md`. Generated searches, intake materials, annotations, screening logs, and reports default to git-ignored `research-library/`.
+
 Start with `README.md`, `methods/source-evaluation.md`, and `graph/schema.md`.

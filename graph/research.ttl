@@ -11,6 +11,7 @@ ir:ResearcherPosition a rdfs:Class ; rdfs:label "Researcher position"@en .
 ir:ResearchQuestion a rdfs:Class ; rdfs:label "Research question"@en .
 ir:EvidenceRecord a rdfs:Class ; rdfs:label "Evidence record"@en .
 ir:SourceRecord a rdfs:Class ; rdfs:label "Source record"@en .
+ir:Claim a rdfs:Class ; rdfs:label "Attributed research claim"@en .
 ir:proposition a rdf:Property ; rdfs:label "proposition"@en .
 ir:epistemicStatus a rdf:Property ; rdfs:label "epistemic status"@en .
 ir:about a rdf:Property ; rdfs:label "about concept"@en .
@@ -21,6 +22,14 @@ ir:locator a rdf:Property ; rdfs:label "source locator"@en .
 ir:evidenceKind a rdf:Property ; rdfs:label "evidence kind"@en .
 ir:stance a rdf:Property ; rdfs:label "stance toward proposition"@en .
 ir:paraphrase a rdf:Property ; rdfs:label "attributed paraphrase"@en .
+ir:claimText a rdf:Property ; rdfs:label "claim text"@en .
+ir:addressesQuestion a rdf:Property ; rdfs:label "addresses research question"@en .
+ir:evidence a rdf:Property ; rdfs:label "evidence record"@en .
+ir:attributedTo a rdf:Property ; rdfs:label "claim attributed to"@en .
+ir:interpretationType a rdf:Property ; rdfs:label "interpretation type"@en .
+ir:reviewStatus a rdf:Property ; rdfs:label "review status"@en .
+ir:sourceRole a rdf:Property ; rdfs:label "source role"@en .
+ir:accessedAt a rdf:Property ; rdfs:label "accessed at"@en .
 
 # Local starter vocabulary: SKOS handles concepts; PROV-O records derivation.
 # Claims remain attributed and provisional until evidence records are added.
@@ -82,3 +91,42 @@ ir:paraphrase a rdf:Property ; rdfs:label "attributed paraphrase"@en .
     prov:wasAttributedTo :researcher ;
     ir:epistemicStatus "proposed" ;
     ir:about :revelation, :prophetic-authority .
+
+# Small pilot record: a located observation from one named English translation.
+# It is not a claim about all translations, Muslim interpretation, or the Arabic text.
+:qurancom-sahih-4-59 a ir:SourceRecord, prov:Entity ;
+    rdfs:label "Quran.com, An-Nisa 4:59, Saheeh International rendering"@en ;
+    dct:creator "Saheeh International" ;
+    dct:source <https://quran.com/id/an-nisa/59/translations/en-sahih-international> ;
+    dct:language "en" ;
+    ir:sourceRole "English translation display" ;
+    ir:reviewStatus "metadata_and_locator_verified" ;
+    ir:accessedAt "2026-10-14"^^xsd:date ;
+    prov:wasGeneratedBy :pilot-metadata-review-2026-10-14 .
+
+:pilot-metadata-review-2026-10-14 a prov:Activity ;
+    rdfs:label "Pilot source and locator metadata review"@en ;
+    prov:startedAtTime "2026-10-14T19:10:00Z"^^xsd:dateTime ;
+    prov:wasAssociatedWith :researcher ;
+    prov:used <https://quran.com/id/an-nisa/59/translations/en-sahih-international> .
+
+:q4-59-translation-observation a ir:EvidenceRecord, prov:Entity ;
+    rdfs:label "Located English-translation observation for Q 4:59"@en ;
+    ir:source :qurancom-sahih-4-59 ;
+    ir:locator "Q 4:59; Saheeh International translation display; accessed 2026-10-14" ;
+    ir:evidenceKind "paraphrase" ;
+    ir:stance "contextualizes" ;
+    ir:paraphrase "The displayed English rendering addresses obedience to God, the Messenger, and those in authority, then refers disputes to God and the Messenger."@en ;
+    prov:wasDerivedFrom :qurancom-sahih-4-59 ;
+    prov:wasGeneratedBy :pilot-metadata-review-2026-10-14 .
+
+:q4-59-translation-claim a ir:Claim, prov:Entity ;
+    rdfs:label "Limited observation about the Saheeh International rendering of Q 4:59"@en ;
+    ir:claimText "The displayed Saheeh International English translation of Q 4:59 addresses obedience to God, the Messenger, and those in authority among the audience, and refers disputes to God and the Messenger."@en ;
+    ir:addressesQuestion :initial-authority-question ;
+    ir:interpretationType "primary_text_observation" ;
+    ir:reviewStatus "human_reviewed" ;
+    ir:attributedTo :qurancom-sahih-4-59 ;
+    ir:evidence :q4-59-translation-observation ;
+    prov:wasDerivedFrom :q4-59-translation-observation ;
+    prov:wasAttributedTo :researcher .

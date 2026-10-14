@@ -9,12 +9,15 @@ The canonical graph is RDF in Turtle (`research.ttl`), with stable local IRIs an
 - **PROV-O** records source, derivation, attribution, and research activity. Provenance indicates where a record came from; it does not establish its truth.
 - **AIF** informs argument structure. Represent propositions as information nodes and inference, conflict, or preference applications as scheme nodes. Preserve the AIF rule that propositions connect through scheme applications. The local argument CSV template is AIF-inspired; it must be mapped to an identified AIF RDF/OWL reification before claiming direct AIF conformance.
 - **SHACL** shapes express validation rules for the RDF graph.
+- **W3C Web Annotation** provides an interoperable body/target/selector pattern for passages. Domain-specific locators (for example, text edition + surah:verse, hadith edition + number, book + page, or manuscript shelfmark) remain explicit because generic selectors do not capture scholarly citation context.
+- **ORKG** is a design reference for structured research contributions and comparisons, not a standard or runtime dependency adopted by this repository.
 
 The open standards are specifications, not one monolithic package. SKOS, PROV-O, RDF/Turtle, and SHACL are W3C standards; AIF is an argument interchange ontology. The project vocabulary in the `ir:` namespace supplies research-specific fields where the standards do not define them.
 
 Namespace prefixes are declared in `research.ttl`. Local identifiers use `https://islam-research.local/id/` as a stable project namespace. These IRIs identify records in this local project; they are not presented as globally resolvable URLs. External records should retain their DOI, ORCID, OpenAlex ID, or other authoritative identifiers separately.
 
 Standards references: [RDF 1.1](https://www.w3.org/TR/rdf11-concepts/), [Turtle](https://www.w3.org/TR/turtle/), [SKOS](https://www.w3.org/TR/skos-reference/), [PROV-O](https://www.w3.org/TR/prov-o/), and [SHACL](https://www.w3.org/TR/shacl/). AIF background: [AIF specification](https://www.arg-tech.org/wp-content/uploads/2011/09/aif-spec.pdf).
+Web Annotation reference: [Web Annotation Data Model](https://www.w3.org/TR/annotation-model/).
 
 ## CSV indexes (working interchange)
 
@@ -35,6 +38,8 @@ Use explicit directional relations such as `authored`, `interprets`, `claims`, `
 `evidence.csv` fields: `id,source_id,locator,kind,quote_or_paraphrase,context,stance,translation,accessed,notes`
 
 `kind` is `quotation`, `paraphrase`, `data`, or `bibliographic`. `stance` identifies whether the passage supports, challenges, qualifies, or contextualizes the linked proposition. Include a page, verse/surah, chapter, section, hadith identifier/edition, archival reference, dataset row, or other reproducible locator. Do not use a whole book as the locator when a precise one is available.
+
+Web passage annotations use `templates/web-annotation.jsonld`. Link each annotation target to the source representation and include an edition-aware `ir:locator`; any exact text selector must be verified in context. An annotation note is not itself an attributed claim. Claims separately identify their type (`primary_text_observation`, `historical_claim`, `scholarly_interpretation`, or `researcher_inference`), review status, addressed question, and evidence links.
 
 ## Claims and hypotheses
 

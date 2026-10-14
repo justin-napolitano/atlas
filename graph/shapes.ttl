@@ -25,3 +25,15 @@ ir:SourceShape a sh:NodeShape ;
     sh:targetClass ir:SourceRecord ;
     sh:property [ sh:path <http://www.w3.org/2000/01/rdf-schema#label> ; sh:minCount 1 ] ;
     sh:property [ sh:path <http://purl.org/dc/terms/creator> ; sh:minCount 1 ] .
+
+ir:ClaimShape a sh:NodeShape ;
+    sh:targetClass ir:Claim ;
+    sh:property [ sh:path ir:claimText ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:Literal ] ;
+    sh:property [ sh:path ir:addressesQuestion ; sh:minCount 1 ; sh:class ir:ResearchQuestion ] ;
+    sh:property [ sh:path ir:interpretationType ; sh:minCount 1 ; sh:in ( "primary_text_observation" "historical_claim" "scholarly_interpretation" "researcher_inference" ) ] ;
+    sh:property [ sh:path ir:reviewStatus ; sh:minCount 1 ; sh:in ( "machine_candidate" "human_reviewed" "needs_followup" ) ] ;
+    sh:or (
+        [ sh:property [ sh:path ir:reviewStatus ; sh:hasValue "human_reviewed" ] ; sh:property [ sh:path ir:evidence ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path ir:reviewStatus ; sh:hasValue "machine_candidate" ] ]
+        [ sh:property [ sh:path ir:reviewStatus ; sh:hasValue "needs_followup" ] ]
+    ) .
