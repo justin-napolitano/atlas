@@ -1,0 +1,52 @@
+name: Nightly research snapshot
+
+on:
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nightly-research-snapshot
+  cancel-in-progress: false
+
+jobs:
+  harvest-build-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install research tools
+        run: python -m pip install -e '.[graph]'
+      - name: Harvest seeded literature searches
+        run: python scripts/nightly_research_harvest.py --max-hours 4 --min-interval 60
+      - name: Build static site
+        working-directory: web
+        run: |
+          npm ci
+          npm test
+          npm run build
+      - name: Publish updated public snapshot to main
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add web/public/data/public-graph.json
+          if git diff --cached --quiet; then
+            echo 'Public snapshot is unchanged.'
+            exit 0
+          fi
+          git commit -m 'chore: refresh nightly research snapshot'
+          git push origin HEAD:main

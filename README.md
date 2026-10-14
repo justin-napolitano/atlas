@@ -24,6 +24,7 @@ The research should understand traditions in context before evaluating them. “
 - `methods/research-workbench.md` — unified CLI for saved search plans, screening, document intake, passage annotations, graph validation, and reports.
 - `docs/adr/0001-research-platform-standards.md` — standards and storage decisions before expanding the tooling.
 - `research-plans/revelation-prophetic-authority.json` — first versioned multi-query research plan.
+- `research-plans/background-question-seeds.json` — 48 paced queries across eight broad research questions for repeatable literature harvesting.
 - `src/islam_research/` — modular local workflow CLI; `scripts/research.py` runs it directly from a checkout.
 - `scripts/literature_search.py` — query OpenAlex, Crossref, Semantic Scholar, OpenAIRE, DataCite, and CORE; deduplicate metadata and save a local JSONL snapshot.
 - `scripts/source_search.py` and `scripts/source_fetch.py` — search local OpenITI/QAC/Fihrist/IIIF data, resolve Corpus Coranicum references, and fetch exact Qur'an/hadith references when credentials are configured.
@@ -68,4 +69,4 @@ Run `python3 scripts/literature_search.py "Qur'an revelation prophetic authority
 
 For the unified flow, install the optional RDF tooling with `python3 -m pip install -e '.[graph]'`, then run `islam-research search research-plans/revelation-prophetic-authority.json`, `islam-research candidates RUN_ID`, `islam-research intake /path/to/document.pdf`, `islam-research annotate --help`, `islam-research validate`, `islam-research export`, or `islam-research report initial-authority-question`. Search, screening, local intake, and annotation are available without the optional graph dependencies. See `methods/research-workbench.md`.
 
-For the public React atlas, see `web/README.md`. It builds from a checked-in static JSON snapshot with `cd web && npm install && npm run build`; no runtime API or secrets are required. Before refreshing public data, review the export diff and retain the distinction between unreviewed search candidates and the curated RDF graph.
+For the public React research studio, see `web/README.md`. Its GitHub Actions workflow harvests the seed plan daily, builds a sanitized static snapshot, and commits changed public data to `main`; a Git-connected Vercel project deploys that commit. Local preview uses `cd web && npm install && npm run dev`. Unreviewed search candidates remain separate from the curated RDF graph.

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "projects": [
+    {
+      "id": "islam-research",
+      "title": "Islam Research Atlas",
+      "description": "A source-grounded map of texts, scholarship, arguments, and open questions.",
+      "status": "active",
+      "kind": "Research atlas",
+      "graph_data": "public-graph.json",
+      "default_view": "Map",
+      "privacy": "public_curated_graph_and_sanitized_discovery_metadata"
+    }
+  ]
+}
