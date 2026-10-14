@@ -10,7 +10,11 @@ The map starts with a list of actual research questions. Clicking a record inspe
 
 Desktop notes sit beside the graph with a draggable, keyboard-accessible divider; the width preference is saved locally. Mobile notes use a collapsible bottom sheet that preserves the selected record. Search returns typed records and short descriptions without filtering away the surrounding graph. Advanced filters and sharing live under Options, while pan/zoom controls sit inside the canvas. Red identifies the active thread, not truth, confidence, or review status.
 
-The full-network view groups records by recorded links. At overview scale, inter-group links carry exact recorded-edge counts; opening a group reveals individual records. Group anchors name a member without asserting a common topic or scholarly consensus. Connected-record buttons and a text connection list provide alternatives to using the diagram. Native SVG and deterministic local geometry keep the map lightweight without a running simulation or new dependencies.
+The default network view uses a deterministic spring/repulsion layout, colored link groups, and point sizes based on distinct neighbors. Drag a point to reposition it. Local views offer one, two, or three hops and retain global coordinates; increasing depth reveals existing links rather than inventing relationships. Reading cards remain available under Options. Label placement avoids collisions and keeps labels at a readable screen size; every point has a full title and accessible record name.
+
+Analyze provides breadth-first shortest paths with either-direction or arrow-following traversal, unique-neighbor degree rankings, and normalized unweighted Brandes betweenness scores. The text path preserves the direction and predicate of the original records. Path highlights and metrics operate on the current record/link filters; parallel predicates count once for structural scores. Metadata-link filtering is explicit. These scores measure graph connectivity, not source quality, scholarly importance, or truth. Disconnected records produce an explicit no-path result.
+
+Native SVG and a bounded deterministic layout keep the graph lightweight without new dependencies or a continuously running simulation. Layout and analysis are computed locally; no AI service is involved. Red marks the active thread or path. The text connection list and reading-card view remain available as alternatives.
 
 ## Run locally
 

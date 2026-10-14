@@ -1,6 +1,9 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { aggregateLinks, buildGraphView, edgeGeometry, wrapLabel } from './graphGeometry.js';
+import { aggregateLinks, buildGraphView, edgeGeometry, graphBounds, wrapLabel } from './graphGeometry.js';
 import { detectCommunities } from './graphLayout.js';
+import NetworkLayer from './NetworkLayer.jsx';
+import GraphAnalysis from './GraphAnalysis.jsx';
+import { layoutNetwork, networkView } from './networkLayout.js';
 import { inspectRecord, navigateGraph, returnToGraph } from './graphNavigation.js';
 
 const pretty = value => String(value || '').replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ');
@@ -16,11 +19,12 @@ export default function GraphMap({ nodes, edges, active, entryRequest, renderNot
   if (!initial.current) {
     const params = new URLSearchParams(location.search);
     const root = nodeMap.get(params.get('node')) || questions[0] || nodes[0];
-    initial.current = { history: [], current: { rootId: root?.id, selectedId: nodeMap.has(params.get('inspect')) ? params.get('inspect') : root?.id, mode: params.get('map') === 'network' ? 'network' : 'focus', started: params.has('node') || params.get('map') === 'network', camera: null, kind: 'all', group: 'all', notesOpen: params.has('inspect'), notesScroll: 0 } };
+    initial.current = { history: [], current: { rootId: root?.id, selectedId: nodeMap.has(params.get('inspect')) ? params.get('inspect') : root?.id, mode: params.get('map') === 'network' ? 'network' : 'focus', started: params.has('node') || params.get('map') === 'network', camera: null, kind: 'all', group: 'all', notesOpen: params.has('inspect'), notesScroll: 0, depth: Math.max(1,Math.min(3,Number(params.get('depth'))||1)), presentation: params.get('style') === 'cards' ? 'cards' : 'network', pins: {}, path: null } };
   }
   const [navigation, setNavigation] = useState(initial.current);
   const { current } = navigation;
   const { mode } = current;
+  const [analysisOpen, setAnalysisOpen] = useState(false);
   const [hovered, setHovered] = useState(null);
   const [copied, setCopied] = useState(false);
   const [search, setSearch] = useState('');
@@ -33,12 +37,18 @@ export default function GraphMap({ nodes, edges, active, entryRequest, renderNot
   const notesBody = useRef(null);
   const [viewport, setViewport] = useState(null);
   const drag = useRef(null);
+  const nodeDrag = useRef(null);
+  const suppressClick = useRef(false);
   const keyboardFocus = useRef(false);
   const resize = useRef(null);
   const marker = useId().replaceAll(':', '');
   const eligible = useMemo(() => nodes.filter(n => n.id === current.rootId || ((current.kind === 'all' || n.type === current.kind) && (current.group === 'all' || groups.find(g => g.id === current.group)?.nodes.some(member => member.id === n.id)))), [nodes, current.rootId, current.kind, current.group, groups]);
   const effectiveRootId = eligible.some(n => n.id === current.rootId) ? current.rootId : eligible[0]?.id;
-  const view = useMemo(() => buildGraphView(eligible, edges, effectiveRootId, mode), [eligible, edges, effectiveRootId, mode]);
+  const isNetwork = current.presentation !== 'cards';
+  const graphEdges = useMemo(() => current.researchOnly ? edges.filter(e => !['inScheme','wasGeneratedBy','wasAssociatedWith','attributedTo','wasAttributedTo'].includes(e.label)) : edges, [edges, current.researchOnly]);
+  const analysisEdges = useMemo(() => { const ids = new Set(eligible.map(n=>n.id)); return graphEdges.filter(e=>ids.has(e.from)&&ids.has(e.to)); }, [eligible,graphEdges]);
+  const network = useMemo(() => layoutNetwork(eligible, graphEdges), [eligible, graphEdges]);
+  const view = useMemo(() => isNetwork ? networkView(eligible, graphEdges, network, effectiveRootId, mode, current.depth || 1, current.pins || {}) : buildGraphView(eligible, graphEdges, effectiveRootId, mode), [eligible, graphEdges, network, effectiveRootId, mode, isNetwork, current.depth, current.pins]);
   const camera = current.camera || view.bounds;
   const inspected = nodeMap.get(current.selectedId);
   const searchResults = useMemo(() => {
@@ -49,7 +59,7 @@ export default function GraphMap({ nodes, edges, active, entryRequest, renderNot
   }, [nodes, search]);
   function navigate(next) {
     setHovered(null);
-    setNavigation(s => navigateGraph({ ...s, current: { ...s.current, pageScroll: window.scrollY, notesScroll: notesBody.current?.scrollTop || 0 } }, { label: undefined, notesScroll: 0, ...next }));
+    setNavigation(s => navigateGraph({ ...s, current: { ...s.current, pageScroll: window.scrollY, notesScroll: notesBody.current?.scrollTop || 0 } }, { label: undefined, notesScroll: 0, path: null, ...next }));
   }
   function back(index) {
     setHovered(null);
@@ -75,6 +85,17 @@ export default function GraphMap({ nodes, edges, active, entryRequest, renderNot
     const width = Math.min(group.width + 70, (viewport?.width || 600) / .8);
     const height = Math.min(group.height + 70, (viewport?.height || 500) / .8);
     navigate({ label: `Link group ${index + 1}`, camera: { x: group.x + group.width/2 - width/2, y: group.y + group.height/2 - height/2, width, height } });
+  }
+  function tracePath(path) {
+    const points = new Map((path.ids || []).map(id => [id, { ...network.positions.get(id), ...current.pins?.[id] }]));
+    const box = points.size ? graphBounds(points, 180) : null;
+    navigate({ mode: 'network', presentation: 'network', started: true, path, camera: box, selectedId: path.from });
+  }
+  function startNodeDrag(event, node, point) {
+    if (event.button !== 0) return;
+    event.stopPropagation(); keyboardFocus.current = false; suppressClick.current = false;
+    nodeDrag.current = { id: node.id, clientX: event.clientX, clientY: event.clientY, point, target: event.currentTarget, moved: false };
+    event.currentTarget.setPointerCapture(event.pointerId);
   }
   function clearFilters() { navigate({ kind: 'all', group: 'all' }); }
   function setCamera(update) {
@@ -109,15 +130,25 @@ export default function GraphMap({ nodes, edges, active, entryRequest, renderNot
     return { x: c.x + (c.width - width) / 2, y: c.y + (c.height - height) / 2, width, height };
   });
   function move(event) {
+    if (nodeDrag.current && svg.current) {
+      const source = nodeDrag.current;
+      if (Math.hypot(event.clientX-source.clientX,event.clientY-source.clientY) < 4 && !source.moved) return;
+      source.moved = true;
+      const matrix = svg.current.getScreenCTM();
+      if (!matrix) return;
+      const point = { x: source.point.x + (event.clientX-source.clientX)/matrix.a, y: source.point.y + (event.clientY-source.clientY)/matrix.d };
+      setNavigation(s => ({ ...s, current: { ...s.current, pins: { ...s.current.pins, [source.id]: point } } }));
+      return;
+    }
     if (!drag.current || !svg.current) return;
     const matrix = svg.current.getScreenCTM();
     if (!matrix) return;
     setCamera({ ...drag.current.camera, x: drag.current.camera.x - (event.clientX - drag.current.x) / matrix.a, y: drag.current.camera.y - (event.clientY - drag.current.y) / matrix.d });
   }
-  function endDrag(event) { if (drag.current) { drag.current = null; svg.current?.releasePointerCapture(event.pointerId); } }
+  function endDrag(event) { if (nodeDrag.current) { suppressClick.current = nodeDrag.current.moved; if(nodeDrag.current.target.hasPointerCapture(event.pointerId))nodeDrag.current.target.releasePointerCapture(event.pointerId); nodeDrag.current = null; } if (drag.current) { drag.current = null; svg.current?.releasePointerCapture(event.pointerId); } }
   async function copyLink() {
     const url = new URL(location.href);
-    url.hash = 'map'; url.searchParams.set('map', mode);
+    url.hash = 'map'; url.searchParams.set('map', mode); url.searchParams.set('style', isNetwork ? 'network' : 'cards'); url.searchParams.set('depth', String(current.depth || 1));
     if (view.root) url.searchParams.set('node', view.root.id);
     if (inspected) url.searchParams.set('inspect', inspected.id);
     try { await navigator.clipboard.writeText(url.href); setCopied(true); } catch { setCopied(false); }
@@ -126,7 +157,7 @@ export default function GraphMap({ nodes, edges, active, entryRequest, renderNot
   const activeEdges = view.edges.filter(e => e.from === activeRecord || e.to === activeRecord);
   const neighbors = new Set(activeEdges.flatMap(e => [e.from, e.to]));
   const lanes = new Map();
-  const grouped = mode === 'network' && viewport && Math.min(viewport.width / camera.width, viewport.height / camera.height) < .65;
+  const grouped = !isNetwork && mode === 'network' && viewport && Math.min(viewport.width / camera.width, viewport.height / camera.height) < .65;
   const groupLinks = aggregateLinks(view.groups, view.edges);
   const groupMap = new Map(view.groups.map(g => [g.id, g]));
   const groupPosition = id => { const g = groupMap.get(id); return { x: g.x + g.width / 2, y: g.y + g.height / 2 + 17, width: g.width - 28, height: g.height - 62 }; };
@@ -143,7 +174,12 @@ export default function GraphMap({ nodes, edges, active, entryRequest, renderNot
         {searchOpen && search.trim() && <div className="research-search-results" id={`${marker}-results`} role="listbox" aria-label="Matching research records">{searchResults.length ? searchResults.map((node, index) => <button key={node.id} role="option" aria-selected={index === searchIndex} id={`${marker}-result-${index}`} onMouseDown={event => event.preventDefault()} onClick={() => inspect(node)}><small>{node.type}</small><strong>{node.label}</strong><span>{node.summary?.slice(0,120) || 'Read notes and source references.'}</span></button>) : <p>No matching records. Try an author, topic, or title.</p>}</div>}
       </div>
       <button onClick={showAll}>Show all</button>
+      <button className="analysis-toggle" aria-expanded={analysisOpen} onClick={() => setAnalysisOpen(open => !open)}>Analyze</button>
       <details className="graph-options" ref={options} onKeyDown={event => {if(event.key === 'Escape') event.currentTarget.open = false;}}><summary>Options</summary><div>
+        <label>Graph style<select value={isNetwork ? 'network' : 'cards'} onChange={event => navigate({ presentation: event.target.value })}><option value="network">Network</option><option value="cards">Reading cards</option></select></label>
+        <label>Label visibility<select value={current.labels || 'auto'} onChange={event => setNavigation(s => ({...s,current:{...s.current,labels:event.target.value}}))}><option value="auto">Avoid overlapping labels</option><option value="all">All labels</option></select></label>
+        <label className="metadata-filter"><input type="checkbox" checked={!!current.researchOnly} onChange={event => navigate({ researchOnly: event.target.checked })}/>Hide project metadata links</label>
+        <button onClick={() => setNavigation(s => ({...s,current:{...s.current,pins:{}}}))}>Reset node positions</button>
         <label>Surrounding record types<select value={current.kind} onChange={event => navigate({kind:event.target.value})}><option value="all">All types</option>{[...new Set(nodes.map(n => n.type))].sort().map(t => <option key={t} value={t}>{pretty(t)}</option>)}</select></label>
         <label>Link group<select value={current.group} onChange={event => navigate({group:event.target.value})}><option value="all">All groups</option>{groups.map((g,i) => <option key={g.id} value={g.id}>Group {i+1} · {g.nodes.length} records</option>)}</select></label>
         <p>The center record stays visible when filtering.</p>
@@ -152,9 +188,11 @@ export default function GraphMap({ nodes, edges, active, entryRequest, renderNot
       </div></details>
     </div>
     <nav className="graph-trail" aria-label="Research trail">{navigation.history.map((entry,index) => <React.Fragment key={index}><button onClick={() => back(index)} title={labelFor(entry)}>{labelFor(entry)}</button><span aria-hidden="true">/</span></React.Fragment>)}<span aria-current="page" title={labelFor(current)}>{labelFor(current)}</span></nav>
+    {analysisOpen && <GraphAnalysis nodes={eligible} edges={analysisEdges} selectedId={current.selectedId} path={current.path} onTrace={tracePath} onInspect={inspect} onClear={()=>setNavigation(s=>({...s,current:{...s.current,path:null}}))}/>}
     {!current.started ? <div className="research-start"><span className="eyebrow">Pick a starting point</span><h2>What are you looking into?</h2><p>Choose a question to read its notes and trace its sources.</p><ol>{questions.map(node => <li key={node.id}><button onClick={() => explore(node)}><strong>{node.label}</strong>{node.scope && <span>{node.scope}</span>}<small>Open question →</small></button></li>)}</ol><button className="start-whole-map" onClick={showAll}>Or browse the whole map →</button></div> : <>
-      <div className="graph-context"><div><span className="eyebrow">{mode === 'network' ? 'Whole map' : 'Current thread'}</span><h2>{mode === 'network' ? 'All recorded connections' : view.root?.label}</h2></div><span>{view.nodes.length} records · {view.edges.length} links</span></div>
-      {(current.kind !== 'all' || current.group !== 'all') && <p className="active-graph-filters">Filtered surroundings · {current.kind !== 'all' ? pretty(current.kind) : 'All types'} · {current.group !== 'all' ? current.group.replace('-', ' ') : 'All groups'} <button onClick={clearFilters}>Clear</button></p>}
+      <div className="graph-context"><div><span className="eyebrow">{mode === 'network' ? 'Whole map' : 'Current thread'}</span><h2>{mode === 'network' ? 'All recorded connections' : view.root?.label}</h2></div><div className="graph-context-tools">{mode === 'focus' && isNetwork && <label>Depth<select aria-label="Connection depth" value={current.depth || 1} onChange={event=>navigate({depth:Number(event.target.value)})}><option value="1">1 hop</option><option value="2">2 hops</option><option value="3">3 hops</option></select></label>}<span>{view.nodes.length} records · {view.edges.length} links</span></div></div>
+      {current.path?.ids && <p className="active-path-summary"><b>{current.path.ids.length-1}-link path</b><span>{nodeMap.get(current.path.from)?.label} → {nodeMap.get(current.path.to)?.label}</span><button onClick={()=>setNavigation(s=>({...s,current:{...s.current,path:null}}))}>Clear path</button></p>}
+      {(current.kind !== 'all'  || current.group !== 'all') && <p className="active-graph-filters">Filtered surroundings · {current.kind !== 'all' ? pretty(current.kind) : 'All types'} · {current.group !== 'all' ? current.group.replace('-', ' ') : 'All groups'} <button onClick={clearFilters}>Clear</button></p>}
       <p className="sr-only" role="status">{inspected ? `Reading ${inspected.type}: ${inspected.label}` : 'Select a record to read its notes.'}</p>
       <div className="graph-reading-layout" style={{'--notes-width': `${notesWidth}px`}}>
         <div className="graph-surface">
@@ -164,23 +202,26 @@ export default function GraphMap({ nodes, edges, active, entryRequest, renderNot
         onPointerDown={event => { keyboardFocus.current = false; if (event.button !== 0 || event.target.closest('[data-record], [data-group]')) return; drag.current = { x: event.clientX, y: event.clientY, camera }; svg.current.setPointerCapture(event.pointerId); }} onPointerMove={move} onPointerUp={endDrag} onPointerCancel={endDrag}
         onKeyDown={event => { if (event.key === 'Tab') keyboardFocus.current = true; if (event.target !== event.currentTarget) return; const delta = camera.width * .08; const keys = { ArrowLeft: [-delta, 0], ArrowRight: [delta, 0], ArrowUp: [0, -delta], ArrowDown: [0, delta] }; if (keys[event.key]) { event.preventDefault(); const [x, y] = keys[event.key]; setCamera(c => ({ ...c, x: c.x + x, y: c.y + y })); } else if (['+', '=', '-'].includes(event.key)) { event.preventDefault(); zoom(event.key === '-' ? 1.3 : 1 / 1.3); } else if (event.key === '0') setCamera(view.bounds); }}>
         <defs><marker id={`${marker}-arrow`} markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 7 4 L 1 7" fill="none" stroke="context-stroke" strokeWidth="1.5"/></marker><marker id={`${marker}-group-arrow`} markerWidth="20" markerHeight="20" refX="17" refY="10" orient="auto" markerUnits="userSpaceOnUse"><path d="M 3 3 L 17 10 L 3 17" fill="none" stroke="context-stroke" strokeWidth="2"/></marker></defs>
-        {!grouped && <g className="network-regions">{view.groups.map((g, i) => <g key={g.id}><rect x={g.x} y={g.y} width={g.width} height={g.height}/><text x={g.x + 28} y={g.y + 32}>Link group {String(i + 1).padStart(2, '0')} · {g.count} records</text></g>)}</g>}
-        {!grouped && <g>{view.edges.map((edge, i) => {
+        {!isNetwork && !grouped && <g className="network-regions">{view.groups.map((g, i) => <g key={g.id}><rect x={g.x} y={g.y} width={g.width} height={g.height}/><text x={g.x + 28} y={g.y + 32}>Link group {String(i + 1).padStart(2, '0')} · {g.count} records</text></g>)}</g>}
+        {!isNetwork && !grouped && <g>{view.edges.map((edge, i) => {
           const key = [edge.from, edge.to].sort().join('|');
           const lane = lanes.get(key) || 0; lanes.set(key, lane + 1);
           const route = edgeGeometry(view.positions.get(edge.from), view.positions.get(edge.to), lane);
           const isActive = !activeRecord || edge.from === activeRecord || edge.to === activeRecord;
           return <g key={`${i}-${edge.from}`} className={`graph-link ${isActive ? '' : 'dim'} ${mode === 'focus' || (activeRecord && isActive) ? 'trace' : ''}`}><path d={route.path} markerEnd={`url(#${marker}-arrow)`}/><title>{`${nodes.find(n => n.id === edge.from)?.label} → ${relation(edge.label)} → ${nodes.find(n => n.id === edge.to)?.label}`}</title>{mode === 'focus' && <g className="relation-chip" transform={`translate(${route.label.x} ${route.label.y})`}><rect x={-Math.max(45, relation(edge.label).length * 3.5 + 10)} y="-11" width={Math.max(90, relation(edge.label).length * 7 + 20)} height="22"/><text textAnchor="middle" y="4">{relation(edge.label)}</text></g>}</g>;
         })}</g>}
-        {!grouped && <g>{view.nodes.map(node => { const p = view.positions.get(node.id); const root = node.id === effectiveRootId; return <g key={node.id} data-record={node.id} className={`graph-record type-${node.type} ${root ? 'root' : ''} ${node.id === current.selectedId ? 'inspected' : ''} ${activeRecord && node.id !== activeRecord && !neighbors.has(node.id) ? 'dim' : ''}`} transform={`translate(${p.x} ${p.y})`} tabIndex={0} role="button" aria-label={`${node.type}: ${node.label}. Read record notes.`} aria-pressed={node.id === current.selectedId} onMouseEnter={() => setHovered(node.id)} onMouseLeave={() => setHovered(null)} onFocus={() => { setHovered(node.id); if (keyboardFocus.current && (p.x - p.width/2 < camera.x || p.x + p.width/2 > camera.x + camera.width || p.y - p.height/2 < camera.y || p.y + p.height/2 > camera.y + camera.height)) setCamera(c => ({ ...c, x: p.x - c.width/2, y: p.y - c.height/2 })); }} onBlur={() => setHovered(null)} onClick={() => inspect(node)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); inspect(node); } }}><title>{node.label}</title><rect className="record-card" x={-p.width / 2} y={-p.height / 2} width={p.width} height={p.height} rx="3"/><text className="record-kind" x={-p.width / 2 + 16} y={-p.height / 2 + 23}>{typeCode[node.type] || 'R'} / {node.type}</text><text className="record-label" x={-p.width / 2 + 16} y={-p.height / 2 + 47}>{wrapLabel(node.label, root && mode === 'focus' ? 31 : 27).map((line, i) => <tspan key={i} x={-p.width / 2 + 16} dy={i ? 18 : 0}>{line}</tspan>)}</text></g>; })}</g>}
+        {!isNetwork && !grouped && <g>{view.nodes.map(node => { const p = view.positions.get(node.id); const root = node.id === effectiveRootId; return <g key={node.id} data-record={node.id} className={`graph-record type-${node.type} ${root ? 'root' : ''} ${node.id === current.selectedId ? 'inspected' : ''} ${activeRecord && node.id !== activeRecord && !neighbors.has(node.id) ? 'dim' : ''}`} transform={`translate(${p.x} ${p.y})`} tabIndex={0} role="button" aria-label={`${node.type}: ${node.label}. Read record notes.`} aria-pressed={node.id === current.selectedId} onMouseEnter={() => setHovered(node.id)} onMouseLeave={() => setHovered(null)} onFocus={() => { setHovered(node.id); if (keyboardFocus.current && (p.x - p.width/2 < camera.x || p.x + p.width/2 > camera.x + camera.width || p.y - p.height/2 < camera.y || p.y + p.height/2 > camera.y + camera.height)) setCamera(c => ({ ...c, x: p.x - c.width/2, y: p.y - c.height/2 })); }} onBlur={() => setHovered(null)} onClick={() => inspect(node)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); inspect(node); } }}><title>{node.label}</title><rect className="record-card" x={-p.width / 2} y={-p.height / 2} width={p.width} height={p.height} rx="3"/><text className="record-kind" x={-p.width / 2 + 16} y={-p.height / 2 + 23}>{typeCode[node.type] || 'R'} / {node.type}</text><text className="record-label" x={-p.width / 2 + 16} y={-p.height / 2 + 47}>{wrapLabel(node.label, root && mode === 'focus' ? 31 : 27).map((line, i) => <tspan key={i} x={-p.width / 2 + 16} dy={i ? 18 : 0}>{line}</tspan>)}</text></g>; })}</g>}
+        {isNetwork && <NetworkLayer view={view} selectedId={current.selectedId} hovered={hovered} rootId={effectiveRootId} marker={marker} path={current.path} showLabels={current.labels || 'auto'} bounds={camera} scale={viewport ? Math.min(viewport.width/camera.width,viewport.height/camera.height) : 1} onInspect={inspect} onHover={setHovered} onNodeDown={startNodeDrag} suppressClick={suppressClick}/>}
         {grouped && <g className="grouped-overview"><g>{groupLinks.map((link, i) => {const route = edgeGeometry(groupPosition(link.from), groupPosition(link.to), i % 2 ? .5 : -.5); return <g className="graph-link group-link" key={`${link.from}-${link.to}`}><path d={route.path} markerEnd={`url(#${marker}-group-arrow)`}/><title>{link.count} directed recorded links between these groups</title><text x={route.label.x} y={route.label.y} textAnchor="middle">{link.count}</text></g>;})}</g>{view.groups.map((g, i) => <g key={g.id} className={`group-summary ${g.nodeIds.includes(effectiveRootId) ? 'selected' : ''}`} data-group={g.id} tabIndex={0} role="button" aria-label={`Open link group ${i+1}: ${g.count} records. Anchor: ${g.label}`} onClick={() => openGroup(g, i)} onKeyDown={event => {if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openGroup(g, i); }}}><rect x={g.x + 14} y={g.y + 48} width={g.width - 28} height={g.height - 62} rx="3"/><text className="group-caption" x={g.x + 42} y={g.y + 94}>ANCHOR / LINK GROUP {String(i + 1).padStart(2, '0')}</text><text className="group-anchor" x={g.x + 42} y={g.y + 144}>{wrapLabel(g.label, 29).map((line, index) => <tspan key={index} x={g.x + 42} dy={index ? 36 : 0}>{line}</tspan>)}</text><text className="group-count" x={g.x + 42} y={g.y + g.height - 44}>{g.count} {g.count === 1 ? 'record' : 'records'} · {g.internalCount} internal links</text></g>)}</g>}
       </svg> : <div className="graph-empty"><p>No records match these filters.</p><button onClick={clearFilters}>Clear filters</button></div>}
     </div>
 
-          <div className="graph-footnote"><span>{grouped ? 'Open a group, then select a record.' : 'Click a record to read its notes.'} Drag to pan.</span></div>
-          {mode === 'focus' && connectedRecords.length > 0 && <section className="graph-connected-records"><h3>Connected records</h3>{connectedRecords.map(n => <button key={n.id} aria-pressed={current.selectedId === n.id} onClick={() => inspect(n)}><small>{n.type}</small><span>{n.label}</span><b aria-hidden="true">→</b></button>)}</section>}
+          <div className="graph-footnote"><span>{grouped ? 'Open a group, then select a record.' : 'Click a record to read its notes. Drag a point to reposition it.'} Drag to pan.</span></div>
+          {mode === 'focus' && connectedRecords.length > 0 && <section className="graph-connected-records"><h3>{isNetwork && mode==='focus' && current.depth>1 ? `Records within ${current.depth} hops` : 'Connected records'}</h3>{connectedRecords.map(n => <button key={n.id} aria-pressed={current.selectedId === n.id} onClick={() => inspect(n)}><small>{n.type}</small><span>{n.label}</span><b aria-hidden="true">→</b></button>)}</section>}
           {mode === 'focus' && view.nodes.length === 1 && <p className="graph-empty-note">No direct connections in this view. <button onClick={clearFilters}>Clear filters</button> or <button onClick={showAll}>show all records</button>.</p>}
-          {mode === 'network' && <p className="graph-caveat">Groups reflect recorded links, not scholarly consensus. Numbers between groups count recorded links.</p>}
+          {isNetwork ? <p className="graph-caveat">Point size: distinct neighbors. Color: computed link group. These encode graph structure, not source quality or consensus.</p> : mode === 'network' && <p className="graph-caveat">Groups reflect recorded links, not scholarly consensus. Numbers between groups count recorded links.</p>}
+          {isNetwork && mode==='network' && <details className="network-record-list"><summary>Browse records ({view.nodes.length})</summary>{view.nodes.map(node=><button key={node.id} onClick={()=>inspect(node)}><small>{node.type}</small><span>{node.label}</span></button>)}</details>}
+          {isNetwork && <details className="network-key"><summary>Link groups ({network.groups.length})</summary><ul>{network.groups.map((group,index)=><li key={group.id}><i style={{background:`var(--group-${index%8})`}} aria-hidden="true"/><span><b>Group {index+1}</b> · {group.nodes.length} records<small>Anchor: {group.label}</small></span></li>)}</ul></details>}
           <details className="graph-text-view"><summary>Connections as text ({view.edges.length})</summary><ul>{view.edges.map((e,i) => <li key={i}><button onClick={() => inspect(nodeMap.get(e.from))}>{nodeMap.get(e.from)?.label}</button><span> → {relation(e.label)} → </span><button onClick={() => inspect(nodeMap.get(e.to))}>{nodeMap.get(e.to)?.label}</button></li>)}</ul>{!view.edges.length && <p>No recorded connections in this view.</p>}</details>
         </div>
         <div className="graph-divider" role="separator" aria-label="Resize record notes" aria-orientation="vertical" aria-valuemin={280} aria-valuemax={500} aria-valuenow={notesWidth} tabIndex={0}
