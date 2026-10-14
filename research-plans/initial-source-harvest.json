@@ -1,0 +1,20 @@
+{
+  "id": "initial-source-harvest-v1",
+  "question": "What kinds of authority do selected Quranic passages assign to revelation, Muhammad, and human interpreters, and how do interpreters and scholars differ in explaining that authority?",
+  "purpose": "First unattended metadata-discovery pass for building a human-reviewed source graph. Search-provider results are leads, not verified bibliography or evidence.",
+  "providers": ["openalex", "crossref", "semantic_scholar", "openaire", "datacite"],
+  "limit": 20,
+  "filters": {
+    "language": ["English", "Arabic when discoverable"],
+    "source_roles": ["primary_text", "classical_interpretation", "modern_scholarship"],
+    "tradition_coverage": ["Sunni", "Shi'i", "other perspectives when directly relevant"],
+    "screening_required": true
+  },
+  "queries": [
+    {"text": "Qur'an revelation prophetic authority Muhammad interpretation", "limit": 20},
+    {"text": "Quran obedience messenger authority exegesis 4:59", "limit": 20},
+    {"text": "Quran ask people of remembrance interpretation 16:43 tafsir", "limit": 20},
+    {"text": "Islamic theology revelation prophecy authority Sunni Shi'i scholarship", "limit": 20},
+    {"text": "Quranic hermeneutics religious authority Islamic legal and theological traditions", "limit": 20}
+  ]
+}
