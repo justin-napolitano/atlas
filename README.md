@@ -17,6 +17,7 @@ The research should understand traditions in context before evaluating them. “
 - `graph/research.ttl` — canonical RDF graph using SKOS and PROV-O.
 - `reports/pilot-ulul-amr-quran-4-59.md` — first bounded, source-linked interpretation comparison; the graph carries its attributed claim and evidence records.
 - `islam-research visualize` — creates an offline interactive radial view of the graph, with search, type filters, and connection highlighting.
+- `web/` — lightweight React public research atlas for the curated graph and a deliberately separate, sanitized set of unreviewed discovery leads; deployable as static output on Vercel.
 - `graph/shapes.ttl` — SHACL validation constraints.
 - `templates/` — reusable source, claim, evidence, concept, hypothesis, and AIF-style argument templates.
 - `methods/programmatic-workflow.md` — repeatable literature search and local document triage.
@@ -66,3 +67,5 @@ Use GitHub Issues to track research questions, source reviews, and hypotheses. F
 Run `python3 scripts/literature_search.py "Qur'an revelation prophetic authority" --provider both --limit 20` for OpenAlex and Crossref metadata discovery. Results are saved under git-ignored `research-library/searches/`; no abstracts or PDFs are downloaded. Run `python3 scripts/review_document.py /path/to/article.pdf` to extract a local document and create a review checklist. PDF extraction uses Apple's PDFKit through the included Swift helper; it extracts selectable text and does not OCR scanned pages. Saved plans rotate provider order across queries, and network requests share a persistent per-host cooldown. See `methods/programmatic-workflow.md` and `methods/research-workbench.md` for limits, source-specific setup, and review steps.
 
 For the unified flow, install the optional RDF tooling with `python3 -m pip install -e '.[graph]'`, then run `islam-research search research-plans/revelation-prophetic-authority.json`, `islam-research candidates RUN_ID`, `islam-research intake /path/to/document.pdf`, `islam-research annotate --help`, `islam-research validate`, `islam-research export`, or `islam-research report initial-authority-question`. Search, screening, local intake, and annotation are available without the optional graph dependencies. See `methods/research-workbench.md`.
+
+For the public React atlas, see `web/README.md`. It builds from a checked-in static JSON snapshot with `cd web && npm install && npm run build`; no runtime API or secrets are required. Before refreshing public data, review the export diff and retain the distinction between unreviewed search candidates and the curated RDF graph.
