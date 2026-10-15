@@ -198,3 +198,40 @@ class APIDatabaseTests(unittest.TestCase):
             with self.assertRaises(Exception) as denied:
                 connection.execute("SELECT * FROM research.personal_states")
             self.assertEqual(denied.exception.sqlstate, "42501")
+
+    def test_markdown_roundtrip_uses_real_revision_safe_storage(self):
+        import tempfile
+        from pathlib import Path
+        from islam_research.note_sync import SyncProblem, transfer
+        from islam_research.note_format import parse_note
+        dsn = os.environ["RESEARCH_TEST_DATABASE_URL"]
+        with db.connect(dsn) as connection:
+            db.migrate(connection)
+        client = TestClient(create_app(Settings(dsn, owner_subject=OWNER, iap_audience=AUDIENCE,
+                                               owner_origin=ORIGIN), verifier=self.verifier))
+        project, record = "test:"+uuid.uuid4().hex, "test:"+uuid.uuid4().hex
+        self.assertEqual(client.post("/v1/projects",json={"project_id":project,"title":"Synthetic note sync project"},headers=self.headers()).status_code,201)
+        self.assertEqual(client.put("/v1/records",json={"record_id":record,"project_id":project,"kind":"source","title":"Synthetic source"},headers=self.headers()).status_code,200)
+        headers = self.headers
+        class SignedTestAdapter:
+            def request(self,path,params=None,value=None):
+                response = client.put("/v1/"+path,json=value,headers=headers()) if value is not None else client.get("/v1/"+path,params=params,headers=headers())
+                if response.status_code >= 400:
+                    raise SyncProblem(response.status_code,response.json().get("current"))
+                return response.json()
+        adapter = SignedTestAdapter()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory).resolve()/"Synthetic source.md"
+            transfer(adapter,path,"pull",apply=True,project_id=project,record_id=record)
+            path.write_text(path.read_text()+"Synthetic offline note",encoding="utf-8")
+            result = transfer(adapter,path,"push",apply=True)
+            self.assertTrue(result["applied"])
+            self.assertEqual(result["remote_revision"],1)
+            self.assertFalse(parse_note(path.read_text())["locally_changed"])
+            other = client.put("/v1/personal-states",json={"record_id":record,"project_id":project,"note":"Synthetic app edit","expected_revision":1},headers=self.headers())
+            self.assertEqual(other.status_code,200)
+            path.write_text(path.read_text()+" and another offline edit",encoding="utf-8")
+            result = transfer(adapter,path,"push",apply=True)
+            self.assertEqual(result["status"],"conflict")
+            self.assertIn("Synthetic app edit",(path.parent/result["cloud_copy"]).read_text())
+            self.assertEqual(client.get("/v1/personal-state",params={"project_id":project,"record_id":record},headers=self.headers()).json()["note"],"Synthetic app edit")
