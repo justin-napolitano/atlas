@@ -1,0 +1,32 @@
+.lexicon-capture,.concept-panel { border-top:1px solid var(--rule); margin-top:16px; padding-top:12px; min-width:0; }
+.lexicon-capture h5,.concept-panel h5 { font:600 14px/1.5 ui-sans-serif,system-ui,sans-serif; margin:8px 0; }
+.lexicon-capture p,.concept-panel p { overflow-wrap:anywhere; }
+.lexicon-capture label,.concept-panel label { display:grid; gap:6px; font:12px/1.6 ui-sans-serif,system-ui,sans-serif; min-width:0; }
+.lexicon-capture input,.lexicon-capture select,.lexicon-capture textarea,.concept-panel input,.concept-panel select,.concept-panel textarea { width:100%; box-sizing:border-box; min-width:0; border:1px solid var(--rule); padding:9px; color:var(--ink); background:var(--paper); font:14px/1.7 ui-sans-serif,system-ui,sans-serif; }
+.lexicon-capture textarea,.concept-panel textarea { font:16px/1.8 Georgia,serif; resize:vertical; }
+.lexicon-capture fieldset,.concept-panel fieldset { display:grid; gap:12px; min-width:0; padding:12px 0; margin:0; border:0; }
+.lexicon-capture legend { font-size:12px; color:var(--muted); }
+.lexicon-author,.lexicon-find { margin-block:12px; }
+.lexicon-find { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:8px; }
+.lexicon-capture button,.concept-panel button { font:13px/1.6 ui-sans-serif,system-ui,sans-serif; padding:8px 10px; min-height:40px; margin:4px 8px 4px 0; border:1px solid var(--rule); overflow-wrap:anywhere; max-width:100%; text-align:start; }
+.lexicon-capture button:hover,.concept-panel button:hover { border-color:var(--accent); }
+.lexicon-capture small,.concept-panel small { display:block; font:12px/1.7 ui-sans-serif,system-ui,sans-serif; color:var(--muted); overflow-wrap:anywhere; }
+.lexicon-source-quote,.concept-panel blockquote { font:17px/1.9 Georgia,serif; white-space:pre-wrap; overflow-wrap:anywhere; margin:14px 0; border-inline-start:2px solid var(--accent); padding-inline-start:12px; }
+.lexicon-language { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.lexicon-language label:last-child { grid-column:1/-1; }
+.lexicon-search-results button { display:block; width:100%; }
+.lexicon-choice { border-inline-start:2px solid var(--accent); padding-inline-start:12px; }
+.lexicon-choice strong { display:block; overflow-wrap:anywhere; }
+.lexicon-capture summary,.concept-panel summary { cursor:pointer; padding-block:10px; font-size:13px; }
+.lexicon-save,.concept-edit-save { border-color:var(--accent) !important; }
+.lexicon-message,.concept-definition-gap { border-inline-start:2px solid var(--accent); padding-inline-start:12px; font:14px/1.8 ui-sans-serif,system-ui,sans-serif; }
+.concept-panel-heading { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+.concept-panel-heading h3 { margin-block:8px; }
+.concept-definition,.concept-occurrences article { border-top:1px solid var(--rule); padding-block:18px; }
+.concept-definition-text { font:18px/1.85 Georgia,serif; white-space:pre-wrap; }
+.concept-definition-edit,.concept-definition-conflict { border:1px solid var(--accent); padding:12px; margin-block:12px; }
+.concept-definition-conflict pre { white-space:pre-wrap; overflow-wrap:anywhere; font:16px/1.8 Georgia,serif; }
+.concept-panel mark { background:var(--accent-wash); color:var(--ink); text-decoration:underline; text-decoration-color:var(--accent); }
+.concept-coverage { font:12px/1.8 ui-sans-serif,system-ui,sans-serif; color:var(--muted); }
+.workspace-summary > small { display:block; margin-bottom:8px; font:12px/1.6 ui-sans-serif,system-ui,sans-serif; color:var(--muted); }
+@media(max-width:600px) { .lexicon-find { grid-template-columns:minmax(0,1fr); }.lexicon-capture button,.concept-panel button { min-height:44px; } }

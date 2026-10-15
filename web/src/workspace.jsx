@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import ResizablePanes from './ResizablePanes.jsx';
 import SourceReader from './SourceReader.jsx';
+import ConceptPanel from './ConceptPanel.jsx';
+import {mergeResearchMatches} from './lexiconClient.js';
 import { PassageNoteEditor } from './passageNoteEditor.js';
 import { ReadingWorkspace, blankState, markdownDraft, workspaceAPI } from './workspaceClient.js';
 import './style.css';
@@ -64,8 +66,18 @@ function Workspace() {
     const token = ++generation.current;
     setSearching(true); setError(''); setNotice('');
     try {
-      const data = search && query.trim() ? await api.request('search', { project_id: project, q: query, scope, ...(kind ? { kind } : {}) })
-        : await api.request('records', { project_id: project, limit: 50, ...(kind ? { kind } : {}), ...(append && cursor ? { cursor } : {}) });
+      let data;
+      if(search && query.trim() && scope==='lexicon') {
+        const lexical=await api.request('lexicon/search',{project_id:project,q:query});
+        data={...lexical,items:mergeResearchMatches([],lexical.items),next_cursor:null};
+      } else if(search && query.trim() && scope==='all' && (!kind || kind==='concept')) {
+        const [ordinary,lexical]=await Promise.all([
+          api.request('search',{project_id:project,q:query,scope,...(kind ? {kind} : {})}),
+          api.request('lexicon/search',{project_id:project,q:query})]);
+        data={items:mergeResearchMatches(ordinary.items,lexical.items),next_cursor:null,truncated:ordinary.truncated || lexical.truncated};
+      } else data=search && query.trim() ? await api.request('search',{project_id:project,q:query,scope,...(kind ? {kind} : {})})
+        : await api.request('records',{project_id:project,limit:50,...(kind ? {kind} : {}),...(append && cursor ? {cursor} : {})});
+      if(data.items.some(row=>row.project_id!==project))throw new Error('Search results did not match this project.');
       if (token !== generation.current) return;
       setRows(old => append ? [...old, ...data.items] : data.items); setCursor(data.next_cursor || null);
       if (data.truncated) setNotice('Showing the top matches. Narrow your query for more precise results.');
@@ -106,14 +118,14 @@ function Workspace() {
     <form className="workspace-search" onSubmit={e => { e.preventDefault(); loadRows({ search: true }); }}>
       <label>Project<select value={project} onChange={e => open('', e.target.value)}>{projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}</select></label>
       <label className="workspace-query">Find in my research<input value={query} onChange={e => setQuery(e.target.value)} maxLength={500} placeholder="Words from a title, finding, or note" /></label>
-      <label>Search in<select value={scope} onChange={e => setScope(e.target.value)}><option value="records">Records</option><option value="notes">My record notes</option><option value="annotations">My passage notes</option><option value="all">All my research</option></select></label>
-      <label>Type<select value={kind} onChange={e => setKind(e.target.value)}><option value="">All types</option>{['source','question','claim','evidence','concept','person'].map(k => <option key={k}>{k}</option>)}</select></label>
+      <label>Search in<select value={scope} onChange={e => {setScope(e.target.value);if(e.target.value==='lexicon')setKind('');}}><option value="records">Records</option><option value="notes">My record notes</option><option value="annotations">My passage notes</option><option value="lexicon">Concept words & definitions</option><option value="all">All my research</option></select></label>
+      <label>Type<select value={kind} disabled={scope==='lexicon'} onChange={e => setKind(e.target.value)}><option value="">All types</option>{['source','question','claim','evidence','concept','person'].map(k => <option key={k}>{k}</option>)}</select></label>
       <button type="submit" disabled={!project || searching}>{searching ? 'Loading…' : 'Search'}</button><button type="button" disabled={!project || searching} onClick={() => { setQuery(''); loadRows(); }}>Browse all</button>
     </form>
     <ResizablePanes storageKey="research:hosted-pane-width" className="owner-panes">
       <section id="workspace-results" className="workspace-results" aria-label="Research records">
         <p className="workspace-result-count" role="status">{searching ? 'Loading records…' : `${rows.length} records shown`}{notice && ` · ${notice}`}</p>
-        {rows.map(row => <article key={row.id} className="workspace-hit"><button className="workspace-row" aria-pressed={selected === row.id} onClick={() => open(row.id)}><small>{row.kind} · {row.review_state}{store.current.entries.has(row.id) && ` · ${store.current.entries.get(row.id).draft.reading}`}</small><strong>{row.title}</strong>{row.matches?.filter(match=>match.channel!=='private_annotation').map(match => <span key={match.channel}><b>{match.channel === 'private_note' ? 'My note' : 'Record'}</b> · {match.excerpt}</span>)}</button>
+        {rows.map(row => <article key={row.id} className="workspace-hit"><button className="workspace-row" aria-pressed={selected === row.id} onClick={() => open(row.id)}><small>{row.kind} · {row.review_state}{store.current.entries.has(row.id) && ` · ${store.current.entries.get(row.id).draft.reading}`}</small><strong>{row.title}</strong>{row.matches?.filter(match=>match.channel!=='private_annotation').map((match,i) => <span key={match.channel+':'+i}><b>{match.channel === 'private_note' ? 'My note' : match.channel==='lexicon' ? 'Matched wording' : 'Record'}</b> · {match.excerpt}{match.assertion_kind && ` · ${match.assertion_kind.replaceAll('_',' ')}`}</span>)}</button>
           {row.matches?.filter(match=>match.channel==='private_annotation').map(match=><a key={match.target_id} className="workspace-passage-hit" href={`?${new URLSearchParams({project,record:row.id,annotation:match.target_id})}`} onClick={event=>{ if(event.button===0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) { event.preventDefault(); open(row.id,project,match.target_id); } }}><small>My passage note · {match.capture_kind?.replaceAll('_',' ')} · revision {match.revision}</small><span>{match.excerpt}</span><b>Open exact passage →</b></a>)}
           {row.matches_truncated && <small className="workspace-match-limit">More matches exist in this source. Narrow your search.</small>}
         </article>)}
@@ -122,11 +134,12 @@ function Workspace() {
       <section ref={reader} tabIndex={-1} className="workspace-reader" aria-label="Selected record and private notes">
         {!record ? <div className="workspace-empty"><h2>{selected ? 'Opening record…' : 'Start with a question or a source.'}</h2><p>Select a record on the left. Questions show the claims, evidence, and sources behind them.</p></div> : <>
           <div className="workspace-record-heading"><small>{record.kind} · {record.review_state}</small><h2>{record.title}</h2></div>
-          <p className="workspace-summary">{record.summary || 'No summary recorded yet.'}</p>
+          <p className="workspace-summary">{record.kind==='concept' && <small>Concept description</small>}{record.summary || 'No summary recorded yet.'}</p>
           {[['Citation', 'http://purl.org/dc/terms/bibliographicCitation'], ['Location', ir+'locator'], ['Scope', ir+'scope']].map(([label, key]) => property(record, key).length > 0 && <section className="workspace-context" key={key}><h3>{label}</h3>{property(record,key).map((text,i) => <p key={i}>{text}</p>)}</section>)}
           {property(record,'http://purl.org/dc/terms/source').filter(url => /^https?:\/\//i.test(url)).map(url => <a className="source-link" key={url} href={url} target="_blank" rel="noreferrer">Open source ↗</a>)}
           {(record.attributes?.recorded_review_status || []).map(text => <p className="workspace-review-scope" key={text}>{text}</p>)}
           {record.kind === 'question' && <EvidenceTrails trail={trail} onOpen={open} />}
+          {record.kind === 'concept' && <ConceptPanel key={JSON.stringify([record.project_id,record.id])} record={record} api={api} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} navigate={open} />}
           {['source','work','edition'].includes(record.kind) && <SourceReader key={JSON.stringify([record.id,selectedAnnotation])} record={record} api={api} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} initialAnnotationId={selectedAnnotation} noteEditor={passageNotes.current} navigate={open} />}
           {entry && <section className="workspace-notes" aria-labelledby="my-notes-heading"><h3 id="my-notes-heading">My reading & notes</h3>
             <label>Reading progress<select value={entry.draft.reading} onChange={e => edit({ reading: e.target.value }, true)}><option value="unread">Unread</option><option value="reading">Reading</option><option value="read">Read by me</option></select></label>
