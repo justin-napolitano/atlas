@@ -12,9 +12,8 @@ from psycopg.errors import SerializationFailure
 from psycopg.types.json import Jsonb
 
 from .database import RevisionConflict
+from .publication_contract import PUBLIC_KINDS, PUBLICATION_POLICY
 
-PUBLIC_KINDS = frozenset("source work edition claim evidence question hypothesis concept lexical_form sense definition occurrence person place period tradition school event article".split())
-PUBLICATION_POLICY = {"policy": "explicit_owner_selection_v1", "review": "Visibility approval is not a new scholarly review"}
 IR = "https://islam-research.local/vocab/"
 DCT = "http://purl.org/dc/terms/"
 

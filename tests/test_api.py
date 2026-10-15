@@ -210,24 +210,30 @@ class APIDatabaseTests(unittest.TestCase):
 
     def test_read_only_role_can_read_published_data_but_not_private_notes(self):
         from psycopg.conninfo import make_conninfo
+        from islam_research import publication
         dsn = os.environ["RESEARCH_TEST_DATABASE_URL"]
-        snapshot_id = "synthetic-" + uuid.uuid4().hex
+        project_id = "synthetic-public-" + uuid.uuid4().hex
         with db.connect(dsn) as connection:
             db.migrate(connection)
             if not connection.execute("SELECT 1 FROM pg_roles WHERE rolname='research_ci_public'").fetchone():
                 connection.execute("CREATE ROLE research_ci_public LOGIN")
             connection.execute("GRANT USAGE ON SCHEMA research_public TO research_ci_public")
             connection.execute("GRANT SELECT ON research_public.snapshots,research_public.publication_heads TO research_ci_public")
-            connection.execute("INSERT INTO research_public.snapshots(id,project_id,payload) VALUES (%s,%s,%s::jsonb)",
-                               (snapshot_id, "synthetic-head-"+snapshot_id, json.dumps({"nodes": [], "title": "Synthetic public snapshot"})))
-            connection.execute("""INSERT INTO research_public.publication_heads(project_id,revision,snapshot_id,status)
-                VALUES(%s,1,%s,'published')""",("synthetic-head-"+snapshot_id,snapshot_id))
+            db.create_project(connection, project_id, "Synthetic public snapshot")
+            db.save_record(connection, record_id=project_id+":source", project_id=project_id,
+                           kind="source", title="Synthetic source", actor="synthetic-owner")
+            connection.commit()
+            preview = publication.preview(connection, project_id=project_id,
+                selections=[{"record_id": project_id+":source"}], relation_ids=[], actor="synthetic-owner")
+            snapshot_id = preview["id"]
+            publication.approve(connection, preview_id=snapshot_id, expected_sha256=preview["payload_sha256"],
+                expected_revision=0, rationale="Synthetic rights review", actor="synthetic-owner", rights_checked=True)
         reader_dsn = make_conninfo(dsn, user="research_ci_public", password="")
         public = TestClient(create_app(Settings(reader_dsn, mode="public")))
         self.assertEqual(public.get("/health/ready").status_code, 200)
         result = public.get("/v1/public/snapshots/" + snapshot_id)
         self.assertEqual(result.status_code, 200)
-        self.assertEqual(result.json()["payload"]["title"], "Synthetic public snapshot")
+        self.assertEqual(result.json()["payload"]["project"]["title"], "Synthetic public snapshot")
         self.assertEqual(public.put("/v1/personal-states", json={}).status_code, 404)
         with db.connect(reader_dsn) as connection:
             with self.assertRaises(Exception) as denied:
