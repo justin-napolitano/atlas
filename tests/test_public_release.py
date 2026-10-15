@@ -50,6 +50,20 @@ def reseal(files, *, heads=None):
 
 
 class PublicReleaseTests(unittest.TestCase):
+    def test_browser_fixture_is_reproduced_by_the_actual_approved_bundle_exporter(self):
+        fixture = json.loads((ROOT / "web/scripts/fixtures/approved-release.json").read_text())
+        rows = []
+        for project in fixture["/data/projects.json"]["projects"]:
+            payload = fixture["/data/" + project["graph_data"]]
+            raw = json.dumps(payload, ensure_ascii=False)
+            rows.append({"project_id": project["id"], "revision": 1, "status": "published",
+                         "snapshot_id": payload["snapshot_id"], "changed_at": NOW, "published_at": NOW,
+                         "payload_text": raw, "payload_sha256": release.digest(raw.encode())})
+        identifier, files = bundle(rows)
+        self.assertEqual(fixture, {"/"+name: json.loads(data) for name,data in files.items() if name.startswith("data/")})
+        with tempfile.TemporaryDirectory() as temp:
+            release.verify_bundle(release.write_bundle(temp, identifier, files))
+
     def test_multi_project_roundtrip_preserves_source_limits_excludes_private_data(self):
         identifier, files = bundle([row("islam"), row("philosophy"), row("retired", withdrawn=True)])
         again = bundle([row("philosophy"), row("retired", withdrawn=True), row("islam")])
