@@ -1,6 +1,7 @@
 name: GCP infrastructure validation
 
 on:
+  workflow_call:
   pull_request:
     paths: ['infra/**', 'config/postgres-observability.json', '.github/workflows/infrastructure-validation.yml']
   push:

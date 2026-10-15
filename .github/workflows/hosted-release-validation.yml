@@ -1,0 +1,46 @@
+name: Hosted release integration
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/hosted-release-validation.yml'
+      - 'docs/hosted-release-evidence.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  database:
+    uses: ./.github/workflows/postgres-validation.yml
+  frontend:
+    uses: ./.github/workflows/workspace-validation.yml
+  infrastructure:
+    uses: ./.github/workflows/infrastructure-validation.yml
+  graph:
+    uses: ./.github/workflows/graph-validation.yml
+  integration-result:
+    name: Combined source verification
+    if: ${{ always() }}
+    needs: [database, frontend, infrastructure, graph]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    env:
+      RELEASE_JOB_RESULTS: ${{ toJSON(needs) }}
+    steps:
+      - name: Require all component checks and retain release limitations
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          results = json.loads(os.environ['RELEASE_JOB_RESULTS'])
+          required = ['database', 'frontend', 'infrastructure', 'graph']
+          passed = set(results) == set(required) and all(results[name]['result'] == 'success' for name in required)
+          lines = ['# Combined research source verification', '', '| Component | Result |', '| --- | --- |']
+          lines.extend(f"| {name} | {results.get(name, {}).get('result', 'missing')} |" for name in required)
+          lines.extend(['', 'This checks one combined source revision. It does not deploy resources, authenticate a live owner, verify cross-device sessions, restore a backup, or complete the Q 4:59 verse/concept/article launch flow.', '', 'Remaining launch requirements: docs/hosted-release-evidence.md and issue #42.'])
+          Path(os.environ['GITHUB_STEP_SUMMARY']).write_text('\n'.join(lines) + '\n', encoding='utf-8')
+          print(json.dumps({'combined_source_passed': passed, 'deployed': False, 'launch_verified': False}))
+          raise SystemExit(0 if passed else 1)
+          PY
