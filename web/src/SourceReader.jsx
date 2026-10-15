@@ -73,8 +73,8 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
   function recoverCapture(value){
     if(value.project_id!==record.project_id || value.record_id!==record.id || value.document_id!==document?.id || value.text_sha256!==document?.text_sha256 || capture?.saving || capture?.submitted){setMessage('Confirm the pending passage save before recovering different writing.');return false;}
     if(value.existing_annotation){
-      if(!recoverPassageWriting(noteEditor,record,value)){setMessage('The saved passage is still saving or could not be matched. Retry after confirming it.');return false;}
-      const row=value.existing_annotation;setAnnotations(old=>[row,...old.filter(item=>item.id!==row.id)]);setActiveAnnotation(row.id);setHighlight({start:row.start_pos,end:row.end_pos});bookmark(row.id);return true;
+      if(!recoverPassageWriting(noteEditor,record,value)){setMessage('Finish or discard changes in that saved passage’s editor, then inspect this recovery copy again.');return false;}
+      const row=value.existing_annotation;forget(captureKey);setAnnotations(old=>[row,...old.filter(item=>item.id!==row.id)]);setActiveAnnotation(row.id);setHighlight({start:row.start_pos,end:row.end_pos});bookmark(row.id);return true;
     }
     const restored={start:value.start,end:value.end,exact:value.exact,capture_kind:value.capture_kind,body:value.body,mark_style:value.mark_style,
       annotation_uuid:value.annotation_uuid,documentId:document.id,sourceRecordId:record.id,saving:false};
@@ -101,7 +101,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
         composer.current?.focus();return;
       }
       if(capture?.submitted) {setMessage('Retry or discard the original submitted note before changing its mark.');return;}
-      const value={...selected,annotation_uuid:crypto.randomUUID(),body:capture?.body || '',capture_kind:capture?.capture_kind || 'comment',
+      const value={...selected,annotation_uuid:capture?.annotation_uuid || crypto.randomUUID(),body:capture?.body || '',capture_kind:capture?.capture_kind || 'comment',
         mark_style:markStyle,documentId:document.id,sourceRecordId:record.id,saving:false};
       remember(captureKey,value); setHighlight(value);setActiveAnnotation('');setMarginOpen(true);setMessage('Write in the margin. Save with the button or ⌘/Ctrl + Enter.');
       window.getSelection()?.removeAllRanges();
