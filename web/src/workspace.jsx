@@ -8,6 +8,8 @@ import PilotReading from './PilotReading.jsx';
 import ReadingComparison from './ReadingComparison.jsx';
 import ReadingCollection from './ReadingCollection.jsx';
 import ResearchNotebook from './ResearchNotebook.jsx';
+import RecoverableDraft from './RecoverableDraft.jsx';
+import {recoverRecordWriting} from './recoverIntoEditor.js';
 import {collectionPreset} from './readerCollectionClient.js';
 import RecordContext from './RecordContext.jsx';
 import EvidencePaths from './EvidencePaths.jsx';
@@ -195,6 +197,7 @@ function Workspace() {
             <div className="workspace-decisions">{[['relevant','Keep'],['not_relevant','Skip'],['read_later','Read later'],['unreviewed','Unscreened']].map(([decision,label]) => <button key={decision} aria-pressed={entry.draft.decision === decision} onClick={() => edit({ decision }, true)}>{label}</button>)}</div>
             <label htmlFor="my-note">Reading notes</label><textarea id="my-note" value={entry.draft.note} onChange={e => edit({ note: e.target.value })} onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); store.current.save(record.id); } }} maxLength={10000} rows={9} placeholder="What did you learn? What needs more evidence?" />
             <div className="workspace-note-actions"><button disabled={['saved','saving','conflict'].includes(entry.status)} onClick={() => store.current.save(record.id)}>Save note</button><button onClick={exportNote}>Export Markdown</button><span role="status">{statuses[entry.status]}</span></div>
+            <RecoverableDraft key={record.project_id+record.id+':record-note'} api={api} projectId={record.project_id} recordId={record.id} contextKind="record_note" body={entry.draft.note} baseRevision={entry.server.revision} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onRecover={value=>recoverRecordWriting(store.current,record,value)}/>
             <small>Notes save with the button or ⌘/Ctrl + Enter. Reading and screening choices save immediately. Markdown exports support the optional Obsidian connector; vault sync is explicit.</small>
             {entry.status === 'conflict' && <div className="workspace-conflict" role="alert"><h4>Both versions are safe to compare.</h4><p>Your draft is above. The cloud version is revision {entry.current.revision}, {entry.current.reading}, {entry.current.decision}.</p><pre>{entry.current.note || '(No note text)'}</pre><button onClick={() => store.current.resolve(record.id,'cloud')}>Use cloud version</button><button onClick={() => store.current.resolve(record.id,'draft')}>Save my draft over this revision</button><p>Previous cloud revisions remain in history.</p></div>}
           </section>}

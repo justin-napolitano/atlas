@@ -44,6 +44,7 @@ const readingDocument={ id:'synthetic:document',project_id:'synthetic',source_re
 readingDocument.text_sha256=createHash('sha256').update(readingDocument.text_body).digest('hex');
 const comparisonDocument={...readingDocument,id:'synthetic:comparison',edition:'Synthetic contrasting edition',text_body:'A different rendering: التفسير.',text_sha256:createHash('sha256').update('A different rendering: التفسير.').digest('hex')};
 const graphEdges=[{id:'1',project_id:'synthetic',from_id:claim.id,to_id:records[0].id,predicate:'https://islam-research.local/vocab/addressesQuestion',review_state:'pending',provenance:{basis:'Synthetic bounded claim'}},{id:'2',project_id:'synthetic',from_id:claim.id,to_id:evidence.id,predicate:'https://islam-research.local/vocab/evidence',review_state:'pending',provenance:{basis:'Synthetic located evidence'}},{id:'3',project_id:'synthetic',from_id:evidence.id,to_id:records[1].id,predicate:'https://islam-research.local/vocab/source',review_state:'pending',provenance:{basis:'Synthetic source identity'}}];
+const readingCollection=JSON.parse(await readFile(join(root,'../src/islam_research/resources/reading-collection-v1.json'),'utf8'));readingCollection.artifact_sha256=createHash('sha256').update(await readFile(join(root,'../src/islam_research/resources/reading-collection-v1.json'))).digest('hex');
 const pilotResource={resource_id:'synthetic:resource',label:'Synthetic Arabic fixture',publisher:'Synthetic',source_notice:'Synthetic source notice',reading_note:'No edition inference',review_limit:'Synthetic test text, not Quran text',attribution_url:'https://tanzil.net/',verses:[59,83].map(ayah=>({chapter:4,ayah_start:ayah,ayah_end:ayah,text:`اختبار ${ayah}`,text_sha256:createHash('sha256').update(`اختبار ${ayah}`).digest('hex'),reference:{id:`synthetic:4:${ayah}`,label:`Q 4:${ayah}`}}))};
 const captures=[];let captureLostResponse=false;
 let readingDesk=null,deskLostResponse=true;const deskRequests=[];
@@ -97,6 +98,8 @@ async function fixture(event) {
   else if(publicTesting) throw new Error('Public viewer attempted an owner API request');
   else if (!authenticated) { status=401; data={ detail:'Owner sign-in required' }; }
   else if (path==='/v1/me') data={ mode:'owner',can_edit:true };
+  else if(path==='/v1/reading/collection') data=readingCollection;
+  else if(path==='/v1/notebook/items') data={items:captures.map(row=>({id:row.id,item_kind:'passage_note',thought_type:'passage_note',project_id:row.project_id,record_id:readingDocument.source_record_id,document_id:row.document_id,annotation_id:row.id,title:'Passage note: '+row.exact,body:row.body,selected_quote:row.exact,revision:row.revision})),next_cursor:null};
   else if (path==='/v1/verses/pilot') data=pilotResource;
   else if (path==='/v1/projects') data={ items:[{ id:'synthetic',title:'Synthetic research project' }] };
   else if(path==='/v1/record-context'){const id=url.searchParams.get('record_id'),record=[...records,claim,evidence,...lexicalConcepts.values()].find(row=>row.id===id);data={project_id:'synthetic',record,items:graphEdges.filter(edge=>edge.from_id===id || edge.to_id===id).map(edge=>({edge,node:[...records,claim,evidence].find(row=>row.id===(edge.from_id===id ? edge.to_id : edge.from_id)),direction:edge.from_id===id ? 'out' : 'in',meaning:'Synthetic recorded relation'})),next_cursor:null};}
@@ -807,6 +810,18 @@ try {
   await until(()=>navigation>previousNavigation,'mismatched source document committed');
   await until(()=>evaluate('document.querySelector(".reader-message")?.textContent.includes("belongs to another source")'),'mismatched source rejected');
   assert.equal(await evaluate('!!document.querySelector(".reader-text")'),false);
+  await click('Reading collection & context');
+  await until(()=>evaluate('document.querySelectorAll(".collection-readings article").length===3'),'actual collection reading choices');
+  assert.ok(await evaluate('document.querySelector(".reading-collection").textContent.includes("Rodwell")'));
+  await evaluate(`{const select=document.querySelector('.reading-collection select');select.value='83';select.dispatchEvent(new Event('change',{bubbles:true}));}`);
+  await until(()=>evaluate('document.querySelectorAll(".collection-readings article").length===2'),'collection Q4:83 choices');
+  await reload();
+  await until(()=>evaluate('document.querySelector(".reading-collection select")?.value==="83"'),'collection verse survives reload');
+  await click('Back to my reading');
+  await click('My notebook');
+  await until(()=>evaluate('document.querySelectorAll(".research-notebook .notebook-title").length>0'),'workspace notebook shows live passage notes');
+  await evaluate('document.querySelector(".research-notebook .notebook-title").click()');
+  await until(()=>evaluate('!!document.querySelector(".reader-text mark.is-selected")'),'notebook backlink opens saved passage');
   await click('Read the Sirry article');
   await until(()=>evaluate('document.querySelector("[name=title]")?.value.includes("Who Are Those in Authority")'),'real article preset reachable from workspace');
   assert.ok(await evaluate('document.querySelector(".intake-preset-note").textContent.includes("manual transcription")'));
