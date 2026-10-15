@@ -85,6 +85,15 @@ class LexiconStoreTests(unittest.TestCase):
                 row=connection.execute(self.sql.SQL("SELECT count(*) AS n FROM research.{} WHERE project_id=%s").format(self.sql.Identifier(table)),(self.project,)).fetchone()
                 self.assertEqual(row["n"],0,table)
 
+    def test_capture_rejects_snapshot_isolation_before_any_authoring(self):
+        from psycopg import IsolationLevel
+        with self.db.connect(self.owner_dsn) as connection:
+            connection.isolation_level=IsolationLevel.REPEATABLE_READ
+            with self.assertRaisesRegex(ValueError,"READ COMMITTED"):
+                self.store.capture(connection,**self.capture_values())
+        with self.db.connect(self.owner_dsn) as connection:
+            self.assertEqual(connection.execute("SELECT count(*) AS n FROM research.lexicon_entries WHERE project_id=%s",(self.project,)).fetchone()["n"],0)
+
     def test_spelling_variants_require_explicit_grouping_and_retain_each_source_origin(self):
         with self.db.connect(self.owner_dsn) as connection:
             first=self.store.capture(connection,**self.capture_values())

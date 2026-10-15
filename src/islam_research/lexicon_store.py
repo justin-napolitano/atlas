@@ -79,6 +79,8 @@ def capture(connection,*,request_uuid,project_id,annotation_id,start,end,entry,r
                  representation_id=representation_id,concept=concept,sense_id=sense_id,sense_scope=sense_scope,rationale=rationale,actor=actor)
     digest=model.fingerprint(payload)
     with connection.transaction():
+        if connection.execute("SHOW transaction_isolation").fetchone()["transaction_isolation"]!="read committed":
+            raise ValueError("Lexicon capture retries require READ COMMITTED isolation")
         # READ COMMITTED: separate post-lock read sees a concurrent completed retry.
         connection.execute("SELECT pg_advisory_xact_lock(184513,hashtext(%s))",(str(request_id),))
         previous=connection.execute("SELECT * FROM research.lexicon_captures WHERE request_uuid=%s",(request_id,)).fetchone()
