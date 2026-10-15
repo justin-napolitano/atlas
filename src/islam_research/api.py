@@ -140,6 +140,11 @@ class PublicationPreviewInput(Input):
     relation_ids: list[Identifier] = Field(default_factory=list,max_length=300)
 
 
+class PublicationRelationsInput(Input):
+    project_id: Identifier
+    record_ids: list[Identifier] = Field(min_length=1,max_length=100)
+
+
 class PublicationApprovalInput(Input):
     preview_id: Annotated[str,Field(pattern=r"^publication-[a-f0-9]{32}$")]
     expected_sha256: Annotated[str,Field(pattern=r"^[a-f0-9]{64}$")]
@@ -442,6 +447,10 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     @router.post("/publication/previews",status_code=201)
     def publication_preview(value: PublicationPreviewInput,actor: str = Depends(owner)):
         return store.publication_preview(actor=actor,**value.model_dump())
+
+    @router.post("/publication/relations")
+    def publication_relations(value: PublicationRelationsInput):
+        return store.publication_relations(**value.model_dump())
 
     @router.post("/publication/approve")
     def publication_approve(value: PublicationApprovalInput,actor: str = Depends(owner)):
