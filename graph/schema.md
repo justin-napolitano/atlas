@@ -53,6 +53,15 @@ The hosted workspace may retain private, immutable plain-text excerpts as applic
 
 Private annotations use W3C Web Annotation TextQuoteSelector and TextPositionSelector, with positions counted in Unicode code points in logical order. They retain the snapshot ID/checksum and edition/locator. Capture kind distinguishes a comment, term candidate, or scripture-reference candidate. An exact anchor verifies selection against the stored text, not a claim or scholarly interpretation. Captures stay unreviewed, with revisions and actor attribution. Changed, ambiguous, or missing anchors require review and never relocate silently. Private reading tables remain separate from public projections and canonical graph authority.
 
+## Private concept lexicon
+
+The hosted lexicon is specified in
+[`docs/scoped-concept-lexicon.md`](../docs/scoped-concept-lexicon.md). It reuses
+concept record IDs and separates entries, forms, representations, senses,
+definitions, and located occurrences. It does not write curated Turtle or
+create SKOS/OntoLex entailments automatically. Normalized retrieval strings
+are not identity or evidence of equivalence.
+
 ## Files
 
 `research.ttl` is the RDF source of truth. `shapes.ttl` contains SHACL validation shapes. `templates/` has reusable source, claim/evidence, concept, hypothesis, and argument templates. `argument-networks.csv` carries the AIF-style node and edge model before export to AIF RDF. CSV node, edge, and evidence indexes remain header-only until records are authored; never fabricate evidence just to populate a graph.
