@@ -11,6 +11,9 @@ dependencies = []
 
 [project.optional-dependencies]
 graph = ["rdflib>=7,<8", "pyshacl>=0.25,<1"]
+database = [
+    "psycopg[binary]==3.3.6",
+]
 
 [project.scripts]
 islam-research = "islam_research.cli:main"
@@ -20,3 +23,6 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+islam_research = ["migrations/*.sql"]
