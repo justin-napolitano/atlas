@@ -72,6 +72,12 @@ try{
   await evaluate('window.__notebookTest.search("No matching routed thought")');await until(()=>evaluate('document.body.textContent.includes("No matching entries")'),'routed notebook search');
   assert.equal(await evaluate('document.querySelector(".notebook-filters input").value'),'No matching routed thought');
   await evaluate('window.__notebookTest.search("")');await until(()=>evaluate('document.body.textContent.includes("My contextual question")'),'routed query cleared');
+  await click('My contextual question');await until(()=>evaluate('document.body.textContent.includes("Thought ID:")'),'reopen correction target');
+  await evaluate(`{const input=[...document.querySelectorAll('label')].find(label=>label.textContent.startsWith('Thought (Markdown')).querySelector('textarea');input.focus();input.select();}`);
+  await call('Input.insertText',{text:'Late saved correction'});await evaluate('window.__notebookTest.hold=true');await click('Save thought');
+  await until(()=>evaluate('typeof window.__notebookTest.release==="function"'),'held save');await click('New thought');await fillLabel('Title','Another unfinished thought');
+  await evaluate('window.__notebookTest.release()');await until(()=>evaluate('[...window.__notebookTest.entries.values()][0].body==="Late saved correction"'),'old thought saved');
+  assert.equal(await evaluate(`[...document.querySelectorAll('label')].find(label=>label.textContent.startsWith('Title')).querySelector('input').value`),'Another unfinished thought');
   await evaluate('window.__notebookTest.wrong(true)');await click('Apply filters');await until(()=>evaluate('document.body.textContent.includes("Notebook list did not match this project")'),'foreign project refused');
   assert.equal(await evaluate('Object.values(localStorage).some(value=>value.includes("My revised reading"))'),false);assert.deepEqual(problems,[]);
   console.log(JSON.stringify({notebookPassed:true,checks:['compiled owner notebook','live passage note backlink','anchored thought and explained connection','Unicode Markdown inert text','retained creation UUID and exact lost-response retry','source context readback','two-device correction comparison','CAS lost acknowledgement retry','paged revision history','withdrawal filter','wrong-project refusal','dark390px','no private localStorage'],artifacts}));
