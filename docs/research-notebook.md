@@ -43,7 +43,7 @@ does not register these routes. Existing publication previews exclude the notebo
 
 ## Component contract
 
-`ResearchNotebook({api,projectId,drafts,changed,onOpenSource,anchor})` is a standalone
+`ResearchNotebook({api,projectId,drafts,changed,onOpenSource,anchor,initialQuery})` is a standalone
 owner component for the workspace. `drafts.current` is the existing shared
 page-memory Map; `changed()` feeds the workspace unsaved-change warning. Draft
 keys include project and entry. No private content is put in localStorage.
@@ -52,6 +52,9 @@ explicit “New thought at this passage” action captures it without changing a
 already-open draft. `onOpenSource(recordId,projectId,annotationId,documentId)`
 reopens a reading note or exact immutable source. Connections can also open
 another notebook thought. Root workspace wiring is delivered separately.
+`initialQuery` defaults to an empty string and prefilters the list when routing
+from global notebook search; changing it refreshes that query without discarding
+retained entry drafts.
 
 Creation and correction requests retain their exact payload/UUID/revision through
 unknown outcomes. Readback verifies project, identity, source binding and metadata.
