@@ -53,6 +53,13 @@ def save(connection,*,draft_uuid,project_id,record_id,context_kind,document_id,a
                 captured=passage_store.annotation(connection,project_id,annotation_id)
                 if not captured or not captured['anchor']['anchored'] or any(captured['annotation'][key]!=values[key] for key in ('document_id','text_sha256','start_pos','end_pos','exact','capture_kind')):
                     raise ValueError('Draft does not match saved source annotation')
+        if context_kind=='annotation' and base_revision<1:raise ValueError('Saved annotation drafts need a historical baseline revision')
+        if context_kind=='annotation':
+            baseline=connection.execute("SELECT 1 FROM research.reading_annotation_revisions WHERE annotation_id=%s AND revision=%s AND snapshot->>'project_id'=%s",(annotation_id,base_revision,project_id)).fetchone()
+            if baseline is None:raise ValueError('Annotation baseline revision is unavailable')
+        elif context_kind=='record_note' and base_revision>0:
+            baseline=connection.execute("SELECT 1 FROM research.personal_state_revisions WHERE record_id=%s AND revision=%s AND snapshot->>'project_id'=%s",(record_id,base_revision,project_id)).fetchone()
+            if baseline is None:raise ValueError('Record-note baseline revision is unavailable')
         current=get(connection,project_id,draft_id)
         if current and any(current[key]!=values[key] for key in IDENTITY): raise ValueError('A draft identity cannot move to another source or baseline')
         fields=(*IDENTITY,'body','mark_style','state','changed_by')

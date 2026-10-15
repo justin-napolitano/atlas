@@ -48,6 +48,7 @@ class ReadingDraftTests(unittest.TestCase):
             with self.assertRaises(self.db.RevisionConflict) as error:self.save(other,expected_revision=1,body='Conflicting local version')
             self.assertEqual(error.exception.current['body'],'Second private version')
             separate=self.save(other,draft_uuid=str(uuid.uuid4()),body='Conflicting local version');self.assertNotEqual(separate['id'],first['id'])
+            page=self.listing(other,limit=1);self.assertEqual(len(page),1);self.assertEqual(len(self.listing(other,limit=1,cursor=page[0]['id'])),1)
             discarded=self.save(other,expected_revision=2,body='Second private version',state='discarded');self.assertEqual(discarded['revision'],3)
             self.assertEqual(len(self.listing(other)),1);self.assertEqual(self.listing(other,state='discarded')[0]['id'],first['id'])
             restored=self.save(other,expected_revision=3,body='Second private version',state='active');self.assertEqual(restored['revision'],4)
@@ -68,7 +69,7 @@ class ReadingDraftTests(unittest.TestCase):
             self.db.save_personal_state(connection,record_id=concept,project_id=self.project,actor='owner',note='Original record note')
             value=self.save(connection,draft_uuid=str(uuid.uuid4()),record_id=concept,context_kind='record_note',document_id=None,annotation_id=None,text_sha256=None,start=None,end=None,exact='',capture_kind=None,base_revision=1,mark_style='none')
             self.assertEqual(value['base_snapshot'],dict(note='Original record note',revision=1))
-            with self.assertRaises(Exception):
+            with self.assertRaises(ValueError):
                 with connection.transaction():self.save(connection,draft_uuid=str(uuid.uuid4()),context_kind='annotation',annotation_id=self.annotation['id'],base_revision=999)
 
     def test_source_baseline_and_selector_are_immutable_and_project_isolated(self):
