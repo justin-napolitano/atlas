@@ -17,8 +17,10 @@ def main(argv=None):
     parser.add_argument("--path", type=Path, default=Path("research-library/public-releases"),
                         help="Export/current root, or exact release directory for verify")
     args = parser.parse_args(argv)
+    uncertain_type = ()
     try:
-        from islam_research.public_release import current_bundle, verify_bundle
+        from islam_research.public_release import ActivationUncertain, current_bundle, verify_bundle
+        uncertain_type = ActivationUncertain
         if args.action == "export":
             from islam_research.public_release_store import export_approved
             dsn = os.environ.get("RESEARCH_PUBLISHER_DATABASE_URL")
@@ -39,7 +41,7 @@ def main(argv=None):
     except Exception as error:
         # Driver errors, validation errors and paths can contain private values.
         # Offline checks require only the semantic extra, not a database driver.
-        uncertain = type(error).__name__ == "ActivationUncertain"
+        uncertain = isinstance(error, uncertain_type)
         print("Export activation uncertain; verify current before retrying." if uncertain else
               "Public release operation failed; no deployment was attempted.", file=sys.stderr)
         return 3 if uncertain else 1

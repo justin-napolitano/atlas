@@ -25,6 +25,8 @@ Record the successful run URL, tested commit, and actual results in the issue/PR
 
 An intermediate candidate's browser failed to expose its owned debug port within the former ten-second startup window, and the aggregate correctly failed despite the other components passing. Cold runner startup now has a bounded thirty-second observation window for the same process; UI waits and assertions are unchanged. A startup timeout retains bounded stderr diagnostics. No browser retry, sandbox disabling, test suppression, or skipped-check waiver was added. This addresses the observation budget and diagnostics; it does not establish the cause of slow runner startup.
 
+The follow-on [approved release exporter](public-release-export.md) supplies restricted-login capture, independently verified immutable artifacts and public-only Ossie metadata. It does not yet connect the existing public frontend or build/deploy an image. Withdrawal locking covers local capture/activation only; head freshness at remote deploy and cache withdrawal remain open. Its tests are additional evidence, not a replacement for the complete combined release gate or live launch requirements below.
+
 ## First-release acceptance remains intact
 
 | Requirement from #42 | Current evidence | Still required |
