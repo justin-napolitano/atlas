@@ -49,6 +49,18 @@ class ProjectionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             pub.project_payload(source,[{"record_id":"source:1"}],["edge:1"],snapshot_id="x",generated_at="x")
 
+    def test_draft_bibliography_does_not_log_literal_conversion_or_construct_invalid_uris(self):
+        source=synthetic_inputs()
+        source["records"][0]["attributes"]["rdf_properties"][pub.DCT+"bibliographicCitation"]=['"PRIVATE_DRAFT_LITERAL"^^<http://www.w3.org/2001/XMLSchema#integer>']
+        source["records"][0]["attributes"]["rdf_properties"][pub.DCT+"source"]=['<https://example.invalid/PRIVATE INVALID URI>']
+        with self.assertNoLogs("rdflib",level="WARNING"):
+            preview=pub.project_payload(source,[{"record_id":"source:1","include_bibliography":True}],[],snapshot_id="x",generated_at="x")
+        self.assertEqual(preview["nodes"][0]["citation"],"PRIVATE_DRAFT_LITERAL")
+        self.assertEqual(preview["nodes"][0]["links"],[])
+        source["records"][0]["attributes"]["rdf_properties"]="PRIVATE_INVALID_MAPPING"
+        with self.assertRaises(ValueError):
+            pub.project_payload(source,[{"record_id":"source:1","include_bibliography":True}],[],snapshot_id="x",generated_at="x")
+
 
 @unittest.skipUnless(os.environ.get("RESEARCH_TEST_DATABASE_URL"),"Requires real isolated PostgreSQL")
 class PublicationDatabaseTests(unittest.TestCase):

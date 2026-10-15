@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import ipaddress
 import json
+import re
 from urllib.parse import urlsplit
 import uuid
 
@@ -20,9 +21,11 @@ DCT = "http://purl.org/dc/terms/"
 
 def _metadata(record):
     """Parse only selected RDF bibliography predicates; never fetch remote data."""
-    from rdflib import Literal, URIRef
+    from rdflib import Literal
     from rdflib.util import from_n3
     properties = record.get("attributes", {}).get("rdf_properties", {})
+    if not isinstance(properties,dict):
+        raise ValueError("Publication bibliography must be a predicate mapping")
     def values(predicate):
         raw = properties.get(predicate, [])
         if not isinstance(raw, list) or len(raw)>20:
@@ -31,9 +34,27 @@ def _metadata(record):
         for value in raw:
             if not isinstance(value, str) or len(value)>4000:
                 raise ValueError("Publication metadata exceeds its reviewed bounds")
-            term = from_n3(value)
-            if isinstance(term, (Literal, URIRef)):
-                result.append(str(term))
+            try:
+                if value.startswith('<') and value.endswith('>'):
+                    # Decode only N3 Unicode escapes; constructing an invalid URIRef
+                    # can log the private draft URI before the owner approves it.
+                    iri=re.sub(r'\\(?:u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8})',lambda m:chr(int(m[0][2:],16)),value[1:-1])
+                    result.append(iri)
+                elif value.startswith('"'):
+                    delimiter='"""' if value.startswith('"""') else '"'
+                    end=value.rfind(delimiter)
+                    if end<len(delimiter):
+                        raise ValueError("Unclosed bibliography literal")
+                    # Publish the lexical text. Datatype conversion may log an
+                    # invalid private literal, and is unnecessary for bibliography.
+                    term=from_n3(value[:end+len(delimiter)])
+                    if not isinstance(term,Literal):
+                        raise ValueError("Bibliography value is not a literal")
+                    result.append(str(term))
+                else:
+                    raise ValueError("Bibliography requires explicit literals or IRIs")
+            except (ValueError,KeyError,TypeError,AssertionError):
+                raise ValueError("Publication bibliography needs lexical review") from None
         return result
     links = []
     for value in values(DCT + "source"):
