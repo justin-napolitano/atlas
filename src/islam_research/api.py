@@ -568,6 +568,13 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         if rows is None: raise HTTPException(404,"No active reading place saved for this project")
         return {"items":rows[:limit],"next_before_revision":rows[limit-1]["revision"] if len(rows)>limit else None}
 
+    @router.get("/record-context")
+    def record_context(project_id: Identifier, record_id: Identifier,
+        cursor: Annotated[str,Query(max_length=500)]="", limit: Annotated[int,Query(ge=1,le=25)]=25):
+        value=store.record_context(project_id,record_id,cursor,limit)
+        if value is None: raise HTTPException(404,"Record not found in this project")
+        return value
+
     @router.get("/projects")
     def projects():
         return {"items": store.projects()}

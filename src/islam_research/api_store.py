@@ -10,9 +10,14 @@ from . import lexicon_store
 from . import verse_store
 from . import source_intake
 from . import reading_desk
+from . import record_context
 
 
 class PostgreSQLStore:
+    def record_context(self, project_id, record_id, cursor, limit):
+        with db.connect(self.dsn) as connection:
+            return record_context.neighborhood(connection,project_id,record_id,cursor,limit)
+
     """Keep private queries and public projection reads separate."""
 
     def __init__(self, dsn: str):

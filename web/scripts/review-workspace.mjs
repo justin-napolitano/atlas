@@ -42,6 +42,8 @@ const readingDocument={ id:'synthetic:document',project_id:'synthetic',source_re
   source_notice:'Synthetic attribution retained verbatim.\n<b>This notice is plain text.</b>',
   text_body:'😀 Before tafsīr and التفسير; Q 4:59. After.',review_scope:'Synthetic private unverified excerpt' };
 readingDocument.text_sha256=createHash('sha256').update(readingDocument.text_body).digest('hex');
+const comparisonDocument={...readingDocument,id:'synthetic:comparison',edition:'Synthetic contrasting edition',text_body:'A different rendering: التفسير.',text_sha256:createHash('sha256').update('A different rendering: التفسير.').digest('hex')};
+const graphEdges=[{id:'1',project_id:'synthetic',from_id:claim.id,to_id:records[0].id,predicate:'https://islam-research.local/vocab/addressesQuestion',review_state:'pending',provenance:{basis:'Synthetic bounded claim'}},{id:'2',project_id:'synthetic',from_id:claim.id,to_id:evidence.id,predicate:'https://islam-research.local/vocab/evidence',review_state:'pending',provenance:{basis:'Synthetic located evidence'}},{id:'3',project_id:'synthetic',from_id:evidence.id,to_id:records[1].id,predicate:'https://islam-research.local/vocab/source',review_state:'pending',provenance:{basis:'Synthetic source identity'}}];
 const pilotResource={resource_id:'synthetic:resource',label:'Synthetic Arabic fixture',publisher:'Synthetic',source_notice:'Synthetic source notice',reading_note:'No edition inference',review_limit:'Synthetic test text, not Quran text',attribution_url:'https://tanzil.net/',verses:[59,83].map(ayah=>({chapter:4,ayah_start:ayah,ayah_end:ayah,text:`اختبار ${ayah}`,text_sha256:createHash('sha256').update(`اختبار ${ayah}`).digest('hex'),reference:{id:`synthetic:4:${ayah}`,label:`Q 4:${ayah}`}}))};
 const captures=[];let captureLostResponse=false;
 let readingDesk=null,deskLostResponse=true;const deskRequests=[];
@@ -97,6 +99,7 @@ async function fixture(event) {
   else if (path==='/v1/me') data={ mode:'owner',can_edit:true };
   else if (path==='/v1/verses/pilot') data=pilotResource;
   else if (path==='/v1/projects') data={ items:[{ id:'synthetic',title:'Synthetic research project' }] };
+  else if(path==='/v1/record-context'){const id=url.searchParams.get('record_id'),record=[...records,claim,evidence,...lexicalConcepts.values()].find(row=>row.id===id);data={project_id:'synthetic',record,items:graphEdges.filter(edge=>edge.from_id===id || edge.to_id===id).map(edge=>({edge,node:[...records,claim,evidence].find(row=>row.id===(edge.from_id===id ? edge.to_id : edge.from_id)),direction:edge.from_id===id ? 'out' : 'in',meaning:'Synthetic recorded relation'})),next_cursor:null};}
   else if (path==='/v1/records') data={ items:records,next_cursor:null };
   else if (path==='/v1/search') {
     const scope=url.searchParams.get('scope'), q=url.searchParams.get('q').toLowerCase();
@@ -126,8 +129,8 @@ async function fixture(event) {
   else if(path==='/v1/verses/material')data=verseMaterials.get(url.searchParams.get('material_id'));
   else if(path==='/v1/verses/annotation-links')data={items:[...verseMaterials.values()].filter(row=>row.annotation_id===url.searchParams.get('annotation_id')),next_cursor:null};
   else if(path==='/v1/verses/materials')data={items:[...verseMaterials.values()].filter(row=>row.project_id===url.searchParams.get('project_id') && row.chapter===Number(url.searchParams.get('chapter')) && row.ayah_start<=Number(url.searchParams.get('ayah_end')) && row.ayah_end>=Number(url.searchParams.get('ayah_start'))),next_cursor:null};
-  else if (path==='/v1/reading/documents') data={ items:url.searchParams.get('source_record_id')===readingDocument.source_record_id ? [readingDocument] : [],next_cursor:null };
-  else if (path==='/v1/reading/document') data=readingDocument;
+  else if (path==='/v1/reading/documents') data={ items:url.searchParams.get('source_record_id')===readingDocument.source_record_id ? [readingDocument,comparisonDocument] : [],next_cursor:null };
+  else if (path==='/v1/reading/document') data=url.searchParams.get('document_id')===comparisonDocument.id ? comparisonDocument : readingDocument;
   else if (path==='/v1/reading/annotations' && event.request.method==='POST') {
     const value=JSON.parse(event.request.postData), characters=Array.from(readingDocument.text_body);
     assert.equal(value.text_sha256,readingDocument.text_sha256);
@@ -288,7 +291,7 @@ async function fixture(event) {
     if (conflict) { conflict=false; status=409; data={ current:{ ...value,note:'Cloud edit from another synthetic machine',revision:9 } }; saved.set(value.record_id,data.current); }
     else if (value.expected_revision !== (current?.revision || 0)) { status=409; data={ current }; }
     else { data={ ...value,revision:(current?.revision || 0)+1,read_at:value.reading==='read' ? '2026-10-15T00:00:00Z' : null }; saved.set(value.record_id,data); }
-  } else if (path==='/v1/evidence-path') data={ nodes:[...records,claim,evidence],edges:[],paths:[{ records:[records[0].id,claim.id,evidence.id,records[1].id],edges:['1','2','3'] }],truncated:false };
+  } else if (path==='/v1/evidence-path') data={ project_id:'synthetic',nodes:[...records,claim,evidence],edges:graphEdges,paths:[{ records:[records[0].id,claim.id,evidence.id,records[1].id],edges:['1','2','3'] }],truncated:false };
   else { status=404; data={}; }
   await call('Fetch.fulfillRequest',{ requestId:event.requestId,responseCode:status,
     responseHeaders:[{ name:'Content-Type',value:'application/json' }],body:Buffer.from(JSON.stringify(data || {})).toString('base64') });
@@ -315,7 +318,7 @@ try {
   await evaluate('document.querySelectorAll(".workspace-row")[0].click()');
   await until(() => evaluate('document.querySelector(".workspace-trails")?.textContent.includes("Synthetic section 2, paragraph 3")'),'located question evidence trail');
   assert.match(await evaluate('document.querySelector(".workspace-trails").textContent'),/Synthetic finding about authority/);
-  await evaluate('[...document.querySelectorAll(".workspace-trails li button")].at(-1).click()');
+  await evaluate('[...document.querySelectorAll(".workspace-trails .evidence-step>button")].at(-1).click()');
   await until(() => evaluate('document.querySelector(".workspace-record-heading")?.textContent.includes("Synthetic source")'),'open source from evidence trail');
   await until(() => evaluate('!!document.querySelector("#my-note")'),'source reading notes');
   assert.equal(await evaluate('document.querySelectorAll(".workspace-record-heading script").length'),0);
@@ -325,6 +328,23 @@ try {
   assert.equal(await evaluate('document.querySelector(".reader-source-notice pre").textContent'),readingDocument.source_notice);
   assert.equal(await evaluate('document.querySelectorAll(".reader-source-notice b").length'),0);
   await evaluate('document.querySelector(".reader-source-notice summary").click()');
+  // Compare actual immutable version identities independently and restore them from URL.
+  await click('Compare readings');
+  await until(()=>evaluate('document.querySelectorAll(".comparison-pane").length===2'),'independent comparison panes');
+  await evaluate(`{const select=document.querySelectorAll('.comparison-pane')[1].querySelector('select');select.value='synthetic:source';select.dispatchEvent(new Event('change',{bubbles:true}));}`);
+  await until(()=>evaluate('document.querySelectorAll(".comparison-text").length===2'),'both source versions loaded');
+  await evaluate(`{const select=document.querySelectorAll('.comparison-pane')[1].querySelectorAll('select')[1];select.value='synthetic:comparison';select.dispatchEvent(new Event('change',{bubbles:true}));}`);
+  await until(()=>evaluate('document.querySelectorAll(".comparison-text")[1]?.textContent.includes("different rendering")'),'contrasting edition');
+  assert.equal(await evaluate('document.querySelectorAll(".comparison-text")[0].textContent'),readingDocument.text_body);
+  await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),true);
+  await writeFile(join(artifacts,'comparison-mobile.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
+  await call('Emulation.clearDeviceMetricsOverride');
+
+  await reload();
+  await until(()=>evaluate('document.querySelectorAll(".comparison-text")[1]?.textContent.includes("different rendering")'),'comparison URL reload');
+  await click('Back to my reading');
+  await until(()=>evaluate('!!document.querySelector(".reader-text")'),'return from comparison to source');
   await evaluate(`const textRoot=document.querySelector('.reader-text'), range=document.createRange();
     const start=textRoot.textContent.indexOf('tafsīr'); range.setStart(textRoot.firstChild,start); range.setEnd(textRoot.firstChild,start+6);
     const selection=window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
@@ -351,6 +371,11 @@ try {
   await until(()=>evaluate('new URLSearchParams(location.search).has("annotation") && document.querySelector(".reader-text mark.is-selected")?.textContent==="tafsīr"'),'search opens exact saved passage');
   await reload();
   await until(()=>evaluate('document.querySelector(".reader-text mark.is-selected")?.textContent==="tafsīr"'),'annotation bookmark survives reload');
+  await click('Compare readings');
+  await until(()=>evaluate('!!document.querySelector(".comparison-pane")'),'comparison from saved passage');
+  await click('Back to my reading');
+  await until(()=>evaluate('document.querySelector(".reader-text mark.is-selected")?.textContent==="tafsīr"'),'comparison return preserves exact origin passage');
+
   await until(()=>evaluate('!!document.querySelector(".passage-note-open")'),'saved passage edit button');
   await evaluate('document.querySelector(".passage-note-open").click()');
   await until(()=>evaluate('!!document.querySelector(".passage-note-edit textarea")'),'saved passage editor');
@@ -913,7 +938,7 @@ try {
   assert.deepEqual(problems,[]);
   console.log(JSON.stringify({publicChecksPassed:true,checks:['actual approved-export fixture','anonymous read-only data requests','multi-project switching','Back/Forward and record reload','citations, locators and review limits','same record ID across projects','dark mobile layout','mismatched project refusal','all-withdrawn empty state','unsafe path refusal','unknown project recovery','no legacy fallback in approved mode','legacy RDF compatibility'],artifacts}));
   console.log(JSON.stringify({publicationChecksPassed:true,checks:['explicit record, summary, bibliography and relation choices','no automatic approval','sealed preview privacy and inert labels','stale head requires new preview','revision-bound acknowledgement and approval','reload without duplicate approval','withdrawal acknowledgement','390px overflow','private rationale outside localStorage','anonymous publication denial'],publicationAttempts,artifacts}));
-  console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','Quran reference decision reload and retained draft','idempotent reference retry after lost response','reference conflict comparison and explicit resolution','reverse verse lookup to exact saved passage','reference dismissal and 390px controls','manual mapping distinct from citation claims','invalid verse bounds explained before saving','word to scoped concept and durable passage links','idempotent concept and definition creation after lost responses','explicit definition gaps and separate machine proposals','attributed definitions and exact source reopening','definition correction conflict, retry and history','existing lexical connection reuse and Arabic source preservation','normalized and combined research search','lexical pagination and dark/mobile/RTL layout','persistent source marks and overlapping underline reload','direct margin writing and frozen idempotent capture retry','mark-to-note and note-to-source focus with stable bookmarks','resizable collapsible margin and focused mobile reading','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','margin source-to-verse discussion save and exact retry','generic selected verse-range view and source return','no unrelated Arabic text for unbundled ranges','durable bookmark exact retry and reload','server bookmark to exact source passage','other-device bookmark conflict requires explicit replacement','workspace source intake and real article preset','retained intake never overwritten by preset','Arabic pilot URL Back and Forward','anonymous boundary'],artifacts }));
+  console.log(JSON.stringify({ passed:true,checks:['independent comparison versions and URL reload','comparison 390px layout and exact passage return','question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','Quran reference decision reload and retained draft','idempotent reference retry after lost response','reference conflict comparison and explicit resolution','reverse verse lookup to exact saved passage','reference dismissal and 390px controls','manual mapping distinct from citation claims','invalid verse bounds explained before saving','word to scoped concept and durable passage links','idempotent concept and definition creation after lost responses','explicit definition gaps and separate machine proposals','attributed definitions and exact source reopening','definition correction conflict, retry and history','existing lexical connection reuse and Arabic source preservation','normalized and combined research search','lexical pagination and dark/mobile/RTL layout','persistent source marks and overlapping underline reload','direct margin writing and frozen idempotent capture retry','mark-to-note and note-to-source focus with stable bookmarks','resizable collapsible margin and focused mobile reading','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','margin source-to-verse discussion save and exact retry','generic selected verse-range view and source return','no unrelated Arabic text for unbundled ranges','durable bookmark exact retry and reload','server bookmark to exact source passage','other-device bookmark conflict requires explicit replacement','workspace source intake and real article preset','retained intake never overwritten by preset','Arabic pilot URL Back and Forward','anonymous boundary'],artifacts }));
 } finally {
   socket?.close(); chrome.kill(); await preview.close();
   for (const item of pending.values()) { clearTimeout(item.timeout); item.reject(new Error('Review finished')); }
