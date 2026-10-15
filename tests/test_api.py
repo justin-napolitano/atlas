@@ -85,7 +85,7 @@ class APIBoundaryTests(unittest.TestCase):
         public = TestClient(create_app(Settings("synthetic-not-a-live-dsn", mode="public"), store=MemoryBoundaryStore()))
         self.assertEqual(public.get("/v1/public/snapshots/test").status_code, 200)
         for path in ["/v1/projects", "/v1/personal-states", "/v1/records", "/v1/schema", "/openapi.json",
-                     "/v1/evidence-path", "/v1/research-operations", "/v1/rank", "/v1/search"]:
+                     "/v1/evidence-path", "/v1/research-operations", "/v1/rank", "/v1/search", "/v1/personal-state"]:
             self.assertEqual(public.get(path).status_code, 404)
             self.assertEqual(public.put(path, json={}).status_code, 404)
             self.assertEqual(public.post(path, json={}).status_code, 404)
@@ -161,6 +161,10 @@ class APIDatabaseTests(unittest.TestCase):
                                                owner_origin=ORIGIN), verifier=self.verifier))
         rows = second.get("/v1/personal-states", params={"project_id": project}, headers=self.headers()).json()["items"]
         self.assertEqual(rows[0]["note"], state["note"])
+        direct = second.get("/v1/personal-state", params={"project_id": project, "record_id": record}, headers=self.headers())
+        self.assertEqual(direct.status_code, 200)
+        self.assertEqual(direct.json()["note"], state["note"])
+        self.assertEqual(second.get("/v1/personal-state", params={"project_id": "other", "record_id": record}, headers=self.headers()).status_code, 404)
         state.update(note="Synthetic newer note", expected_revision=1)
         self.assertEqual(second.put("/v1/personal-states", json=state, headers=self.headers()).status_code, 200)
         stale = client.put("/v1/personal-states", json=state, headers=self.headers())

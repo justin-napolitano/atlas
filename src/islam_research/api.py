@@ -294,6 +294,13 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     def put_state(value: PersonalInput, actor: str = Depends(owner)):
         return store.save_state(actor=actor, **value.model_dump())
 
+    @router.get("/personal-state")
+    def personal_state(project_id: Identifier, record_id: Identifier):
+        result = store.state(project_id, record_id)
+        if result is None:
+            raise HTTPException(404, "Personal state not yet recorded")
+        return result
+
     @router.get("/research-operations")
     def operations():
         policy, digest = registered_policy()
