@@ -51,6 +51,10 @@ class MemoryBoundaryStore:
         return {"actor":value["actor"],"concept_id":"synthetic:concept","occurrence_id":"synthetic:occurrence"}
     def lexicon_create_definition(self, **value):
         return {"actor":value["actor"],"revision":1}
+    def create_reading_annotation(self, **value):
+        return {**value,"revision":1}
+    def update_reading_annotation(self, **value):
+        return {**value,"revision":value["expected_revision"]+1}
 
 
 @unittest.skipUnless(jwt, "Install api and test extras for HTTP contract tests")
@@ -205,6 +209,23 @@ class APIBoundaryTests(unittest.TestCase):
         self.assertIn("/v1/personal-states", schema["paths"])
         self.assertEqual(self.client.get("/v1/schema").status_code, 401)
 
+    def test_passage_mark_input_is_bounded_owner_only_and_independent_of_review(self):
+        path="/v1/reading/annotations"
+        payload=dict(annotation_uuid=str(uuid.uuid4()),project_id="synthetic",document_id="synthetic:document",text_sha256="a"*64,
+            start=0,end=6,exact="tafsīr",capture_kind="comment",body="Margin note",mark_style="underline")
+        self.assertEqual(self.client.post(path,json=payload).status_code,401)
+        self.assertEqual(self.client.post(path,json=payload,headers=self.headers(sub="other")).status_code,403)
+        result=self.client.post(path,json=payload,headers=self.headers())
+        self.assertEqual(result.status_code,201)
+        self.assertEqual(result.json()["mark_style"],"underline")
+        self.assertEqual(result.json()["actor"],OWNER)
+        for style in ["reviewed","",True,123,None]:
+            self.assertEqual(self.client.post(path,json={**payload,"mark_style":style},headers=self.headers()).status_code,422)
+        patch=dict(project_id="synthetic",annotation_id="synthetic:annotation",body="Revised margin note",expected_revision=1,mark_style="none")
+        result=self.client.put("/v1/reading/annotation",json=patch,headers=self.headers())
+        self.assertEqual(result.json()["mark_style"],"none")
+        self.assertEqual(self.client.put("/v1/reading/annotation",json={**patch,"review_state":"reviewed"},headers=self.headers()).status_code,422)
+
     def test_unexpected_errors_are_redacted(self):
         def broken():
             raise RuntimeError("SYNTHETIC-PRIVATE-NOTE must never enter errors/logs")
@@ -222,6 +243,34 @@ class APIBoundaryTests(unittest.TestCase):
 class APIDatabaseTests(unittest.TestCase):
     setUp = APIBoundaryTests.setUp
     headers = APIBoundaryTests.headers
+    def test_marks_roundtrip_between_sessions_and_preserve_style_on_body_only_update(self):
+        dsn=os.environ["RESEARCH_TEST_DATABASE_URL"]
+        with db.connect(dsn) as connection: db.migrate(connection)
+        settings=Settings(dsn,owner_subject=OWNER,iap_audience=AUDIENCE,owner_origin=ORIGIN)
+        first=TestClient(create_app(settings,verifier=self.verifier))
+        second=TestClient(create_app(settings,verifier=self.verifier))
+        project,source="test:"+uuid.uuid4().hex,"test:"+uuid.uuid4().hex
+        first.post("/v1/projects",json=dict(project_id=project,title="Synthetic margin project"),headers=self.headers()).raise_for_status()
+        first.put("/v1/records",json=dict(record_id=source,project_id=project,kind="source",title="Synthetic margin source"),headers=self.headers()).raise_for_status()
+        document=first.post("/v1/reading/documents",json=dict(project_id=project,source_record_id=source,edition="Synthetic",locator="Paragraph 1",text="😀 tafsīr and evidence"),headers=self.headers()).json()
+        payload=dict(annotation_uuid=str(uuid.uuid4()),project_id=project,document_id=document["id"],text_sha256=document["text_sha256"],start=2,end=8,exact="tafsīr",body="Margin thought",mark_style="underline")
+        response=first.post("/v1/reading/annotations",json=payload,headers=self.headers())
+        self.assertEqual(response.status_code,201);annotation=response.json()
+        identity=dict(project_id=project,annotation_id=annotation["id"])
+        loaded=second.get("/v1/reading/annotation",params=identity,headers=self.headers()).json()
+        self.assertEqual(loaded["annotation"]["mark_style"],"underline")
+        self.assertTrue(loaded["anchor"]["anchored"])
+        patch=dict(**identity,body="Changed thought",expected_revision=1,mark_style="none")
+        updated=first.put("/v1/reading/annotation",json=patch,headers=self.headers())
+        self.assertEqual(updated.status_code,200)
+        self.assertEqual(first.put("/v1/reading/annotation",json=patch,headers=self.headers()).json()["revision"],2)
+        self.assertEqual(second.put("/v1/reading/annotation",json={**patch,"mark_style":"highlight"},headers=self.headers()).status_code,409)
+        latest=second.put("/v1/reading/annotation",json=dict(**identity,body="Body edit",expected_revision=2),headers=self.headers()).json()
+        self.assertEqual(latest["mark_style"],"none")
+        exported=first.get("/v1/reading/annotation",params=identity,headers=self.headers()).json()
+        self.assertEqual(exported["web_annotation"]["ir:markStyle"],"none")
+        self.assertEqual(second.get("/v1/reading/annotation",params={**identity,"project_id":"other"},headers=self.headers()).status_code,404)
+
     def test_lexicon_http_capture_definition_conflict_history_and_source_roundtrip(self):
         dsn=os.environ["RESEARCH_TEST_DATABASE_URL"]
         with db.connect(dsn) as connection: db.migrate(connection)

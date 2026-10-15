@@ -65,12 +65,14 @@ def annotation(connection, project_id, annotation_id):
     return {"annotation":row,"anchor":resolve_anchor(document["text_body"],selector),"web_annotation":web_annotation(document,row)}
 
 
-def create_annotation(connection, *, annotation_uuid, project_id, document_id, text_sha256, start, end, exact, capture_kind, body, actor):
+def create_annotation(connection, *, annotation_uuid, project_id, document_id, text_sha256, start, end, exact, capture_kind, body, actor, mark_style="highlight"):
     identifier = uuid.UUID(annotation_uuid)
     if identifier.version != 4:
         raise ValueError("Use a fresh UUIDv4 capture ID and retain it when retrying")
     if capture_kind not in {"comment","term_candidate","citation_candidate"}:
         raise ValueError("Unsupported capture kind")
+    if mark_style not in {"highlight","underline","none"}:
+        raise ValueError("Unsupported passage mark style")
     db._text(body,"annotation body",10000,empty=True)
     db._text(actor,"actor",500)
     annotation_id = "urn:research:annotation:"+str(identifier)
@@ -82,13 +84,13 @@ def create_annotation(connection, *, annotation_uuid, project_id, document_id, t
         if selection["text_sha256"] != text_sha256 or selection["exact"] != exact:
             raise ValueError("The source version or selected text changed; select it again")
         row = connection.execute("""INSERT INTO research.reading_annotations
-            (id,project_id,document_id,text_sha256,start_pos,end_pos,exact,prefix,suffix,capture_kind,body,changed_by)
-            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT(id) DO NOTHING RETURNING *""",
-            (annotation_id,project_id,document_id,text_sha256,start,end,exact,selection["prefix"],selection["suffix"],capture_kind,body,actor)).fetchone()
+            (id,project_id,document_id,text_sha256,start_pos,end_pos,exact,prefix,suffix,capture_kind,body,changed_by,mark_style)
+            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT(id) DO NOTHING RETURNING *""",
+            (annotation_id,project_id,document_id,text_sha256,start,end,exact,selection["prefix"],selection["suffix"],capture_kind,body,actor,mark_style)).fetchone()
         if row is None:
             row = connection.execute("SELECT * FROM research.reading_annotations WHERE id=%s",(annotation_id,)).fetchone()
             if any(row[k] != v for k,v in {"project_id":project_id,"document_id":document_id,"start_pos":start,"end_pos":end,
-                "exact":exact,"text_sha256":text_sha256,"capture_kind":capture_kind,"body":body,"changed_by":actor}.items()):
+                "exact":exact,"text_sha256":text_sha256,"capture_kind":capture_kind,"body":body,"changed_by":actor,"mark_style":mark_style}.items()):
                 raise db.RevisionConflict(row)
         return row
 
@@ -100,19 +102,28 @@ def annotations(connection, project_id, document_id, cursor, limit):
                               (project_id,document_id,cursor,limit)).fetchall()
 
 
-def update_annotation(connection, *, annotation_id, project_id, body, expected_revision, actor):
+def update_annotation(connection, *, annotation_id, project_id, body, expected_revision, actor, mark_style=None):
     db._text(body,"annotation body",10000,empty=True)
     db._text(actor,"actor",500)
+    if mark_style is not None and mark_style not in {"highlight","underline","none"}:
+        raise ValueError("Unsupported passage mark style")
     if type(expected_revision) is not int or expected_revision < 1:
         raise ValueError("Supply the last confirmed annotation revision")
     with connection.transaction():
         current = annotation(connection,project_id,annotation_id)
         if current is None:
             raise ValueError("Active annotation not found")
-        row = connection.execute("""UPDATE research.reading_annotations SET body=%s,revision=revision+1,changed_by=%s
+        row = connection.execute("""UPDATE research.reading_annotations SET body=%s,revision=revision+1,changed_by=%s,
+            mark_style=coalesce(%s,mark_style)
             WHERE project_id=%s AND id=%s AND revision=%s RETURNING *""",
-            (body,actor,project_id,annotation_id,expected_revision)).fetchone()
+            (body,actor,mark_style,project_id,annotation_id,expected_revision)).fetchone()
         if row is None:
-            raise db.RevisionConflict(connection.execute("SELECT * FROM research.reading_annotations WHERE project_id=%s AND id=%s",
-                                                       (project_id,annotation_id)).fetchone())
+            latest=connection.execute("SELECT * FROM research.reading_annotations WHERE project_id=%s AND id=%s",
+                                      (project_id,annotation_id)).fetchone()
+            # A repeated request after a lost response acknowledges the same edit,
+            # but cannot overwrite a different newer body or explicit style.
+            if (latest and latest["revision"]==expected_revision+1 and latest["body"]==body
+                and latest["changed_by"]==actor and (mark_style is None or latest["mark_style"]==mark_style)):
+                return latest
+            raise db.RevisionConflict(latest)
         return row
