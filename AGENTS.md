@@ -49,3 +49,9 @@ For literature discovery, use `scripts/literature_search.py` to query OpenAlex a
 The unified CLI is in `src/islam_research/cli.py`; run it with the `islam-research` entry point after installation or `python3 scripts/research.py` from a checkout. Keep machine candidate and extraction states distinct from human-reviewed records. Standards mapping and storage decisions are recorded in `docs/adr/0001-research-platform-standards.md`. Generated searches, intake materials, annotations, screening logs, and reports default to git-ignored `research-library/`.
 
 Start with `README.md`, `methods/source-evaluation.md`, and `graph/schema.md`.
+
+## Hosted platform implementation
+
+The current product roadmap is GitHub issue #30 and `docs/adr/0002-hosted-research-and-ossie.md`. Implement PostgreSQL on GCP for durable hosted authoring, one human owner/editor, and anonymous read-only access to explicitly published research. The earlier local-only storage constraint is superseded for application state. Until a validated graph migration lands, `graph/research.ttl` remains the authoritative curated graph; preserve its IDs and export/validation semantics rather than creating two independently edited authorities.
+
+Keep the first corpus bounded by `methods/corpus-scope.md` and its versioned pilot manifest. Apply `methods/editorial-review.md` to source, passage, claim, definition, and publication changes. An implementation pass is not a new scholarly review; never promote existing metadata/abstract review to full-argument verification. Agent outputs are attributable proposals and do not acquire human-reviewed or public status automatically.
