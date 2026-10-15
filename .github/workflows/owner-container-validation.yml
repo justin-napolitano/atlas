@@ -28,6 +28,7 @@ jobs:
       - run: uv sync --frozen --extra api --extra database --extra test
       - run: npm ci --prefix web --no-audit --no-fund
       - run: uv run --no-sync python -m unittest discover -s tests -p test_owner_runtime.py -v
+      - run: uv run --no-sync python -m unittest discover -s tests -p test_owner_scan.py -v
       - run: uv run --no-sync python scripts/check_owner_container.py
       - name: Retain synthetic owner image evidence
         if: ${{ always() }}

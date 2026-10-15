@@ -65,6 +65,13 @@ upstream review; do not infer complete native-component coverage from a clean
 OS/package scan. Scanner/download errors and unsuppressed High/Critical findings
 fail the job. No ignore list or exception is introduced.
 
+The scan contract requires identified Alpine OS and installed Python results bound
+to the actual image ID. Trivy's [OS result type](https://github.com/aquasecurity/trivy/blob/v0.76.0/pkg/fanal/types/artifact.go)
+omits `EOSL` when false; that omission is accepted only alongside identified OS
+and package coverage. Unknown OS identity, true/malformed EOSL, missing coverage
+or any reported High/Critical finding still fails. Contract tests exercise these
+failure cases rather than weakening the scan on an absent optional field.
+
 ## Reviewable Cloud Run configuration
 
 `owner_release = null` creates no owner runtime/IAP resources. The optional input

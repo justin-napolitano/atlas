@@ -17,11 +17,20 @@ The integration workflow runs on changes to itself or this evidence ledger and c
 | PostgreSQL | All existing contracts on 17 and 18, real restricted-role saves, CAS conflicts/history, private passage selectors, public approval/withdrawal | Ephemeral isolated PostgreSQL, not Cloud SQL IAM or a production capacity test |
 | Native database logs | Synthetic private bound-value marker absent; sentinel and error paths present; shared flags enforced | Cloud SQL pgAudit literal masking and extension installation still require live verification |
 | Owner/public API | Signed synthetic IAP assertions, anonymous/non-owner denial, CSRF/origin/write boundary, public route exclusion and approved-head reads | No live IAP/OAuth session or browser cookie flow |
+| Owner service delivery | Separate bounded frontend, signed-owner page/asset tests, isolated real Linux image runtime/OS/Python/npm scan, native-IAP/private-SQL Terraform contracts | No pushed image, credentialed cloud plan, live identity/database connection, or release approval |
 | Reading/publication UI | Frontend contracts, production build, owned headless Chrome reading/notes/selection/search/publication/conflict/mobile flows | Synthetic API interception; no actual multi-machine hosted editing |
 | Graph/semantic | SHACL and deterministic canonical exports, pinned Ossie/model/policy checks | Structural correctness is not scholarly review, semantic completeness, or a graph-authority cutover |
 | Infrastructure | Formatting/schema validation, six credential-free mock plans, exact SQL logging flags, Checkov policy checks | Not a credentialed cloud plan/apply, live cost/capacity proof, backup restore, or completed security review |
 
 Record the successful run URL, tested commit, and actual results in the issue/PR after CI finishes. This ledger intentionally does not hardcode a self-referential future commit hash or claim a run before it exists.
+
+The [owner delivery slice](owner-service-delivery.md) adds the owner-container
+workflow to the required aggregate alongside the existing public-container gate.
+Its optional native-IAP and IAM SQL sidecar configuration is disabled by default;
+the expanded infrastructure suite has fourteen credential-free mock tests. An
+image/scanner result is source evidence, not a live IAP, Cloud SQL, cost or recovery
+verification. Personal Google projects require initial Console OAuth setup as
+documented in the runbook; no authentication bypass substitutes for it.
 
 An intermediate candidate's browser failed to expose its owned debug port within the former ten-second startup window, and the aggregate correctly failed despite the other components passing. Cold runner startup now has a bounded thirty-second observation window for the same process; UI waits and assertions are unchanged. A startup timeout retains bounded stderr diagnostics. No browser retry, sandbox disabling, test suppression, or skipped-check waiver was added. This addresses the observation budget and diagnostics; it does not establish the cause of slow runner startup.
 

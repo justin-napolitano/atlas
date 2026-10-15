@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import subprocess
 import sys
 import tempfile
@@ -14,11 +15,27 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
-from install_container_scanner import install
 from islam_research.public_container import container_policy, frontend_bom
 
 
+def validate_scan(scan, image_id):
+    """Require identified OS/Python coverage and honor Trivy's omitted false EOSL."""
+    metadata = scan.get('Metadata', {})
+    operating_system = metadata.get('OS', {})
+    # Trivy v0.76.0's OS.Eosl has json:"EOSL,omitempty": absent means false.
+    # Unknown/missing OS identity still fails, as do true or malformed flags.
+    assert metadata.get('ImageID') == image_id
+    assert operating_system.get('Family') == 'alpine'
+    assert re.fullmatch(r'3\.\d+\.\d+', operating_system.get('Name', ''))
+    assert operating_system.get('EOSL', False) is False
+    results = scan.get('Results', [])
+    assert any(result.get('Type') == 'alpine' for result in results)
+    assert any(result.get('Type') == 'python-pkg' for result in results)
+    assert not any(result.get('Vulnerabilities') for result in results)
+
+
 def main():
+    from install_container_scanner import install
     if sys.platform != 'linux' or platform.machine() != 'x86_64' or os.environ.get('GITHUB_ACTIONS') != 'true' or os.environ.get('RESEARCH_CONTAINER_TESTS') != 'isolated-ci-only':
         raise RuntimeError('Use isolated Linux CI; never start a Mac Docker daemon')
     evidence = ROOT / 'research-library/owner-container-validation'; evidence.mkdir(parents=True, exist_ok=True)
@@ -80,10 +97,7 @@ for name in ['/app/private-write','/tmp/private-write']:
             scanner = install(temp / 'tools')
             run([str(scanner), 'image', '--input', str(archive), '--scanners', 'vuln', '--severity', 'HIGH,CRITICAL', '--exit-code', '1', '--format', 'json', '--output', str(evidence / 'scan.json')], timeout=300)
             scan = json.loads((evidence / 'scan.json').read_text())
-            assert scan.get('Metadata', {}).get('ImageID') == info['Id'] and scan.get('Results')
-            assert not scan['Metadata'].get('OS', {}).get('EOSL', True)
-            assert any(result.get('Type') == 'python-pkg' for result in scan['Results'])
-            assert not any(result.get('Vulnerabilities') for result in scan['Results'])
+            validate_scan(scan, info['Id'])
             run([str(scanner), 'convert', '--format', 'cyclonedx', '--output', str(evidence / 'sbom.cdx.json'), str(evidence / 'scan.json')])
             (evidence / 'frontend.sbom.cdx.json').write_text(json.dumps(frontend_bom(ROOT)))
             run([str(scanner), 'sbom', '--scanners', 'vuln', '--severity', 'HIGH,CRITICAL', '--exit-code', '1', '--format', 'json', '--output', str(evidence / 'frontend-scan.json'), str(evidence / 'frontend.sbom.cdx.json')], timeout=300)
