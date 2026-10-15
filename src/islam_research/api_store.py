@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from . import database as db
+from .graph_engine import registered_policy, traverse
 
 
 class PostgreSQLStore:
@@ -54,6 +55,31 @@ class PostgreSQLStore:
     def save_state(self, **values) -> dict:
         with db.connect(self.dsn) as connection:
             return db.save_personal_state(connection, **values)
+
+    def evidence_path(self, project_id: str, record_id: str, profile_id: str) -> dict | None:
+        policy, _ = registered_policy()
+        if profile_id not in {p["id"] for p in policy["traversal_profiles"]}:
+            raise ValueError("Unknown registered path")
+        with db.connect(self.dsn) as connection:
+            # One coherent graph view even if another session updates records.
+            connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
+            start = connection.execute("""SELECT * FROM research.records
+                WHERE project_id=%s AND id=%s AND deleted_at IS NULL""", (project_id, record_id)).fetchone()
+            if start is None:
+                return None
+            def adjacent(frontier, step, predicate, limit):
+                # Direction chooses one of two fixed query fragments, never caller SQL.
+                match = "e.from_id" if step["direction"] == "out" else "e.to_id"
+                return connection.execute("""SELECT e.*,to_jsonb(s) AS source,to_jsonb(t) AS target
+                    FROM research.relations e
+                    JOIN research.records s ON s.project_id=e.project_id AND s.id=e.from_id
+                    JOIN research.records t ON t.project_id=e.project_id AND t.id=e.to_id
+                    WHERE e.project_id=%s AND e.predicate=%s AND """ + match + """=ANY(%s)
+                    AND s.deleted_at IS NULL AND t.deleted_at IS NULL
+                    AND s.kind=ANY(%s) AND t.kind=ANY(%s)
+                    ORDER BY e.id LIMIT %s""", (project_id, step["predicate"], frontier,
+                    predicate["from_kinds"], predicate["to_kinds"], limit)).fetchall()
+            return traverse(start, project_id, profile_id, adjacent)
 
     def published(self, snapshot_id: str) -> dict | None:
         # Enforce the public connection boundary on data requests, not just readiness.

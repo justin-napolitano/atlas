@@ -22,6 +22,7 @@ from psycopg import IntegrityError
 from .api_auth import IAPVerifier, IdentityUnavailable, InvalidIdentity
 from .api_store import PostgreSQLStore
 from .database import RevisionConflict
+from .graph_engine import rank, registered_policy
 
 logger = logging.getLogger("research.api")
 Identifier = Annotated[str, Field(min_length=1, max_length=500, pattern=r"^[^\x00-\x1f\x7f]+$")]
@@ -82,6 +83,21 @@ class PersonalInput(Input):
     decision: Literal["unreviewed", "relevant", "not_relevant", "read_later"] = "unreviewed"
     note: Annotated[str, Field(max_length=10000)] = ""
     expected_revision: Annotated[int, Field(ge=0)] = 0
+
+
+class FeatureInput(Input):
+    value: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)] | None = None
+    basis: Annotated[str, Field(max_length=2000)] = ""
+
+
+class RankCandidate(Input):
+    id: Identifier
+    features: dict[str, FeatureInput] = Field(max_length=12)
+
+
+class RankInput(Input):
+    profile_id: Identifier
+    candidates: list[RankCandidate] = Field(max_length=100)
 
 
 def problem(status: int, detail: str, request_id: str = "", **extra) -> JSONResponse:
@@ -277,6 +293,24 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     @router.put("/personal-states")
     def put_state(value: PersonalInput, actor: str = Depends(owner)):
         return store.save_state(actor=actor, **value.model_dump())
+
+    @router.get("/research-operations")
+    def operations():
+        policy, digest = registered_policy()
+        return {"policy_sha256": digest, "traversal_profiles": policy["traversal_profiles"],
+                "ranking_profiles": policy["ranking_profiles"],
+                "execution": "typed_traversal_and_owner_observation_scoring_v1"}
+
+    @router.get("/evidence-path")
+    def evidence_path(project_id: Identifier, record_id: Identifier, profile_id: Identifier):
+        result = store.evidence_path(project_id, record_id, profile_id)
+        if result is None:
+            raise HTTPException(404, "Start record not found in the selected project")
+        return result
+
+    @router.post("/rank")
+    def ranking(value: RankInput):
+        return rank(value.profile_id, [c.model_dump() for c in value.candidates])
 
     @router.get("/schema")
     def schema():

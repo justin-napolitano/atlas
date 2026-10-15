@@ -31,6 +31,8 @@ class MemoryBoundaryStore:
         return {**value, "revision": 1}
     def published(self, snapshot_id):
         return {"id": snapshot_id, "payload": {"nodes": []}}
+    def evidence_path(self, project_id, record_id, profile_id):
+        return {"project_id": project_id, "start_id": record_id, "profile": profile_id, "paths": []}
 
 
 @unittest.skipUnless(jwt, "Install api and test extras for HTTP contract tests")
@@ -80,9 +82,29 @@ class APIBoundaryTests(unittest.TestCase):
     def test_public_mode_has_no_owner_routes_or_mutations(self):
         public = TestClient(create_app(Settings("synthetic-not-a-live-dsn", mode="public"), store=MemoryBoundaryStore()))
         self.assertEqual(public.get("/v1/public/snapshots/test").status_code, 200)
-        for path in ["/v1/projects", "/v1/personal-states", "/v1/records", "/v1/schema", "/openapi.json"]:
+        for path in ["/v1/projects", "/v1/personal-states", "/v1/records", "/v1/schema", "/openapi.json",
+                     "/v1/evidence-path", "/v1/research-operations", "/v1/rank"]:
             self.assertEqual(public.get(path).status_code, 404)
             self.assertEqual(public.put(path, json={}).status_code, 404)
+            self.assertEqual(public.post(path, json={}).status_code, 404)
+
+    def test_graph_operations_are_owner_only_and_rank_inputs_are_explained(self):
+        query = {"project_id": "synthetic", "record_id": "question", "profile_id": "question_evidence_trail"}
+        self.assertEqual(self.client.get("/v1/evidence-path", params=query).status_code, 401)
+        self.assertEqual(self.client.get("/v1/evidence-path", params=query, headers=self.headers()).status_code, 200)
+        self.assertEqual(self.client.get("/v1/research-operations").status_code, 401)
+        response = self.client.get("/v1/research-operations", headers=self.headers())
+        self.assertEqual(len(response.json()["ranking_profiles"]), 5)
+        payload = {"profile_id": "graph_degree", "candidates": [{"id": "synthetic", "features": {}}]}
+        self.assertEqual(self.client.post("/v1/rank", json=payload).status_code, 401)
+        result = self.client.post("/v1/rank", json=payload, headers=self.headers())
+        self.assertEqual(result.status_code, 200)
+        self.assertIsNone(result.json()["items"][0]["score"])
+        payload["profile_id"] = "invented-profile"
+        self.assertEqual(self.client.post("/v1/rank", json=payload, headers=self.headers()).status_code, 422)
+        payload["profile_id"] = "graph_degree"
+        payload["candidates"][0]["features"] = {"normalized_degree": {"value": True, "basis": "Synthetic"}}
+        self.assertEqual(self.client.post("/v1/rank", json=payload, headers=self.headers()).status_code, 422)
 
     def test_security_headers_and_schema(self):
         result = self.client.get("/v1/me", headers=self.headers())

@@ -1,6 +1,32 @@
 {
   "components": {
     "schemas": {
+      "FeatureInput": {
+        "additionalProperties": false,
+        "properties": {
+          "basis": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Basis",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "title": "FeatureInput",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -100,6 +126,58 @@
           "title"
         ],
         "title": "ProjectInput",
+        "type": "object"
+      },
+      "RankCandidate": {
+        "additionalProperties": false,
+        "properties": {
+          "features": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FeatureInput"
+            },
+            "maxProperties": 12,
+            "title": "Features",
+            "type": "object"
+          },
+          "id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "features"
+        ],
+        "title": "RankCandidate",
+        "type": "object"
+      },
+      "RankInput": {
+        "additionalProperties": false,
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/RankCandidate"
+            },
+            "maxItems": 100,
+            "title": "Candidates",
+            "type": "array"
+          },
+          "profile_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Profile Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "profile_id",
+          "candidates"
+        ],
+        "title": "RankInput",
         "type": "object"
       },
       "RecordInput": {
@@ -237,6 +315,70 @@
           }
         },
         "summary": "Ready"
+      }
+    },
+    "/v1/evidence-path": {
+      "get": {
+        "operationId": "evidence_path_v1_evidence_path_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Record Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Evidence Path"
       }
     },
     "/v1/me": {
@@ -402,6 +544,42 @@
         "summary": "Create Project"
       }
     },
+    "/v1/rank": {
+      "post": {
+        "operationId": "ranking_v1_rank_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RankInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ranking"
+      }
+    },
     "/v1/record": {
       "get": {
         "operationId": "record_v1_record_get",
@@ -556,6 +734,22 @@
           }
         },
         "summary": "Put Record"
+      }
+    },
+    "/v1/research-operations": {
+      "get": {
+        "operationId": "operations_v1_research_operations_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Operations"
       }
     },
     "/v1/schema": {

@@ -34,6 +34,7 @@ The research should understand traditions in context before evaluating them. “
 - `methods/source-evaluation.md` — source evaluation and note-taking method.
 - `semantic/` — pinned Apache Ossie interchange metadata, explicit research mappings, and offline-validated ranking/traversal definitions; execution is a separate backend responsibility.
 - `docs/owner-api.md` — signed single-owner API, separate read-only publication mode, failure/privacy contracts, and remaining deployment prerequisites.
+- `docs/research-operations.md` — executable typed evidence trails, non-AI local graph exploration, and transparent owner-observation scoring with unknown inputs preserved.
 - `docs/postgres.md` — migration-managed PostgreSQL records, retained RDF imports, revision-safe personal state, and real-database test commands; hosted authentication/deployment remain separate slices.
 - `methods/corpus-scope.md` — Islam-first source selection and bounded expansion into philosophy/religion.
 - `methods/editorial-review.md` — source/passage/claim review, uncertainty, publication, and corrections.
