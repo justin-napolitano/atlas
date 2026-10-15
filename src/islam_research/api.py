@@ -129,6 +129,16 @@ class ReadingAnnotationUpdate(Input):
     expected_revision: Annotated[int, Field(ge=1)]
 
 
+class ReadingDeskInput(Input):
+    project_id: Identifier
+    record_id: Identifier
+    document_id: Identifier | None = None
+    annotation_id: Identifier | None = None
+    start: Annotated[int,Field(ge=0,le=12000)] | None = None
+    end: Annotated[int,Field(ge=0,le=12000)] | None = None
+    expected_revision: Annotated[int,Field(ge=0)]
+
+
 class ScriptureResolutionInput(Input):
     project_id: Identifier
     annotation_id: Identifier
@@ -444,6 +454,23 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     @router.get("/me")
     def me():
         return {"mode": "owner", "can_edit": True}
+
+    @router.get("/reading/desk")
+    def reading_desk(project_id: Identifier):
+        value=store.reading_desk(project_id)
+        if value is None: raise HTTPException(404,"No active reading place saved for this project")
+        return value
+
+    @router.put("/reading/desk")
+    def save_reading_desk(value: ReadingDeskInput,actor: str = Depends(owner)):
+        return store.save_reading_desk(actor=actor,**value.model_dump())
+
+    @router.get("/reading/desk-history")
+    def reading_desk_history(project_id: Identifier,before_revision: Annotated[int,Query(ge=1)] | None = None,
+        limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows=store.reading_desk_history(project_id,before_revision,limit+1)
+        if rows is None: raise HTTPException(404,"No active reading place saved for this project")
+        return {"items":rows[:limit],"next_before_revision":rows[limit-1]["revision"] if len(rows)>limit else None}
 
     @router.get("/projects")
     def projects():

@@ -51,6 +51,10 @@ class MemoryBoundaryStore:
         return {"actor":value["actor"],"concept_id":"synthetic:concept","occurrence_id":"synthetic:occurrence"}
     def lexicon_create_definition(self, **value):
         return {"actor":value["actor"],"revision":1}
+    def reading_desk(self,project_id):
+        return None
+    def save_reading_desk(self,**value):
+        return {**value,"revision":value["expected_revision"]+1}
 
 
 @unittest.skipUnless(jwt, "Install api and test extras for HTTP contract tests")
@@ -162,10 +166,24 @@ class APIBoundaryTests(unittest.TestCase):
                      "/v1/lexicon/definitions", "/v1/lexicon/definition", "/v1/lexicon/connection", "/v1/lexicon/occurrences", "/v1/lexicon/search",
                      "/v1/lexicon/entity", "/v1/lexicon/history",
                      "/v1/lexicon/annotation-links",
+                     "/v1/reading/desk", "/v1/reading/desk-history",
                      "/v1/publication/head", "/v1/publication/preview", "/v1/publication/previews", "/v1/publication/approve", "/v1/publication/withdraw", "/v1/publication/relations"]:
             self.assertEqual(public.get(path).status_code, 404)
             self.assertEqual(public.put(path, json={}).status_code, 404)
             self.assertEqual(public.post(path, json={}).status_code, 404)
+
+    def test_reading_place_is_owner_only_and_cannot_be_spoofed(self):
+        route="/v1/reading/desk"
+        payload=dict(project_id="synthetic",record_id="synthetic:source",document_id="synthetic:document",annotation_id="synthetic:annotation",expected_revision=0)
+        self.assertEqual(self.client.put(route,json=payload).status_code,401)
+        self.assertEqual(self.client.put(route,json=payload,headers=self.headers(sub="other")).status_code,403)
+        headers=self.headers();headers.pop("x-research-write")
+        self.assertEqual(self.client.put(route,json=payload,headers=headers).status_code,403)
+        result=self.client.put(route,json=payload,headers=self.headers())
+        self.assertEqual(result.status_code,200);self.assertEqual(result.json()["actor"],OWNER)
+        for patch in [{"actor":"forged"},{"note":"Private note"},{"start":True},{"expected_revision":True},{"end":12001}]:
+            self.assertEqual(self.client.put(route,json={**payload,**patch},headers=self.headers()).status_code,422)
+        self.assertEqual(self.client.get(route,params=dict(project_id="synthetic"),headers=self.headers()).status_code,404)
 
     def test_graph_operations_are_owner_only_and_rank_inputs_are_explained(self):
         query = {"project_id": "synthetic", "record_id": "question", "profile_id": "question_evidence_trail"}
@@ -222,6 +240,28 @@ class APIBoundaryTests(unittest.TestCase):
 class APIDatabaseTests(unittest.TestCase):
     setUp = APIBoundaryTests.setUp
     headers = APIBoundaryTests.headers
+    def test_durable_reading_place_http_roundtrip_between_sessions(self):
+        dsn=os.environ["RESEARCH_TEST_DATABASE_URL"]
+        with db.connect(dsn) as connection: db.migrate(connection)
+        settings=Settings(dsn,owner_subject=OWNER,iap_audience=AUDIENCE,owner_origin=ORIGIN)
+        first=TestClient(create_app(settings,verifier=self.verifier));second=TestClient(create_app(settings,verifier=self.verifier))
+        project,source="test:"+uuid.uuid4().hex,"test:"+uuid.uuid4().hex
+        first.post("/v1/projects",json=dict(project_id=project,title="Synthetic resume project"),headers=self.headers()).raise_for_status()
+        first.put("/v1/records",json=dict(record_id=source,project_id=project,kind="source",title="Synthetic source"),headers=self.headers()).raise_for_status()
+        document=first.post("/v1/reading/documents",json=dict(project_id=project,source_record_id=source,edition="Synthetic",locator="Paragraph 1",text="😀 tafsīr"),headers=self.headers()).json()
+        capture=first.post("/v1/reading/annotations",json=dict(annotation_uuid=str(uuid.uuid4()),project_id=project,document_id=document["id"],text_sha256=document["text_sha256"],start=2,end=8,exact="tafsīr"),headers=self.headers()).json()
+        payload=dict(project_id=project,record_id=source,document_id=document["id"],annotation_id=capture["id"],expected_revision=0)
+        response=first.put("/v1/reading/desk",json=payload,headers=self.headers())
+        self.assertEqual(response.status_code,200);saved=response.json()
+        self.assertEqual(second.get("/v1/reading/desk",params=dict(project_id=project),headers=self.headers()).json(),saved)
+        self.assertEqual(second.put("/v1/reading/desk",json=payload,headers=self.headers()).json()["revision"],1)
+        changed={**payload,"annotation_id":None,"start":0,"end":0,"expected_revision":1}
+        self.assertEqual(first.put("/v1/reading/desk",json=changed,headers=self.headers()).json()["revision"],2)
+        conflict=second.put("/v1/reading/desk",json={**payload,"expected_revision":1},headers=self.headers())
+        self.assertEqual(conflict.status_code,409)
+        self.assertEqual(second.get("/v1/reading/desk-history",params=dict(project_id=project,limit=1),headers=self.headers()).json()["next_before_revision"],2)
+        self.assertEqual(second.get("/v1/reading/desk",params=dict(project_id="other"),headers=self.headers()).status_code,404)
+
     def test_lexicon_http_capture_definition_conflict_history_and_source_roundtrip(self):
         dsn=os.environ["RESEARCH_TEST_DATABASE_URL"]
         with db.connect(dsn) as connection: db.migrate(connection)

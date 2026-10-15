@@ -7,6 +7,7 @@ from . import passage_store
 from . import publication
 from . import citation_store
 from . import lexicon_store
+from . import reading_desk
 
 
 class PostgreSQLStore:
@@ -41,6 +42,15 @@ class PostgreSQLStore:
     def create_project(self, **values) -> dict:
         with db.connect(self.dsn) as connection:
             return db.create_project(connection, **values)
+
+    def reading_desk(self,project_id):
+        with db.connect(self.dsn) as connection: return reading_desk.get(connection,project_id)
+
+    def save_reading_desk(self,**values):
+        with db.connect(self.dsn) as connection: return reading_desk.save(connection,**values)
+
+    def reading_desk_history(self,project_id,before_revision,limit):
+        with db.connect(self.dsn) as connection: return reading_desk.history(connection,project_id,before_revision,limit)
 
     def records(self, project_id: str, kind: str | None, cursor: str, limit: int) -> list[dict]:
         with db.connect(self.dsn) as connection:

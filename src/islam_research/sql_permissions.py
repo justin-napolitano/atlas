@@ -12,6 +12,7 @@ READ_TABLES = (
     "projects", "records", "record_revisions", "relation_types", "relations",
     "personal_states", "personal_state_revisions", "import_snapshots",
     "reading_documents", "reading_annotations", "reading_annotation_revisions",
+    "reading_desks", "reading_desk_revisions",
     "publication_previews", "publication_events",
     "scripture_citations", "scripture_citation_revisions",
     "lexicon_entries", "lexicon_forms", "lexicon_representations", "lexicon_senses",
@@ -25,6 +26,7 @@ OWNER_FUNCTIONS = (
     "research.withdraw_publication(text,integer,text,text)",
 )
 INSERT_COLUMNS = {
+    "reading_desks": "project_id record_id document_id annotation_id start_pos end_pos changed_by",
     "projects": "id title scope",
     "records": "id project_id kind title summary attributes changed_by",
     "personal_states": "record_id project_id reading read_at decision note changed_by",
@@ -41,6 +43,7 @@ INSERT_COLUMNS = {
     "publication_previews": "id project_id record_ids relation_ids inputs payload payload_sha256 created_by",
 }
 UPDATE_COLUMNS = {
+    "reading_desks": "record_id document_id annotation_id start_pos end_pos changed_by revision",
     "records": "title summary attributes changed_by revision",
     "personal_states": "reading read_at decision note changed_by revision",
     "reading_annotations": "body revision changed_by",

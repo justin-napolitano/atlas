@@ -1572,6 +1572,104 @@
               }
             }
           ]
+        },
+        {
+          "name": "reading_desks",
+          "source": "research.reading_desks",
+          "description": "Private confirmed reading place per project. Stable source/document/annotation lineage, not a scholarly graph edge, reading comprehension score or public state.",
+          "primary_key": [
+            "project_id"
+          ],
+          "fields": [
+            {
+              "name": "annotation_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "annotation_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "document_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "document_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "end_pos",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "end_pos"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "record_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "record_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "start_pos",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "start_pos"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "updated_at",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "updated_at"
+                  }
+                ]
+              }
+            }
+          ]
         }
       ],
       "relationships": [
@@ -1846,6 +1944,45 @@
             "project_id",
             "id",
             "concept_id"
+          ]
+        },
+        {
+          "name": "reading_place_records",
+          "from": "reading_desks",
+          "to": "records",
+          "from_columns": [
+            "project_id",
+            "record_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "reading_place_reading_documents",
+          "from": "reading_desks",
+          "to": "reading_documents",
+          "from_columns": [
+            "project_id",
+            "document_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "reading_place_reading_annotations",
+          "from": "reading_desks",
+          "to": "reading_annotations",
+          "from_columns": [
+            "project_id",
+            "annotation_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
           ]
         }
       ],
