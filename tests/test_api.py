@@ -483,5 +483,10 @@ class APIDatabaseTests(unittest.TestCase):
         self.assertNotIn("PRIVATE EXCERPT MARKER",json.dumps(bundle["web_annotation"]))
         update=dict(annotation_id=captured["id"],project_id=project,body="Updated private question",expected_revision=1)
         self.assertEqual(client.put("/v1/reading/annotation",json=update,headers=self.headers()).status_code,200)
-        self.assertEqual(client.put("/v1/reading/annotation",json=update,headers=self.headers()).status_code,409)
+        # Lost-response retry acknowledges the same revision; a different stale
+        # edit still conflicts and cannot overwrite the saved margin note.
+        repeated=client.put("/v1/reading/annotation",json=update,headers=self.headers())
+        self.assertEqual(repeated.status_code,200)
+        self.assertEqual(repeated.json()["revision"],2)
+        self.assertEqual(client.put("/v1/reading/annotation",json={**update,"body":"Different stale question"},headers=self.headers()).status_code,409)
         self.assertEqual(client.get("/v1/reading/document",params={"project_id":project,"document_id":document["id"]}).status_code,401)
