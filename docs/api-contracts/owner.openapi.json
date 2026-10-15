@@ -1390,6 +1390,12 @@
             "title": "Identifier",
             "type": "string"
           },
+          "intake_context": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Intake Context",
+            "type": "string"
+          },
           "intake_uuid": {
             "pattern": "^[a-fA-F0-9-]{36}$",
             "title": "Intake Uuid",

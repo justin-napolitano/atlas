@@ -17,7 +17,7 @@ RIGHTS = {"unknown", "metadata_only", "permitted_excerpt", "public_domain", "ope
 COVERAGE = {"metadata_only", "abstract", "selected_passage", "full_work_read"}
 LIMITS = {"title":2000,"creators":2000,"publication":2000,"publication_date":200,
           "edition":1000,"identifier":2000,"source_url":2000,"rights_basis":2000,
-          "rationale":2000,"distinct_source_rationale":2000,"language":200,"accessed_on":10}
+          "rationale":2000,"distinct_source_rationale":2000,"language":200,"accessed_on":10,"intake_context":2000}
 
 
 def identity_keys(source_url, identifier):

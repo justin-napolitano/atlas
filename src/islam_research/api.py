@@ -138,6 +138,7 @@ class SourceIntakeInput(Input):
     publication_date: Annotated[str, Field(max_length=200)] = ""
     language: Annotated[str, Field(max_length=200)] = ""
     accessed_on: Annotated[str, Field(max_length=10)] = ""
+    intake_context: Annotated[str, Field(max_length=2000)] = ""
     edition: Annotated[str, Field(min_length=1,max_length=1000)]
     identifier: Annotated[str, Field(max_length=2000)] = ""
     source_url: Annotated[str, Field(max_length=2000)] = ""

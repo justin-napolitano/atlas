@@ -6,7 +6,7 @@ import uuid
 
 def payload(project="synthetic", **patch):
     return {**dict(intake_uuid=str(uuid.uuid4()),project_id=project,title="Synthetic reading source",
-        creators="Synthetic author",publication="Synthetic publication",publication_date="2026",language="English",accessed_on="2026-10-15",edition="Synthetic edition",
+        creators="Synthetic author",publication="Synthetic publication",publication_date="2026",language="English",accessed_on="2026-10-15",intake_context="Synthetic manually entered metadata",edition="Synthetic edition",
         identifier="doi:10.1234/synthetic",source_url="https://example.invalid/article",source_role="scholarship",
         access_status="unknown",rights_status="metadata_only",rights_basis="",coverage_scope="metadata_only",
         rationale="Investigate the bounded pilot question",distinct_source_rationale="",existing_source_record_id=None,
@@ -21,6 +21,7 @@ class SourceIntakeValidationTests(unittest.TestCase):
         for value in ("file:///etc/passwd","https://user:password@example.invalid","https://example.invalid/\nprivate","https://example.invalid:99999"):
             with self.subTest(url=value),self.assertRaises(ValueError): identity_keys(value,"")
         for patch in (dict(owner_confirmed=1),dict(intake_uuid=str(uuid.uuid1())),dict(edition="  "),
+                      dict(intake_context="x"*2001),
                       dict(excerpt={"text":"text","edition":"Synthetic edition","locator":"p1","representation_url":""})):
             with self.subTest(patch=patch),self.assertRaises(ValueError): validate(payload(**patch))
 
@@ -67,6 +68,7 @@ class SourceIntakeStoreTests(unittest.TestCase):
             self.assertEqual(self.db.get_record(connection,result["record_id"])["title"],"Later correction")
             history=self.store.history(connection,self.project,result["record_id"],"",25)
             self.assertEqual(history[0]["declarations"]["coverage_scope"],"metadata_only")
+            self.assertEqual(history[0]["declarations"]["intake_context"],values["intake_context"])
             self.assertEqual(self.store.history(connection,"other",result["record_id"],"",25),[])
             with self.assertRaises(ValueError): self.store.create(connection,**{**values,"title":"Changed retry"})
 
