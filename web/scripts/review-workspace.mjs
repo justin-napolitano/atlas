@@ -272,7 +272,7 @@ try {
   await evaluate('document.querySelector(".publication-approval .publication-ack input").click()');
   await until(()=>evaluate('!document.querySelector(".publication-approve").disabled'),'explicit publication acknowledgement');
   await evaluate('document.querySelector(".publication-approve").click()');
-  await until(()=>evaluate('document.querySelector(".publication-message")?.textContent.includes("research or public revision changed")'),'stale publication prevents approval');
+  await until(()=>evaluate('document.querySelector(".publication-message[role=status]")?.textContent.includes("research or public revision changed")'),'stale publication prevents approval');
   assert.equal(await evaluate('document.querySelector(".publication-approve").disabled'),true);
   await evaluate('document.querySelector(".publication-head button").click()');
   await until(()=>evaluate('document.querySelector(".publication-head")?.textContent.includes("revision 1")'),'refresh concurrent public head');
