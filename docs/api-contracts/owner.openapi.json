@@ -128,6 +128,141 @@
         "title": "ProjectInput",
         "type": "object"
       },
+      "PublicationApprovalInput": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "expected_sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Expected Sha256",
+            "type": "string"
+          },
+          "preview_id": {
+            "pattern": "^publication-[a-f0-9]{32}$",
+            "title": "Preview Id",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "rights_checked": {
+            "const": true,
+            "title": "Rights Checked",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "preview_id",
+          "expected_sha256",
+          "expected_revision",
+          "rationale",
+          "rights_checked"
+        ],
+        "title": "PublicationApprovalInput",
+        "type": "object"
+      },
+      "PublicationPreviewInput": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "relation_ids": {
+            "items": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "type": "string"
+            },
+            "maxItems": 300,
+            "title": "Relation Ids",
+            "type": "array"
+          },
+          "selections": {
+            "items": {
+              "$ref": "#/components/schemas/PublicationSelection"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Selections",
+            "type": "array"
+          }
+        },
+        "required": [
+          "project_id",
+          "selections"
+        ],
+        "title": "PublicationPreviewInput",
+        "type": "object"
+      },
+      "PublicationSelection": {
+        "additionalProperties": false,
+        "properties": {
+          "include_bibliography": {
+            "default": false,
+            "title": "Include Bibliography",
+            "type": "boolean"
+          },
+          "include_summary": {
+            "default": false,
+            "title": "Include Summary",
+            "type": "boolean"
+          },
+          "record_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Record Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record_id"
+        ],
+        "title": "PublicationSelection",
+        "type": "object"
+      },
+      "PublicationWithdrawalInput": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "expected_revision",
+          "rationale"
+        ],
+        "title": "PublicationWithdrawalInput",
+        "type": "object"
+      },
       "RankCandidate": {
         "additionalProperties": false,
         "properties": {
@@ -757,6 +892,206 @@
           }
         },
         "summary": "Create Project"
+      }
+    },
+    "/v1/publication/approve": {
+      "post": {
+        "operationId": "publication_approve_v1_publication_approve_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicationApprovalInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Publication Approve"
+      }
+    },
+    "/v1/publication/head": {
+      "get": {
+        "operationId": "publication_head_v1_publication_head_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Publication Head"
+      }
+    },
+    "/v1/publication/preview": {
+      "get": {
+        "operationId": "publication_preview_by_id_v1_publication_preview_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "preview_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Preview Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Publication Preview By Id"
+      }
+    },
+    "/v1/publication/previews": {
+      "post": {
+        "operationId": "publication_preview_v1_publication_previews_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicationPreviewInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Publication Preview"
+      }
+    },
+    "/v1/publication/withdraw": {
+      "post": {
+        "operationId": "publication_withdraw_v1_publication_withdraw_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicationWithdrawalInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Publication Withdraw"
       }
     },
     "/v1/rank": {

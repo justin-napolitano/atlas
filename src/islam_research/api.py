@@ -128,6 +128,32 @@ class ReadingAnnotationUpdate(Input):
     expected_revision: Annotated[int, Field(ge=1)]
 
 
+class PublicationSelection(Input):
+    record_id: Identifier
+    include_summary: bool = False
+    include_bibliography: bool = False
+
+
+class PublicationPreviewInput(Input):
+    project_id: Identifier
+    selections: list[PublicationSelection] = Field(min_length=1,max_length=100)
+    relation_ids: list[Identifier] = Field(default_factory=list,max_length=300)
+
+
+class PublicationApprovalInput(Input):
+    preview_id: Annotated[str,Field(pattern=r"^publication-[a-f0-9]{32}$")]
+    expected_sha256: Annotated[str,Field(pattern=r"^[a-f0-9]{64}$")]
+    expected_revision: Annotated[int,Field(ge=0)]
+    rationale: Annotated[str,Field(min_length=1,max_length=2000)]
+    rights_checked: Literal[True]
+
+
+class PublicationWithdrawalInput(Input):
+    project_id: Identifier
+    expected_revision: Annotated[int,Field(ge=1)]
+    rationale: Annotated[str,Field(min_length=1,max_length=2000)]
+
+
 def problem(status: int, detail: str, request_id: str = "", **extra) -> JSONResponse:
     return JSONResponse(status_code=status, media_type="application/problem+json",
                         content=jsonable_encoder({"type": "about:blank", "status": status,
@@ -394,6 +420,29 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     @router.put("/reading/annotation")
     def update_reading_annotation(value: ReadingAnnotationUpdate, actor: str = Depends(owner)):
         return store.update_reading_annotation(actor=actor,**value.model_dump())
+
+    @router.get("/publication/head")
+    def publication_head(project_id: Identifier):
+        return store.publication_head(project_id)
+
+    @router.get("/publication/preview")
+    def publication_preview_by_id(project_id: Identifier,preview_id: Identifier):
+        value=store.publication_preview_by_id(project_id,preview_id)
+        if value is None:
+            raise HTTPException(404,"Publication preview not found")
+        return value
+
+    @router.post("/publication/previews",status_code=201)
+    def publication_preview(value: PublicationPreviewInput,actor: str = Depends(owner)):
+        return store.publication_preview(actor=actor,**value.model_dump())
+
+    @router.post("/publication/approve")
+    def publication_approve(value: PublicationApprovalInput,actor: str = Depends(owner)):
+        return store.publication_approve(actor=actor,**value.model_dump())
+
+    @router.post("/publication/withdraw")
+    def publication_withdraw(value: PublicationWithdrawalInput,actor: str = Depends(owner)):
+        return store.publication_withdraw(actor=actor,**value.model_dump())
 
     app.include_router(router)
     return app

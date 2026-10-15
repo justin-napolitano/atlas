@@ -86,7 +86,8 @@ class APIBoundaryTests(unittest.TestCase):
         self.assertEqual(public.get("/v1/public/snapshots/test").status_code, 200)
         for path in ["/v1/projects", "/v1/personal-states", "/v1/records", "/v1/schema", "/openapi.json",
                      "/v1/evidence-path", "/v1/research-operations", "/v1/rank", "/v1/search", "/v1/personal-state",
-                     "/v1/reading/documents", "/v1/reading/document", "/v1/reading/annotations", "/v1/reading/annotation"]:
+                     "/v1/reading/documents", "/v1/reading/document", "/v1/reading/annotations", "/v1/reading/annotation",
+                     "/v1/publication/head", "/v1/publication/preview", "/v1/publication/previews", "/v1/publication/approve", "/v1/publication/withdraw"]:
             self.assertEqual(public.get(path).status_code, 404)
             self.assertEqual(public.put(path, json={}).status_code, 404)
             self.assertEqual(public.post(path, json={}).status_code, 404)
@@ -186,9 +187,11 @@ class APIDatabaseTests(unittest.TestCase):
             if not connection.execute("SELECT 1 FROM pg_roles WHERE rolname='research_ci_public'").fetchone():
                 connection.execute("CREATE ROLE research_ci_public LOGIN")
             connection.execute("GRANT USAGE ON SCHEMA research_public TO research_ci_public")
-            connection.execute("GRANT SELECT ON research_public.snapshots TO research_ci_public")
+            connection.execute("GRANT SELECT ON research_public.snapshots,research_public.publication_heads TO research_ci_public")
             connection.execute("INSERT INTO research_public.snapshots(id,project_id,payload) VALUES (%s,%s,%s::jsonb)",
-                               (snapshot_id, "synthetic-published-project", json.dumps({"nodes": [], "title": "Synthetic public snapshot"})))
+                               (snapshot_id, "synthetic-head-"+snapshot_id, json.dumps({"nodes": [], "title": "Synthetic public snapshot"})))
+            connection.execute("""INSERT INTO research_public.publication_heads(project_id,revision,snapshot_id,status)
+                VALUES(%s,1,%s,'published')""",("synthetic-head-"+snapshot_id,snapshot_id))
         reader_dsn = make_conninfo(dsn, user="research_ci_public", password="")
         public = TestClient(create_app(Settings(reader_dsn, mode="public")))
         self.assertEqual(public.get("/health/ready").status_code, 200)
