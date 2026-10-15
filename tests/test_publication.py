@@ -97,7 +97,7 @@ class PublicationDatabaseTests(unittest.TestCase):
         from islam_research.api_store import PostgreSQLStore
         preview=self.preview();reader=PostgreSQLStore(self.publisher_dsn)
         self.assertTrue(reader.ready("public"));self.assertIsNone(reader.published(preview["id"]))
-        self.assertNotIn("PRIVATE_",json.dumps(preview))
+        self.assertNotIn("PRIVATE_",json.dumps(preview,default=str))
         first=self.approve(preview);again=self.approve(preview)
         self.assertEqual(first,again);self.assertEqual(first["revision"],1)
         public=reader.published(preview["id"])
@@ -165,7 +165,13 @@ class PublicationDatabaseTests(unittest.TestCase):
         from islam_research.database_import import import_turtle
         project="test:"+uuid.uuid4().hex
         with self.db.connect(self.dsn) as connection:
-            self.db.create_project(connection,project,"Canonical pilot")
+            # IDs are global: reuse the unchanged canonical fixture if another
+            # contract already imported it, rather than rewriting graph identities.
+            existing=connection.execute("SELECT project_id FROM research.records WHERE id='https://islam-research.local/id/sirry-2021-ulul-amr'").fetchone()
+            if existing:
+                project=existing["project_id"]
+            else:
+                self.db.create_project(connection,project,"Canonical pilot")
             import_turtle(connection,Path(__file__).resolve().parents[1]/"graph/research.ttl",project,actor="synthetic-importer",dry_run=False)
             records=connection.execute("SELECT id,kind FROM research.records WHERE project_id=%s",(project,)).fetchall()
             ids=[r["id"] for r in records if r["kind"] in pub.PUBLIC_KINDS]
@@ -177,7 +183,9 @@ class PublicationDatabaseTests(unittest.TestCase):
         self.assertTrue(any(n["links"] for n in payload["nodes"] if n["type"]=="source"))
         self.assertTrue(all(e["predicate"].startswith("http") for e in payload["edges"]))
         self.assertNotIn("synthetic-importer",json.dumps(payload));self.assertNotIn("rdf_properties",json.dumps(payload))
-        self.assertEqual(self.approve(preview)["status"],"published")
+        with self.db.connect(self.owner_dsn) as connection:
+            revision=pub.head(connection,project)["revision"]
+        self.assertEqual(self.approve(preview,expected_revision=revision)["status"],"published")
 
     def test_signed_owner_http_approval_and_public_withdrawal_use_restricted_roles(self):
         import time

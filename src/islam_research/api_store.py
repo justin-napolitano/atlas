@@ -23,10 +23,11 @@ class PostgreSQLStore:
                     (has_table_privilege(current_user,c.oid,'INSERT,UPDATE,DELETE')
                      OR has_any_column_privilege(current_user,c.oid,'INSERT,UPDATE')
                      OR has_schema_privilege(current_user,'research_public','CREATE')
-                     OR has_table_privilege(current_user,'research_public.publication_heads','INSERT,UPDATE,DELETE')
-                     OR has_any_column_privilege(current_user,'research_public.publication_heads','INSERT,UPDATE')) AS can_write,
-                    has_table_privilege(current_user,'research_public.publication_heads','SELECT') AS can_read_head
+                     OR has_table_privilege(current_user,h.oid,'INSERT,UPDATE,DELETE')
+                     OR has_any_column_privilege(current_user,h.oid,'INSERT,UPDATE')) AS can_write,
+                    has_table_privilege(current_user,h.oid,'SELECT') AS can_read_head
                     FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                    JOIN pg_class h ON h.relnamespace=n.oid AND h.relname='publication_heads'
                     WHERE n.nspname='research_public' AND c.relname='snapshots'""").fetchone()
                 return bool(row and not row["private_access"] and row["can_read"] and row["can_read_head"] and not row["can_write"])
             return connection.execute("SELECT to_regclass('research.records') IS NOT NULL AS ready").fetchone()["ready"]
