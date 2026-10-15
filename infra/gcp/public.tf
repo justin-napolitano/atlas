@@ -1,6 +1,10 @@
 # Disabled by default. These resources do not execute a build, scan, image push,
 # source-head freshness check or approval. Inspect a complete credentialed plan
 # and required security/cost evidence before any separately authorized apply.
+locals {
+  public_service_name = "${var.prefix}-public"
+}
+
 resource "google_project_service_identity" "public_run" {
   count      = var.public_release == null ? 0 : 1
   provider   = google-beta
@@ -21,7 +25,7 @@ resource "google_kms_crypto_key_iam_member" "public_run" {
 resource "google_cloud_run_v2_service" "public" {
   count                = var.public_release == null ? 0 : 1
   project              = var.project_id
-  name                 = "${var.prefix}-public"
+  name                 = local.public_service_name
   location             = var.region
   ingress              = "INGRESS_TRAFFIC_ALL"
   deletion_protection  = true
@@ -87,10 +91,11 @@ resource "google_cloud_run_v2_service" "public" {
 # Explicit public read-only product requirement. The IAM check itself remains
 # enabled; only this public service may get anonymous invoker membership.
 resource "google_cloud_run_v2_service_iam_member" "anonymous_public" {
-  count    = var.public_release == null ? 0 : (var.public_release.anonymous ? 1 : 0)
-  project  = var.project_id
-  location = var.region
-  name     = google_cloud_run_v2_service.public[0].name
-  role     = "roles/run.invoker"
-  member   = "allUsers"
+  count      = var.public_release == null ? 0 : (var.public_release.anonymous ? 1 : 0)
+  project    = var.project_id
+  location   = var.region
+  name       = local.public_service_name
+  role       = "roles/run.invoker"
+  member     = "allUsers"
+  depends_on = [google_cloud_run_v2_service.public]
 }
