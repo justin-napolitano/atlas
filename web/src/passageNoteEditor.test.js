@@ -15,7 +15,7 @@ test('edits survive navigation and saved response keeps the exact target',async(
   assert.equal(editor.documentForSource('another-project','source:1'),undefined);
   assert.equal(editor.adopt(row(),'source:1').body,'My new note');
   await editor.save('annotation:1');
-  assert.deepEqual(calls,[{path:'reading/annotation',params:{},value:{annotation_id:'annotation:1',project_id:'project:1',body:'My new note',expected_revision:1}}]);
+  assert.deepEqual(calls,[{path:'reading/annotation',params:{},value:{annotation_id:'annotation:1',project_id:'project:1',body:'My new note',mark_style:'highlight',expected_revision:1}}]);
   assert.equal(editor.hasDrafts(),false);
   assert.equal(editor.adopt(row(),'source:1').server.revision,2); // Stale list response cannot roll back a save.
   assert.equal(editor.adopt(row(),'source:1').server.exact,'tafsīr');
@@ -77,4 +77,31 @@ test('refresh adopts a newer saved note, but preserves an unsaved local edit',()
   assert.equal(entry.body,'Unsaved local note');assert.equal(entry.server.revision,2);
   editor.close('annotation:1');assert.equal(entry.body,'New cloud note');assert.equal(editor.hasDrafts(),false);
   assert.throws(()=>editor.adopt({...row(),document_id:'different-document'},'source:1'),/identity/);
+});
+
+test('mark presentation and note body share one revision and conflict decision',async()=>{
+  const writes=[];let cloud={...row(),mark_style:'none',revision:2};
+  const editor=new PassageNoteEditor({request:async(path,params,value)=>{
+    writes.push(value);
+    if(value.expected_revision!==cloud.revision) throw new WorkspaceError(409,cloud);
+    cloud={...cloud,body:value.body,mark_style:value.mark_style,revision:cloud.revision+1};return cloud;
+  }});
+  const entry=editor.adopt({...row(),mark_style:'highlight'},'source:1');editor.editStyle(row().id,'underline');
+  assert.equal(entry.status,'unsaved');assert.equal(editor.hasDrafts(),true);
+  await editor.save(row().id);assert.equal(entry.status,'conflict');assert.equal(entry.current.mark_style,'none');
+  assert.equal(entry.markStyle,'underline');editor.resolve(row().id,'draft');await entry.pending;
+  assert.equal(writes[1].expected_revision,2);assert.equal(entry.server.mark_style,'underline');assert.equal(entry.status,'saved');
+  editor.editStyle(row().id,'none');editor.close(row().id);assert.equal(entry.markStyle,'underline');
+});
+
+test('same body with a different cloud style cannot acknowledge an uncertain style save',async()=>{
+  let count=0;
+  const editor=new PassageNoteEditor({request:async()=>{
+    if(++count===1) throw new WorkspaceError(503);
+    throw new WorkspaceError(409,{...row(),mark_style:'none',revision:2});
+  }});
+  const entry=editor.adopt(row(),'source:1');editor.editStyle(row().id,'underline');
+  await editor.save(row().id);assert.equal(entry.status,'error');
+  await editor.save(row().id);assert.equal(entry.status,'conflict');
+  editor.resolve(row().id,'cloud');assert.equal(entry.markStyle,'none');assert.equal(entry.status,'saved');
 });
