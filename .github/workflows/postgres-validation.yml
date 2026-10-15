@@ -2,10 +2,10 @@ name: PostgreSQL contracts
 
 on:
   pull_request:
-    paths: ['src/**', 'tests/**', 'pyproject.toml', 'uv.lock', '.github/workflows/postgres-validation.yml']
+    paths: ['src/**', 'tests/**', 'scripts/export_api_schema.py', 'docs/api-contracts/**', 'pyproject.toml', 'uv.lock', '.github/workflows/postgres-validation.yml']
   push:
     branches: [main]
-    paths: ['src/**', 'tests/**', 'pyproject.toml', 'uv.lock', '.github/workflows/postgres-validation.yml']
+    paths: ['src/**', 'tests/**', 'scripts/export_api_schema.py', 'docs/api-contracts/**', 'pyproject.toml', 'uv.lock', '.github/workflows/postgres-validation.yml']
 
 permissions:
   contents: read
@@ -33,6 +33,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install 'uv==0.9.21'
-      - run: uv sync --frozen --extra database --extra graph
+      - run: uv sync --frozen --extra database --extra graph --extra api --extra test
       - run: uv run --no-sync python -m unittest discover -s tests -v
+      - run: uv run --no-sync python scripts/export_api_schema.py --check
       - run: uv run --no-sync islam-research validate
