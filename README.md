@@ -39,6 +39,7 @@ The research should understand traditions in context before evaluating them. “
 - `docs/reading-workspace.md` — resizable owner reading UI, revision-aware notes and reading decisions, evidence trails, Markdown export, browser verification, and hosting prerequisites.
 - `docs/reading-place.md` — private revisioned reading bookmarks with exact document/annotation targets and explicit cross-session conflict handling.
 - `docs/reading-context-evidence.md` — independent edition comparison, directed evidence paths, and bounded source-context navigation.
+- `docs/connected-reading-release.md` — reading material, recoverable writing, notebook, comparison and evidence navigation with explicit scope limits.
 - `docs/obsidian-notes.md` — shared versioned private Markdown notes and explicit revision-aware Obsidian/file pull/push; no daemon or live cloud authentication is presumed.
 - `docs/passage-capture.md` — private immutable source excerpts and W3C passage anchors with Unicode positions, edition/locator checks, revision history, and changed-source diagnostics.
 - `docs/passage-marks.md` — revisioned private highlight/underline presentation on those exact passage anchors; no review or publication promotion.

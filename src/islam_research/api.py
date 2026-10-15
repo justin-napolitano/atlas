@@ -254,6 +254,14 @@ class VersePilotImport(VerseOwnerInput):
     rationale: Annotated[str,Field(min_length=1,max_length=2000)]
 
 
+class CollectionReadingLink(VerseOwnerInput):
+    project_id: Identifier
+    reading_id: Identifier
+    document_id: Identifier
+    request_uuid: Annotated[str,Field(pattern=r"^[a-fA-F0-9-]{36}$")]
+    rationale: Annotated[str,Field(min_length=1,max_length=2000)]
+
+
 class VerseMaterialInput(VerseMetadata):
     request_uuid: Annotated[str,Field(pattern=r"^[a-fA-F0-9-]{36}$")]
     project_id: Identifier
@@ -643,6 +651,10 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     @router.get("/reading/collection")
     def reading_collection():
         return collection_resource()
+
+    @router.post("/reading/link-collection",status_code=201)
+    def link_collection_reading(value: CollectionReadingLink,actor: str = Depends(owner)):
+        return store.link_collection_reading(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
 
     @router.get("/record-context")
     def record_context(project_id: Identifier, record_id: Identifier,

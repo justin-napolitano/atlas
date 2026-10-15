@@ -1,6 +1,57 @@
 {
   "components": {
     "schemas": {
+      "CollectionReadingLink": {
+        "additionalProperties": false,
+        "properties": {
+          "document_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "owner_confirmed": {
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "reading_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Reading Id",
+            "type": "string"
+          },
+          "request_uuid": {
+            "pattern": "^[a-fA-F0-9-]{36}$",
+            "title": "Request Uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "project_id",
+          "reading_id",
+          "document_id",
+          "request_uuid",
+          "rationale"
+        ],
+        "title": "CollectionReadingLink",
+        "type": "object"
+      },
       "FeatureInput": {
         "additionalProperties": false,
         "properties": {
@@ -4967,6 +5018,42 @@
           }
         },
         "summary": "Reading Drafts"
+      }
+    },
+    "/v1/reading/link-collection": {
+      "post": {
+        "operationId": "link_collection_reading_v1_reading_link_collection_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionReadingLink"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Link Collection Reading"
       }
     },
     "/v1/reading/scripture-candidates": {

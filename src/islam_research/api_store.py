@@ -13,10 +13,14 @@ from . import reading_desk
 from . import record_context
 from . import notebook
 from . import reading_drafts
+from . import collection_link
 
 
 class PostgreSQLStore:
     """Keep private queries and public projection reads separate."""
+
+    def link_collection_reading(self,**values):
+        with db.connect(self.dsn) as connection:return collection_link.link(connection,**values)
 
     def record_context(self, project_id, record_id, cursor, limit):
         with db.connect(self.dsn) as connection:

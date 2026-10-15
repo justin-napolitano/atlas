@@ -4,6 +4,14 @@ Status: combined source candidate; **not deployed and not launch complete**. The
 
 ## Integrated source
 
+The next connected-reading slice is described in `connected-reading-release.md`:
+five located source readings and sourced preparation cards, explicit typed verse
+connections for imported collection excerpts, private recoverable writing drafts,
+a running notebook over original passage/record note bodies, independent version
+comparison, and directed evidence/source-context navigation. Its combined checks
+must run at the exact integration head. Individual feature checks do not establish
+live IAP sessions, cloud SQL bootstrap, editorial review or launch completion.
+
 The working-reader integration combines persistent highlight/underline/margin
 styles, universal source-intake receipts, the bounded article preset and attributed
 Q 4:59/Q 4:83 Arabic resource, saved passage-to-verse links and scoped material

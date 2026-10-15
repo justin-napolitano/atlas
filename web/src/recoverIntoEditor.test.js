@@ -36,3 +36,11 @@ test('an old recovery preview cannot downgrade a newer confirmed or conflicting 
   assert.equal(recoverPassageWriting(editor,record,{...recovered,context_kind:'annotation',annotation_id:'a',document_id:'d',text_sha256:'x',start:0,end:1,exact:'x',current_snapshot:{...current,revision:3}}),false);
   assert.equal(editor.entries.get('a').server.revision,4);
 });
+
+test('capture finder cannot replace unfinished writing in a different saved-passage editor',()=>{
+  const editor=new PassageNoteEditor({}),record={id:'s',project_id:'p'},uuid='11111111-1111-4111-8111-111111111111';
+  const current={id:'urn:research:annotation:'+uuid,project_id:'p',document_id:'d',text_sha256:'x',start_pos:0,end_pos:1,exact:'x',body:'Cloud',mark_style:'none',revision:1};
+  editor.adopt(current,'s');editor.edit(current.id,'Local writing not shown by the generic capture finder');
+  assert.equal(recoverPassageWriting(editor,record,{context_kind:'capture',annotation_uuid:uuid,project_id:'p',record_id:'s',document_id:'d',text_sha256:'x',start:0,end:1,exact:'x',current_snapshot:current,body:'Other copy',mark_style:'none'}),false);
+  assert.equal(editor.entries.get(current.id).body,'Local writing not shown by the generic capture finder');
+});

@@ -36,6 +36,8 @@ class ContextBoundaryTests(unittest.TestCase):
         class Store(fixtures.MemoryBoundaryStore):
             def record_context(self,project_id,record_id,cursor,limit):
                 return {'project_id':project_id,'record':{'id':record_id},'items':[]}
+            def link_collection_reading(self,**values):
+                return {'project_id':values['project_id'],'actor':values['actor']}
         client=fixtures.TestClient(fixtures.create_app(boundary.settings,store=Store(),verifier=boundary.verifier))
         url='/v1/record-context?project_id=synthetic&record_id=synthetic:source'
         self.assertEqual(client.get(url).status_code,401)
@@ -45,6 +47,11 @@ class ContextBoundaryTests(unittest.TestCase):
         self.assertEqual(client.get('/v1/reading/collection').status_code,401)
         collection=client.get('/v1/reading/collection',headers=boundary.headers()).json()
         self.assertEqual(len(collection['readings']),5)
+        payload=dict(project_id='synthetic',reading_id='rodwell-4-59',document_id='synthetic:doc',request_uuid=str(uuid.uuid4()),rationale='Explicit located reading',owner_confirmed=True)
+        self.assertEqual(client.post('/v1/reading/link-collection',json=payload).status_code,401)
+        self.assertEqual(client.post('/v1/reading/link-collection',json={**payload,'owner_confirmed':False},headers=boundary.headers()).status_code,422)
+        self.assertEqual(client.post('/v1/reading/link-collection',json=payload,headers=boundary.headers()).json()['actor'],fixtures.OWNER)
         public=fixtures.create_app(fixtures.Settings('synthetic-not-a-live-dsn',mode='public'),store=Store())
         self.assertNotIn('/v1/record-context',{route.path for route in public.routes})
         self.assertNotIn('/v1/reading/collection',{route.path for route in public.routes})
+        self.assertNotIn('/v1/reading/link-collection',{route.path for route in public.routes})
