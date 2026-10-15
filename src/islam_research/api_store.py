@@ -81,6 +81,50 @@ class PostgreSQLStore:
                     predicate["from_kinds"], predicate["to_kinds"], limit)).fetchall()
             return traverse(start, project_id, profile_id, adjacent)
 
+    def search(self, project_id: str, query: str, scope: str, kind: str | None, limit: int) -> dict:
+        """Bounded lexical search; private notes are a separately selected channel."""
+        if scope not in {"records", "notes", "all"} or not query.strip() or not 1 <= len(query) <= 500 or not 1 <= limit <= 100:
+            raise ValueError("Invalid search scope, query, or limit")
+        with db.connect(self.dsn) as connection:
+            rows = connection.execute("""WITH query AS (
+                    SELECT plainto_tsquery('simple', %s) AS terms
+                ), candidates AS (
+                    SELECT r.id,'record' AS channel,r.revision,
+                        ts_rank_cd(setweight(to_tsvector('simple',r.title),'A') ||
+                            setweight(to_tsvector('simple',r.summary),'B'),query.terms,32) AS score,
+                        ts_headline('simple',r.title || ' ' || r.summary,query.terms,
+                            'StartSel="",StopSel="",MaxWords=40,MinWords=10,MaxFragments=2') AS excerpt
+                    FROM research.records r CROSS JOIN query
+                    WHERE r.project_id=%s AND r.deleted_at IS NULL AND (%s::text IS NULL OR r.kind=%s)
+                        AND %s::text IN ('records','all')
+                        AND to_tsvector('simple',r.title || ' ' || r.summary) @@ query.terms
+                    UNION ALL
+                    SELECT r.id,'private_note',p.revision,
+                        ts_rank_cd(to_tsvector('simple',p.note),query.terms,32) AS score,
+                        ts_headline('simple',p.note,query.terms,
+                            'StartSel="",StopSel="",MaxWords=40,MinWords=10,MaxFragments=2') AS excerpt
+                    FROM research.personal_states p
+                    JOIN research.records r ON r.project_id=p.project_id AND r.id=p.record_id CROSS JOIN query
+                    WHERE r.project_id=%s AND r.deleted_at IS NULL AND (%s::text IS NULL OR r.kind=%s)
+                        AND %s::text IN ('notes','all') AND to_tsvector('simple',p.note) @@ query.terms
+                ), matches AS (
+                    SELECT id,max(score) AS score,jsonb_agg(jsonb_build_object(
+                        'channel',channel,'revision',revision,'score',score,'excerpt',excerpt) ORDER BY channel) AS matches
+                    FROM candidates GROUP BY id
+                ) SELECT r.id,r.project_id,r.kind,r.title,r.summary,r.revision,r.review_state,m.score,m.matches
+                    FROM matches m JOIN research.records r ON r.id=m.id
+                    ORDER BY m.score DESC,r.id LIMIT %s""",
+                (query, project_id, kind, kind, scope, project_id, kind, kind, scope, limit+1)).fetchall()
+        return {"items": rows[:limit], "truncated": len(rows) > limit, "scope": scope,
+                "method": "postgresql_simple_lexical_v1", "query_semantics": "all_tokenized_terms",
+                "score_meaning": "Normalized lexical cover-density rank, not quality or calibrated semantic relevance",
+                "record_weights": {"title": "A (1.0)", "summary": "B (0.4)"},
+                "note_weight": "D (0.1), separate private-note match channel",
+                "excerpt_format": "plain_text_treat_as_untrusted_text_never_HTML",
+                "limitations": ["No embeddings, synonym expansion, or historical entity disambiguation",
+                    "No Arabic morphological analysis or transliteration equivalence",
+                    "Top results are bounded; no complete-corpus claim"]}
+
     def published(self, snapshot_id: str) -> dict | None:
         # Enforce the public connection boundary on data requests, not just readiness.
         if not self.ready("public"):
