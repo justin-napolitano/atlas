@@ -14,6 +14,8 @@ READ_TABLES = (
     "reading_documents", "reading_annotations", "reading_annotation_revisions",
     "publication_previews", "publication_events",
     "scripture_citations", "scripture_citation_revisions",
+    "lexicon_entries", "lexicon_forms", "lexicon_representations", "lexicon_senses",
+    "lexicon_definitions", "lexicon_occurrences", "lexicon_revisions", "lexicon_captures",
 )
 PUBLIC_TABLES = ("snapshots", "publication_heads")
 OWNER_FUNCTIONS = (
@@ -29,6 +31,13 @@ INSERT_COLUMNS = {
     "reading_documents": "id project_id source_record_id edition locator representation_url text_body input_sha256 text_sha256 normalization content_key changed_by",
     "reading_annotations": "id project_id document_id text_sha256 start_pos end_pos exact prefix suffix capture_kind body changed_by",
     "scripture_citations": "id project_id annotation_id document_id text_sha256 candidate_key parser_version detector_kind match_start match_end matched_text proposal profile_id decision chapter ayah_start ayah_end rationale changed_by",
+    "lexicon_entries": "id project_id entry_type scope changed_by",
+    "lexicon_forms": "id project_id entry_id form_kind rationale changed_by",
+    "lexicon_representations": "id project_id form_id origin_annotation_id origin_start origin_end written_rep language_tag script_tag transliteration_scheme search_key search_version rationale changed_by",
+    "lexicon_senses": "id project_id entry_id concept_id scope rationale changed_by",
+    "lexicon_definitions": "id project_id concept_id sense_id annotation_id definition_kind wording_mode body attribution attribution_person_id scope dating_note rationale proposal_tool proposal_version proposal_activity search_key search_version changed_by",
+    "lexicon_occurrences": "id project_id representation_id sense_id annotation_id document_id text_sha256 term_start term_end exact rationale changed_by",
+    "lexicon_captures": "request_uuid project_id input_sha256 result changed_by",
     "publication_previews": "id project_id record_ids relation_ids inputs payload payload_sha256 created_by",
 }
 UPDATE_COLUMNS = {
@@ -36,6 +45,12 @@ UPDATE_COLUMNS = {
     "personal_states": "reading read_at decision note changed_by revision",
     "reading_annotations": "body revision changed_by",
     "scripture_citations": "decision chapter ayah_start ayah_end rationale revision changed_by",
+    "lexicon_entries": "entry_type scope revision changed_by",
+    "lexicon_forms": "form_kind rationale revision changed_by",
+    "lexicon_representations": "rationale revision changed_by",
+    "lexicon_senses": "scope rationale state revision changed_by",
+    "lexicon_definitions": "wording_mode body attribution scope dating_note rationale search_key state revision changed_by",
+    "lexicon_occurrences": "rationale state revision changed_by",
 }
 
 

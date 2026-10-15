@@ -155,6 +155,105 @@ class PublicationSelection(Input):
     include_bibliography: bool = False
 
 
+class LexiconOwnerInput(Input):
+    owner_confirmed: bool
+
+    @field_validator("owner_confirmed")
+    @classmethod
+    def explicit_lexicon_choice(cls,value):
+        if value is not True: raise ValueError("Explicit owner lexical choice required")
+        return value
+
+
+class LexiconNewEntry(Input):
+    entry_type: Literal["undetermined","word","multiword"] = "undetermined"
+    scope: Annotated[str,Field(min_length=1,max_length=10000)]
+    language_tag: Annotated[str,Field(min_length=1,max_length=100)] = "und"
+    script_tag: Annotated[str,Field(max_length=4)] = ""
+    transliteration_scheme: Annotated[str,Field(max_length=500)] = ""
+
+
+class LexiconNewConcept(Input):
+    mode: Literal["new"]
+    title: Annotated[str,Field(min_length=1,max_length=2000)]
+    scope: Annotated[str,Field(min_length=1,max_length=10000)]
+    language_tag: Annotated[str,Field(min_length=1,max_length=100)] = "und"
+
+
+class LexiconExistingConcept(Input):
+    mode: Literal["existing"]
+    concept_id: Identifier
+
+
+class LexiconCaptureInput(LexiconOwnerInput):
+    request_uuid: Annotated[str,Field(pattern=r"^[a-fA-F0-9-]{36}$")]
+    project_id: Identifier
+    annotation_id: Identifier
+    start: Annotated[int,Field(ge=0,le=499)]
+    end: Annotated[int,Field(ge=1,le=500)]
+    entry: LexiconNewEntry | None = None
+    representation_id: Identifier | None = None
+    concept: Annotated[LexiconNewConcept | LexiconExistingConcept,Field(discriminator="mode")] | None = None
+    sense_id: Identifier | None = None
+    sense_scope: Annotated[str,Field(max_length=10000)] = ""
+    rationale: Annotated[str,Field(min_length=1,max_length=2000)]
+
+
+class LexiconRepresentationInput(LexiconOwnerInput):
+    request_uuid: Annotated[str,Field(pattern=r"^[a-fA-F0-9-]{36}$")]
+    project_id: Identifier
+    form_id: Identifier
+    annotation_id: Identifier
+    start: Annotated[int,Field(ge=0,le=499)]
+    end: Annotated[int,Field(ge=1,le=500)]
+    language_tag: Annotated[str,Field(min_length=1,max_length=100)]
+    script_tag: Annotated[str,Field(max_length=4)] = ""
+    transliteration_scheme: Annotated[str,Field(max_length=500)] = ""
+    rationale: Annotated[str,Field(min_length=1,max_length=2000)]
+
+
+class LexiconDefinitionInput(LexiconOwnerInput):
+    definition_uuid: Annotated[str,Field(pattern=r"^[a-fA-F0-9-]{36}$")]
+    project_id: Identifier
+    concept_id: Identifier
+    sense_id: Identifier | None = None
+    annotation_id: Identifier
+    definition_kind: Literal["source_explicit","reference_gloss","owner_paraphrase","machine_proposed"]
+    wording_mode: Literal["quotation","paraphrase"]
+    body: Annotated[str,Field(min_length=1,max_length=5000)]
+    attribution: Annotated[str,Field(min_length=1,max_length=2000)]
+    attribution_person_id: Identifier | None = None
+    scope: Annotated[str,Field(min_length=1,max_length=10000)]
+    dating_note: Annotated[str,Field(max_length=2000)] = ""
+    rationale: Annotated[str,Field(min_length=1,max_length=2000)]
+    proposal_tool: Annotated[str,Field(max_length=500)] = ""
+    proposal_version: Annotated[str,Field(max_length=500)] = ""
+    proposal_activity: Annotated[str,Field(max_length=500)] = ""
+
+
+class LexiconDefinitionUpdate(LexiconOwnerInput):
+    project_id: Identifier
+    definition_id: Identifier
+    expected_revision: Annotated[int,Field(ge=1)]
+    wording_mode: Literal["quotation","paraphrase"]
+    body: Annotated[str,Field(min_length=1,max_length=5000)]
+    attribution: Annotated[str,Field(min_length=1,max_length=2000)]
+    scope: Annotated[str,Field(min_length=1,max_length=10000)]
+    dating_note: Annotated[str,Field(max_length=2000)] = ""
+    rationale: Annotated[str,Field(min_length=1,max_length=2000)]
+    state: Literal["active","withdrawn"] = "active"
+
+
+class LexiconConnectionUpdate(LexiconOwnerInput):
+    project_id: Identifier
+    entity_kind: Literal["sense","occurrence"]
+    entity_id: Identifier
+    expected_revision: Annotated[int,Field(ge=1)]
+    rationale: Annotated[str,Field(min_length=1,max_length=2000)]
+    scope: Annotated[str,Field(max_length=10000)] = ""
+    state: Literal["active","withdrawn"]
+
+
 class PublicationPreviewInput(Input):
     project_id: Identifier
     selections: list[PublicationSelection] = Field(min_length=1,max_length=100)
@@ -398,6 +497,13 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
                     "owner_resolution":"/v1/reading/scripture-citation","max_reverse_lookup_page":25,
                     "scope":"owner_only","confirmation":"explicit_owner_decision_with_revision_and_rationale",
                     "review_effect":"none","graph_effect":"none","publication_effect":"none"},
+                "lexicon": {"version":1,"scope":"owner_only","search":"/v1/lexicon/search","concept":"/v1/lexicon/concept",
+                    "senses":"/v1/lexicon/senses","representations":"/v1/lexicon/representations",
+                    "definitions":"/v1/lexicon/definitions","occurrences":"/v1/lexicon/occurrences",
+                    "annotation_links":"/v1/lexicon/annotation-links","history":"/v1/lexicon/history",
+                    "capture":"/v1/lexicon/captures","max_page":25,"max_search_results":30,
+                    "review_effect":"none","graph_effect":"none","publication_effect":"none",
+                    "retrieval":"versioned lexical normalization; no semantic equivalence inference"},
                 "execution": "typed_traversal_and_owner_observation_scoring_v1"}
 
     @router.get("/search")
@@ -478,6 +584,84 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
                             limit: Annotated[int,Query(ge=1,le=25)] = 25):
         rows = store.scripture_citations(project_id,chapter,ayah_start,ayah_end,cursor,limit+1)
         return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
+
+    @router.post("/lexicon/captures",status_code=201)
+    def lexicon_capture(value: LexiconCaptureInput,actor: str = Depends(owner)):
+        return store.lexicon_capture(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
+
+    @router.post("/lexicon/representations",status_code=201)
+    def lexicon_create_representation(value: LexiconRepresentationInput,actor: str = Depends(owner)):
+        return store.lexicon_create_representation(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
+
+    @router.post("/lexicon/definitions",status_code=201)
+    def lexicon_create_definition(value: LexiconDefinitionInput,actor: str = Depends(owner)):
+        return store.lexicon_create_definition(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
+
+    @router.put("/lexicon/definition")
+    def lexicon_update_definition(value: LexiconDefinitionUpdate,actor: str = Depends(owner)):
+        return store.lexicon_update_definition(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
+
+    @router.put("/lexicon/connection")
+    def lexicon_update_connection(value: LexiconConnectionUpdate,actor: str = Depends(owner)):
+        return store.lexicon_update_connection(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
+
+    @router.get("/lexicon/concept")
+    def lexicon_concept(project_id: Identifier,concept_id: Identifier):
+        value=store.lexicon_concept(project_id,concept_id)
+        if value is None: raise HTTPException(404,"Concept not found")
+        return value
+
+    def lexicon_page(rows,limit):
+        return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
+
+    @router.get("/lexicon/senses")
+    def lexicon_senses(project_id: Identifier,concept_id: Identifier,cursor: Annotated[str,Query(max_length=500)] = "",
+                       limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        return lexicon_page(store.lexicon_senses(project_id,concept_id,cursor,limit+1),limit)
+
+    @router.get("/lexicon/annotation-links")
+    def lexicon_annotation_links(project_id: Identifier,annotation_id: Identifier,cursor: Annotated[str,Query(max_length=500)] = "",
+                                limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows=store.lexicon_annotation_links(project_id,annotation_id,cursor,limit+1)
+        if rows is None: raise HTTPException(404,"Reading annotation not found")
+        return lexicon_page(rows,limit)
+
+    @router.get("/lexicon/representations")
+    def lexicon_representations(project_id: Identifier,entry_id: Identifier,cursor: Annotated[str,Query(max_length=500)] = "",
+                               limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        return lexicon_page(store.lexicon_representations(project_id,entry_id,cursor,limit+1),limit)
+
+    @router.get("/lexicon/definitions")
+    def lexicon_definitions(project_id: Identifier,concept_id: Identifier,cursor: Annotated[str,Query(max_length=500)] = "",
+                            limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        return lexicon_page(store.lexicon_definitions(project_id,concept_id,cursor,limit+1),limit)
+
+    @router.get("/lexicon/occurrences")
+    def lexicon_occurrences(project_id: Identifier,concept_id: Identifier,cursor: Annotated[str,Query(max_length=500)] = "",
+                            limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        return lexicon_page(store.lexicon_occurrences(project_id,concept_id,cursor,limit+1),limit)
+
+    @router.get("/lexicon/search")
+    def lexicon_search(project_id: Identifier,q: Annotated[str,Query(min_length=1,max_length=500)],
+                       limit: Annotated[int,Query(ge=1,le=30)] = 30):
+        rows=store.lexicon_search(project_id,q,limit+1)
+        return {"items":rows[:limit],"truncated":len(rows)>limit,"retrieval":"lexical text matching, not semantic equivalence or quality ranking"}
+
+    @router.get("/lexicon/entity")
+    def lexicon_entity(project_id: Identifier,entity_id: Identifier,
+                       entity_kind: Literal["entry","form","representation","sense","definition","occurrence"]):
+        value=store.lexicon_entity(project_id,entity_kind,entity_id)
+        if value is None: raise HTTPException(404,"Lexical entity not found")
+        return value
+
+    @router.get("/lexicon/history")
+    def lexicon_history(project_id: Identifier,entity_id: Identifier,
+                        entity_kind: Literal["entry","form","representation","sense","definition","occurrence"],
+                        before_revision: Annotated[int,Query(ge=1,le=2147483647)] = 2147483647,
+                        limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows=store.lexicon_history(project_id,entity_kind,entity_id,before_revision,limit+1)
+        if rows is None: raise HTTPException(404,"Lexical entity not found")
+        return {"items":rows[:limit],"next_before_revision":rows[limit-1]["revision"] if len(rows)>limit else None}
 
     @router.get("/publication/head")
     def publication_head(project_id: Identifier):

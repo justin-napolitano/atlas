@@ -35,6 +35,16 @@ The [located Qur’an reference slice](quran-reference-capture.md) adds offline 
 
 ## First-release acceptance remains intact
 
+The [private scoped lexicon API](scoped-concept-lexicon.md) adds separate entries,
+forms, source-grounded written representations, scoped senses, definition
+assertions, and exact occurrences, reusing existing concept IDs. Runtime-role
+tests cover capture retries/concurrency/rollback, variants, canonical concept
+preservation, definition gaps, CAS corrections and history, scoped retrieval, and
+public-projection exclusion. The private Ossie contract includes their source
+lineage. Backend tests do not establish a usable browser concept-authoring flow,
+public lexical publication, reviewed definitions, or actual hosted operation;
+those remain explicit first-reading-release work under #42/#44.
+
 | Requirement from #42 | Current evidence | Still required |
 | --- | --- | --- |
 | Owner signs in from two independent machines/profiles | Signed-token boundary tests and revision-safe PostgreSQL storage | Actual GCP/IAP setup, two live authenticated sessions, server restart/reconnect and cross-device verification |
