@@ -82,8 +82,8 @@ test('offline failures preserve notes and navigation cannot adopt stale data ove
   store.adopt({ ...initial(), note: 'Stale fetch' }); store.adopt(blankState('other','test-project'));
   assert.equal(store.entries.get('urn:test:source').draft.note, 'Unsaved offline note');
   assert.equal(store.entries.get('urn:test:source').status, 'error'); assert.equal(store.hasDrafts(), true);
-  assert.match(markdownDraft({ id:'urn:test:source', title:'Synthetic source' }, store.entries.get('urn:test:source')), /base_revision: 0/);
-  assert.match(markdownDraft({ id:'urn:test:source', title:'Synthetic source' }, store.entries.get('urn:test:source')), /Unsaved offline note/);
+  assert.match(await markdownDraft({ id:'urn:test:source', title:'Synthetic source' }, store.entries.get('urn:test:source')), /base_revision: 0/);
+  assert.match(await markdownDraft({ id:'urn:test:source', title:'Synthetic source' }, store.entries.get('urn:test:source')), /Unsaved offline note/);
 });
 
 test('lost successful response can be confirmed by matching revision-conflict state', async () => {

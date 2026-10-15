@@ -73,8 +73,25 @@ export class ReadingWorkspace {
   hasDrafts() { return [...this.entries.values()].some(e => e.status !== 'saved'); }
 }
 
-export function markdownDraft(record, entry) {
-  return ['---', `research_id: ${JSON.stringify(record.id)}`, `project_id: ${JSON.stringify(entry.draft.project_id)}`,
-    `base_revision: ${entry.server.revision}`, `reading: ${JSON.stringify(entry.draft.reading)}`,
-    `screening: ${JSON.stringify(entry.draft.decision)}`, '---', '', `# ${record.title.replaceAll('\n', ' ')}`, '', entry.draft.note, ''].join('\n');
+const noteContent = state => ({ reading: state.reading, decision: state.decision, note: state.note.replaceAll('\r\n','\n') });
+async function sha(value) {
+  const bytes = await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(value)));
+  return [...new Uint8Array(bytes)].map(n => n.toString(16).padStart(2,'0')).join('');
+}
+export async function markdownDraft(record, entry) {
+  const base=noteContent(entry.server), draft=noteContent(entry.draft), revision=entry.server.revision;
+  function property(key) {
+    return (record.attributes?.rdf_properties?.[key] || []).map(value => {
+      const literal=value.match(/^"(?:[^"\\]|\\.)*"/);
+      try { return literal ? JSON.parse(literal[0]) : value.replace(/^<|>$/g,''); } catch { return value; }
+    });
+  }
+  const ir='https://islam-research.local/vocab/', dct='http://purl.org/dc/terms/';
+  const context={ title:record.title, source_urls:property(dct+'source'), citation:property(dct+'bibliographicCitation'),
+    locators:property(ir+'locator'), edition:record.attributes?.edition ?? null, question_ids:property(ir+'addressesQuestion'),
+    review_scope:record.attributes?.recorded_review_status || [] };
+  const metadata={ research_note_version:1,research_id:record.id,project_id:entry.draft.project_id,
+    base_revision:revision,base_sha256:await sha(base),
+    reading:draft.reading,screening:draft.decision,context,context_sha256:await sha(context) };
+  return `---\n${Object.entries(metadata).map(([key,value]) => `${key}: ${JSON.stringify(value)}`).join('\n')}\n---\n\n${draft.note}`;
 }
