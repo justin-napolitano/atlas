@@ -205,6 +205,36 @@
         "title": "PublicationPreviewInput",
         "type": "object"
       },
+      "PublicationRelationsInput": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "record_ids": {
+            "items": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Record Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "project_id",
+          "record_ids"
+        ],
+        "title": "PublicationRelationsInput",
+        "type": "object"
+      },
       "PublicationSelection": {
         "additionalProperties": false,
         "properties": {
@@ -1055,6 +1085,42 @@
           }
         },
         "summary": "Publication Preview"
+      }
+    },
+    "/v1/publication/relations": {
+      "post": {
+        "operationId": "publication_relations_v1_publication_relations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicationRelationsInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Publication Relations"
       }
     },
     "/v1/publication/withdraw": {

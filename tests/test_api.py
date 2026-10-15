@@ -41,6 +41,8 @@ class MemoryBoundaryStore:
         return {"revision":1,"actor":value["actor"],"status":"published"}
     def publication_withdraw(self, **value):
         return {"revision":2,"actor":value["actor"],"status":"withdrawn"}
+    def publication_relations(self, **value):
+        return {"items":[],"truncated":False}
 
 
 @unittest.skipUnless(jwt, "Install api and test extras for HTTP contract tests")
@@ -95,6 +97,10 @@ class APIBoundaryTests(unittest.TestCase):
         for value in [False,0,1,"true",None]:
             self.assertEqual(self.client.post("/v1/publication/approve",json={**approval,"rights_checked":value},headers=self.headers()).status_code,422)
         self.assertEqual(self.client.post("/v1/publication/previews",json={**preview,"payload":{"private":"PRIVATE"}},headers=self.headers()).status_code,422)
+        route="/v1/publication/relations";payload={"project_id":"synthetic","record_ids":["synthetic:source"]}
+        self.assertEqual(self.client.post(route,json=payload).status_code,401)
+        self.assertEqual(self.client.post(route,json=payload,headers=self.headers(sub="other")).status_code,403)
+        self.assertEqual(self.client.post(route,json=payload,headers=self.headers()).json(),{"items":[],"truncated":False})
 
     def test_input_errors_do_not_echo_notes_and_payload_is_bounded(self):
         payload = {"record_id": "synthetic", "project_id": "synthetic", "note": "SYNTHETIC-PRIVATE-NOTE" * 1000}
@@ -111,7 +117,7 @@ class APIBoundaryTests(unittest.TestCase):
         for path in ["/v1/projects", "/v1/personal-states", "/v1/records", "/v1/schema", "/openapi.json",
                      "/v1/evidence-path", "/v1/research-operations", "/v1/rank", "/v1/search", "/v1/personal-state",
                      "/v1/reading/documents", "/v1/reading/document", "/v1/reading/annotations", "/v1/reading/annotation",
-                     "/v1/publication/head", "/v1/publication/preview", "/v1/publication/previews", "/v1/publication/approve", "/v1/publication/withdraw"]:
+                     "/v1/publication/head", "/v1/publication/preview", "/v1/publication/previews", "/v1/publication/approve", "/v1/publication/withdraw", "/v1/publication/relations"]:
             self.assertEqual(public.get(path).status_code, 404)
             self.assertEqual(public.put(path, json={}).status_code, 404)
             self.assertEqual(public.post(path, json={}).status_code, 404)

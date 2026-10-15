@@ -180,6 +180,21 @@ class PostgreSQLStore:
         with db.connect(self.dsn) as connection:
             return publication.preview(connection,**values)
 
+    def publication_relations(self, project_id, record_ids):
+        if len(set(record_ids))!=len(record_ids):
+            raise ValueError("Duplicate publication selection")
+        with db.connect(self.dsn) as connection:
+            rows=connection.execute("""SELECT e.id,e.from_id,e.to_id,e.predicate,e.review_state,
+                s.title AS source_title,t.title AS target_title FROM research.relations e
+                JOIN research.records s ON s.project_id=e.project_id AND s.id=e.from_id
+                JOIN research.records t ON t.project_id=e.project_id AND t.id=e.to_id
+                WHERE e.project_id=%s AND e.from_id=ANY(%s) AND e.to_id=ANY(%s)
+                AND s.deleted_at IS NULL AND t.deleted_at IS NULL
+                AND s.review_state<>'withdrawn' AND t.review_state<>'withdrawn' AND e.review_state<>'withdrawn'
+                AND s.kind=ANY(%s) AND t.kind=ANY(%s)
+                ORDER BY e.id LIMIT 301""",(project_id,record_ids,record_ids,sorted(publication.PUBLIC_KINDS),sorted(publication.PUBLIC_KINDS))).fetchall()
+            return {"items":rows[:300],"truncated":len(rows)>300}
+
     def publication_approve(self, **values):
         with db.connect(self.dsn) as connection:
             return publication.approve(connection,**values)

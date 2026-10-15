@@ -100,7 +100,7 @@ function Workspace() {
   }
   return <main className="shell owner-shell">
     <a className="skip-link" href="#workspace-results">Skip to research records</a>
-    <header className="topbar"><a className="brand" href="/">Research notes</a><span>My workspace</span><div className="header-tools"><button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</button><a href="/">Public research ↗</a></div></header>
+    <header className="topbar"><a className="brand" href="/">Research notes</a><span>My workspace</span><div className="header-tools"><button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</button><a href={`/publish.html?${new URLSearchParams({project})}`}>Publish research</a><a href="/">Public research ↗</a></div></header>
     <div className="owner-heading"><h1>Read. Follow the sources. Make notes.</h1><p>Your reading state and notes are private. Saving here does not publish them.</p></div>
     {error && <div role="alert" className="workspace-alert"><p>{error}</p><button onClick={() => location.reload()}>Reconnect workspace</button><small>Export unsaved notes before reloading. The hosted owner endpoint must be configured at this address.</small></div>}
     <form className="workspace-search" onSubmit={e => { e.preventDefault(); loadRows({ search: true }); }}>

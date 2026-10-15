@@ -225,3 +225,32 @@ class PublicationDatabaseTests(unittest.TestCase):
         self.assertEqual(result.status_code,200);self.assertNotIn("PRIVATE_",result.text)
         self.assertEqual(owner.post("/v1/publication/withdraw",json={"project_id":self.project,"expected_revision":1,"rationale":"Synthetic correction"},headers=headers).status_code,200)
         self.assertEqual(public.get("/v1/public/snapshots/"+preview["id"]).status_code,404)
+
+    def test_relation_picker_is_project_scoped_bounded_and_omits_private_provenance(self):
+        from islam_research.api_store import PostgreSQLStore
+        from psycopg.types.json import Jsonb
+        target="test:"+uuid.uuid4().hex;predicate="https://example.invalid/recordsEvidence"
+        with self.db.connect(self.dsn) as connection:
+            self.db.save_record(connection,project_id=self.project,record_id=target,kind="evidence",title="Synthetic evidence",actor="test-owner")
+            connection.execute("INSERT INTO research.relation_types(predicate,description) VALUES(%s,'Synthetic relation') ON CONFLICT DO NOTHING",(predicate,))
+            connection.execute("""INSERT INTO research.relations(id,project_id,from_id,predicate,to_id,provenance)
+                VALUES(%s,%s,%s,%s,%s,%s)""",("edge:"+uuid.uuid4().hex,self.project,self.source,predicate,target,Jsonb({"private":"PRIVATE_RELATION_PROVENANCE"})))
+        store=PostgreSQLStore(self.owner_dsn)
+        self.assertEqual(store.publication_relations(self.project,[self.source])["items"],[])
+        self.assertEqual(store.publication_relations("different-project",[self.source,target])["items"],[])
+        result=store.publication_relations(self.project,[self.source,target]);self.assertEqual(len(result["items"]),1)
+        self.assertNotIn("PRIVATE_",json.dumps(result));self.assertNotIn("provenance",json.dumps(result))
+        self.assertEqual(result["items"][0]["source_title"],"Synthetic source")
+        with self.assertRaises(ValueError):store.publication_relations(self.project,[self.source,self.source])
+        prefix="https://example.invalid/"+uuid.uuid4().hex+"/"
+        with self.db.connect(self.dsn) as connection:
+            connection.execute("INSERT INTO research.relation_types(predicate,description) SELECT %s||i::text,'Synthetic bounded relation' FROM generate_series(1,301) i",(prefix,))
+            connection.execute("""INSERT INTO research.relations(id,project_id,from_id,predicate,to_id,provenance)
+                SELECT %s||i::text,%s,%s,%s||i::text,%s,'{"private":"PRIVATE_RELATION_PROVENANCE"}'::jsonb
+                FROM generate_series(1,301) i""",(prefix,self.project,self.source,prefix,target))
+        bounded=store.publication_relations(self.project,[self.source,target])
+        self.assertEqual(len(bounded["items"]),300);self.assertTrue(bounded["truncated"])
+        self.assertNotIn("PRIVATE_",json.dumps(bounded))
+        with self.db.connect(self.dsn) as connection:
+            connection.execute("UPDATE research.records SET deleted_at=clock_timestamp(),revision=revision+1 WHERE id=%s",(target,))
+        self.assertEqual(store.publication_relations(self.project,[self.source,target])["items"],[])

@@ -1,6 +1,16 @@
 # Explicit public research snapshots
 
-Publication is a separate axis from scholarly review and personal reading progress. The owner chooses exact records and relations, inspects a sealed preview, and approves its digest. This implementation provides PostgreSQL/API approval and withdrawal; the publication UI, immutable image exporter/build/deploy, cache replacement, rollback policy, and hosted verification remain follow-up work in #41. No real research is approved by implementation tests.
+Publication is a separate axis from scholarly review and personal reading progress. The owner chooses exact records and relations, inspects a sealed preview, and approves its digest. The owner screen and PostgreSQL/API approval/withdrawal are implemented; the immutable image exporter/build/deploy, cache replacement, rollback policy, and hosted verification remain follow-up work in #41. No real research is approved by implementation tests.
+
+## Owner screen
+
+Choose **Publish research** from the reading workspace, or open `/publish.html` on the same authenticated owner origin. Select a project and search/browse its records. Check individual records; summaries and bibliography are excluded until you opt in for each one. Private-only kinds and withdrawn records are disabled. Selected records stay in this page's memory when changing projects or searches; the leave warning covers unsaved selections and private rationale text. Nothing is written to localStorage except theme and pane-width preferences.
+
+Choose **Find connections between selected records**, then check the recorded relations you intend to publish. The private owner endpoint is `POST /v1/publication/relations` with `project_id` and `record_ids`; it returns at most 300 project-scoped, active relations with endpoint titles and full predicates, omitting raw provenance. Both endpoints must be selected. A truncated result says so; narrow the selection to inspect fewer relations. Removing/changing the selected records clears relation choices so dangling links cannot survive silently. This picker checks recorded structure, not whether a relation is a sound scholarly assertion.
+
+**Make private preview** saves a sealed snapshot and moves focus to its readable records, included connections, and complete public JSON/digest. Its authenticated link can reopen the same preview after reload or on another machine. A reopened preview does not approve itself. Review all included content and actual source-review limits, supply a private publication rationale, then explicitly acknowledge privacy/attribution/quotation-rights review before **Approve this snapshot** becomes available. Editing selection/options invalidates that preview and acknowledgement. The screen labels approval separately from a completed public-site build.
+
+A source/head conflict requires a refreshed approval status and a newly inspected preview; unrelated picker actions cannot clear that requirement. An unconfirmed network response retains the same preview/digest/head revision/rationale for an exact retry. Approval of the already-current snapshot is disabled. Withdrawal has its own private rationale and explicit revision-specific acknowledgement; an unconfirmed withdrawal requires a head refresh before retrying. Neither approval nor withdrawal claims that deployed images or cached copies changed immediately.
 
 ## Owner API flow
 

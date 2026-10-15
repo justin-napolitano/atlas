@@ -44,7 +44,7 @@ The research should understand traditions in context before evaluating them. “
 - `docs/adr/0003-immutable-public-delivery.md` — approved snapshots in immutable public builds, isolated publisher reads, and a public runtime with no data credentials; deployment gates remain explicit.
 - `docs/postgres-observability.md` — PostgreSQL 17/18 contract matrix and real native log checks for private bound values, error paths, and shared redaction settings.
 - `docs/runtime-sql-permissions.md` — previewable post-migration grants, restricted owner/publisher logins, and real PostgreSQL permission tests.
-- `docs/publication.md` — owner-selected sealed previews, explicit visibility approval, revisioned publication heads, and withdrawal; public image deployment remains pending.
+- `docs/publication.md` — owner publication screen, sealed previews, explicit visibility approval, revisioned publication heads, and withdrawal; public image deployment remains pending.
 - `methods/corpus-scope.md` — Islam-first source selection and bounded expansion into philosophy/religion.
 - `methods/editorial-review.md` — source/passage/claim review, uncertainty, publication, and corrections.
 - `research-plans/corpora/islam-authority-pilot.json` — existing source IDs and located evidence for the first Q 4:59 reading pilot; not a new review of those sources.
