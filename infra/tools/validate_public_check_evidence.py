@@ -21,7 +21,11 @@ def verify(report):
 
 if __name__ == "__main__":
     try:
-        print(json.dumps(verify(json.loads(Path(sys.argv[1]).read_text())), sort_keys=True))
+        report = json.loads(Path(sys.argv[1]).read_text())
+        print(json.dumps({"security_counts": report.get("summary"), "public_policy_results": {
+            kind: [{"check_id": row.get("check_id"), "resource": row.get("resource")} for row in report.get("results", {}).get(kind, [])
+                   if row.get("check_id") == CHECK] for kind in ("passed_checks", "failed_checks", "skipped_checks")}}, sort_keys=True))
+        print(json.dumps(verify(report), sort_keys=True))
     except Exception:
         print("Required public v2 policy evidence failed verification.", file=sys.stderr)
         raise SystemExit(1)

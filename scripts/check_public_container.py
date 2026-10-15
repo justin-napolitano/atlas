@@ -122,6 +122,9 @@ def run():
                 "--db-repository", "ghcr.io/aquasecurity/trivy-db:2", "--timeout", "5m", "--format", "json",
                 "--list-all-pkgs", "--output", str(report_root / "scan.json")], cwd=root, timeout=360, check=False)
             report = json.loads((report_root / "scan.json").read_text())
+            assert report["SchemaVersion"] == 2 and report["ArtifactType"] == "container_image"
+            assert report["Metadata"]["ImageID"] == info["Id"] and report["Metadata"]["OS"]["Family"] == "alpine"
+            assert isinstance(report["Results"], list) and report["Results"]
             findings = [v for result in report.get("Results", []) for v in result.get("Vulnerabilities", [])]
             phase("sbom_conversion")
             command([str(scanner), "convert", "--config", "/dev/null", "--format", "cyclonedx", "--output",
