@@ -89,7 +89,7 @@ class PostgreSQLStore:
 
     def search(self, project_id: str, query: str, scope: str, kind: str | None, limit: int) -> dict:
         """Bounded lexical search; private notes are a separately selected channel."""
-        if scope not in {"records", "notes", "all"} or not query.strip() or not 1 <= len(query) <= 500 or not 1 <= limit <= 100:
+        if scope not in {"records", "notes", "annotations", "all"} or not query.strip() or not 1 <= len(query) <= 500 or not 1 <= limit <= 100:
             raise ValueError("Invalid search scope, query, or limit")
         with db.connect(self.dsn) as connection:
             rows = connection.execute("""WITH query AS (
@@ -99,7 +99,8 @@ class PostgreSQLStore:
                         ts_rank_cd(setweight(to_tsvector('simple',r.title),'A') ||
                             setweight(to_tsvector('simple',r.summary),'B'),query.terms,32) AS score,
                         ts_headline('simple',r.title || ' ' || r.summary,query.terms,
-                            'StartSel="",StopSel="",MaxWords=40,MinWords=10,MaxFragments=2') AS excerpt
+                            'StartSel="",StopSel="",MaxWords=40,MinWords=10,MaxFragments=2') AS excerpt,
+                        r.id AS target_id,NULL::text AS document_id,NULL::text AS capture_kind
                     FROM research.records r CROSS JOIN query
                     WHERE r.project_id=%s AND r.deleted_at IS NULL AND (%s::text IS NULL OR r.kind=%s)
                         AND %s::text IN ('records','all')
@@ -108,24 +109,47 @@ class PostgreSQLStore:
                     SELECT r.id,'private_note',p.revision,
                         ts_rank_cd(to_tsvector('simple',p.note),query.terms,32) AS score,
                         ts_headline('simple',p.note,query.terms,
-                            'StartSel="",StopSel="",MaxWords=40,MinWords=10,MaxFragments=2') AS excerpt
+                            'StartSel="",StopSel="",MaxWords=40,MinWords=10,MaxFragments=2') AS excerpt,
+                        r.id,NULL::text,NULL::text
                     FROM research.personal_states p
                     JOIN research.records r ON r.project_id=p.project_id AND r.id=p.record_id CROSS JOIN query
                     WHERE r.project_id=%s AND r.deleted_at IS NULL AND (%s::text IS NULL OR r.kind=%s)
                         AND %s::text IN ('notes','all') AND to_tsvector('simple',p.note) @@ query.terms
+                    UNION ALL
+                    SELECT r.id,'private_annotation',a.revision,
+                        ts_rank_cd(to_tsvector('simple',a.exact || ' ' || a.body),query.terms,32),
+                        ts_headline('simple',a.exact || ' — ' || a.body,query.terms,
+                            'StartSel="",StopSel="",MaxWords=40,MinWords=10,MaxFragments=2'),
+                        a.id,a.document_id,a.capture_kind
+                    FROM research.reading_annotations a
+                    JOIN research.reading_documents d ON d.project_id=a.project_id AND d.id=a.document_id
+                    JOIN research.records r ON r.project_id=d.project_id AND r.id=d.source_record_id CROSS JOIN query
+                    WHERE r.project_id=%s AND r.deleted_at IS NULL AND (%s::text IS NULL OR r.kind=%s)
+                        AND %s::text IN ('annotations','all')
+                        AND to_tsvector('simple',a.exact || ' ' || a.body) @@ query.terms
+                ), bounded AS (
+                    SELECT *,row_number() OVER(PARTITION BY id,channel ORDER BY score DESC,target_id) AS match_number
+                    FROM candidates
                 ), matches AS (
-                    SELECT id,max(score) AS score,jsonb_agg(jsonb_build_object(
-                        'channel',channel,'revision',revision,'score',score,'excerpt',excerpt) ORDER BY channel) AS matches
-                    FROM candidates GROUP BY id
-                ) SELECT r.id,r.project_id,r.kind,r.title,r.summary,r.revision,r.review_state,m.score,m.matches
+                    SELECT id,max(score) AS score,bool_or(match_number>5) AS matches_truncated,
+                        jsonb_agg(jsonb_build_object('channel',channel,'revision',revision,'score',score,'excerpt',excerpt,
+                            'target_id',target_id,'document_id',document_id,'capture_kind',capture_kind,
+                            'review_state',CASE WHEN channel='private_annotation' THEN 'captured_unreviewed' ELSE NULL END)
+                            ORDER BY channel,score DESC,target_id) FILTER(WHERE match_number<=5) AS matches
+                    FROM bounded GROUP BY id
+                ) SELECT r.id,r.project_id,r.kind,r.title,left(r.summary,2000) AS summary,
+                    length(r.summary)>2000 AS summary_truncated,r.revision,r.review_state,m.score,m.matches,m.matches_truncated
                     FROM matches m JOIN research.records r ON r.id=m.id
                     ORDER BY m.score DESC,r.id LIMIT %s""",
-                (query, project_id, kind, kind, scope, project_id, kind, kind, scope, limit+1)).fetchall()
+                (query, project_id, kind, kind, scope, project_id, kind, kind, scope,
+                 project_id,kind,kind,scope,limit+1)).fetchall()
         return {"items": rows[:limit], "truncated": len(rows) > limit, "scope": scope,
                 "method": "postgresql_simple_lexical_v1", "query_semantics": "all_tokenized_terms",
                 "score_meaning": "Normalized lexical cover-density rank, not quality or calibrated semantic relevance",
                 "record_weights": {"title": "A (1.0)", "summary": "B (0.4)"},
                 "note_weight": "D (0.1), separate private-note match channel",
+                "annotation_weight": "D (0.1), selected text and private comment; captured, unreviewed",
+                "max_matches_per_channel": 5,
                 "excerpt_format": "plain_text_treat_as_untrusted_text_never_HTML",
                 "limitations": ["No embeddings, synonym expansion, or historical entity disambiguation",
                     "No Arabic morphological analysis or transliteration equivalence",
