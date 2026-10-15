@@ -1,11 +1,11 @@
 """Exercise extra v2 coverage without accepting generic anonymous owner services."""
-import copy
 from pathlib import Path
 import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "checks"))
 from public_runtime import public_contract
+from validate_public_check_evidence import verify, CHECK, REQUIRED
 
 
 def service():
@@ -16,6 +16,17 @@ def service():
 
 
 class PublicRuntimeCheckTests(unittest.TestCase):
+    def test_actual_policy_execution_evidence_is_required_without_failures_or_skips(self):
+        report = {"check_type": "terraform", "results": {"passed_checks": [{"check_id": CHECK, "resource": resource} for resource in REQUIRED],
+                  "failed_checks": [], "skipped_checks": []}, "summary": {"passed": 2}}
+        self.assertTrue(verify(report)["public_v2_policy_executed"])
+        for kind in ("missing", "failed", "skipped"):
+            import copy
+            changed = copy.deepcopy(report)
+            if kind == "missing": changed["results"]["passed_checks"].pop()
+            else: changed["results"][kind+"_checks"] = [{"check_id": CHECK}]
+            with self.assertRaises(ValueError): verify(changed)
+
     def test_expected_isolated_runtime_passes(self):
         self.assertTrue(public_contract("google_cloud_run_v2_service", service()))
 
