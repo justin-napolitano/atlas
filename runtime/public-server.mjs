@@ -66,7 +66,8 @@ export async function loadPublicSite(directory) {
   }
   for (const name of [runtimePath,'site/index.html','site/.public-profile.json','release/release-manifest.json','release/data/projects.json','release/data/release.json'])
     if (!all.has(name)) throw new Error('Missing public entry point');
-  if (JSON.stringify(manifest.files[runtimePath])!==JSON.stringify(manifest.source_inputs?.[runtimePath]))
+  if (manifest.files[runtimePath].sha256!==manifest.source_inputs?.[runtimePath]?.sha256 ||
+      manifest.files[runtimePath].bytes!==manifest.source_inputs?.[runtimePath]?.bytes)
     throw new Error('Public runtime provenance mismatch');
   const releaseBytes = all.get('release/release-manifest.json');
   if (sha(releaseBytes)!==manifest.release_manifest_sha256) throw new Error('Approved release hash mismatch');
@@ -83,7 +84,8 @@ export async function loadPublicSite(directory) {
     if (name.startsWith('site/assets/')) {path='/'+name.slice(5);type=name.endsWith('.js')?'text/javascript; charset=utf-8':'text/css; charset=utf-8';}
     else if (name.startsWith('release/')) {
       const relative=name.slice(8);
-      if (relative!=='release-manifest.json' && (JSON.stringify(release.files[relative])!==JSON.stringify(manifest.files[name]) ||
+      if (relative!=='release-manifest.json' && (release.files[relative]?.sha256!==manifest.files[name].sha256 ||
+          release.files[relative]?.bytes!==manifest.files[name].bytes ||
           !(relative==='data/projects.json' || relative==='data/release.json' || /^data\/graph-[a-f0-9]{64}\.json$/.test(relative) ||
             ['semantic/publication.ossie.json','semantic/upstream.json',...['osi-schema.json','LICENSE','LICENSE-Docs','NOTICE'].map(p=>'semantic/vendor/apache-ossie/'+p)].includes(relative))))
         throw new Error('Unregistered approved public file');
@@ -136,6 +138,13 @@ export async function startPublicServer(directory, {host='0.0.0.0',port=8080,req
     response.writeHead(status);response.end(method==='HEAD'?undefined:body);request.resume();
   });
   server.maxConnections=32;
+  server.on('clientError',(_error,socket)=>{
+    if(socket.writable){
+      const headers=Object.entries(HEADERS).map(([key,value])=>key+': '+value).join('\r\n');
+      socket.end('HTTP/1.1 400 Bad Request\r\n'+headers+'\r\nConnection: close\r\nContent-Length: 12\r\n\r\nBad request\n');
+    }
+    log({event:'public_request',method:'other',route:'bad_request',status:400,duration_ms:0});
+  });
   await new Promise((accept,reject)=>{server.once('error',reject);server.listen(port,host,accept);});
   return {server,manifest};
 }

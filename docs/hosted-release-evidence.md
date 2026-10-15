@@ -27,6 +27,8 @@ An intermediate candidate's browser failed to expose its owned debug port within
 
 The follow-on [approved release exporter](public-release-export.md) supplies restricted-login capture, independently verified immutable artifacts and public-only Ossie metadata. The [public viewer](public-viewer.md) consumes that format with project/record navigation, review limits and empty-withdrawal handling; it does not build/deploy an isolated public image. Withdrawal locking covers local capture/activation only; head freshness at remote deploy and cache withdrawal remain open. These tests are additional evidence, not a replacement for the complete combined release gate or live launch requirements below.
 
+The [isolated site builder](public-site-build.md) now packages one verified approved release, a guarded public-only frontend and a database-free read-only Node runtime. Its tests use the actual compiled artifact over HTTP and in Chrome under the runtime CSP. The portable directory is not yet a scanned container image or a deployed service; deployment freshness, scheduler, cache withdrawal, live recovery and domain-reading gates remain open.
+
 ## First-release acceptance remains intact
 
 | Requirement from #42 | Current evidence | Still required |
