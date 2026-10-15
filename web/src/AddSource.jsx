@@ -13,14 +13,14 @@ const labels={primary_text:'Primary text',translation:'Translation',commentary:'
 export default function AddSource({api,projectId,drafts,changed=()=>{},onCreated,onCancel}) {
   const localDrafts=useRef(new Map()),store=drafts || localDrafts;
   const key=`source-intake:${JSON.stringify(projectId)}`;
-  const initial=useMemo(()=>({intake_uuid:crypto.randomUUID(),title:'',creators:'',publication:'',publication_date:'',edition:'',identifier:'',source_url:'',
+  const initial=useMemo(()=>({intake_uuid:crypto.randomUUID(),title:'',creators:'',publication:'',publication_date:'',language:'',accessed_on:'',edition:'',identifier:'',source_url:'',
     source_role:'undetermined',access_status:'unknown',rights_status:'metadata_only',rights_basis:'',coverage_scope:'metadata_only',rationale:'',
     distinct_source_rationale:'',existing_source_record_id:'',existing_title:'',include_excerpt:false,text:'',locator:'',step:1,identity_checked:false,confirmed:false}),[projectId]);
   const [,render]=useState(0),[matches,setMatches]=useState([]),[searchResults,setSearchResults]=useState([]),[search,setSearch]=useState(''),[message,setMessage]=useState(''),[checking,setChecking]=useState(false);
-  const alive=useRef(true),generation=useRef(0);
+  const alive=useRef(true),generation=useRef(0),saving=useRef(false);
   const form=store.current.get(key) || initial,locked=!!form.sent || !!form.saving;
   function update(value){store.current.set(key,value);render(n=>n+1);changed();}
-  function edit(patch){if(!locked)update({...form,...patch,confirmed:false,error:'',...(Object.hasOwn(patch,'source_url') || Object.hasOwn(patch,'identifier') ? {identity_checked:false,existing_source_record_id:'',existing_title:''} : {})});}
+  function edit(patch){if(!locked){generation.current++;update({...form,...patch,confirmed:false,error:'',...(Object.hasOwn(patch,'source_url') || Object.hasOwn(patch,'identifier') ? {identity_checked:false,existing_source_record_id:'',existing_title:''} : {})});}}
   useEffect(()=>{alive.current=true;setMatches([]);setSearchResults([]);setMessage('');return()=>{alive.current=false;generation.current++;};},[projectId]);
   useEffect(()=>{const warn=event=>{if(store.current.has(key)){event.preventDefault();event.returnValue='';}};addEventListener('beforeunload',warn);return()=>removeEventListener('beforeunload',warn);},[key,store]);
   async function checkIdentity(event) {
@@ -42,22 +42,24 @@ export default function AddSource({api,projectId,drafts,changed=()=>{},onCreated
   }
   function choose(row){edit({existing_source_record_id:row.id,existing_title:row.title});}
   async function save(event) {
-    event.preventDefault();if(form.saving || (!form.sent && !form.confirmed))return;
-    const result=await saveSourceIntake({api,form,payload:sourceIntakePayload(form,projectId),update});
-    if(result){store.current.delete(key);changed();onCreated(result);}
+    event.preventDefault();if(saving.current || form.saving || (!form.sent && !form.confirmed))return;
+    saving.current=true;
+    try{const result=await saveSourceIntake({api,form,payload:sourceIntakePayload(form,projectId),update});
+      if(result){store.current.delete(key);changed();onCreated(result);}}
+    finally{saving.current=false;}
   }
   function exportDraft(){const url=URL.createObjectURL(new Blob([JSON.stringify({format:'private-source-intake-draft-1',project_id:projectId,draft:form},null,2)],{type:'application/json'}));
     const link=document.createElement('a');link.href=url;link.download='private-source-intake-draft.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
   const input=(name,label,max,required=false)=> <label>{label}<input name={name} value={form[name]} maxLength={max} required={required} disabled={locked} onChange={event=>edit({[name]:event.target.value})}/></label>;
   const select=(name,label,options)=><label>{label}<select value={form[name]} disabled={locked} onChange={event=>edit({[name]:event.target.value})}>{options.map(value=><option key={value} value={value}>{labels[value]}</option>)}</select></label>;
   return <section className="source-intake" aria-labelledby="source-intake-heading">
-    <header><div><p className="eyebrow">Your research library</p><h2 id="source-intake-heading">Add a source</h2></div>{onCancel && <button type="button" onClick={onCancel}>Back to reading</button>}</header>
+    <header><div><p className="eyebrow">Your research library</p><h2 id="source-intake-heading">Add a source</h2></div>{onCancel && <button type="button" disabled={form.saving} onClick={onCancel}>Back to reading</button>}</header>
     <p>Record the source, identify its edition, then optionally bring a located excerpt into the reader. Metadata stays private and pending review.</p>
     <ol className="intake-steps" aria-label="Source intake steps">{['Source','Identity & access','Review & read'].map((label,i)=><li key={label} aria-current={form.step===i+1 ? 'step' : undefined}>{i+1}. {label}</li>)}</ol>
     {form.step===1 && <form onSubmit={checkIdentity}>
       <p>Enter details yourself. URLs and identifiers are recorded, not fetched or automatically resolved. You can save metadata when text is unavailable.</p>
       {input('title','Title',2000,true)}{input('source_url','Source URL (optional)',2000)}{input('identifier','DOI, ISBN, or another identifier (optional)',2000)}
-      <div className="intake-grid">{input('creators','Author / editor / translator',2000)}{input('publication','Publication / publisher',2000)}{input('publication_date','Publication date or uncertainty',200)}{input('edition','Edition / translation / version (say if unknown)',1000,true)}</div>
+      <div className="intake-grid">{input('creators','Author / editor / translator',2000)}{input('publication','Publication / publisher',2000)}{input('publication_date','Publication date or uncertainty',200)}{input('edition','Edition / translation / version (say if unknown)',1000,true)}{input('language','Language (optional, as declared)',200)}{input('accessed_on','Date you accessed it (YYYY-MM-DD, optional)',10)}</div>
       {select('source_role','Role of this source',['undetermined','primary_text','translation','commentary','scholarship','reference'])}
       <label>Why add this source?<textarea name="rationale" value={form.rationale} maxLength={2000} required disabled={locked} onChange={event=>edit({rationale:event.target.value})}/></label>
       <button disabled={checking || locked}>{checking ? 'Checking identity hints…' : 'Check identity & continue'}</button>

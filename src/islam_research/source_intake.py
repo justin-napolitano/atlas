@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import date
 import json
 import re
 from urllib.parse import urlsplit, urlunsplit
@@ -16,7 +17,7 @@ RIGHTS = {"unknown", "metadata_only", "permitted_excerpt", "public_domain", "ope
 COVERAGE = {"metadata_only", "abstract", "selected_passage", "full_work_read"}
 LIMITS = {"title":2000,"creators":2000,"publication":2000,"publication_date":200,
           "edition":1000,"identifier":2000,"source_url":2000,"rights_basis":2000,
-          "rationale":2000,"distinct_source_rationale":2000}
+          "rationale":2000,"distinct_source_rationale":2000,"language":200,"accessed_on":10}
 
 
 def identity_keys(source_url, identifier):
@@ -46,6 +47,9 @@ def validate(values):
     if request.version != 4:
         raise ValueError("Retain a UUIDv4 intake ID for retries")
     for key,limit in LIMITS.items(): db._text(values[key],key,limit,empty=key not in {"title","edition","rationale"})
+    if values["accessed_on"]:
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}",values["accessed_on"]): raise ValueError("Use an ISO access date or leave it unknown")
+        date.fromisoformat(values["accessed_on"])
     for key,allowed in [("source_role",ROLES),("access_status",ACCESS),("rights_status",RIGHTS),("coverage_scope",COVERAGE)]:
         if values[key] not in allowed: raise ValueError("Invalid "+key)
     for key in ("project_id","actor"): db._text(values[key],key,500)
@@ -106,6 +110,7 @@ def create(connection, **values):
         declarations = {k:values[k] for k in LIMITS}
         declarations.update({k:values[k] for k in ("source_role","access_status","rights_status","coverage_scope")})
         declarations.update(metadata_origin="owner_declared_manual",identity_resolution="unresolved",review_effect="none",intake_version=1)
+        declarations["intake_state"] = "representation_ready" if values["excerpt"] else "metadata_ready"
         if values["excerpt"]:
             declarations["excerpt"]={k:v for k,v in values["excerpt"].items() if k!="text"}
             declarations["excerpt"]["input_sha256"] = hashlib.sha256(values["excerpt"]["text"].encode()).hexdigest()

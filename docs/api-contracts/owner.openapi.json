@@ -1325,6 +1325,12 @@
             "title": "Access Status",
             "type": "string"
           },
+          "accessed_on": {
+            "default": "",
+            "maxLength": 10,
+            "title": "Accessed On",
+            "type": "string"
+          },
           "coverage_scope": {
             "default": "metadata_only",
             "enum": [
@@ -1387,6 +1393,12 @@
           "intake_uuid": {
             "pattern": "^[a-fA-F0-9-]{36}$",
             "title": "Intake Uuid",
+            "type": "string"
+          },
+          "language": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Language",
             "type": "string"
           },
           "owner_confirmed": {

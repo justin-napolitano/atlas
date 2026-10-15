@@ -6,7 +6,7 @@ import uuid
 
 def payload(project="synthetic", **patch):
     return {**dict(intake_uuid=str(uuid.uuid4()),project_id=project,title="Synthetic reading source",
-        creators="Synthetic author",publication="Synthetic publication",publication_date="2026",edition="Synthetic edition",
+        creators="Synthetic author",publication="Synthetic publication",publication_date="2026",language="English",accessed_on="2026-10-15",edition="Synthetic edition",
         identifier="doi:10.1234/synthetic",source_url="https://example.invalid/article",source_role="scholarship",
         access_status="unknown",rights_status="metadata_only",rights_basis="",coverage_scope="metadata_only",
         rationale="Investigate the bounded pilot question",distinct_source_rationale="",existing_source_record_id=None,

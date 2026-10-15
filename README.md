@@ -42,6 +42,7 @@ The research should understand traditions in context before evaluating them. “
 - `docs/quran-reference-capture.md` — offline Qur’an reference candidates, private revisioned owner decisions, exact source provenance, reverse verse lookup, and reader controls; commentary and translation reading remain separate work.
 - `docs/scoped-concept-lexicon.md` — private scoped lexical entries, source-grounded term occurrences, attributed definitions, revision history, and bounded owner API retrieval; public lexical projection remains pending.
 - `docs/lexicon-reader.md` — owner reading controls for concept connections, attributed definitions, source reopening, draft/conflict recovery, private history, and lexical search; public lexical projection remains pending.
+- `docs/source-intake-workflow.md` — reviewed manual bibliography/URL/identifier intake, explicit existing-source reuse, optional permitted located excerpts, and atomic retry receipts; provider resolution and file import remain pending.
 - `docs/postgres.md` — migration-managed PostgreSQL records, retained RDF imports, revision-safe personal state, and real-database test commands; hosted authentication/deployment remain separate slices.
 - `docs/postgres-observability.md` — PostgreSQL 17/18 contract matrix and real native log checks for private bound values, error paths, and shared redaction settings.
 - `docs/runtime-sql-permissions.md` — previewable post-migration grants, restricted owner/publisher logins, and real PostgreSQL permission tests.

@@ -1,8 +1,8 @@
 /** Build an explicit owner-declared intake; no URL fetching or metadata inference. */
 export function sourceIntakePayload(form,projectId) {
-  const {intake_uuid,title,creators,publication,publication_date,edition,identifier,source_url,source_role,
+  const {intake_uuid,title,creators,publication,publication_date,language,accessed_on,edition,identifier,source_url,source_role,
     access_status,rights_status,rights_basis,coverage_scope,rationale,distinct_source_rationale,existing_source_record_id}=form;
-  return {intake_uuid,project_id:projectId,title,creators,publication,publication_date,edition,identifier,source_url,source_role,
+  return {intake_uuid,project_id:projectId,title,creators,publication,publication_date,language,accessed_on,edition,identifier,source_url,source_role,
     access_status,rights_status,rights_basis,coverage_scope,rationale,distinct_source_rationale,
     existing_source_record_id:existing_source_record_id || null,owner_confirmed:true,
     excerpt:form.include_excerpt ? {text:form.text,edition,locator:form.locator,representation_url:source_url} : null};
