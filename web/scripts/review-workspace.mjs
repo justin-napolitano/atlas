@@ -39,6 +39,7 @@ const claim={ ...records[0],id:'synthetic:claim',kind:'claim',title:'Synthetic a
 const evidence={ ...records[0],id:'synthetic:evidence',kind:'evidence',title:'Synthetic located evidence',summary:'Synthetic fair paraphrase',attributes:{ rdf_properties:{ 'https://islam-research.local/vocab/locator':['"Synthetic section 2, paragraph 3"'] } } };
 const readingDocument={ id:'synthetic:document',project_id:'synthetic',source_record_id:records[1].id,
   edition:'Synthetic edition',locator:'Abstract',representation_url:'https://example.invalid/source',
+  source_notice:'Synthetic attribution retained verbatim.\n<b>This notice is plain text.</b>',
   text_body:'😀 Before tafsīr and التفسير; Q 4:59. After.',review_scope:'Synthetic private unverified excerpt' };
 readingDocument.text_sha256=createHash('sha256').update(readingDocument.text_body).digest('hex');
 const captures=[];let captureLostResponse=false;
@@ -291,6 +292,11 @@ try {
   await until(() => evaluate('!!document.querySelector("#my-note")'),'source reading notes');
   assert.equal(await evaluate('document.querySelectorAll(".workspace-record-heading script").length'),0);
   await until(()=>evaluate('!!document.querySelector(".reader-text")'),'private passage reader');
+  assert.equal(await evaluate('document.querySelector(".reader-source-notice").open'),false);
+  await evaluate('document.querySelector(".reader-source-notice summary").click()');
+  assert.equal(await evaluate('document.querySelector(".reader-source-notice pre").textContent'),readingDocument.source_notice);
+  assert.equal(await evaluate('document.querySelectorAll(".reader-source-notice b").length'),0);
+  await evaluate('document.querySelector(".reader-source-notice summary").click()');
   await evaluate(`const textRoot=document.querySelector('.reader-text'), range=document.createRange();
     const start=textRoot.textContent.indexOf('tafsīr'); range.setStart(textRoot.firstChild,start); range.setEnd(textRoot.firstChild,start+6);
     const selection=window.getSelection(); selection.removeAllRanges(); selection.addRange(range);

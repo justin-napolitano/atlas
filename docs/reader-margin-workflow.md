@@ -20,6 +20,13 @@ also supports opening the passage in another tab. Source text is rendered as tex
 never injected HTML. Rendering does not change Unicode text, normalization,
 edition, quotation or immutable positions.
 
+When a saved document carries `source_notice`, its full attribution/license
+notice is available beside the edition in **Source notice & attribution**. The
+notice is rendered verbatim as inert plain text, separately from the selectable
+source passage. Existing excerpts without a notice keep working. The bounded
+licensed Arabic pilot uses this metadata so its required notice accompanies the
+reading copy; storing/importing it is owned by the pilot backend slice.
+
 The margin can be resized with a pointer or keyboard separator, or hidden to
 read quietly. Selecting a new passage or opening a saved mark reopens it.
 **Focus on reading** expands the reading desk by hiding the record list;

@@ -168,6 +168,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
     {snapshots.length>0 && <label className="reader-version">Reading version<select value={documentId} onChange={e=>{requestedAnchor.current=null;setDocumentId(e.target.value);bookmark('',e.target.value);}}>{snapshots.map(d=><option key={d.id} value={d.id}>{d.edition} · {d.locator} · {d.text_sha256.slice(0,8)}{drafts.current.has(`capture:${d.id}`) ? ' · draft' : ''}</option>)}</select></label>}
     {cursor && <button onClick={moreSnapshots}>More saved excerpts</button>}
     {document && <><p className="reader-help">{document.edition} · {document.locator}<br/>{document.review_scope}</p>
+      {document.source_notice && <details className="reader-source-notice"><summary>Source notice & attribution</summary><pre dir="auto">{document.source_notice}</pre></details>}
       <div className="reader-toolbar" role="group" aria-label="Passage annotation tools">
         <button className="reader-select" onPointerDown={e=>e.preventDefault()} onClick={()=>select('highlight')} disabled={capture?.saving}>Annotate selected text</button>
         <button className="reader-underline" onPointerDown={e=>e.preventDefault()} onClick={()=>select('underline')} disabled={capture?.saving}>Underline</button>
