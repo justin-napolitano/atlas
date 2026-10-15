@@ -12,6 +12,14 @@ READ_TABLES = (
     "projects", "records", "record_revisions", "relation_types", "relations",
     "personal_states", "personal_state_revisions", "import_snapshots",
     "reading_documents", "reading_annotations", "reading_annotation_revisions",
+    "publication_previews", "publication_events",
+)
+PUBLIC_TABLES = ("snapshots", "publication_heads")
+OWNER_FUNCTIONS = (
+    "research.publication_inputs(text,text[],text[])",
+    "research.publication_head(text)",
+    "research.approve_publication(text,text,integer,text,text,boolean)",
+    "research.withdraw_publication(text,integer,text,text)",
 )
 INSERT_COLUMNS = {
     "projects": "id title scope",
@@ -19,6 +27,7 @@ INSERT_COLUMNS = {
     "personal_states": "record_id project_id reading read_at decision note changed_by",
     "reading_documents": "id project_id source_record_id edition locator representation_url text_body input_sha256 text_sha256 normalization content_key changed_by",
     "reading_annotations": "id project_id document_id text_sha256 start_pos end_pos exact prefix suffix capture_kind body changed_by",
+    "publication_previews": "id project_id record_ids relation_ids inputs payload payload_sha256 created_by",
 }
 UPDATE_COLUMNS = {
     "records": "title summary attributes changed_by revision",
@@ -37,7 +46,11 @@ def grant_plan(owner: str, publisher: str):
         statements.append(sql.SQL("GRANT USAGE ON SCHEMA {} TO {}").format(sql.Identifier(schema), sql.Identifier(role)))
     for table in READ_TABLES:
         statements.append(sql.SQL("GRANT SELECT ON TABLE research.{} TO {}").format(sql.Identifier(table), sql.Identifier(owner)))
-    statements.append(sql.SQL("GRANT SELECT ON TABLE research_public.snapshots TO {}").format(sql.Identifier(publisher)))
+    for table in PUBLIC_TABLES:
+        statements.append(sql.SQL("GRANT SELECT ON TABLE research_public.{} TO {}").format(sql.Identifier(table),sql.Identifier(publisher)))
+    for function in OWNER_FUNCTIONS:
+        # Closed registry of migration-defined signatures; no caller SQL enters it.
+        statements.append(sql.SQL("GRANT EXECUTE ON FUNCTION {} TO {}").format(sql.SQL(function),sql.Identifier(owner)))
     for privilege, tables in (("INSERT", INSERT_COLUMNS), ("UPDATE", UPDATE_COLUMNS)):
         for table, columns in tables.items():
             statements.append(sql.SQL("GRANT {} ({}) ON TABLE research.{} TO {}").format(
@@ -86,7 +99,7 @@ def audit(connection, role: str, *, publisher: bool, require_complete: bool = Tr
     found = set()
     for table in tables:
         schema, name, oid = table["nspname"], table["relname"], table["oid"]
-        readable = (schema == "research_public" and name == "snapshots") if publisher else (schema == "research" and name in READ_TABLES)
+        readable = (schema == "research_public" and name in PUBLIC_TABLES) if publisher else (schema == "research" and name in READ_TABLES)
         found.add((schema, name))
         if table["relowner"] == row["oid"]:
             problems.append(f"unexpected table ownership: {schema}.{name}")
@@ -105,13 +118,19 @@ def audit(connection, role: str, *, publisher: bool, require_complete: bool = Tr
                 grantable = connection.execute("SELECT has_column_privilege(%s,%s,%s,%s) AS allowed", (role, oid, column["attname"], privilege + " WITH GRANT OPTION")).fetchone()["allowed"]
                 if grantable or actual != expected and (actual or require_complete):
                     problems.append(f"column privilege mismatch: {schema}.{name}.{column['attname']} {privilege}")
-    required = {("research_public", "snapshots")} if publisher else {("research", t) for t in READ_TABLES}
+    required = {("research_public", t) for t in PUBLIC_TABLES} if publisher else {("research", t) for t in READ_TABLES}
     if not required <= found:
         problems.append("required migrated tables are missing")
+    allowed_functions = set() if publisher else {connection.execute("SELECT to_regprocedure(%s)::oid AS oid",(name,)).fetchone()["oid"] for name in OWNER_FUNCTIONS}
+    if None in allowed_functions:
+        problems.append("required publication functions are missing")
     functions = connection.execute("""SELECT p.oid,p.proowner FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
         WHERE n.nspname IN ('research','research_public')""").fetchall()
     for function in functions:
-        if function["proowner"] == row["oid"] or connection.execute("SELECT has_function_privilege(%s,%s,'EXECUTE') AS allowed", (role, function["oid"])).fetchone()["allowed"]:
+        actual = connection.execute("SELECT has_function_privilege(%s,%s,'EXECUTE') AS allowed", (role, function["oid"])).fetchone()["allowed"]
+        grantable = connection.execute("SELECT has_function_privilege(%s,%s,'EXECUTE WITH GRANT OPTION') AS allowed", (role, function["oid"])).fetchone()["allowed"]
+        expected = function["oid"] in allowed_functions
+        if function["proowner"] == row["oid"] or grantable or actual!=expected and (actual or require_complete):
             problems.append("unexpected application function ownership/EXECUTE")
     return problems
 

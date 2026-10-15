@@ -35,6 +35,12 @@ class MemoryBoundaryStore:
         return {"project_id": project_id, "start_id": record_id, "profile": profile_id, "paths": []}
     def search(self, project_id, query, scope, kind, limit):
         return {"scope": scope, "items": []}
+    def publication_preview(self, **value):
+        return {"actor":value["actor"],"id":"publication-"+"a"*32,"payload":{}}
+    def publication_approve(self, **value):
+        return {"revision":1,"actor":value["actor"],"status":"published"}
+    def publication_withdraw(self, **value):
+        return {"revision":2,"actor":value["actor"],"status":"withdrawn"}
 
 
 @unittest.skipUnless(jwt, "Install api and test extras for HTTP contract tests")
@@ -72,6 +78,24 @@ class APIBoundaryTests(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.json()["actor"], OWNER)
 
+    def test_publication_requires_owner_write_boundary_and_literal_rights_acknowledgement(self):
+        preview={"project_id":"synthetic","selections":[{"record_id":"synthetic:source"}]}
+        approval={"preview_id":"publication-"+"a"*32,"expected_sha256":"b"*64,"expected_revision":0,"rationale":"Synthetic privacy and rights review","rights_checked":True}
+        withdrawal={"project_id":"synthetic","expected_revision":1,"rationale":"Synthetic correction"}
+        for path,payload in [("previews",preview),("approve",approval),("withdraw",withdrawal)]:
+            route="/v1/publication/"+path
+            self.assertEqual(self.client.post(route,json=payload).status_code,401)
+            self.assertEqual(self.client.post(route,json=payload,headers=self.headers(sub="other")).status_code,403)
+            headers=self.headers();headers.pop("x-research-write")
+            self.assertEqual(self.client.post(route,json=payload,headers=headers).status_code,403)
+            self.assertEqual(self.client.post(route,json=payload,headers=self.headers(origin="https://other.example.invalid")).status_code,403)
+            result=self.client.post(route,json=payload,headers=self.headers())
+            self.assertIn(result.status_code,(200,201));self.assertEqual(result.json()["actor"],OWNER)
+            self.assertEqual(self.client.post(route,json={**payload,"actor":"forged-owner"},headers=self.headers()).status_code,422)
+        for value in [False,0,1,"true",None]:
+            self.assertEqual(self.client.post("/v1/publication/approve",json={**approval,"rights_checked":value},headers=self.headers()).status_code,422)
+        self.assertEqual(self.client.post("/v1/publication/previews",json={**preview,"payload":{"private":"PRIVATE"}},headers=self.headers()).status_code,422)
+
     def test_input_errors_do_not_echo_notes_and_payload_is_bounded(self):
         payload = {"record_id": "synthetic", "project_id": "synthetic", "note": "SYNTHETIC-PRIVATE-NOTE" * 1000}
         result = self.client.put("/v1/personal-states", json=payload, headers=self.headers())
@@ -86,7 +110,8 @@ class APIBoundaryTests(unittest.TestCase):
         self.assertEqual(public.get("/v1/public/snapshots/test").status_code, 200)
         for path in ["/v1/projects", "/v1/personal-states", "/v1/records", "/v1/schema", "/openapi.json",
                      "/v1/evidence-path", "/v1/research-operations", "/v1/rank", "/v1/search", "/v1/personal-state",
-                     "/v1/reading/documents", "/v1/reading/document", "/v1/reading/annotations", "/v1/reading/annotation"]:
+                     "/v1/reading/documents", "/v1/reading/document", "/v1/reading/annotations", "/v1/reading/annotation",
+                     "/v1/publication/head", "/v1/publication/preview", "/v1/publication/previews", "/v1/publication/approve", "/v1/publication/withdraw"]:
             self.assertEqual(public.get(path).status_code, 404)
             self.assertEqual(public.put(path, json={}).status_code, 404)
             self.assertEqual(public.post(path, json={}).status_code, 404)
@@ -186,9 +211,11 @@ class APIDatabaseTests(unittest.TestCase):
             if not connection.execute("SELECT 1 FROM pg_roles WHERE rolname='research_ci_public'").fetchone():
                 connection.execute("CREATE ROLE research_ci_public LOGIN")
             connection.execute("GRANT USAGE ON SCHEMA research_public TO research_ci_public")
-            connection.execute("GRANT SELECT ON research_public.snapshots TO research_ci_public")
+            connection.execute("GRANT SELECT ON research_public.snapshots,research_public.publication_heads TO research_ci_public")
             connection.execute("INSERT INTO research_public.snapshots(id,project_id,payload) VALUES (%s,%s,%s::jsonb)",
-                               (snapshot_id, "synthetic-published-project", json.dumps({"nodes": [], "title": "Synthetic public snapshot"})))
+                               (snapshot_id, "synthetic-head-"+snapshot_id, json.dumps({"nodes": [], "title": "Synthetic public snapshot"})))
+            connection.execute("""INSERT INTO research_public.publication_heads(project_id,revision,snapshot_id,status)
+                VALUES(%s,1,%s,'published')""",("synthetic-head-"+snapshot_id,snapshot_id))
         reader_dsn = make_conninfo(dsn, user="research_ci_public", password="")
         public = TestClient(create_app(Settings(reader_dsn, mode="public")))
         self.assertEqual(public.get("/health/ready").status_code, 200)

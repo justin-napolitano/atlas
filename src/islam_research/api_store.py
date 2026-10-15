@@ -4,6 +4,7 @@ from __future__ import annotations
 from . import database as db
 from .graph_engine import registered_policy, traverse
 from . import passage_store
+from . import publication
 
 
 class PostgreSQLStore:
@@ -19,10 +20,16 @@ class PostgreSQLStore:
                 row = connection.execute("""SELECT
                     has_schema_privilege(current_user,'research','USAGE') AS private_access,
                     has_table_privilege(current_user,c.oid,'SELECT') AS can_read,
-                    has_table_privilege(current_user,c.oid,'INSERT,UPDATE,DELETE') AS can_write
+                    (has_table_privilege(current_user,c.oid,'INSERT,UPDATE,DELETE')
+                     OR has_any_column_privilege(current_user,c.oid,'INSERT,UPDATE')
+                     OR has_schema_privilege(current_user,'research_public','CREATE')
+                     OR has_table_privilege(current_user,h.oid,'INSERT,UPDATE,DELETE')
+                     OR has_any_column_privilege(current_user,h.oid,'INSERT,UPDATE')) AS can_write,
+                    has_table_privilege(current_user,h.oid,'SELECT') AS can_read_head
                     FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                    JOIN pg_class h ON h.relnamespace=n.oid AND h.relname='publication_heads'
                     WHERE n.nspname='research_public' AND c.relname='snapshots'""").fetchone()
-                return bool(row and not row["private_access"] and row["can_read"] and not row["can_write"])
+                return bool(row and not row["private_access"] and row["can_read"] and row["can_read_head"] and not row["can_write"])
             return connection.execute("SELECT to_regclass('research.records') IS NOT NULL AS ready").fetchone()["ready"]
 
     def projects(self) -> list[dict]:
@@ -160,8 +167,31 @@ class PostgreSQLStore:
         if not self.ready("public"):
             raise PermissionError("Public storage identity is not read-only")
         with db.connect(self.dsn) as connection:
-            return connection.execute("SELECT id,project_id,payload,published_at FROM research_public.snapshots WHERE id=%s",
+            return connection.execute("""SELECT s.id,s.project_id,s.payload,s.published_at FROM research_public.snapshots s
+                JOIN research_public.publication_heads h ON h.project_id=s.project_id AND h.snapshot_id=s.id
+                WHERE s.id=%s AND h.status='published'""",
                                       (snapshot_id,)).fetchone()
+
+    def publication_head(self, project_id):
+        with db.connect(self.dsn) as connection:
+            return publication.head(connection,project_id)
+
+    def publication_preview(self, **values):
+        with db.connect(self.dsn) as connection:
+            return publication.preview(connection,**values)
+
+    def publication_approve(self, **values):
+        with db.connect(self.dsn) as connection:
+            return publication.approve(connection,**values)
+
+    def publication_withdraw(self, **values):
+        with db.connect(self.dsn) as connection:
+            return publication.withdraw(connection,**values)
+
+    def publication_preview_by_id(self, project_id, preview_id):
+        with db.connect(self.dsn) as connection:
+            return connection.execute("""SELECT id,project_id,payload,payload_sha256,created_at
+                FROM research.publication_previews WHERE project_id=%s AND id=%s""",(project_id,preview_id)).fetchone()
 
     def reading_documents(self, project_id, source_record_id, cursor, limit):
         with db.connect(self.dsn) as connection:
