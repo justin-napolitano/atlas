@@ -1,6 +1,7 @@
 name: Reading workspace
 
 on:
+  workflow_call:
   pull_request:
     paths: ['web/**', '.github/workflows/workspace-validation.yml']
   push:
