@@ -6,6 +6,8 @@ import AddSource from './AddSource.jsx';
 import ReadingPlace from './ReadingPlace.jsx';
 import PilotReading from './PilotReading.jsx';
 import ReadingComparison from './ReadingComparison.jsx';
+import ReadingCollection from './ReadingCollection.jsx';
+import {collectionPreset} from './readerCollectionClient.js';
 import RecordContext from './RecordContext.jsx';
 import EvidencePaths from './EvidencePaths.jsx';
 import {sirryPilotPreset} from './researchPilot.js';
@@ -51,6 +53,9 @@ function Workspace() {
   const [readingFocus,setReadingFocus]=useState(false);
   const [currentReadingPlace,setCurrentReadingPlace]=useState(null);
   const [libraryView,setLibraryView]=useState(fromURL().view || '');
+  const [collectionReading,setCollectionReading]=useState(null);
+  const [collectionReadingId,setCollectionReadingId]=useState(fromURL().reading_id || '');
+  const [collectionError,setCollectionError]=useState('');
   const [verseReference,setVerseReference]=useState(verseFromURL());
   const [comparison,setComparison]=useState(()=>({left:{record_id:fromURL().left_source || fromURL().record || '',document_id:fromURL().left_document || fromURL().document || ''},right:{record_id:fromURL().right_source || '',document_id:fromURL().right_document || ''}}));
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem('research-theme') || 'light'; } catch { return 'light'; } });
@@ -60,6 +65,12 @@ function Workspace() {
     document.documentElement.dataset.theme = theme;
     try { localStorage.setItem('research-theme', theme); } catch { /* Preference only. */ }
   }, [theme]);
+  useEffect(()=>{
+    if(libraryView!=='collection-intake' || collectionReading?.preset_id?.endsWith(':'+collectionReadingId))return;
+    let active=true;setCollectionReading(null);setCollectionError('');
+    api.request('reading/collection').then(value=>{const reading=value.readings.find(row=>row.id===collectionReadingId);if(!reading)throw new Error('That collection reading is unavailable. Return to the collection and select a source.');if(active)setCollectionReading(collectionPreset(value,reading));}).catch(err=>{if(active)setCollectionError(err.message);});
+    return()=>{active=false;};
+  },[libraryView,collectionReadingId]);
   useEffect(() => {
     let active = true;
     api.request('me').then(() => api.request('projects')).then(data => {
@@ -71,7 +82,7 @@ function Workspace() {
   }, []);
   useEffect(() => {
     const unload = event => { if (store.current.hasDrafts() || passageNotes.current.hasDrafts() || readingDrafts.current.size) { event.preventDefault(); event.returnValue = ''; } };
-    const pop = () => { const state = fromURL(); setProject(state.project || ''); setSelected(state.record || ''); setSelectedAnnotation(state.annotation || '');setSelectedDocument(state.document || '');setLibraryView(['add-source','article-pilot','pilot','compare'].includes(state.view) ? state.view : '');setVerseReference(verseFromURL());setComparison({left:{record_id:state.left_source || state.record || '',document_id:state.left_document || state.document || ''},right:{record_id:state.right_source || '',document_id:state.right_document || ''}}); };
+    const pop = () => { const state = fromURL(); setProject(state.project || ''); setSelected(state.record || ''); setSelectedAnnotation(state.annotation || '');setSelectedDocument(state.document || '');setLibraryView(['add-source','article-pilot','pilot','compare','collection','collection-intake'].includes(state.view) ? state.view : '');setVerseReference(verseFromURL());setCollectionReadingId(state.reading_id || '');setComparison({left:{record_id:state.left_source || state.record || '',document_id:state.left_document || state.document || ''},right:{record_id:state.right_source || '',document_id:state.right_document || ''}}); };
     addEventListener('beforeunload', unload); addEventListener('popstate', pop);
     return () => { removeEventListener('beforeunload', unload); removeEventListener('popstate', pop); };
   }, []);
@@ -131,6 +142,7 @@ function Workspace() {
     if(target.record_id)url.searchParams.set('left_source',target.record_id);if(target.document_id)url.searchParams.set('left_document',target.document_id);
     history.pushState(null,'',url);setLibraryView('compare');setReadingFocus(false);
   }
+  function chooseCollection(collection,reading){setCollectionReadingId(reading.id);setCollectionReading(collectionPreset(collection,reading));showLibrary('collection-intake');const url=new URL(location.href);url.searchParams.set('reading_id',reading.id);history.replaceState(null,'',url);}
   function comparisonSelection(side,target){const url=new URL(location.href);url.searchParams.set(side+'_source',target.record_id);url.searchParams.set(side+'_document',target.document_id);history.replaceState(null,'',url);}
   function closeLibrary() {const url=new URL(location.href);url.searchParams.delete('view');history.pushState(null,'',url);setSelectedAnnotation(url.searchParams.get('annotation') || '');setSelectedDocument(url.searchParams.get('document') || '');setLibraryView('');}
   const entry = record && store.current.entries.get(record.id);
@@ -152,8 +164,8 @@ function Workspace() {
       <button type="submit" disabled={!project || searching}>{searching ? 'Loading…' : 'Search'}</button><button type="button" disabled={!project || searching} onClick={() => { setQuery(''); setScope('records'); setKind(''); loadRows(); }}>Browse all</button>
     </form>
     {project && <ReadingPlace key={project} api={api} projectId={project} place={!libraryView && currentReadingPlace?.project_id===project && currentReadingPlace.record_id===record?.id ? currentReadingPlace : null} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onResume={open} />}
-    <nav className="workspace-library-actions" aria-label="Reading library actions"><button disabled={!project} onClick={()=>showLibrary('add-source')}>Add a source</button><button disabled={!project} onClick={()=>showLibrary('article-pilot')}>Read the Sirry article</button><button disabled={!project} onClick={()=>showLibrary('pilot')}>Start Qur’an pilot</button><button disabled={!project} onClick={()=>compare()}>Compare readings</button></nav>
-    {libraryView==='compare' ? <ReadingComparison key={JSON.stringify([project,comparison])} api={api} projectId={project} initialLeft={comparison.left} initialRight={comparison.right} onSelection={comparisonSelection} onOpen={open} onClose={closeLibrary}/> : ['add-source','article-pilot'].includes(libraryView) ? <AddSource key={project+libraryView} initialPreset={libraryView==='article-pilot' ? sirryPilotPreset : undefined} api={api} projectId={project} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onCancel={closeLibrary} onCreated={result=>{loadRows();open(result.record_id,result.project_id,'',result.document_id || '');}} /> : libraryView==='pilot' ? <PilotReading key={JSON.stringify([project,verseReference])} initialReference={verseReference} api={api} projectId={project} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onOpen={open} onCancel={closeLibrary} /> : <ResizablePanes storageKey="research:hosted-pane-width" className={`owner-panes${readingFocus && ['source','work','edition'].includes(record?.kind) ? ' reading-focus' : ''}`}>
+    <nav className="workspace-library-actions" aria-label="Reading library actions"><button disabled={!project} onClick={()=>showLibrary('add-source')}>Add a source</button><button disabled={!project} onClick={()=>showLibrary('article-pilot')}>Read the Sirry article</button><button disabled={!project} onClick={()=>showLibrary('pilot')}>Start Qur’an pilot</button><button disabled={!project} onClick={()=>compare()}>Compare readings</button><button disabled={!project} onClick={()=>showLibrary('collection')}>Reading collection & context</button></nav>
+    {libraryView==='collection-intake' && !collectionReading ? <section><p role="status">{collectionError || 'Loading the selected reading…'}</p><button onClick={()=>showLibrary('collection')}>Return to reading collection</button></section> : libraryView==='collection' ? <ReadingCollection api={api} onChoose={chooseCollection} onOpenVerse={reference=>showLibrary('pilot',reference)} onClose={closeLibrary}/> : libraryView==='compare' ? <ReadingComparison key={JSON.stringify([project,comparison])} api={api} projectId={project} initialLeft={comparison.left} initialRight={comparison.right} onSelection={comparisonSelection} onOpen={open} onClose={closeLibrary}/> : ['add-source','article-pilot','collection-intake'].includes(libraryView) ? <AddSource key={project+libraryView} initialPreset={libraryView==='article-pilot' ? sirryPilotPreset : libraryView==='collection-intake' ? collectionReading || undefined : undefined} api={api} projectId={project} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onCancel={closeLibrary} onCreated={result=>{loadRows();open(result.record_id,result.project_id,'',result.document_id || '');}} /> : libraryView==='pilot' ? <PilotReading key={JSON.stringify([project,verseReference])} initialReference={verseReference} api={api} projectId={project} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onOpen={open} onCancel={closeLibrary} /> : <ResizablePanes storageKey="research:hosted-pane-width" className={`owner-panes${readingFocus && ['source','work','edition'].includes(record?.kind) ? ' reading-focus' : ''}`}>
       <section id="workspace-results" className="workspace-results" aria-label="Research records">
         <p className="workspace-result-count" role="status">{searching ? 'Loading records…' : `${rows.length} records shown`}{notice && ` · ${notice}`}</p>
         {rows.map(row => <article key={row.id} className="workspace-hit"><button className="workspace-row" aria-pressed={selected === row.id} onClick={() => open(row.id)}><small>{row.kind} · {row.review_state}{store.current.entries.has(row.id) && ` · ${store.current.entries.get(row.id).draft.reading}`}</small><strong>{row.title}</strong>{row.matches?.filter(match=>match.channel!=='private_annotation').map((match,i) => <span key={match.channel+':'+i}><b>{match.channel === 'private_note' ? 'My note' : match.channel==='lexicon' ? 'Matched wording' : 'Record'}</b> · {match.excerpt}{match.assertion_kind && ` · ${match.assertion_kind.replaceAll('_',' ')}`}</span>)}</button>

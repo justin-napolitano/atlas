@@ -3632,6 +3632,22 @@
         "summary": "Create Reading Annotation"
       }
     },
+    "/v1/reading/collection": {
+      "get": {
+        "operationId": "reading_collection_v1_reading_collection_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Reading Collection"
+      }
+    },
     "/v1/reading/desk": {
       "get": {
         "operationId": "reading_desk_v1_reading_desk_get",
