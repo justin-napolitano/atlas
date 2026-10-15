@@ -40,6 +40,7 @@ try{
   await call('Runtime.enable');await call('Page.enable');await call('Page.navigate',{url:origin+'/scripts/fixtures/notebook-harness.html'});
   await until(()=>evaluate('document.body.textContent.includes("Original passage note")'),'notebook mounted');
   assert.equal(await evaluate('window.__notebookTest.requests.length'),0);
+  await click('Original record note');assert.equal(await evaluate('window.__notebookTest.opened[2]'),'');
   await click('Original passage note');assert.equal(await evaluate('window.__notebookTest.opened[2]'),'synthetic:annotation');
   await click('New thought at this passage');
   await fillLabel('Title','My contextual question');await fillLabel('Thought (Markdown','😀 التفسير **tafsīr** <script>unsafe</script>');
@@ -68,6 +69,9 @@ try{
   await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-color-scheme',value:'dark'}]});
   assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'390px no overflow');
   await writeFile(join(artifacts,'notebook-mobile-dark.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
+  await evaluate('window.__notebookTest.search("No matching routed thought")');await until(()=>evaluate('document.body.textContent.includes("No matching entries")'),'routed notebook search');
+  assert.equal(await evaluate('document.querySelector(".notebook-filters input").value'),'No matching routed thought');
+  await evaluate('window.__notebookTest.search("")');await until(()=>evaluate('document.body.textContent.includes("My contextual question")'),'routed query cleared');
   await evaluate('window.__notebookTest.wrong(true)');await click('Apply filters');await until(()=>evaluate('document.body.textContent.includes("Notebook list did not match this project")'),'foreign project refused');
   assert.equal(await evaluate('Object.values(localStorage).some(value=>value.includes("My revised reading"))'),false);assert.deepEqual(problems,[]);
   console.log(JSON.stringify({notebookPassed:true,checks:['compiled owner notebook','live passage note backlink','anchored thought and explained connection','Unicode Markdown inert text','retained creation UUID and exact lost-response retry','source context readback','two-device correction comparison','CAS lost acknowledgement retry','paged revision history','withdrawal filter','wrong-project refusal','dark390px','no private localStorage'],artifacts}));

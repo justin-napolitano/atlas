@@ -3,23 +3,23 @@ import {newThought,notebookKey,notebookMetadata,saveThought,thoughtLabel,thought
 import './researchNotebook.css';
 
 /** Running project notebook. Passage bodies are a live server projection, never copied here. */
-export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},onOpenSource,anchor=null}){
-  const [rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[query,setQuery]=useState(''),[kind,setKind]=useState(''),[state,setState]=useState('active');
+export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},onOpenSource,anchor=null,initialQuery=''}){
+  const [rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[query,setQuery]=useState(initialQuery),[kind,setKind]=useState(''),[state,setState]=useState('active');
   const [selected,setSelected]=useState(null),[cloud,setCloud]=useState(null),[message,setMessage]=useState(''),[loading,setLoading]=useState(false),[history,setHistory]=useState(null);
   const [link,setLink]=useState({kind:'record',id:'',rationale:''});
   const [,render]=useState(0),generation=useRef(0),mounted=useRef(true),busy=useRef(false);
   const key=notebookKey(projectId,selected || 'new'),draft=drafts.current.get(key);
   function remember(value,at=key){drafts.current.set(at,value);changed();render(v=>v+1);}
   function clear(at=key){drafts.current.delete(at);changed();render(v=>v+1);}
-  async function load(after=''){
+  async function load(after='',queryValue=query){
     const token=++generation.current;setLoading(true);setMessage('');
-    try{const page=await api.request('notebook/items',{project_id:projectId,q:query,thought_type:kind,state,cursor:after,limit:25});
+    try{const page=await api.request('notebook/items',{project_id:projectId,q:queryValue,thought_type:kind,state,cursor:after,limit:25});
       if(!Array.isArray(page.items) || page.items.some(r=>r.project_id!==projectId))throw new Error('Notebook list did not match this project.');
       if(mounted.current && token===generation.current){setRows(old=>after?[...old,...page.items]:page.items);setCursor(page.next_cursor);}}
     catch(error){if(mounted.current && token===generation.current)setMessage(error.message);}
     finally{if(mounted.current && token===generation.current)setLoading(false);}
   }
-  useEffect(()=>{mounted.current=true;setSelected(null);setCloud(null);setRows([]);setHistory(null);load();return()=>{mounted.current=false;generation.current++;};},[projectId]);
+  useEffect(()=>{mounted.current=true;setQuery(initialQuery);setSelected(null);setCloud(null);setRows([]);setHistory(null);load('',initialQuery);return()=>{mounted.current=false;generation.current++;};},[projectId,initialQuery]);
   function start(useAnchor){setSelected(null);setCloud(null);setHistory(null);const at=notebookKey(projectId);
     if(drafts.current.has(at)){setMessage('Your unfinished new thought is retained. Save it before starting another.');return;}
     remember({value:newThought(useAnchor || {}),base:null,sent:null,saving:false,error:'',current:null},at);
