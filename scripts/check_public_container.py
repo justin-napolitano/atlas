@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Build/scan/smoke-test a synthetic image on an isolated Linux CI runner only."""
 import json
+import ipaddress
 import os
 from pathlib import Path
 import platform
@@ -83,10 +84,11 @@ def run():
             phase("runtime_network_and_http")
             command(["docker", "network", "create", "--internal", network]); network_created = True
             command(["docker", "run", "--detach", "--name", name, "--network", network, *restrictions,
-                     "--publish", "127.0.0.1::8080", image]); container_created = True
-            port = command(["docker", "port", name, "8080/tcp"]).stdout.strip()
-            if not re.fullmatch(r"127\.0\.0\.1:[1-9][0-9]{1,4}", port): raise ValueError("Unexpected container test binding")
-            origin = "http://" + port
+                     image]); container_created = True
+            inspect = json.loads(command(["docker", "inspect", name]).stdout)[0]
+            address = inspect["NetworkSettings"]["Networks"][network]["IPAddress"]
+            if not ipaddress.ip_address(address).is_private: raise ValueError("Container test bridge must be private")
+            origin = "http://" + address + ":8080"
             deadline = time.monotonic() + 30
             while True:
                 try:
@@ -102,7 +104,7 @@ def run():
             assert inspect["HostConfig"]["SecurityOpt"] == ["no-new-privileges"]
             assert not inspect["Mounts"]
             env = {**_environment(), "RESEARCH_TEST_PUBLIC_SITE": str(artifact), "RESEARCH_PUBLIC_TEST_ORIGIN": origin,
-                   "CHROME_PATH": "/usr/bin/google-chrome"}
+                   "CHROME_PATH": "/usr/bin/google-chrome", "GITHUB_ACTIONS": "true", "RESEARCH_CONTAINER_TESTS": "isolated-ci-only"}
             phase("container_browser")
             browser = command(["node", "web/scripts/review-public-site.mjs"], env=env, timeout=90)
             for line in browser.stdout.splitlines():
