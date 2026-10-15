@@ -64,6 +64,13 @@ are not identity or evidence of equivalence.
 
 ## Files
 
+Private verse reading materials are specified in
+[`docs/verse-reading-materials.md`](../docs/verse-reading-materials.md). They bind
+identified Arabic/translation representations and separately typed citation,
+discussion, or interpretation assertions to exact source annotations and stable
+verse-profile IDs. These application bindings do not create reviewed curated RDF
+claims or public commentary coverage automatically.
+
 `research.ttl` is the RDF source of truth. `shapes.ttl` contains SHACL validation shapes. `templates/` has reusable source, claim/evidence, concept, hypothesis, and argument templates. `argument-networks.csv` carries the AIF-style node and edge model before export to AIF RDF. CSV node, edge, and evidence indexes remain header-only until records are authored; never fabricate evidence just to populate a graph.
 
 ## OpenAlex source discovery
