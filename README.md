@@ -35,6 +35,7 @@ The research should understand traditions in context before evaluating them. “
 - `semantic/` — pinned Apache Ossie interchange metadata, explicit research mappings, and offline-validated ranking/traversal definitions; execution is a separate backend responsibility.
 - `docs/owner-api.md` — signed single-owner API, separate read-only publication mode, failure/privacy contracts, and remaining deployment prerequisites.
 - `docs/research-operations.md` — executable typed evidence trails, non-AI local graph exploration, and transparent owner-observation scoring with unknown inputs preserved.
+- `docs/research-search.md` — bounded, signed-owner lexical retrieval across research records and explicitly selected private notes, with channel/revision provenance.
 - `docs/postgres.md` — migration-managed PostgreSQL records, retained RDF imports, revision-safe personal state, and real-database test commands; hosted authentication/deployment remain separate slices.
 - `infra/gcp/` — reviewable private GCP/PostgreSQL foundation, pinned tooling, credential-free plan tests, and cost/recovery worksheet; no resources provisioned.
 - `docs/adr/0003-immutable-public-delivery.md` — approved snapshots in immutable public builds, isolated publisher reads, and a public runtime with no data credentials; deployment gates remain explicit.

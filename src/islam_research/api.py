@@ -301,6 +301,12 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
                 "ranking_profiles": policy["ranking_profiles"],
                 "execution": "typed_traversal_and_owner_observation_scoring_v1"}
 
+    @router.get("/search")
+    def search(project_id: Identifier, q: Annotated[str, Query(min_length=1, max_length=500)],
+               scope: Literal["records", "notes", "all"] = "records", kind: Identifier | None = None,
+               limit: Annotated[int, Query(ge=1, le=100)] = 30):
+        return store.search(project_id, q, scope, kind, limit)
+
     @router.get("/evidence-path")
     def evidence_path(project_id: Identifier, record_id: Identifier, profile_id: Identifier):
         result = store.evidence_path(project_id, record_id, profile_id)
