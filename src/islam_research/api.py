@@ -119,6 +119,7 @@ class ReadingCaptureInput(Input):
     end: Annotated[int, Field(ge=1,le=12000)]
     exact: Annotated[str, Field(min_length=1,max_length=500)]
     capture_kind: Literal["comment","term_candidate","citation_candidate"] = "comment"
+    mark_style: Literal["highlight","underline","none"] = "highlight"
     body: Annotated[str, Field(max_length=10000)] = ""
 
 
@@ -127,6 +128,7 @@ class ReadingAnnotationUpdate(Input):
     project_id: Identifier
     body: Annotated[str, Field(max_length=10000)]
     expected_revision: Annotated[int, Field(ge=1)]
+    mark_style: Literal["highlight","underline","none"] | None = None
 
 
 class ScriptureResolutionInput(Input):

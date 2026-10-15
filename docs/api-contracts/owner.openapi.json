@@ -977,6 +977,22 @@
             "title": "Expected Revision",
             "type": "integer"
           },
+          "mark_style": {
+            "anyOf": [
+              {
+                "enum": [
+                  "highlight",
+                  "underline",
+                  "none"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mark Style"
+          },
           "project_id": {
             "maxLength": 500,
             "minLength": 1,
@@ -1035,6 +1051,16 @@
             "maxLength": 500,
             "minLength": 1,
             "title": "Exact",
+            "type": "string"
+          },
+          "mark_style": {
+            "default": "highlight",
+            "enum": [
+              "highlight",
+              "underline",
+              "none"
+            ],
+            "title": "Mark Style",
             "type": "string"
           },
           "project_id": {

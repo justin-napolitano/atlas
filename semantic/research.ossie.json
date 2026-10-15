@@ -578,6 +578,17 @@
                   }
                 ]
               }
+            },
+            {
+              "name": "mark_style",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "mark_style"
+                  }
+                ]
+              }
             }
           ]
         },
