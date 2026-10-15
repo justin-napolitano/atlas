@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "native": {
+    "log_connections": "on",
+    "log_disconnections": "on",
+    "log_checkpoints": "on",
+    "log_hostname": "on",
+    "log_lock_waits": "on",
+    "log_duration": "on",
+    "log_statement": "ddl",
+    "log_min_duration_statement": "-1",
+    "log_min_error_statement": "error",
+    "log_min_messages": "error",
+    "log_error_verbosity": "terse",
+    "log_parameter_max_length": "0",
+    "log_parameter_max_length_on_error": "0"
+  },
+  "cloud_sql": {
+    "cloudsql.iam_authentication": "on",
+    "cloudsql.enable_pgaudit": "on",
+    "cloudsql.pgaudit_mask_literals": "on",
+    "pgaudit.log": "ddl,role",
+    "pgaudit.log_parameter": "off"
+  }
+}

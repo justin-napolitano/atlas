@@ -2,10 +2,10 @@ name: GCP infrastructure validation
 
 on:
   pull_request:
-    paths: ['infra/**', '.github/workflows/infrastructure-validation.yml']
+    paths: ['infra/**', 'config/postgres-observability.json', '.github/workflows/infrastructure-validation.yml']
   push:
     branches: [main]
-    paths: ['infra/**', '.github/workflows/infrastructure-validation.yml']
+    paths: ['infra/**', 'config/postgres-observability.json', '.github/workflows/infrastructure-validation.yml']
 
 permissions:
   contents: read
@@ -36,5 +36,6 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install 'uv==0.9.21'
+      - run: python infra/tools/validate_logging_policy.py
       - run: uv sync --project infra/tools --frozen
       - run: uv run --project infra/tools --no-sync checkov --directory infra/gcp --framework terraform --compact
