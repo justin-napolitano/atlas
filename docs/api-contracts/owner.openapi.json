@@ -653,6 +653,224 @@
         "title": "LexiconRepresentationInput",
         "type": "object"
       },
+      "NotebookCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "annotation_id": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annotation Id"
+          },
+          "body": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "document_id": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/NotebookLink"
+            },
+            "maxItems": 25,
+            "title": "Links",
+            "type": "array"
+          },
+          "owner_confirmed": {
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "record_id": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Record Id"
+          },
+          "request_uuid": {
+            "maxLength": 36,
+            "minLength": 36,
+            "title": "Request Uuid",
+            "type": "string"
+          },
+          "thought_type": {
+            "default": "note",
+            "enum": [
+              "note",
+              "question",
+              "source_claim",
+              "interpretation",
+              "objection"
+            ],
+            "title": "Thought Type",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "title",
+          "body",
+          "request_uuid",
+          "project_id"
+        ],
+        "title": "NotebookCreate",
+        "type": "object"
+      },
+      "NotebookLink": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "record",
+              "annotation",
+              "entry"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "rationale"
+        ],
+        "title": "NotebookLink",
+        "type": "object"
+      },
+      "NotebookUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "entry_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/NotebookLink"
+            },
+            "maxItems": 25,
+            "title": "Links",
+            "type": "array"
+          },
+          "owner_confirmed": {
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "state": {
+            "default": "active",
+            "enum": [
+              "active",
+              "withdrawn"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "thought_type": {
+            "default": "note",
+            "enum": [
+              "note",
+              "question",
+              "source_claim",
+              "interpretation",
+              "objection"
+            ],
+            "title": "Thought Type",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "title",
+          "body",
+          "entry_id",
+          "project_id",
+          "expected_revision"
+        ],
+        "title": "NotebookUpdate",
+        "type": "object"
+      },
       "PersonalInput": {
         "additionalProperties": false,
         "properties": {
@@ -2964,6 +3182,317 @@
           }
         },
         "summary": "Me"
+      }
+    },
+    "/v1/notebook/entries": {
+      "post": {
+        "operationId": "notebook_create_v1_notebook_entries_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotebookCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Notebook Create"
+      }
+    },
+    "/v1/notebook/entry": {
+      "get": {
+        "operationId": "notebook_entry_v1_notebook_entry_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Notebook Entry"
+      },
+      "put": {
+        "operationId": "notebook_update_v1_notebook_entry_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotebookUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Notebook Update"
+      }
+    },
+    "/v1/notebook/history": {
+      "get": {
+        "operationId": "notebook_history_v1_notebook_history_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before_revision",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before Revision"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 25,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Notebook History"
+      }
+    },
+    "/v1/notebook/items": {
+      "get": {
+        "operationId": "notebook_items_v1_notebook_items_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 300,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "thought_type",
+            "required": false,
+            "schema": {
+              "default": "",
+              "enum": [
+                "",
+                "note",
+                "question",
+                "source_claim",
+                "interpretation",
+                "objection",
+                "passage_note",
+                "record_note"
+              ],
+              "title": "Thought Type",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "default": "active",
+              "enum": [
+                "active",
+                "withdrawn"
+              ],
+              "title": "State",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 1100,
+              "title": "Cursor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 25,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Notebook Items"
       }
     },
     "/v1/personal-state": {

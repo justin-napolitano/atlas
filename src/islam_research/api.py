@@ -256,6 +256,34 @@ class VerseMaterialUpdate(VerseMetadata):
     expected_revision: Annotated[int,Field(ge=1)]
 
 
+class NotebookLink(Input):
+    kind: Literal["record","annotation","entry"]
+    id: Identifier
+    rationale: Annotated[str,Field(min_length=1,max_length=2000)]
+
+
+class NotebookMetadata(VerseOwnerInput):
+    thought_type: Literal["note","question","source_claim","interpretation","objection"] = "note"
+    title: Annotated[str,Field(min_length=1,max_length=300)]
+    body: Annotated[str,Field(min_length=1,max_length=20000)]
+    links: Annotated[list[NotebookLink],Field(max_length=25)] = Field(default_factory=list)
+
+
+class NotebookCreate(NotebookMetadata):
+    request_uuid: Annotated[str,Field(min_length=36,max_length=36)]
+    project_id: Identifier
+    record_id: Identifier | None = None
+    document_id: Identifier | None = None
+    annotation_id: Identifier | None = None
+
+
+class NotebookUpdate(NotebookMetadata):
+    entry_id: Identifier
+    project_id: Identifier
+    expected_revision: Annotated[int,Field(ge=1)]
+    state: Literal["active","withdrawn"] = "active"
+
+
 class PublicationSelection(Input):
     record_id: Identifier
     include_summary: bool = False
@@ -579,6 +607,36 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         value=store.record_context(project_id,record_id,cursor,limit)
         if value is None: raise HTTPException(404,"Record not found in this project")
         return value
+    @router.get("/notebook/items")
+    def notebook_items(project_id: Identifier,q: Annotated[str,Query(max_length=300)] = "",
+        thought_type: Literal["","note","question","source_claim","interpretation","objection","passage_note","record_note"] = "",
+        state: Literal["active","withdrawn"] = "active",cursor: Annotated[str,Query(max_length=1100)] = "",
+        limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows=store.notebook_items(project_id=project_id,q=q,thought_type=thought_type,state=state,cursor=cursor,limit=limit+1)
+        return {"items":rows[:limit],"next_cursor":rows[limit-1]["cursor"] if len(rows)>limit else None}
+
+    @router.get("/notebook/entry")
+    def notebook_entry(project_id: Identifier,entry_id: Identifier):
+        row=store.notebook_entry(project_id,entry_id)
+        if row is None:raise HTTPException(404,"Notebook thought not found in this project")
+        return row
+
+    @router.post("/notebook/entries",status_code=201)
+    def notebook_create(value: NotebookCreate,actor: str = Depends(owner)):
+        fields=value.model_dump();fields.pop("owner_confirmed")
+        return store.notebook_create(actor=actor,**fields)
+
+    @router.put("/notebook/entry")
+    def notebook_update(value: NotebookUpdate,actor: str = Depends(owner)):
+        fields=value.model_dump();fields.pop("owner_confirmed")
+        return store.notebook_update(actor=actor,**fields)
+
+    @router.get("/notebook/history")
+    def notebook_history(project_id: Identifier,entry_id: Identifier,before_revision: Annotated[int,Query(ge=1)] | None = None,
+        limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows=store.notebook_history(project_id=project_id,entry_id=entry_id,before_revision=before_revision,limit=limit+1)
+        if rows is None:raise HTTPException(404,"Notebook thought not found in this project")
+        return {"items":rows[:limit],"next_before_revision":rows[limit-1]["revision"] if len(rows)>limit else None}
 
     @router.get("/projects")
     def projects():
