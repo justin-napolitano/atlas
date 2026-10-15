@@ -17,10 +17,13 @@ const preview = await startPreview({ root,logLevel:'silent',preview:{ host:'127.
 const testOrigin = `http://127.0.0.1:${preview.httpServer.address().port}`;
 const chrome = spawn(chromePath,['--headless=new','--disable-background-networking','--disable-component-update',
   '--no-first-run','--no-default-browser-check','--remote-debugging-port=0',`--user-data-dir=${profile}`,
-  '--window-size=1440,1000','about:blank'],{ stdio:'ignore' });
+  '--window-size=1440,1000','about:blank'],{ stdio:['ignore','ignore','pipe'] });
 let socket;
 let processFailure;
+let chromeStartupDiagnostics='';
+chrome.stderr.on('data',chunk=>{chromeStartupDiagnostics=(chromeStartupDiagnostics+chunk.toString()).slice(-4000);});
 chrome.on('error',error => { processFailure = error; });
+chrome.on('exit',(code,signal)=>{processFailure=new Error(`Owned test Chrome exited (${code ?? signal}): ${chromeStartupDiagnostics}`);});
 const sleep = ms => new Promise(resolve => setTimeout(resolve,ms));
 async function until(fn, label) {
   for (let i=0;i<100;i++) { if (processFailure) throw processFailure; try { const value=await fn(); if (value) return value; } catch {} await sleep(100); }
@@ -78,6 +81,13 @@ async function fixture(event) {
     captures.push(data);
   }
   else if (path==='/v1/reading/annotations') data={ items:captures,next_cursor:null };
+  else if (path==='/v1/reading/annotation' && event.request.method==='PUT') {
+    const value=JSON.parse(event.request.postData), index=captures.findIndex(row=>row.id===value.annotation_id && row.project_id===value.project_id);
+    assert.equal(event.request.headers['X-Research-Write'] || event.request.headers['x-research-write'],'1');
+    assert.ok(index>=0);
+    if(value.expected_revision!==captures[index].revision) {status=409;data={current:captures[index]};}
+    else {data={...captures[index],body:value.body,revision:captures[index].revision+1};captures[index]=data;}
+  }
   else if (path==='/v1/reading/annotation') {
     const row=captures.find(c=>c.id===url.searchParams.get('annotation_id'));
     data={annotation:row,anchor:{anchored:true,start:row.start_pos,end:row.end_pos},web_annotation:{ id:row.id,type:'Annotation' }};
@@ -146,6 +156,24 @@ try {
   await until(()=>evaluate('new URLSearchParams(location.search).has("annotation") && document.querySelector(".reader-text mark")?.textContent==="tafsīr"'),'search opens exact saved passage');
   await reload();
   await until(()=>evaluate('document.querySelector(".reader-text mark")?.textContent==="tafsīr"'),'annotation bookmark survives reload');
+  await until(()=>evaluate('!!document.querySelector(".passage-note-open")'),'saved passage edit button');
+  await evaluate('document.querySelector(".passage-note-open").click()');
+  await until(()=>evaluate('!!document.querySelector(".passage-note-edit textarea")'),'saved passage editor');
+  await evaluate('document.querySelector(".passage-note-edit textarea").focus()');
+  await call('Input.insertText',{text:' Edited on this machine.'});
+  await evaluate('document.querySelectorAll(".workspace-row")[0].click()');
+  await until(()=>evaluate('document.querySelector(".workspace-record-heading")?.textContent.includes("Synthetic question")'),'leave existing passage edit');
+  await evaluate('document.querySelectorAll(".workspace-row")[1].click()');
+  await until(()=>evaluate('document.querySelector(".passage-note-edit textarea")?.value.includes("Edited on this machine")'),'existing passage draft retained');
+  captures[0]={...captures[0],body:'Cloud passage edit from another machine',revision:2};
+  await evaluate('document.querySelector(".passage-note-save").click()');
+  await until(()=>evaluate('document.querySelector(".passage-note-conflict pre")?.textContent.includes("Cloud passage edit")'),'passage conflict comparison');
+  assert.match(await evaluate('document.querySelector(".passage-note-edit textarea").value'),/Edited on this machine/);
+  await evaluate('document.querySelectorAll(".passage-note-conflict button")[1].click()');
+  await until(()=>evaluate('document.querySelector(".passage-note-edit [role=status]")?.textContent.includes("Saved to your workspace")'),'explicit passage draft resolution');
+  assert.equal(captures[0].revision,3);assert.match(captures[0].body,/Edited on this machine/);assert.equal(captures[0].exact,'tafsīr');
+  await reload();
+  await until(()=>evaluate('document.querySelector(".saved-passage-note")?.textContent.includes("Edited on this machine")'),'edited passage persists after reload');
   await evaluate('document.querySelector("#my-note").focus()');
   await call('Input.insertText',{ text:'Synthetic browser note <img src=x onerror=alert(1)>' });
   await evaluate('document.querySelector(".workspace-note-actions button").click()');
