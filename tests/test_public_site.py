@@ -31,6 +31,7 @@ def synthetic_site(root):
     (directory / "site/assets/public-test.js").write_text('export const synthetic = true;')
     (directory / "site/assets/public-test.css").write_text('body{color:black}')
     (directory / "site/.public-profile.json").write_bytes(release.encoded({"version": 1, "modules": sorted(site.policy(ROOT)["modules"])}))
+    shutil.copyfile(ROOT / "web/THIRD_PARTY_LICENSES.txt", directory / "site/THIRD_PARTY_LICENSES.txt")
     (directory / "runtime").mkdir()
     shutil.copyfile(ROOT / site.RUNTIME, directory / site.RUNTIME)
     manifest = {"format_version": 1, "kind": "approved_public_site", "built_at": NOW,

@@ -49,6 +49,8 @@ dependencies. CI has read-only repository access and no cloud credentials.
   public-only semantic model and upstream licenses. No older release is copied.
 - `site/`: the public HTML, hashed JS/CSS and module profile. No owner entry points,
   source maps, legacy graph or original source tree are copied.
+- `site/THIRD_PARTY_LICENSES.txt`: notices for the locked React, React DOM and
+  Scheduler packages. This does not select a license for the project's own code.
 - `runtime/public-server.mjs`: a standalone server using Node's built-in modules.
 - `build-manifest.json`: source commit/input hashes, approved release identity,
   file hashes/sizes and build time. `deployed` remains false.

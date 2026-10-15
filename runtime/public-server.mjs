@@ -56,7 +56,7 @@ export async function loadPublicSite(directory) {
   const all = new Map(); let total = 0;
   for (const [name,info] of Object.entries(manifest.files)) {
     if (name.includes('..') || name.includes('\\') || name.startsWith('/') ||
-        !(name===runtimePath || ['site/index.html','site/.public-profile.json'].includes(name) ||
+        !(name===runtimePath || ['site/index.html','site/.public-profile.json','site/THIRD_PARTY_LICENSES.txt'].includes(name) ||
           name.startsWith('site/') && asset.test(name.slice(5)) || name.startsWith('release/')) ||
         !keysEqual(info,['bytes','sha256']) || !Number.isInteger(info.bytes) || info.bytes<0 ||
         !/^[a-f0-9]{64}$/.test(info.sha256)) throw new Error('Unregistered public build file');
@@ -64,7 +64,7 @@ export async function loadPublicSite(directory) {
     if (total>MAX_BYTES || data.length!==info.bytes || sha(data)!==info.sha256) throw new Error('Public build integrity mismatch');
     all.set(name,data);
   }
-  for (const name of [runtimePath,'site/index.html','site/.public-profile.json','release/release-manifest.json','release/data/projects.json','release/data/release.json'])
+  for (const name of [runtimePath,'site/index.html','site/.public-profile.json','site/THIRD_PARTY_LICENSES.txt','release/release-manifest.json','release/data/projects.json','release/data/release.json'])
     if (!all.has(name)) throw new Error('Missing public entry point');
   if (manifest.files[runtimePath].sha256!==manifest.source_inputs?.[runtimePath]?.sha256 ||
       manifest.files[runtimePath].bytes!==manifest.source_inputs?.[runtimePath]?.bytes)
@@ -81,7 +81,8 @@ export async function loadPublicSite(directory) {
   const types = new Map([['/','text/html; charset=utf-8'],['/index.html','text/html; charset=utf-8']]);
   for (const [name,data] of all) {
     let path, type;
-    if (name.startsWith('site/assets/')) {path='/'+name.slice(5);type=name.endsWith('.js')?'text/javascript; charset=utf-8':'text/css; charset=utf-8';}
+    if (name==='site/THIRD_PARTY_LICENSES.txt') {path='/THIRD_PARTY_LICENSES.txt';type='text/plain; charset=utf-8';}
+    else if (name.startsWith('site/assets/')) {path='/'+name.slice(5);type=name.endsWith('.js')?'text/javascript; charset=utf-8':'text/css; charset=utf-8';}
     else if (name.startsWith('release/')) {
       const relative=name.slice(8);
       if (relative!=='release-manifest.json' && (release.files[relative]?.sha256!==manifest.files[name].sha256 ||

@@ -34,6 +34,8 @@ test('verified runtime serves exactly the public page, assets, approved data and
     }
     for(const asset of html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)) assert.equal((await fetch(base+asset[1])).status,200);
     assert.equal((await fetch(base+'/semantic/vendor/apache-ossie/NOTICE')).status,200);
+    const notices=await fetch(base+'/THIRD_PARTY_LICENSES.txt');assert.equal(notices.status,200);
+    assert.match(await notices.text(),/MIT License/);
     assert.equal((await fetch(base+'/release-manifest.json')).status,200);
   });
 });

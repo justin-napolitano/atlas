@@ -22,6 +22,7 @@ BUILD_ID = re.compile(r"build-[a-f0-9]{64}")
 RUNTIME = "runtime/public-server.mjs"
 CONTROL_FILES = (
     "config/public-build.json", "web/package.json", "web/package-lock.json",
+    "web/THIRD_PARTY_LICENSES.txt",
     "web/scripts/build-public-frontend.mjs", "scripts/build_public_site.py",
     "src/islam_research/public_site.py", "src/islam_research/public_release.py",
     "src/islam_research/publication_contract.py", RUNTIME,
@@ -160,14 +161,14 @@ def verify_site(directory, checkout):
         relative = Path(name)
         if relative.is_absolute() or ".." in relative.parts:
             raise ValueError("Unsafe public site file path")
-        if not (name == RUNTIME or name in {"site/index.html", "site/.public-profile.json"}
+        if not (name == RUNTIME or name in {"site/index.html", "site/.public-profile.json", "site/THIRD_PARTY_LICENSES.txt"}
                 or name.startswith("site/") and ASSET.fullmatch(name[5:]) or name.startswith("release/")):
             raise ValueError("Unregistered public site file")
         data = _read(directory / relative, MAX_SITE_BYTES)
         total += len(data)
         if total > MAX_SITE_BYTES or info != {"bytes": len(data), "sha256": digest(data)}:
             raise ValueError("Public site integrity or byte limit mismatch")
-    required_files = {RUNTIME, "site/index.html", "site/.public-profile.json"}
+    required_files = {RUNTIME, "site/index.html", "site/.public-profile.json", "site/THIRD_PARTY_LICENSES.txt"}
     if not required_files <= set(files): raise ValueError("Missing public site entry points")
     release = verify_bundle(directory / "release", expected_id=manifest["release_id"])
     if digest(_read(directory / "release/release-manifest.json", 1_000_000)) != manifest["release_manifest_sha256"]:
@@ -185,6 +186,8 @@ def verify_site(directory, checkout):
         raise ValueError("Missing referenced public asset")
     # Runtime bytes are part of source provenance, not an arbitrary injected server.
     if files[RUNTIME] != inputs[RUNTIME]: raise ValueError("Public runtime source/build mismatch")
+    if files["site/THIRD_PARTY_LICENSES.txt"] != inputs["web/THIRD_PARTY_LICENSES.txt"]:
+        raise ValueError("Public dependency license mismatch")
     return manifest
 
 
@@ -212,6 +215,7 @@ def build_site(release_directory, output_root, checkout, *, built_at=None):
             cwd=checkout / "web", env=_environment(), capture_output=True, timeout=120)
         if result.returncode: raise ValueError("Isolated public frontend compilation failed")
         _externalize_theme(stage / "site")
+        (stage / "site/THIRD_PARTY_LICENSES.txt").write_bytes(_read(checkout / "web/THIRD_PARTY_LICENSES.txt", 100000))
         (stage / "runtime").mkdir()
         (stage / RUNTIME).write_bytes(_read(checkout / RUNTIME, 100000))
         if source_inputs(checkout) != inputs or source_commit(checkout, inputs) != commit:
