@@ -49,7 +49,7 @@ export default function AddSource({api,projectId,drafts,changed=()=>{},onCreated
     event.preventDefault();if(saving.current || form.saving || (!form.sent && !form.confirmed))return;
     saving.current=true;
     try{const result=await saveSourceIntake({api,form,payload:sourceIntakePayload(form,projectId),update});
-      if(result){store.current.delete(key);changed();onCreated(result);}}
+      if(result){store.current.delete(key);changed();if(alive.current)onCreated(result);}}
     finally{saving.current=false;}
   }
   function exportDraft(){const url=URL.createObjectURL(new Blob([JSON.stringify({format:'private-source-intake-draft-1',project_id:projectId,draft:form},null,2)],{type:'application/json'}));
@@ -59,6 +59,7 @@ export default function AddSource({api,projectId,drafts,changed=()=>{},onCreated
   return <section className="source-intake" aria-labelledby="source-intake-heading">
     <header><div><p className="eyebrow">Your research library</p><h2 id="source-intake-heading">Add a source</h2></div>{onCancel && <button type="button" disabled={form.saving} onClick={onCancel}>Back to reading</button>}</header>
     <p>Record the source, identify its edition, then optionally bring a located excerpt into the reader. Metadata stays private and pending review.</p>
+    {initialPreset && store.current.has(key) && form.preset_id!==initialPreset.preset_id && <p className="intake-retained-warning" role="status">You have an unfinished source intake for “{form.title || 'Untitled source'}”. It is shown below. The newly selected reading “{initialPreset.title}” has not replaced it. Finish this intake or export and discard it before starting the selected reading.</p>}
     {form.preset_note && <p className="intake-preset-note">{form.preset_note}</p>}
     <ol className="intake-steps" aria-label="Source intake steps">{['Source','Identity & access','Review & read'].map((label,i)=><li key={label} aria-current={form.step===i+1 ? 'step' : undefined}>{i+1}. {label}</li>)}</ol>
     {form.step===1 && <form onSubmit={checkIdentity}>

@@ -3,6 +3,8 @@ import { selectedPassage } from './passageSelection.js';
 import SavedPassageNote from './SavedPassageNote.jsx';
 import {readingMarks,verifyReadingCapture} from './readingMarks.js';
 import ResizablePanes from './ResizablePanes.jsx';
+import RecoverableDraft from './RecoverableDraft.jsx';
+import {recoverPassageWriting} from './recoverIntoEditor.js';
 import './sourceReader.css';
 
 /** Edition-bound reading surface with saved inline marks and adjacent private notes. */
@@ -68,6 +70,16 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
     window.history.replaceState(null,'',url);
   }
   function forget(key) { drafts.current.delete(key); changed(); }
+  function recoverCapture(value){
+    if(value.project_id!==record.project_id || value.record_id!==record.id || value.document_id!==document?.id || value.text_sha256!==document?.text_sha256 || capture?.saving || capture?.submitted){setMessage('Confirm the pending passage save before recovering different writing.');return false;}
+    if(value.existing_annotation){
+      if(!recoverPassageWriting(noteEditor,record,value)){setMessage('Finish or discard changes in that saved passage’s editor, then inspect this recovery copy again.');return false;}
+      const row=value.existing_annotation;forget(captureKey);setAnnotations(old=>[row,...old.filter(item=>item.id!==row.id)]);setActiveAnnotation(row.id);setHighlight({start:row.start_pos,end:row.end_pos});bookmark(row.id);return true;
+    }
+    const restored={start:value.start,end:value.end,exact:value.exact,capture_kind:value.capture_kind,body:value.body,mark_style:value.mark_style,
+      annotation_uuid:value.annotation_uuid,documentId:document.id,sourceRecordId:record.id,saving:false};
+    remember(captureKey,restored);setHighlight(restored);setActiveAnnotation('');setMarginOpen(true);setMessage('Recovered private writing. Review it before saving the actual passage note.');return true;
+  }
   function editImport(patch) { remember(importKey,{...importDraft,...patch}); }
   async function importText(event) {
     event.preventDefault(); if(importDraft.saving) return;
@@ -89,7 +101,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
         composer.current?.focus();return;
       }
       if(capture?.submitted) {setMessage('Retry or discard the original submitted note before changing its mark.');return;}
-      const value={...selected,annotation_uuid:crypto.randomUUID(),body:capture?.body || '',capture_kind:capture?.capture_kind || 'comment',
+      const value={...selected,annotation_uuid:capture?.annotation_uuid || crypto.randomUUID(),body:capture?.body || '',capture_kind:capture?.capture_kind || 'comment',
         mark_style:markStyle,documentId:document.id,sourceRecordId:record.id,saving:false};
       remember(captureKey,value); setHighlight(value);setActiveAnnotation('');setMarginOpen(true);setMessage('Write in the margin. Save with the button or ⌘/Ctrl + Enter.');
       window.getSelection()?.removeAllRanges();
@@ -190,16 +202,18 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
           {...(run.ids.length ? {role:'button',tabIndex:0,'aria-label':`${run.text} — ${run.ids.length===1 ? 'open margin note' : `${run.ids.length} margin notes; activate to cycle`}`,'aria-pressed':run.ids.includes(activeAnnotation),
             onClick:()=>openMargin(run.ids),onKeyDown:event=>{if(event.key==='Enter' || event.key===' ') {event.preventDefault();openMargin(run.ids);}}} : {})}>{run.text}</mark> : run.text)}</div></div>
         <aside ref={margin} id={marginId} hidden={!marginOpen} className="reader-margin" aria-label="Passage margin notes">
+          {!capture && <RecoverableDraft key={document.id+':capture-finder'} api={api} projectId={record.project_id} recordId={record.id} contextKind="capture" document={document} body="" drafts={drafts} changed={changed} onRecover={recoverCapture}/>}
           {capture && <div className="reader-capture"><h4>In the margin</h4><blockquote dir="auto">{capture.exact}</blockquote>
             <label>Passage mark<select value={capture.mark_style || 'highlight'} disabled={capture.saving || !!capture.submitted} onChange={e=>remember(captureKey,{...capture,mark_style:e.target.value})}><option value="highlight">Highlight</option><option value="underline">Underline</option><option value="none">Margin note only</option></select></label>
             <label>My passage note<textarea ref={composer} value={capture.body} disabled={capture.saving || !!capture.submitted} rows={5} maxLength={10000} onChange={e=>remember(captureKey,{...capture,body:e.target.value})}
               placeholder="Your thought, question, or disagreement…" onKeyDown={event=>{if((event.metaKey || event.ctrlKey) && event.key==='Enter') {event.preventDefault();saveCapture();}}} /></label>
             <label>Capture as<select value={capture.capture_kind} disabled={capture.saving || !!capture.submitted} onChange={e=>remember(captureKey,{...capture,capture_kind:e.target.value})}><option value="comment">Reading note</option><option value="term_candidate">Term to investigate</option><option value="citation_candidate">Scripture reference to check</option></select></label>
             <div><button onClick={saveCapture} disabled={capture.saving}>{capture.saving ? 'Saving…' : capture.submitted ? 'Retry original save' : 'Save passage note'}</button><button disabled={capture.saving} onClick={()=>{forget(captureKey);setHighlight(null);}}>Discard selection draft</button></div>
+            <RecoverableDraft key={document.id+':'+capture.start+':'+capture.end} api={api} projectId={record.project_id} recordId={record.id} contextKind="capture" document={document} selection={capture} body={capture.body} markStyle={capture.mark_style || 'highlight'} drafts={drafts} changed={changed} onRecover={recoverCapture}/>
             {capture.submitted && !capture.saving && <small>The response was not confirmed. Retry sends the original note and ID, so it cannot create a second note. Discarding removes this local draft; a committed note may still exist in the cloud. Refresh saved notes to check.</small>}
             <small>Your note stays attached to this exact source version. Capturing it does not create a reviewed claim.</small></div>}
           <div className="reader-annotations"><h4>Saved passage notes <span>{annotations.length}{annotationCursor ? '+' : ''}</span></h4>{!annotations.length && <p>Select a passage and write here. Your saved notes will stay beside this source.</p>}
-            {saved.map(row=><SavedPassageNote key={row.id} row={row} sourceId={record.id} editor={noteEditor} reopen={reopen} api={api} drafts={drafts} changed={changed} navigate={navigate} onOpenVerse={onOpenVerse} active={activeAnnotation===row.id} />)}
+            {saved.map(row=><SavedPassageNote key={row.id} row={row} sourceId={record.id} document={document} editor={noteEditor} reopen={reopen} api={api} drafts={drafts} changed={changed} navigate={navigate} onOpenVerse={onOpenVerse} active={activeAnnotation===row.id} />)}
             {annotationCursor && <><p className="reader-help">More notes exist. Load them to see their marks in the text.</p><button onClick={moreAnnotations}>More passage notes</button></>}</div>
         </aside>
       </ResizablePanes>

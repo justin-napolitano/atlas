@@ -16,6 +16,7 @@ from jsonschema import Draft202012Validator
 from referencing import Registry
 
 TABLES = {
+    "notebook_entries": {"id","project_id","record_id","document_id","annotation_id","thought_type","title","body","links","state","review_state","revision","updated_at"},
     "projects": {"id", "title", "scope", "graph_authority"},
     "records": {"id", "project_id", "kind", "title", "summary", "review_state", "origin", "revision", "updated_at"},
     "relations": {"id", "project_id", "from_id", "predicate", "to_id", "provenance", "review_state"},

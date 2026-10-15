@@ -10,10 +10,21 @@ from . import lexicon_store
 from . import verse_store
 from . import source_intake
 from . import reading_desk
+from . import record_context
+from . import notebook
+from . import reading_drafts
+from . import collection_link
 
 
 class PostgreSQLStore:
     """Keep private queries and public projection reads separate."""
+
+    def link_collection_reading(self,**values):
+        with db.connect(self.dsn) as connection:return collection_link.link(connection,**values)
+
+    def record_context(self, project_id, record_id, cursor, limit):
+        with db.connect(self.dsn) as connection:
+            return record_context.neighborhood(connection,project_id,record_id,cursor,limit)
 
     def __init__(self, dsn: str):
         self.dsn = dsn
@@ -45,6 +56,18 @@ class PostgreSQLStore:
         with db.connect(self.dsn) as connection:
             return db.create_project(connection, **values)
 
+    def reading_draft(self,project_id,draft_id):
+        with db.connect(self.dsn) as connection: return reading_drafts.get(connection,project_id,draft_id)
+
+    def save_reading_draft(self,**values):
+        with db.connect(self.dsn) as connection: return reading_drafts.save(connection,**values)
+
+    def reading_drafts(self,**values):
+        with db.connect(self.dsn) as connection: return reading_drafts.listing(connection,**values)
+
+    def reading_draft_history(self,project_id,draft_id,before_revision,limit):
+        with db.connect(self.dsn) as connection: return reading_drafts.history(connection,project_id,draft_id,before_revision,limit)
+
     def reading_desk(self,project_id):
         with db.connect(self.dsn) as connection: return reading_desk.get(connection,project_id)
 
@@ -53,6 +76,21 @@ class PostgreSQLStore:
 
     def reading_desk_history(self,project_id,before_revision,limit):
         with db.connect(self.dsn) as connection: return reading_desk.history(connection,project_id,before_revision,limit)
+
+    def notebook_items(self,**values):
+        with db.connect(self.dsn) as connection:return notebook.items(connection,**values)
+
+    def notebook_entry(self,project_id,entry_id):
+        with db.connect(self.dsn) as connection:return notebook.get(connection,project_id,entry_id)
+
+    def notebook_create(self,**values):
+        with db.connect(self.dsn) as connection:return notebook.create(connection,**values)
+
+    def notebook_update(self,**values):
+        with db.connect(self.dsn) as connection:return notebook.update(connection,**values)
+
+    def notebook_history(self,**values):
+        with db.connect(self.dsn) as connection:return notebook.history(connection,**values)
 
     def records(self, project_id: str, kind: str | None, cursor: str, limit: int) -> list[dict]:
         with db.connect(self.dsn) as connection:

@@ -25,6 +25,11 @@ class MemoryBoundaryStore:
     """Only a transport test adapter; database guarantees have separate real-PG tests."""
     def ready(self, mode):
         return True
+    def save_reading_draft(self,**value):
+        return {**value,"revision":1}
+    def reading_draft(self,*args):return None
+    def reading_drafts(self,**values):return []
+    def reading_draft_history(self,*args):return None
     def source_intake(self, **values):
         return {"project_id":values["project_id"],"record_id":"synthetic:source","document_id":None,"actor":values["actor"]}
     def source_candidates(self,*args):
@@ -116,6 +121,23 @@ class APIBoundaryTests(unittest.TestCase):
         public=TestClient(create_app(Settings("synthetic",mode="public"),store=MemoryBoundaryStore()))
         self.assertEqual(public.post("/v1/source-intakes",json=value).status_code,404)
         self.assertEqual(public.get("/v1/source-intakes/candidates").status_code,404)
+
+    def test_recovery_drafts_are_owner_only_strict_private_and_csrf_protected(self):
+        value={"draft_uuid":str(uuid.uuid4()),"project_id":"synthetic","record_id":"synthetic:source","context_kind":"record_note","base_revision":0,"body":"SYNTHETIC unfinished writing","expected_revision":0}
+        route="/v1/reading/draft"
+        self.assertEqual(self.client.put(route,json=value).status_code,401)
+        self.assertEqual(self.client.put(route,json=value,headers=self.headers(sub="other")).status_code,403)
+        missing=self.headers();missing.pop("x-research-write")
+        self.assertEqual(self.client.put(route,json=value,headers=missing).status_code,403)
+        self.assertEqual(self.client.put(route,json=value,headers=self.headers(origin="https://other.example.invalid")).status_code,403)
+        result=self.client.put(route,json=value,headers=self.headers());self.assertEqual(result.status_code,200);self.assertEqual(result.json()["actor"],OWNER)
+        for patch in ({"actor":"forged"},{"review_state":"reviewed"},{"base_snapshot":{"body":"forged"}},{"body":"x"*10001},{"expected_revision":True}):
+            response=self.client.put(route,json={**value,**patch},headers=self.headers());self.assertEqual(response.status_code,422);self.assertNotIn('SYNTHETIC unfinished',response.text)
+        public=TestClient(create_app(Settings("synthetic",mode="public"),store=MemoryBoundaryStore()))
+        for path in ('draft','drafts','draft-history'):
+            self.assertEqual(self.client.get('/v1/reading/'+path,params={"project_id":"synthetic"}).status_code,401)
+            self.assertEqual(public.get('/v1/reading/'+path).status_code,404)
+        self.assertEqual(public.put(route,json=value).status_code,404)
 
     def test_write_requires_csrf_boundary_and_owner(self):
         payload = {"record_id": "synthetic", "project_id": "synthetic", "note": "Synthetic private note"}

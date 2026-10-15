@@ -1998,6 +1998,165 @@
               }
             }
           ]
+        },
+        {
+          "name": "notebook_entries",
+          "source": "research.notebook_entries",
+          "description": "Private owner thoughts with explicit source anchors and explained links. Pending review; existing passage-note bodies are not copied into these entries. Connections describe owner rationale, not scholarly entailment.",
+          "primary_key": [
+            "id"
+          ],
+          "unique_keys": [
+            [
+              "project_id",
+              "id"
+            ]
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "record_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "record_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "document_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "document_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "annotation_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "annotation_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "thought_type",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "thought_type"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "title",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "title"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "body",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "body"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "links",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "links"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "review_state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "review_state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "updated_at",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "updated_at"
+                  }
+                ]
+              }
+            }
+          ]
         }
       ],
       "relationships": [
@@ -2342,6 +2501,45 @@
         {
           "name": "reading_place_reading_annotations",
           "from": "reading_desks",
+          "to": "reading_annotations",
+          "from_columns": [
+            "project_id",
+            "annotation_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "notebook_records",
+          "from": "notebook_entries",
+          "to": "records",
+          "from_columns": [
+            "project_id",
+            "record_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "notebook_reading_documents",
+          "from": "notebook_entries",
+          "to": "reading_documents",
+          "from_columns": [
+            "project_id",
+            "document_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "notebook_reading_annotations",
+          "from": "notebook_entries",
           "to": "reading_annotations",
           "from_columns": [
             "project_id",

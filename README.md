@@ -38,6 +38,8 @@ The research should understand traditions in context before evaluating them. “
 - `docs/research-search.md` — bounded, signed-owner lexical retrieval across research records and explicitly selected private notes, with channel/revision provenance.
 - `docs/reading-workspace.md` — resizable owner reading UI, revision-aware notes and reading decisions, evidence trails, Markdown export, browser verification, and hosting prerequisites.
 - `docs/reading-place.md` — private revisioned reading bookmarks with exact document/annotation targets and explicit cross-session conflict handling.
+- `docs/reading-context-evidence.md` — independent edition comparison, directed evidence paths, and bounded source-context navigation.
+- `docs/connected-reading-release.md` — reading material, recoverable writing, notebook, comparison and evidence navigation with explicit scope limits.
 - `docs/obsidian-notes.md` — shared versioned private Markdown notes and explicit revision-aware Obsidian/file pull/push; no daemon or live cloud authentication is presumed.
 - `docs/passage-capture.md` — private immutable source excerpts and W3C passage anchors with Unicode positions, edition/locator checks, revision history, and changed-source diagnostics.
 - `docs/passage-marks.md` — revisioned private highlight/underline presentation on those exact passage anchors; no review or publication promotion.
@@ -47,6 +49,7 @@ The research should understand traditions in context before evaluating them. “
 - `docs/lexicon-reader.md` — owner reading controls for concept connections, attributed definitions, source reopening, draft/conflict recovery, private history, and lexical search; public lexical projection remains pending.
 - `docs/source-intake-workflow.md` — reviewed manual bibliography/URL/identifier intake, explicit existing-source reuse, optional permitted located excerpts, and atomic retry receipts; provider resolution and file import remain pending.
 - `docs/passage-verse-links.md` — scoped owner discussion/interpretation links from exact saved passages to verse ranges, pending review with source-bound save verification and retained retries.
+- `docs/located-reading-collection.md` — real, located Q 4:59 / 4:83 Rodwell, al-Tabari, and translated Al-Mizan readings, with exact quotation/analyst-paraphrase separation and explicit evidence/reuse limits.
 - `docs/postgres.md` — migration-managed PostgreSQL records, retained RDF imports, revision-safe personal state, and real-database test commands; hosted authentication/deployment remain separate slices.
 - `docs/postgres-observability.md` — PostgreSQL 17/18 contract matrix and real native log checks for private bound values, error paths, and shared redaction settings.
 - `docs/runtime-sql-permissions.md` — previewable post-migration grants, restricted owner/publisher logins, and real PostgreSQL permission tests.
@@ -107,3 +110,6 @@ The owner reading workspace now connects [source intake, the bounded article pre
 The authenticated owner runtime, isolated build, native-IAP/private-SQL delivery configuration and remaining live rollout gates are documented in [owner service delivery](docs/owner-service-delivery.md).
 
 The [linked reading workflow](docs/linked-reading-workflow.md) follows saved passage → scoped verse discussion/interpretation → exact source and adds an explicit per-project server bookmark with retry/conflict controls. Unsaved notes and scrolling are not synchronized by the bookmark.
+
+The [private research notebook](docs/research-notebook.md) collects running thoughts and live passage/record notes with exact source anchors, explained connections and revision history.
+[Recoverable private writing drafts](docs/recoverable-writing-drafts.md) preserve explicitly saved unfinished record/passage notes across sessions, with exact source anchors, historical baselines, conflict comparison and recoverable discard. Recovery fills the editor; it does not automatically commit notes or publish content.

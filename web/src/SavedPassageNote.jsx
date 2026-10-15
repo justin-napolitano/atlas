@@ -2,10 +2,12 @@ import React from 'react';
 import ScriptureCitations from './ScriptureCitations.jsx';
 import LexiconCapture from './LexiconCapture.jsx';
 import VerseLinks from './VerseLinks.jsx';
+import RecoverableDraft from './RecoverableDraft.jsx';
+import {recoverPassageWriting} from './recoverIntoEditor.js';
 
 const statuses={saved:'Saved to your workspace',unsaved:'Unsaved changes',saving:'Saving…',conflict:'Changed on another device',error:'Save failed. Your draft is still here.'};
 /** A revisioned margin note; source selection and note identity remain immutable. */
-export default function SavedPassageNote({ row,sourceId,editor,reopen,api,drafts,changed,navigate,onOpenVerse,active=false }) {
+export default function SavedPassageNote({ row,sourceId,document,editor,reopen,api,drafts,changed,navigate,onOpenVerse,active=false }) {
   const entry=editor.adopt(row,sourceId), value=entry.server;
   return <article className={`saved-passage-note${active ? ' is-active' : ''}`} data-annotation-id={value.id} aria-label={active ? 'Selected passage note' : 'Passage note'}>
     <a className="reader-reopen" dir="auto" href={`?${new URLSearchParams({project:value.project_id,record:sourceId,document:value.document_id,annotation:value.id})}`} onClick={event=>{
@@ -26,6 +28,7 @@ export default function SavedPassageNote({ row,sourceId,editor,reopen,api,drafts
       </div>}
       <button className="passage-note-save" disabled={!!entry.pending || entry.status==='conflict' || entry.status==='saved'} onClick={()=>editor.save(value.id)}>Save changes</button>
       <button disabled={!!entry.pending} onClick={()=>editor.close(value.id)}>{entry.status==='saved' ? 'Close editor' : 'Discard my changes'}</button>
+      {document && <RecoverableDraft key={value.id+':drafts'} api={api} projectId={value.project_id} recordId={sourceId} contextKind="annotation" document={document} annotation={value} body={entry.body} markStyle={entry.markStyle} baseRevision={entry.server.revision} drafts={drafts} changed={changed} onRecover={recovered=>recoverPassageWriting(editor,{id:sourceId,project_id:value.project_id},recovered)}/>}
       <small>Your saved note stays private. Editing it keeps the selected text, source version, and revision history attached.</small>
     </div> : <>{value.body && <p>{value.body}</p>}<button className="passage-note-open" onClick={()=>editor.open(value.id)}>Edit note</button></>}
     <button onClick={()=>reopen(value,true)}>Export private annotation</button>

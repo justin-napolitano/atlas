@@ -25,6 +25,7 @@ from .database import RevisionConflict
 from .graph_engine import rank, registered_policy
 from .quran_citations import PARSER_VERSION as QURAN_PARSER_VERSION, PROFILE_ID as QURAN_PROFILE_ID
 from .quran_resources import pilot_resource
+from .reader_collection import collection_resource
 
 logger = logging.getLogger("research.api")
 Identifier = Annotated[str, Field(min_length=1, max_length=500, pattern=r"^[^\x00-\x1f\x7f]+$")]
@@ -172,6 +173,25 @@ class ReadingAnnotationUpdate(Input):
     mark_style: Literal["highlight","underline","none"] | None = None
 
 
+class ReadingDraftInput(Input):
+    draft_uuid: Annotated[str,Field(pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")]
+    project_id: Identifier
+    record_id: Identifier
+    context_kind: Literal["record_note","capture","annotation"]
+    document_id: Identifier | None = None
+    annotation_id: Identifier | None = None
+    text_sha256: Annotated[str,Field(pattern=r"^[0-9a-f]{64}$")] | None = None
+    start: Annotated[int,Field(ge=0,le=12000)] | None = None
+    end: Annotated[int,Field(ge=1,le=12000)] | None = None
+    exact: Annotated[str,Field(max_length=500)] = ""
+    capture_kind: Literal["comment","term_candidate","citation_candidate"] | None = None
+    base_revision: Annotated[int,Field(ge=0)]
+    body: Annotated[str,Field(max_length=10000)]
+    mark_style: Literal["highlight","underline","none"] = "none"
+    state: Literal["active","discarded"] = "active"
+    expected_revision: Annotated[int,Field(ge=0)]
+
+
 class ReadingDeskInput(Input):
     project_id: Identifier
     record_id: Identifier
@@ -234,6 +254,14 @@ class VersePilotImport(VerseOwnerInput):
     rationale: Annotated[str,Field(min_length=1,max_length=2000)]
 
 
+class CollectionReadingLink(VerseOwnerInput):
+    project_id: Identifier
+    reading_id: Identifier
+    document_id: Identifier
+    request_uuid: Annotated[str,Field(pattern=r"^[a-fA-F0-9-]{36}$")]
+    rationale: Annotated[str,Field(min_length=1,max_length=2000)]
+
+
 class VerseMaterialInput(VerseMetadata):
     request_uuid: Annotated[str,Field(pattern=r"^[a-fA-F0-9-]{36}$")]
     project_id: Identifier
@@ -253,6 +281,34 @@ class VerseMaterialUpdate(VerseMetadata):
     project_id: Identifier
     material_id: Identifier
     expected_revision: Annotated[int,Field(ge=1)]
+
+
+class NotebookLink(Input):
+    kind: Literal["record","annotation","entry"]
+    id: Identifier
+    rationale: Annotated[str,Field(min_length=1,max_length=2000)]
+
+
+class NotebookMetadata(VerseOwnerInput):
+    thought_type: Literal["note","question","source_claim","interpretation","objection"] = "note"
+    title: Annotated[str,Field(min_length=1,max_length=300)]
+    body: Annotated[str,Field(min_length=1,max_length=20000)]
+    links: Annotated[list[NotebookLink],Field(max_length=25)] = Field(default_factory=list)
+
+
+class NotebookCreate(NotebookMetadata):
+    request_uuid: Annotated[str,Field(min_length=36,max_length=36)]
+    project_id: Identifier
+    record_id: Identifier | None = None
+    document_id: Identifier | None = None
+    annotation_id: Identifier | None = None
+
+
+class NotebookUpdate(NotebookMetadata):
+    entry_id: Identifier
+    project_id: Identifier
+    expected_revision: Annotated[int,Field(ge=1)]
+    state: Literal["active","withdrawn"] = "active"
 
 
 class PublicationSelection(Input):
@@ -551,6 +607,30 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     def me():
         return {"mode": "owner", "can_edit": True}
 
+    @router.get("/reading/draft")
+    def reading_draft(project_id: Identifier,draft_id: Identifier):
+        value=store.reading_draft(project_id,draft_id)
+        if value is None: raise HTTPException(404,"Draft not found in this project")
+        return value
+
+    @router.put("/reading/draft")
+    def save_reading_draft(value: ReadingDraftInput,actor: str=Depends(owner)):
+        return store.save_reading_draft(actor=actor,**value.model_dump())
+
+    @router.get("/reading/drafts")
+    def reading_drafts(project_id: Identifier,record_id: Identifier | None = None,document_id: Identifier | None = None,
+        annotation_id: Identifier | None = None,context_kind: Literal["record_note","capture","annotation"] | None = None,
+        state: Literal["active","discarded"] = "active",cursor: Annotated[str,Query(max_length=500)] = "",limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows=store.reading_drafts(project_id=project_id,record_id=record_id,document_id=document_id,annotation_id=annotation_id,context_kind=context_kind,state=state,cursor=cursor,limit=limit+1)
+        return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
+
+    @router.get("/reading/draft-history")
+    def reading_draft_history(project_id: Identifier,draft_id: Identifier,before_revision: Annotated[int,Query(ge=1)] | None = None,
+        limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows=store.reading_draft_history(project_id,draft_id,before_revision,limit+1)
+        if rows is None: raise HTTPException(404,"Draft history not found in this project")
+        return {"items":rows[:limit],"next_before_revision":rows[limit-1]["revision"] if len(rows)>limit else None}
+
     @router.get("/reading/desk")
     def reading_desk(project_id: Identifier):
         value=store.reading_desk(project_id)
@@ -566,6 +646,51 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         limit: Annotated[int,Query(ge=1,le=25)] = 25):
         rows=store.reading_desk_history(project_id,before_revision,limit+1)
         if rows is None: raise HTTPException(404,"No active reading place saved for this project")
+        return {"items":rows[:limit],"next_before_revision":rows[limit-1]["revision"] if len(rows)>limit else None}
+
+    @router.get("/reading/collection")
+    def reading_collection():
+        return collection_resource()
+
+    @router.post("/reading/link-collection",status_code=201)
+    def link_collection_reading(value: CollectionReadingLink,actor: str = Depends(owner)):
+        return store.link_collection_reading(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
+
+    @router.get("/record-context")
+    def record_context(project_id: Identifier, record_id: Identifier,
+        cursor: Annotated[str,Query(max_length=500)]="", limit: Annotated[int,Query(ge=1,le=25)]=25):
+        value=store.record_context(project_id,record_id,cursor,limit)
+        if value is None: raise HTTPException(404,"Record not found in this project")
+        return value
+    @router.get("/notebook/items")
+    def notebook_items(project_id: Identifier,q: Annotated[str,Query(max_length=300)] = "",
+        thought_type: Literal["","note","question","source_claim","interpretation","objection","passage_note","record_note"] = "",
+        state: Literal["active","withdrawn"] = "active",cursor: Annotated[str,Query(max_length=1100)] = "",
+        limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows=store.notebook_items(project_id=project_id,q=q,thought_type=thought_type,state=state,cursor=cursor,limit=limit+1)
+        return {"items":rows[:limit],"next_cursor":rows[limit-1]["cursor"] if len(rows)>limit else None}
+
+    @router.get("/notebook/entry")
+    def notebook_entry(project_id: Identifier,entry_id: Identifier):
+        row=store.notebook_entry(project_id,entry_id)
+        if row is None:raise HTTPException(404,"Notebook thought not found in this project")
+        return row
+
+    @router.post("/notebook/entries",status_code=201)
+    def notebook_create(value: NotebookCreate,actor: str = Depends(owner)):
+        fields=value.model_dump();fields.pop("owner_confirmed")
+        return store.notebook_create(actor=actor,**fields)
+
+    @router.put("/notebook/entry")
+    def notebook_update(value: NotebookUpdate,actor: str = Depends(owner)):
+        fields=value.model_dump();fields.pop("owner_confirmed")
+        return store.notebook_update(actor=actor,**fields)
+
+    @router.get("/notebook/history")
+    def notebook_history(project_id: Identifier,entry_id: Identifier,before_revision: Annotated[int,Query(ge=1)] | None = None,
+        limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows=store.notebook_history(project_id=project_id,entry_id=entry_id,before_revision=before_revision,limit=limit+1)
+        if rows is None:raise HTTPException(404,"Notebook thought not found in this project")
         return {"items":rows[:limit],"next_before_revision":rows[limit-1]["revision"] if len(rows)>limit else None}
 
     @router.get("/projects")
