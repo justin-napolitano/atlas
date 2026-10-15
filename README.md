@@ -107,3 +107,5 @@ The owner reading workspace now connects [source intake, the bounded article pre
 The authenticated owner runtime, isolated build, native-IAP/private-SQL delivery configuration and remaining live rollout gates are documented in [owner service delivery](docs/owner-service-delivery.md).
 
 The [linked reading workflow](docs/linked-reading-workflow.md) follows saved passage → scoped verse discussion/interpretation → exact source and adds an explicit per-project server bookmark with retry/conflict controls. Unsaved notes and scrolling are not synchronized by the bookmark.
+
+[Recoverable private writing drafts](docs/recoverable-writing-drafts.md) preserve explicitly saved unfinished record/passage notes across sessions, with exact source anchors, historical baselines, conflict comparison and recoverable discard. Recovery fills the editor; it does not automatically commit notes or publish content.
