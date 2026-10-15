@@ -47,6 +47,10 @@ class MemoryBoundaryStore:
         return {**value,"revision":1}
     def scripture_candidates(self, project_id, annotation_id):
         return {"candidates":[],"resolutions":[]}
+    def lexicon_capture(self, **value):
+        return {"actor":value["actor"],"concept_id":"synthetic:concept","occurrence_id":"synthetic:occurrence"}
+    def lexicon_create_definition(self, **value):
+        return {"actor":value["actor"],"revision":1}
 
 
 @unittest.skipUnless(jwt, "Install api and test extras for HTTP contract tests")
@@ -133,6 +137,20 @@ class APIBoundaryTests(unittest.TestCase):
         self.assertEqual(self.client.get(route).status_code,401)
         self.assertEqual(self.client.get(route,headers=self.headers()).status_code,200)
 
+    def test_lexicon_mutations_require_owner_confirmation_and_reject_unreviewed_state_promotion(self):
+        payload=dict(request_uuid=str(uuid.uuid4()),project_id="synthetic",annotation_id="synthetic:annotation",start=0,end=6,
+            entry=dict(scope="Synthetic entry scope",language_tag="ar-Latn"),concept=dict(mode="new",title="Synthetic concept",scope="Synthetic scope"),
+            sense_scope="Only this synthetic passage",rationale="Synthetic explicit owner connection",owner_confirmed=True)
+        path="/v1/lexicon/captures"
+        self.assertEqual(self.client.post(path,json=payload).status_code,401)
+        self.assertEqual(self.client.post(path,json=payload,headers=self.headers(sub="other")).status_code,403)
+        headers=self.headers();headers.pop("x-research-write")
+        self.assertEqual(self.client.post(path,json=payload,headers=headers).status_code,403)
+        self.assertEqual(self.client.post(path,json=payload,headers=self.headers()).json()["actor"],OWNER)
+        for patch in [{"owner_confirmed":value} for value in [False,0,1,"true",None]] + [{"actor":"forged"},{"review_state":"reviewed"},{"start":True}]:
+            self.assertEqual(self.client.post(path,json={**payload,**patch},headers=self.headers()).status_code,422)
+        self.assertEqual(self.client.post(path,json={**payload,"entry":{"scope":"Synthetic","actor":"forged"}},headers=self.headers()).status_code,422)
+
     def test_public_mode_has_no_owner_routes_or_mutations(self):
         public = TestClient(create_app(Settings("synthetic-not-a-live-dsn", mode="public"), store=MemoryBoundaryStore()))
         self.assertEqual(public.get("/v1/public/snapshots/test").status_code, 200)
@@ -140,6 +158,8 @@ class APIBoundaryTests(unittest.TestCase):
                      "/v1/evidence-path", "/v1/research-operations", "/v1/rank", "/v1/search", "/v1/personal-state",
                      "/v1/reading/documents", "/v1/reading/document", "/v1/reading/annotations", "/v1/reading/annotation",
                      "/v1/reading/scripture-candidates", "/v1/reading/scripture-citation", "/v1/reading/scripture-citations",
+                     "/v1/lexicon/captures", "/v1/lexicon/representations", "/v1/lexicon/concept", "/v1/lexicon/senses",
+                     "/v1/lexicon/definitions", "/v1/lexicon/definition", "/v1/lexicon/connection", "/v1/lexicon/occurrences", "/v1/lexicon/search",
                      "/v1/publication/head", "/v1/publication/preview", "/v1/publication/previews", "/v1/publication/approve", "/v1/publication/withdraw", "/v1/publication/relations"]:
             self.assertEqual(public.get(path).status_code, 404)
             self.assertEqual(public.put(path, json={}).status_code, 404)

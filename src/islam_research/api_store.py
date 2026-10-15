@@ -6,6 +6,7 @@ from .graph_engine import registered_policy, traverse
 from . import passage_store
 from . import publication
 from . import citation_store
+from . import lexicon_store
 
 
 class PostgreSQLStore:
@@ -252,3 +253,36 @@ class PostgreSQLStore:
     def scripture_citations(self, project_id, chapter, ayah_start, ayah_end, cursor, limit):
         with db.connect(self.dsn) as connection:
             return citation_store.for_verse(connection,project_id,chapter,ayah_start,ayah_end,cursor,limit)
+
+    def lexicon_capture(self, **values):
+        with db.connect(self.dsn) as connection: return lexicon_store.capture(connection,**values)
+
+    def lexicon_create_representation(self, **values):
+        with db.connect(self.dsn) as connection: return lexicon_store.create_representation(connection,**values)
+
+    def lexicon_create_definition(self, **values):
+        with db.connect(self.dsn) as connection: return lexicon_store.create_definition(connection,**values)
+
+    def lexicon_update_definition(self, **values):
+        with db.connect(self.dsn) as connection: return lexicon_store.update_definition(connection,**values)
+
+    def lexicon_update_connection(self, **values):
+        with db.connect(self.dsn) as connection: return lexicon_store.update_connection(connection,**values)
+
+    def lexicon_concept(self, project_id, concept_id):
+        with db.connect(self.dsn) as connection: return lexicon_store.get_concept(connection,project_id,concept_id)
+
+    def lexicon_senses(self, project_id, concept_id, cursor, limit):
+        with db.connect(self.dsn) as connection: return lexicon_store.senses(connection,project_id,concept_id,cursor,limit)
+
+    def lexicon_representations(self, project_id, entry_id, cursor, limit):
+        with db.connect(self.dsn) as connection: return lexicon_store.representations(connection,project_id,entry_id,cursor,limit)
+
+    def lexicon_definitions(self, project_id, concept_id, cursor, limit):
+        with db.connect(self.dsn) as connection: return lexicon_store.definitions(connection,project_id,concept_id,cursor,limit)
+
+    def lexicon_occurrences(self, project_id, concept_id, cursor, limit):
+        with db.connect(self.dsn) as connection: return lexicon_store.occurrences(connection,project_id,concept_id,cursor,limit)
+
+    def lexicon_search(self, project_id, query, limit):
+        with db.connect(self.dsn) as connection: return lexicon_store.search(connection,project_id,query,limit)

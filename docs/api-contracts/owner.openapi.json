@@ -40,6 +40,619 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "LexiconCaptureInput": {
+        "additionalProperties": false,
+        "properties": {
+          "annotation_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Annotation Id",
+            "type": "string"
+          },
+          "concept": {
+            "anyOf": [
+              {
+                "discriminator": {
+                  "mapping": {
+                    "existing": "#/components/schemas/LexiconExistingConcept",
+                    "new": "#/components/schemas/LexiconNewConcept"
+                  },
+                  "propertyName": "mode"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/LexiconNewConcept"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LexiconExistingConcept"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concept"
+          },
+          "end": {
+            "maximum": 500.0,
+            "minimum": 1.0,
+            "title": "End",
+            "type": "integer"
+          },
+          "entry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LexiconNewEntry"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "owner_confirmed": {
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "representation_id": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Representation Id"
+          },
+          "request_uuid": {
+            "pattern": "^[a-fA-F0-9-]{36}$",
+            "title": "Request Uuid",
+            "type": "string"
+          },
+          "sense_id": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sense Id"
+          },
+          "sense_scope": {
+            "default": "",
+            "maxLength": 10000,
+            "title": "Sense Scope",
+            "type": "string"
+          },
+          "start": {
+            "maximum": 499.0,
+            "minimum": 0.0,
+            "title": "Start",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "request_uuid",
+          "project_id",
+          "annotation_id",
+          "start",
+          "end",
+          "rationale"
+        ],
+        "title": "LexiconCaptureInput",
+        "type": "object"
+      },
+      "LexiconConnectionUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "entity_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "entity_kind": {
+            "enum": [
+              "sense",
+              "occurrence"
+            ],
+            "title": "Entity Kind",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "owner_confirmed": {
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "scope": {
+            "default": "",
+            "maxLength": 10000,
+            "title": "Scope",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "active",
+              "withdrawn"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "project_id",
+          "entity_kind",
+          "entity_id",
+          "expected_revision",
+          "rationale",
+          "state"
+        ],
+        "title": "LexiconConnectionUpdate",
+        "type": "object"
+      },
+      "LexiconDefinitionInput": {
+        "additionalProperties": false,
+        "properties": {
+          "annotation_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Annotation Id",
+            "type": "string"
+          },
+          "attribution": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Attribution",
+            "type": "string"
+          },
+          "attribution_person_id": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attribution Person Id"
+          },
+          "body": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "concept_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Concept Id",
+            "type": "string"
+          },
+          "dating_note": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Dating Note",
+            "type": "string"
+          },
+          "definition_kind": {
+            "enum": [
+              "source_explicit",
+              "reference_gloss",
+              "owner_paraphrase",
+              "machine_proposed"
+            ],
+            "title": "Definition Kind",
+            "type": "string"
+          },
+          "definition_uuid": {
+            "pattern": "^[a-fA-F0-9-]{36}$",
+            "title": "Definition Uuid",
+            "type": "string"
+          },
+          "owner_confirmed": {
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "proposal_activity": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Proposal Activity",
+            "type": "string"
+          },
+          "proposal_tool": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Proposal Tool",
+            "type": "string"
+          },
+          "proposal_version": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Proposal Version",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "scope": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Scope",
+            "type": "string"
+          },
+          "sense_id": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sense Id"
+          },
+          "wording_mode": {
+            "enum": [
+              "quotation",
+              "paraphrase"
+            ],
+            "title": "Wording Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "definition_uuid",
+          "project_id",
+          "concept_id",
+          "annotation_id",
+          "definition_kind",
+          "wording_mode",
+          "body",
+          "attribution",
+          "scope",
+          "rationale"
+        ],
+        "title": "LexiconDefinitionInput",
+        "type": "object"
+      },
+      "LexiconDefinitionUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "attribution": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Attribution",
+            "type": "string"
+          },
+          "body": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "dating_note": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Dating Note",
+            "type": "string"
+          },
+          "definition_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Definition Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "owner_confirmed": {
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "scope": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Scope",
+            "type": "string"
+          },
+          "state": {
+            "default": "active",
+            "enum": [
+              "active",
+              "withdrawn"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "wording_mode": {
+            "enum": [
+              "quotation",
+              "paraphrase"
+            ],
+            "title": "Wording Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "project_id",
+          "definition_id",
+          "expected_revision",
+          "wording_mode",
+          "body",
+          "attribution",
+          "scope",
+          "rationale"
+        ],
+        "title": "LexiconDefinitionUpdate",
+        "type": "object"
+      },
+      "LexiconExistingConcept": {
+        "additionalProperties": false,
+        "properties": {
+          "concept_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Concept Id",
+            "type": "string"
+          },
+          "mode": {
+            "const": "existing",
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "concept_id"
+        ],
+        "title": "LexiconExistingConcept",
+        "type": "object"
+      },
+      "LexiconNewConcept": {
+        "additionalProperties": false,
+        "properties": {
+          "language_tag": {
+            "default": "und",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Language Tag",
+            "type": "string"
+          },
+          "mode": {
+            "const": "new",
+            "title": "Mode",
+            "type": "string"
+          },
+          "scope": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Scope",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "title",
+          "scope"
+        ],
+        "title": "LexiconNewConcept",
+        "type": "object"
+      },
+      "LexiconNewEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "entry_type": {
+            "default": "undetermined",
+            "enum": [
+              "undetermined",
+              "word",
+              "multiword"
+            ],
+            "title": "Entry Type",
+            "type": "string"
+          },
+          "language_tag": {
+            "default": "und",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Language Tag",
+            "type": "string"
+          },
+          "scope": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Scope",
+            "type": "string"
+          },
+          "script_tag": {
+            "default": "",
+            "maxLength": 4,
+            "title": "Script Tag",
+            "type": "string"
+          },
+          "transliteration_scheme": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Transliteration Scheme",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scope"
+        ],
+        "title": "LexiconNewEntry",
+        "type": "object"
+      },
+      "LexiconRepresentationInput": {
+        "additionalProperties": false,
+        "properties": {
+          "annotation_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Annotation Id",
+            "type": "string"
+          },
+          "end": {
+            "maximum": 500.0,
+            "minimum": 1.0,
+            "title": "End",
+            "type": "integer"
+          },
+          "form_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Form Id",
+            "type": "string"
+          },
+          "language_tag": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Language Tag",
+            "type": "string"
+          },
+          "owner_confirmed": {
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "request_uuid": {
+            "pattern": "^[a-fA-F0-9-]{36}$",
+            "title": "Request Uuid",
+            "type": "string"
+          },
+          "script_tag": {
+            "default": "",
+            "maxLength": 4,
+            "title": "Script Tag",
+            "type": "string"
+          },
+          "start": {
+            "maximum": 499.0,
+            "minimum": 0.0,
+            "title": "Start",
+            "type": "integer"
+          },
+          "transliteration_scheme": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Transliteration Scheme",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "request_uuid",
+          "project_id",
+          "form_id",
+          "annotation_id",
+          "start",
+          "end",
+          "language_tag",
+          "rationale"
+        ],
+        "title": "LexiconRepresentationInput",
+        "type": "object"
+      },
       "PersonalInput": {
         "additionalProperties": false,
         "properties": {
@@ -803,6 +1416,597 @@
           }
         },
         "summary": "Evidence Path"
+      }
+    },
+    "/v1/lexicon/captures": {
+      "post": {
+        "operationId": "lexicon_capture_v1_lexicon_captures_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LexiconCaptureInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lexicon Capture"
+      }
+    },
+    "/v1/lexicon/concept": {
+      "get": {
+        "operationId": "lexicon_concept_v1_lexicon_concept_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "concept_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Concept Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lexicon Concept"
+      }
+    },
+    "/v1/lexicon/connection": {
+      "put": {
+        "operationId": "lexicon_update_connection_v1_lexicon_connection_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LexiconConnectionUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lexicon Update Connection"
+      }
+    },
+    "/v1/lexicon/definition": {
+      "put": {
+        "operationId": "lexicon_update_definition_v1_lexicon_definition_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LexiconDefinitionUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lexicon Update Definition"
+      }
+    },
+    "/v1/lexicon/definitions": {
+      "get": {
+        "operationId": "lexicon_definitions_v1_lexicon_definitions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "concept_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Concept Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 500,
+              "title": "Cursor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 25,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lexicon Definitions"
+      },
+      "post": {
+        "operationId": "lexicon_create_definition_v1_lexicon_definitions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LexiconDefinitionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lexicon Create Definition"
+      }
+    },
+    "/v1/lexicon/occurrences": {
+      "get": {
+        "operationId": "lexicon_occurrences_v1_lexicon_occurrences_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "concept_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Concept Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 500,
+              "title": "Cursor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 25,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lexicon Occurrences"
+      }
+    },
+    "/v1/lexicon/representations": {
+      "get": {
+        "operationId": "lexicon_representations_v1_lexicon_representations_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 500,
+              "title": "Cursor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 25,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lexicon Representations"
+      },
+      "post": {
+        "operationId": "lexicon_create_representation_v1_lexicon_representations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LexiconRepresentationInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lexicon Create Representation"
+      }
+    },
+    "/v1/lexicon/search": {
+      "get": {
+        "operationId": "lexicon_search_v1_lexicon_search_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 30,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lexicon Search"
+      }
+    },
+    "/v1/lexicon/senses": {
+      "get": {
+        "operationId": "lexicon_senses_v1_lexicon_senses_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "concept_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Concept Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 500,
+              "title": "Cursor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 25,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lexicon Senses"
       }
     },
     "/v1/me": {
