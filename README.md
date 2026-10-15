@@ -33,6 +33,7 @@ The research should understand traditions in context before evaluating them. “
 - `scripts/review_document.py` — extract text from PDF, DOCX, Markdown, TXT, HTML, or CSV and produce a deterministic review aid.
 - `methods/source-evaluation.md` — source evaluation and note-taking method.
 - `infra/gcp/` — reviewable private GCP/PostgreSQL foundation, pinned tooling, credential-free plan tests, and cost/recovery worksheet; no resources provisioned.
+- `docs/adr/0003-immutable-public-delivery.md` — approved snapshots in immutable public builds, isolated publisher reads, and a public runtime with no data credentials; deployment gates remain explicit.
 - `methods/corpus-scope.md` — Islam-first source selection and bounded expansion into philosophy/religion.
 - `methods/editorial-review.md` — source/passage/claim review, uncertainty, publication, and corrections.
 - `research-plans/corpora/islam-authority-pilot.json` — existing source IDs and located evidence for the first Q 4:59 reading pilot; not a new review of those sources.

@@ -1,8 +1,8 @@
 # GCP foundation (review before provisioning)
 
-This module prepares private Cloud SQL PostgreSQL 17, a VPC/subnet for later Cloud Run Direct VPC access, separate service identities, a private versioned publication bucket, an image repository, and project-scoped budget alerts. It does **not** deploy an application, grant a human editing session, publish research, or create user-managed service-account keys.
+This module prepares private Cloud SQL PostgreSQL 18, a VPC/subnet with sampled flow logs and explicit default-deny ingress, separate service identities, a CMEK-protected immutable image repository, and budget alerts. It does **not** deploy an app, grant human sessions, publish research, or create service-account keys. Public delivery follows `docs/adr/0003-immutable-public-delivery.md`: an approved-snapshot image with no database access in the anonymous runtime.
 
-Terraform is pinned to 1.16.6 and the Google provider to 8.7.0. Commit the provider lockfile. Mock plans validate configuration contracts; they do not prove IAM access, regional availability, or a live database restore.
+Terraform is pinned to 1.16.6 and Google/Google-beta providers to 8.7.0. Beta generates the Artifact Registry service identity before its key grant. Commit the lockfile. Mock plans validate contracts, not live IAM, regional availability, or restore behavior.
 
 ## Inputs and execution
 
@@ -28,15 +28,17 @@ Inspect resource count, IAM, region, network ranges, costs, and the complete sav
 | --- | --- | --- |
 | owner-api | Cloud SQL connector/instance login | Authenticated owner-only API and explicit SQL table grants |
 | migrator | Cloud SQL connector/instance login | Controlled migration job/SQL schema ownership |
-| reader | Publication-bucket object reader | Public viewer restricted to published objects |
-| publisher | Publication-bucket object CRUD | Owner-authorized allowlisted publication job |
-| worker | No database or bucket permissions | Scoped proposal API/job permissions |
+| reader | No database/storage permissions | Static runtime containing only an approved release |
+| publisher | Cloud SQL connector/instance login | Public-schema SELECT only; approved export and scoped image build/deploy |
+| worker | No database/storage permissions | Scoped proposal API/job permissions |
 
-The database has no public IP or authorized public networks and requires encrypted connections. Runtime private connectivity must be configured explicitly with Direct VPC egress and a supported Cloud SQL connector/IAM flow. A connector does not replace network reachability or SQL authorization. No runtime service exists yet, so there are no public ingress or owner-session claims to verify in this slice.
+The database has no public IP or authorized public networks and requires TLS with trusted client certificates. Configure Direct VPC egress and a supported Cloud SQL connector/IAM flow. A connector does not replace reachability or SQL authorization. No runtime service exists yet, so live ingress/owner sessions remain unverified.
 
 Cloud Run service deployment follows #33/#35: pin an immutable release image, set owner/public modes and dedicated identities, configure verified owner authentication, minimum instances zero, maximum initially one per service, bounded concurrency/pools/timeouts, health probes, and revision rollback. A worker must not gain owner-level write/publish authority. CI federation follows concrete service-level permissions; no broad deployment-admin identity is granted in this foundation.
 
-The publication bucket itself prohibits anonymous access. A read-only runtime may serve selected published objects; private notes and source documents do not belong in it. Versioning retains earlier object revisions; noncurrent objects expire after 30 days. Withdrawal must account for earlier versions, caches, and access policy in #41.
+Public builds contain approved projections only; private notes/excerpts never enter their build contexts. Failed builds retain the last successful image. Tags are immutable; a regional software KMS key rotates every 90 days with Terraform destruction protection. Only the Artifact Registry service agent gets encryption use on the key. Retain keys/images needed for rollback. Withdrawal and caches remain #41 work; no public runtime is deployed.
+
+SQL flags log connections/checkpoints/durations and DDL, with routine DML/read and slow-statement logs disabled. Normal/error bind parameters are omitted; terse errors suppress detail/context rows. pgAudit is configured for DDL/roles, parameters off, literal masking on. Native primary errors or manually executed literal SQL can still contain values: parameterized application queries and restrictive runtime roles remain required. The Cloud SQL flag does not install the extension: a privileged operator must create `pgaudit` in the research database and verify actual masking before release ([auditing](https://docs.cloud.google.com/sql/docs/postgres/pg-audit), [flags](https://docs.cloud.google.com/sql/docs/postgres/flags)). Native CI does not prove Cloud SQL audit behavior.
 
 ## Cost worksheet
 
@@ -48,6 +50,9 @@ Illustrative US-central1 list-price input, checked 2026-10-15, 730 hours/month, 
 | Alternative `db-g1-small` compute | 0.035/hour | 25.55 |
 | 10 GiB SSD | 0.000232877/GiB-hour | 1.70 |
 | Example 1 GiB billable backup use | 0.000109589/GiB-hour | 0.08 |
+| Software KMS key version | 1 retained active/disabled version | 0.06 |
+
+KMS operations and each additional retained key version add charges; rotation does not erase old versions automatically. See [KMS pricing](https://cloud.google.com/kms/pricing). The database-only subtotal below excludes this image-key cost, runtime/build/image storage, flow logs, and actual audit volume.
 
 The illustrative micro database subtotal is about **9.45/month**, or **27.33/month** with g1-small, under those assumptions. These are calculated estimates, not a quote or the whole platform bill. Source: [Cloud SQL pricing](https://cloud.google.com/sql/pricing). Recheck region, currency, backup/PITR bytes, and taxes before applying. Automatic SSD growth stops at 20 GiB but is not automatic capacity management; reaching the limit requires intervention.
 
@@ -65,6 +70,6 @@ Automated backups and seven-day PITR are configured; proposed initial objectives
 4. Record timings, checksum/count evidence, permissions, operator actions, and cleanup. Verify backup retention and notification delivery.
 5. Test application rollback against the current schema; use forward migrations or isolated restore for database recovery, not edited migration checksums.
 
-SQL deletion protection is enabled in both Terraform and the API. Teardown requires an explicit reviewed change disabling both protections after a verified retained backup. Bucket `force_destroy` is false. API enablements are not automatically disabled on destroy. Do not promise deletion or recovery solely from `terraform validate`.
+SQL deletion protection is enabled in Terraform and the API. Teardown needs a reviewed change disabling both after a verified retained backup. KMS destruction protection also requires a recovery-aware change. Google service identities/key-ring metadata can persist; API enablements are not automatically disabled on destroy. Mock validation does not prove deletion or recovery.
 
 Security review remains required before live IAM/network/runtime rollout. See `docs/platform-threat-model.md` for the current trust-boundary assessment and explicit unverified controls.
