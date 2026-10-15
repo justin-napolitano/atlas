@@ -32,6 +32,7 @@ The research should understand traditions in context before evaluating them. “
 - `src/islam_research/net.py` — sequential per-host request pacing persisted across runs, with a default two-second cooldown and bounded retry/backoff.
 - `scripts/review_document.py` — extract text from PDF, DOCX, Markdown, TXT, HTML, or CSV and produce a deterministic review aid.
 - `methods/source-evaluation.md` — source evaluation and note-taking method.
+- `docs/postgres.md` — migration-managed PostgreSQL records, retained RDF imports, revision-safe personal state, and real-database test commands; hosted authentication/deployment remain separate slices.
 - `infra/gcp/` — reviewable private GCP/PostgreSQL foundation, pinned tooling, credential-free plan tests, and cost/recovery worksheet; no resources provisioned.
 - `docs/adr/0003-immutable-public-delivery.md` — approved snapshots in immutable public builds, isolated publisher reads, and a public runtime with no data credentials; deployment gates remain explicit.
 - `methods/corpus-scope.md` — Islam-first source selection and bounded expansion into philosophy/religion.
