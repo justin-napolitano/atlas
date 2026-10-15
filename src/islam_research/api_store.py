@@ -9,7 +9,7 @@ from . import citation_store
 from . import lexicon_store
 from . import verse_store
 from . import source_intake
-from . import reading_desk
+from . import reading_desk, reading_drafts
 
 
 class PostgreSQLStore:
@@ -44,6 +44,18 @@ class PostgreSQLStore:
     def create_project(self, **values) -> dict:
         with db.connect(self.dsn) as connection:
             return db.create_project(connection, **values)
+
+    def reading_draft(self,project_id,draft_id):
+        with db.connect(self.dsn) as connection: return reading_drafts.get(connection,project_id,draft_id)
+
+    def save_reading_draft(self,**values):
+        with db.connect(self.dsn) as connection: return reading_drafts.save(connection,**values)
+
+    def reading_drafts(self,**values):
+        with db.connect(self.dsn) as connection: return reading_drafts.listing(connection,**values)
+
+    def reading_draft_history(self,project_id,draft_id,before_revision,limit):
+        with db.connect(self.dsn) as connection: return reading_drafts.history(connection,project_id,draft_id,before_revision,limit)
 
     def reading_desk(self,project_id):
         with db.connect(self.dsn) as connection: return reading_desk.get(connection,project_id)
