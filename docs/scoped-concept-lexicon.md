@@ -1,8 +1,9 @@
 # Scoped concept lexicon
 
 The private owner API stores scoped lexical entries, source-grounded occurrences,
-and independently attributed definitions for #44. Reader controls and public
-lexical projection remain separate work. Curated RDF authority is unchanged.
+and independently attributed definitions for #44. The owner controls are described
+in [lexicon-reader.md](lexicon-reader.md); public lexical projection remains
+separate work. Curated RDF authority is unchanged.
 
 ## Standards assessment
 

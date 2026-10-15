@@ -1,10 +1,11 @@
 import React from 'react';
 import ScriptureCitations from './ScriptureCitations.jsx';
+import LexiconCapture from './LexiconCapture.jsx';
 
 const statuses={saved:'Saved to your workspace',unsaved:'Unsaved changes',saving:'Saving…',conflict:'Changed on another device',error:'Save failed. Your draft is still here.'};
 export default function SavedPassageNote({ row,sourceId,editor,reopen,api,drafts,changed,navigate }) {
   const entry=editor.adopt(row,sourceId), value=entry.server;
-  return <article className="saved-passage-note">
+  return <article className="saved-passage-note" data-annotation-id={value.id}>
     <button className="reader-reopen" onClick={()=>reopen(value)}>{value.exact}</button>
     <small>{value.capture_kind.replaceAll('_',' ')} · captured, unreviewed · revision {value.revision}</small>
     {entry.open ? <div className="passage-note-edit">
@@ -24,5 +25,6 @@ export default function SavedPassageNote({ row,sourceId,editor,reopen,api,drafts
     </div> : <>{value.body && <p>{value.body}</p>}<button className="passage-note-open" onClick={()=>editor.open(value.id)}>Edit note</button></>}
     <button onClick={()=>reopen(value,true)}>Export private annotation</button>
     <ScriptureCitations annotation={value} sourceId={sourceId} api={api} drafts={drafts} changed={changed} navigate={navigate} />
+    <LexiconCapture annotation={value} sourceId={sourceId} api={api} drafts={drafts} changed={changed} navigate={navigate} />
   </article>;
 }
