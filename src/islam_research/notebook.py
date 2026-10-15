@@ -40,6 +40,25 @@ def get(connection,project_id,entry_id):
         WHERE n.project_id=%s AND n.id=%s''',(project_id,entry_id)).fetchone()
 
 
+def _targets(connection,project_id,record_id,document_id,annotation_id,links):
+    if record_id and not connection.execute('SELECT id FROM research.records WHERE project_id=%s AND id=%s AND deleted_at IS NULL',(project_id,record_id)).fetchone():
+        raise ValueError('Notebook source is unavailable in this project')
+    if document_id:
+        document=passage_store.get_document(connection,project_id,document_id)
+        if not document or document['source_record_id']!=record_id:raise ValueError('Notebook document does not match its source')
+    if annotation_id:
+        bundle=passage_store.annotation(connection,project_id,annotation_id)
+        if not bundle or not bundle['anchor']['anchored'] or bundle['annotation']['document_id']!=document_id:
+            raise ValueError('Notebook thought needs its exact saved passage')
+    for link in links:
+        if link['kind']=='entry':
+            row=get(connection,project_id,link['id']);found=row and row['state']=='active'
+        elif link['kind']=='annotation':
+            row=passage_store.annotation(connection,project_id,link['id']);found=row and row['anchor']['anchored']
+        else:found=connection.execute('SELECT id FROM research.records WHERE project_id=%s AND id=%s AND deleted_at IS NULL',(project_id,link['id'])).fetchone()
+        if not found:raise ValueError('Notebook connection target is unavailable in this project')
+
+
 def create(connection,*,request_uuid,project_id,thought_type,title,body,links,actor,record_id=None,document_id=None,annotation_id=None):
     try:
         identifier=uuid.UUID(request_uuid)
@@ -53,6 +72,11 @@ def create(connection,*,request_uuid,project_id,thought_type,title,body,links,ac
     payload=dict(**values,project_id=project_id,record_id=record_id,document_id=document_id,annotation_id=annotation_id,actor=actor)
     fingerprint=hashlib.sha256(json.dumps(payload,sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()
     with connection.transaction():
+        existing=get(connection,project_id,entry_id)
+        if existing:
+            if existing['creation_sha256']!=fingerprint:raise db.RevisionConflict(None)
+            return dict(id=entry_id,project_id=project_id,revision=existing['revision'],replayed=True)
+        _targets(connection,project_id,record_id,document_id,annotation_id,values['links'])
         row=connection.execute('''INSERT INTO research.notebook_entries(id,project_id,creation_sha256,record_id,document_id,annotation_id,
             thought_type,title,body,links,changed_by) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             ON CONFLICT(id) DO NOTHING RETURNING id''',
@@ -66,6 +90,13 @@ def update(connection,*,project_id,entry_id,expected_revision,thought_type,title
     values=metadata(thought_type,title,body,links,state);db._text(actor,'actor',500)
     if type(expected_revision) is not int or expected_revision<1: raise ValueError('Supply the last confirmed notebook revision')
     with connection.transaction():
+        previous=get(connection,project_id,entry_id)
+        if previous is None:raise db.RevisionConflict(None)
+        if previous['revision']!=expected_revision:
+            if previous['revision']==expected_revision+1 and previous['changed_by']==actor and all(previous[k]==v for k,v in values.items()):return previous
+            raise db.RevisionConflict(previous)
+        if thought_type=='source_claim' and not previous['annotation_id']:raise ValueError('A source claim needs an exact saved passage')
+        _targets(connection,project_id,previous['record_id'],previous['document_id'],previous['annotation_id'],values['links'])
         row=connection.execute('''UPDATE research.notebook_entries SET thought_type=%s,title=%s,body=%s,links=%s,state=%s,
             changed_by=%s,revision=revision+1 WHERE project_id=%s AND id=%s AND revision=%s RETURNING id''',
             (thought_type,values['title'],values['body'],db.Jsonb(values['links']),state,actor,project_id,entry_id,expected_revision)).fetchone()
@@ -82,13 +113,13 @@ def history(connection,project_id,entry_id,before_revision,limit):
 
 
 def items(connection,project_id,q,thought_type,state,cursor,limit):
-    if thought_type not in TYPES|{'','passage_note'} or state not in {'active','withdrawn'}:raise ValueError('Unknown notebook filter')
+    if thought_type not in TYPES|{'','passage_note','record_note'} or state not in {'active','withdrawn'}:raise ValueError('Unknown notebook filter')
     db._text(q,'query',300,empty=True);db._text(cursor,'cursor',1100,empty=True)
     # Existing passage bodies are projected from their sole existing authority.
     return connection.execute('''WITH thoughts AS (
         SELECT 'entry' AS item_kind,n.id,n.project_id,n.thought_type,n.title,n.body,n.state,n.revision,n.updated_at,
             n.record_id,n.document_id,n.annotation_id,r.title AS source_title,d.edition,d.locator,a.exact AS selected_quote,
-            'entry:'||n.id AS cursor FROM research.notebook_entries n
+            'entry:'||n.id AS item_key FROM research.notebook_entries n
         LEFT JOIN research.records r ON r.project_id=n.project_id AND r.id=n.record_id
         LEFT JOIN research.reading_documents d ON d.project_id=n.project_id AND d.id=n.document_id
         LEFT JOIN research.reading_annotations a ON a.project_id=n.project_id AND a.id=n.annotation_id WHERE n.project_id=%s
@@ -97,7 +128,13 @@ def items(connection,project_id,q,thought_type,state,cursor,limit):
             r.id,d.id,a.id,r.title,d.edition,d.locator,a.exact,'passage_note:'||a.id
         FROM research.reading_annotations a JOIN research.reading_documents d ON d.project_id=a.project_id AND d.id=a.document_id
         JOIN research.records r ON r.project_id=d.project_id AND r.id=d.source_record_id
-        WHERE a.project_id=%s AND btrim(a.body)<>'' AND r.deleted_at IS NULL)
-        SELECT * FROM thoughts WHERE state=%s AND (%s='' OR thought_type=%s) AND cursor>%s
+        WHERE a.project_id=%s AND btrim(a.body)<>'' AND r.deleted_at IS NULL
+        UNION ALL
+        SELECT 'record_note',p.record_id,p.project_id,'record_note',r.title,p.note,'active',p.revision,p.updated_at,
+            r.id,NULL::text,NULL::text,r.title,NULL::text,NULL::text,NULL::text,'record_note:'||r.id
+        FROM research.personal_states p JOIN research.records r ON r.project_id=p.project_id AND r.id=p.record_id
+        WHERE p.project_id=%s AND btrim(p.note)<>'' AND r.deleted_at IS NULL), ordered AS (
+        SELECT thoughts.*,to_char(updated_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US')||':'||item_key AS cursor FROM thoughts)
+        SELECT * FROM ordered WHERE state=%s AND (%s='' OR thought_type=%s) AND (%s='' OR cursor<%s)
         AND (%s='' OR to_tsvector('simple',title||' '||body||' '||coalesce(selected_quote,'')) @@ plainto_tsquery('simple',%s))
-        ORDER BY cursor LIMIT %s''',(project_id,project_id,state,thought_type,thought_type,cursor,q,q,limit)).fetchall()
+        ORDER BY cursor DESC LIMIT %s''',(project_id,project_id,project_id,state,thought_type,thought_type,cursor,cursor,q,q,limit)).fetchall()

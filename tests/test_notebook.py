@@ -78,6 +78,11 @@ class NotebookStoreTests(unittest.TestCase):
             following=self.store.items(connection,self.project,'','','active',first[0]['cursor'],1)
             self.assertNotEqual(first[0]['id'],following[0]['id'])
             self.assertEqual(self.store.items(connection,'other','','','active','',25),[])
+            self.db.save_personal_state(connection,record_id=self.source,project_id=self.project,note='Record-only reflection',actor='owner')
+            record_notes=self.store.items(connection,self.project,'reflection','record_note','active','',25)
+            self.assertEqual(record_notes[0]['record_id'],self.source);self.assertIsNone(record_notes[0]['annotation_id'])
+            self.db.save_personal_state(connection,record_id=self.source,project_id=self.project,note='Updated record reflection',actor='owner',expected_revision=1)
+            self.assertEqual(self.store.items(connection,self.project,'Updated','record_note','active','',25)[0]['revision'],2)
 
     def test_source_claim_requires_exact_anchor_links_require_reason_and_project(self):
         from psycopg.errors import CheckViolation,ForeignKeyViolation
@@ -86,7 +91,7 @@ class NotebookStoreTests(unittest.TestCase):
             claim=self.store.create(connection,**{**self.values,'thought_type':'source_claim','links':[dict(kind='record',id=self.source,rationale='Context for this question')]})
             self.assertEqual(self.store.get(connection,self.project,claim['id'])['review_state'],'pending')
             for change in [dict(annotation_id='other'),dict(document_id='other'),dict(record_id='other'),dict(links=[dict(kind='record',id='other',rationale='Foreign target')])]:
-                with self.subTest(change=change),self.assertRaises((CheckViolation,ForeignKeyViolation)):
+                with self.subTest(change=change),self.assertRaises((ValueError,CheckViolation,ForeignKeyViolation)):
                     with connection.transaction():self.store.create(connection,**{**self.values,'request_uuid':str(uuid.uuid4()),**change})
             self.assertEqual(len(self.store.history(connection,self.project,claim['id'],None,25)),1)
 

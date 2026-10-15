@@ -3427,7 +3427,8 @@
                 "source_claim",
                 "interpretation",
                 "objection",
-                "passage_note"
+                "passage_note",
+                "record_note"
               ],
               "title": "Thought Type",
               "type": "string"
