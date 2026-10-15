@@ -18,6 +18,7 @@ api = [
     "fastapi==0.143.2",
     "pyjwt[crypto]==2.15.1",
     "uvicorn==0.54.0",
+    "jsonschema==4.26.0",
 ]
 test = [
     "httpx==0.28.1",
@@ -36,4 +37,4 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.setuptools.package-data]
-islam_research = ["migrations/*.sql"]
+islam_research = ["migrations/*.sql", "policies/*.json"]

@@ -351,6 +351,7 @@ source = { editable = "." }
 [package.optional-dependencies]
 api = [
     { name = "fastapi" },
+    { name = "jsonschema" },
     { name = "pyjwt", extra = ["crypto"] },
     { name = "uvicorn" },
 ]
@@ -372,6 +373,7 @@ test = [
 requires-dist = [
     { name = "fastapi", marker = "extra == 'api'", specifier = "==0.143.2" },
     { name = "httpx", marker = "extra == 'test'", specifier = "==0.28.1" },
+    { name = "jsonschema", marker = "extra == 'api'", specifier = "==4.26.0" },
     { name = "jsonschema", marker = "extra == 'semantic'", specifier = "==4.26.0" },
     { name = "psycopg", extras = ["binary"], marker = "extra == 'database'", specifier = "==3.3.6" },
     { name = "pyjwt", extras = ["crypto"], marker = "extra == 'api'", specifier = "==2.15.1" },
