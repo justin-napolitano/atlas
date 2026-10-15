@@ -128,6 +128,26 @@ class ReadingAnnotationUpdate(Input):
     expected_revision: Annotated[int, Field(ge=1)]
 
 
+class ScriptureResolutionInput(Input):
+    project_id: Identifier
+    annotation_id: Identifier
+    candidate_key: Annotated[str, Field(pattern=r"^(manual|[a-f0-9]{64})$")]
+    decision: Literal["confirmed","dismissed"]
+    chapter: Annotated[int, Field(ge=1,le=114)] | None = None
+    ayah_start: Annotated[int, Field(ge=1,le=286)] | None = None
+    ayah_end: Annotated[int, Field(ge=1,le=286)] | None = None
+    rationale: Annotated[str, Field(min_length=1,max_length=2000)]
+    expected_revision: Annotated[int, Field(ge=0)]
+    owner_confirmed: bool
+
+    @field_validator("owner_confirmed")
+    @classmethod
+    def explicit_resolution(cls,value):
+        if value is not True:
+            raise ValueError("Explicit owner reference decision required")
+        return value
+
+
 class PublicationSelection(Input):
     record_id: Identifier
     include_summary: bool = False
@@ -432,6 +452,26 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     @router.put("/reading/annotation")
     def update_reading_annotation(value: ReadingAnnotationUpdate, actor: str = Depends(owner)):
         return store.update_reading_annotation(actor=actor,**value.model_dump())
+
+    @router.get("/reading/scripture-candidates")
+    def scripture_candidates(project_id: Identifier, annotation_id: Identifier):
+        value = store.scripture_candidates(project_id,annotation_id)
+        if value is None:
+            raise HTTPException(404,"Reading annotation not found")
+        return value
+
+    @router.put("/reading/scripture-citation")
+    def resolve_scripture_citation(value: ScriptureResolutionInput, actor: str = Depends(owner)):
+        return store.resolve_scripture_citation(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
+
+    @router.get("/reading/scripture-citations")
+    def scripture_citations(project_id: Identifier, chapter: Annotated[int,Query(ge=1,le=114)],
+                            ayah_start: Annotated[int,Query(ge=1,le=286)],
+                            ayah_end: Annotated[int,Query(ge=1,le=286)],
+                            cursor: Annotated[str,Query(max_length=500)] = "",
+                            limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows = store.scripture_citations(project_id,chapter,ayah_start,ayah_end,cursor,limit+1)
+        return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
 
     @router.get("/publication/head")
     def publication_head(project_id: Identifier):

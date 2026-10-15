@@ -43,6 +43,10 @@ class MemoryBoundaryStore:
         return {"revision":2,"actor":value["actor"],"status":"withdrawn"}
     def publication_relations(self, **value):
         return {"items":[],"truncated":False}
+    def resolve_scripture_citation(self, **value):
+        return {**value,"revision":1}
+    def scripture_candidates(self, project_id, annotation_id):
+        return {"candidates":[],"resolutions":[]}
 
 
 @unittest.skipUnless(jwt, "Install api and test extras for HTTP contract tests")
@@ -111,12 +115,31 @@ class APIBoundaryTests(unittest.TestCase):
         self.assertEqual(result.status_code, 413)
         self.assertEqual(result.headers["x-content-type-options"], "nosniff")
 
+    def test_scripture_resolution_requires_owner_csrf_and_literal_confirmation(self):
+        path="/v1/reading/scripture-citation"
+        payload=dict(project_id="synthetic",annotation_id="synthetic:annotation",candidate_key="manual",
+                     decision="confirmed",chapter=4,ayah_start=59,ayah_end=59,rationale="Private reference decision",
+                     expected_revision=0,owner_confirmed=True)
+        self.assertEqual(self.client.put(path,json=payload).status_code,401)
+        self.assertEqual(self.client.put(path,json=payload,headers=self.headers(sub="other")).status_code,403)
+        headers=self.headers();headers.pop("x-research-write")
+        self.assertEqual(self.client.put(path,json=payload,headers=headers).status_code,403)
+        result=self.client.put(path,json=payload,headers=self.headers())
+        self.assertEqual(result.status_code,200)
+        self.assertEqual(result.json()["actor"],OWNER)
+        for patch in [{"owner_confirmed":value} for value in [False,0,1,"true",None]] + [{"actor":"forged"},{"matched_text":"forged"},{"chapter":True}]:
+            self.assertEqual(self.client.put(path,json={**payload,**patch},headers=self.headers()).status_code,422)
+        route="/v1/reading/scripture-candidates?project_id=synthetic&annotation_id=synthetic"
+        self.assertEqual(self.client.get(route).status_code,401)
+        self.assertEqual(self.client.get(route,headers=self.headers()).status_code,200)
+
     def test_public_mode_has_no_owner_routes_or_mutations(self):
         public = TestClient(create_app(Settings("synthetic-not-a-live-dsn", mode="public"), store=MemoryBoundaryStore()))
         self.assertEqual(public.get("/v1/public/snapshots/test").status_code, 200)
         for path in ["/v1/projects", "/v1/personal-states", "/v1/records", "/v1/schema", "/openapi.json",
                      "/v1/evidence-path", "/v1/research-operations", "/v1/rank", "/v1/search", "/v1/personal-state",
                      "/v1/reading/documents", "/v1/reading/document", "/v1/reading/annotations", "/v1/reading/annotation",
+                     "/v1/reading/scripture-candidates", "/v1/reading/scripture-citation", "/v1/reading/scripture-citations",
                      "/v1/publication/head", "/v1/publication/preview", "/v1/publication/previews", "/v1/publication/approve", "/v1/publication/withdraw", "/v1/publication/relations"]:
             self.assertEqual(public.get(path).status_code, 404)
             self.assertEqual(public.put(path, json={}).status_code, 404)
