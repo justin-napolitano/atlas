@@ -70,6 +70,12 @@ def fixture(root):
 
 
 def run():
+    notices = (ROOT / "web/THIRD_PARTY_LICENSES.txt").read_text()
+    for package in site.policy(ROOT)["dependency_packages"]:
+        installed = ROOT / "web/node_modules" / package
+        version = json.loads((installed / "package.json").read_text())["version"]
+        assert package + " " + version in notices
+        assert (installed / "LICENSE").read_text() in notices
     with tempfile.TemporaryDirectory(prefix="research-public-site-") as temporary:
         root = Path(temporary)
         approved = fixture(root)
