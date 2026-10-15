@@ -42,6 +42,8 @@ const readingDocument={ id:'synthetic:document',project_id:'synthetic',source_re
   text_body:'😀 Before tafsīr and التفسير; Q 4:59. After.',review_scope:'Synthetic private unverified excerpt' };
 readingDocument.text_sha256=createHash('sha256').update(readingDocument.text_body).digest('hex');
 const captures=[];
+const scriptureResolutions=new Map();let scriptureLostResponse=false;
+const scriptureStructure=JSON.parse(await readFile(join(root,'../src/islam_research/resources/quran-structure-v1.json'),'utf8'));
 const publicationPreviews=new Map();let publicationHead={project_id:'synthetic',revision:0,status:'private',snapshot_id:null};
 let publicationAttempts=0,publicationConflict=true;
 const approvedRelease=JSON.parse(await readFile(join(root,'scripts/fixtures/approved-release.json'),'utf8'));
@@ -93,7 +95,7 @@ async function fixture(event) {
     const value=JSON.parse(event.request.postData), characters=Array.from(readingDocument.text_body);
     assert.equal(value.text_sha256,readingDocument.text_sha256);
     assert.equal(characters.slice(value.start,value.end).join(''),value.exact);
-    assert.equal(value.start,Array.from(readingDocument.text_body.slice(0,readingDocument.text_body.indexOf('tafsīr'))).length);
+    assert.equal(value.start,Array.from(readingDocument.text_body.slice(0,readingDocument.text_body.indexOf(value.exact))).length);
     data={...value,id:'urn:research:annotation:'+value.annotation_uuid,start_pos:value.start,end_pos:value.end,
       prefix:characters.slice(Math.max(0,value.start-40),value.start).join(''),suffix:characters.slice(value.end,value.end+40).join(''),
       revision:1,created_at:'2026-10-15T00:00:00Z',changed_by:'synthetic-owner'};
@@ -109,7 +111,33 @@ async function fixture(event) {
   }
   else if (path==='/v1/reading/annotation') {
     const row=captures.find(c=>c.id===url.searchParams.get('annotation_id'));
-    data={annotation:row,anchor:{anchored:true,start:row.start_pos,end:row.end_pos},web_annotation:{ id:row.id,type:'Annotation' }};
+    data={annotation:row,anchor:{anchored:true,start:row.start_pos,end:row.end_pos},web_annotation:{ id:row.id,type:'Annotation',
+      'ir:scriptureReferences':[...scriptureResolutions.values()].filter(item=>item.annotation_id===row.id) }};
+  }
+  else if(path==='/v1/reading/scripture-candidates') {
+    const row=captures.find(item=>item.id===url.searchParams.get('annotation_id'));
+    data={annotation_id:row.id,structure_profile:scriptureStructure,
+      candidates:row.exact==='Q 4:59' ? [{key:'c'.repeat(64),detector_kind:'explicit_numeric',matched_text:row.exact,status:'candidate',reason:'Owner confirmation required',reference:{chapter:4,ayah_start:59,ayah_end:59,label:'Q 4:59'}}] : [],
+      resolutions:[...scriptureResolutions.values()].filter(item=>item.annotation_id===row.id)};
+  }
+  else if(path==='/v1/reading/scripture-citation' && event.request.method==='PUT') {
+    const value=JSON.parse(event.request.postData),key=value.annotation_id+value.candidate_key,existing=scriptureResolutions.get(key);
+    assert.equal(event.request.headers['X-Research-Write'] || event.request.headers['x-research-write'],'1');
+    assert.equal(value.owner_confirmed,true);assert.ok(value.rationale.trim());
+    assert.ok(captures.some(row=>row.id===value.annotation_id && row.project_id===value.project_id));
+    const same=existing && ['chapter','ayah_start','ayah_end','decision','rationale'].every(field=>existing[field]===value[field]);
+    if(existing && value.expected_revision!==existing.revision && !(existing.revision===value.expected_revision+1 && same)) {status=409;data={current:existing};}
+    else {
+      data=existing && same && existing.revision===value.expected_revision+1 ? existing : {...value,
+        detector_kind:value.candidate_key==='manual' ? 'owner_mapping' : 'explicit_numeric',
+        id:'synthetic:citation:'+key,revision:(existing?.revision || 0)+1};
+      scriptureResolutions.set(key,data);
+      if(scriptureLostResponse) {scriptureLostResponse=false;status=503;data={detail:'Synthetic lost acknowledgement'};}
+    }
+  }
+  else if(path==='/v1/reading/scripture-citations') {
+    data={items:[...scriptureResolutions.values()].filter(row=>row.decision==='confirmed' && row.chapter===Number(url.searchParams.get('chapter')) && row.ayah_start<=Number(url.searchParams.get('ayah_end')) && row.ayah_end>=Number(url.searchParams.get('ayah_start')))
+      .map(row=>({...row,source_record_id:records[1].id,source_title:'Synthetic source',edition:readingDocument.edition,locator:readingDocument.locator,selected_quote:captures.find(item=>item.id===row.annotation_id).exact})),next_cursor:null};
   }
   else if (path==='/v1/record') data=[...records,claim,evidence,{...records[1],id:'synthetic:other',title:'Another synthetic source'}].find(r => r.id===url.searchParams.get('record_id'));
   else if (path==='/v1/publication/head') data=publicationHead;
@@ -227,6 +255,80 @@ try {
   assert.equal(captures[0].revision,3);assert.match(captures[0].body,/Edited on this machine/);assert.equal(captures[0].exact,'tafsīr');
   await reload();
   await until(()=>evaluate('document.querySelector(".saved-passage-note")?.textContent.includes("Edited on this machine")'),'edited passage persists after reload');
+  // The detector itself is tested offline in Python. This checks the real reader
+  // controls against synthetic authenticated storage responses and conflicts.
+  await evaluate(`const walker=document.createTreeWalker(document.querySelector('.reader-text'),NodeFilter.SHOW_TEXT);
+    let node;while((node=walker.nextNode()) && !node.textContent.includes('Q 4:59')) {}
+    const range=document.createRange(),offset=node.textContent.indexOf('Q 4:59');range.setStart(node,offset);range.setEnd(node,offset+6);
+    const selection=getSelection();selection.removeAllRanges();selection.addRange(range);document.querySelector('.reader-select').click();`);
+  await until(()=>evaluate('document.querySelector(".reader-capture blockquote")?.textContent==="Q 4:59"'),'exact scripture selection');
+  await evaluate('document.querySelector(".reader-capture button").click()');
+  await until(()=>captures.length===2 && evaluate('document.querySelectorAll(".saved-passage-note").length===2'),'second saved passage');
+  await evaluate('[...document.querySelectorAll(".saved-passage-note")].find(node=>node.querySelector(".reader-reopen").textContent==="Q 4:59").querySelector(".scripture-toggle").click()');
+  const citationSelector='[data-candidate-key="'+'c'.repeat(64)+'"]';
+  await until(()=>evaluate(`!!document.querySelector(${JSON.stringify(citationSelector)})`),'located reference candidate');
+  await evaluate(`document.querySelector(${JSON.stringify(citationSelector+' textarea')}).focus()`);
+  await call('Input.insertText',{text:'Synthetic owner reference resolution'});
+  await evaluate('document.querySelectorAll(".workspace-row")[0].click()');
+  await until(()=>evaluate('document.querySelector(".workspace-record-heading")?.textContent.includes("Synthetic question")'),'leave reference draft');
+  await evaluate('document.querySelectorAll(".workspace-row")[1].click()');
+  await until(()=>evaluate('document.querySelectorAll(".scripture-toggle").length===2'),'return to reference source');
+  await evaluate('[...document.querySelectorAll(".saved-passage-note")].find(node=>node.querySelector(".reader-reopen").textContent==="Q 4:59").querySelector(".scripture-toggle").click()');
+  await until(()=>evaluate(`document.querySelector(${JSON.stringify(citationSelector+' textarea')})?.value==='Synthetic owner reference resolution'`),'reference draft retained');
+  await evaluate(`{const field=document.querySelector(${JSON.stringify(citationSelector)}).querySelectorAll('input')[2];Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(field,'177');field.dispatchEvent(new Event('input',{bubbles:true}));}`);
+  await evaluate(`document.querySelector(${JSON.stringify(citationSelector+' .scripture-confirm')}).click()`);
+  await until(()=>evaluate(`document.querySelector(${JSON.stringify(citationSelector+' [role=alert]')})?.textContent.includes('valid surah and ayah range')`),'invalid verse bounds explain the correction');
+  assert.equal(scriptureResolutions.size,0);
+  await evaluate(`{const field=document.querySelector(${JSON.stringify(citationSelector)}).querySelectorAll('input')[2];Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(field,'59');field.dispatchEvent(new Event('input',{bubbles:true}));}`);
+  scriptureLostResponse=true;
+  await evaluate(`document.querySelector(${JSON.stringify(citationSelector+' .scripture-confirm')}).click()`);
+  await until(()=>evaluate(`document.querySelector(${JSON.stringify(citationSelector+' [role=alert]')})?.textContent.includes('draft is still here')`),'lost acknowledgement keeps reference draft');
+  await evaluate(`document.querySelector(${JSON.stringify(citationSelector+' .scripture-confirm')}).click()`);
+  await until(()=>evaluate(`document.querySelector(${JSON.stringify(citationSelector+' .scripture-saved')})?.textContent.includes('revision 1')`),'idempotent reference retry');
+  assert.equal([...scriptureResolutions.values()][0].revision,1);
+  await reload();
+  await until(()=>evaluate('document.querySelectorAll(".scripture-toggle").length===2'),'saved reference reload');
+  await evaluate('[...document.querySelectorAll(".saved-passage-note")].find(node=>node.querySelector(".reader-reopen").textContent==="Q 4:59").querySelector(".scripture-toggle").click()');
+  await until(()=>evaluate(`document.querySelector(${JSON.stringify(citationSelector+' .scripture-saved')})?.textContent.includes('Linked to Q 4:59')`),'reference decision survives reload');
+  await evaluate(`document.querySelector(${JSON.stringify(citationSelector+' details')}).open=true;document.querySelector(${JSON.stringify(citationSelector+' textarea')}).focus()`);
+  await call('Input.insertText',{text:' My newer draft.'});
+  const citationEntry=[...scriptureResolutions.entries()][0];
+  scriptureResolutions.set(citationEntry[0],{...citationEntry[1],revision:2,rationale:'Cloud reference correction'});
+  await evaluate(`document.querySelector(${JSON.stringify(citationSelector+' .scripture-confirm')}).click()`);
+  await until(()=>evaluate('document.querySelector(".scripture-conflict")?.textContent.includes("Cloud reference correction")'),'reference revision conflict');
+  assert.match(await evaluate(`document.querySelector(${JSON.stringify(citationSelector+' textarea')}).value`),/My newer draft/);
+  await evaluate('document.querySelectorAll(".scripture-conflict button")[1].click()');
+  await evaluate(`document.querySelector(${JSON.stringify(citationSelector+' .scripture-confirm')}).click()`);
+  await until(()=>evaluate(`document.querySelector(${JSON.stringify(citationSelector+' .scripture-saved')})?.textContent.includes('revision 3')`),'explicit reference conflict resolution');
+  await evaluate(`document.querySelector(${JSON.stringify(citationSelector+' .scripture-saved button')}).click()`);
+  await until(()=>evaluate('document.querySelector(".scripture-related")?.textContent.includes("Synthetic edition · Abstract")'),'reverse verse lookup retains source location');
+  await evaluate('document.querySelector(".scripture-related button").click()');
+  await until(()=>evaluate('document.querySelector(".reader-text mark")?.textContent==="Q 4:59"'),'reverse lookup opens exact saved passage');
+  await evaluate('[...document.querySelectorAll(".saved-passage-note")].find(node=>node.querySelector(".reader-reopen").textContent==="Q 4:59").querySelector(".scripture-toggle").click()');
+  await until(()=>evaluate(`!!document.querySelector(${JSON.stringify(citationSelector+' .scripture-saved')})`),'reference reopen');
+  await evaluate(`document.querySelector(${JSON.stringify(citationSelector+' details')}).open=true;document.querySelector(${JSON.stringify(citationSelector)}).scrollIntoView({block:'start'})`);
+  const referenceDesktop=await call('Page.captureScreenshot',{format:'png'});await writeFile(join(artifacts,'scripture-desktop.png'),Buffer.from(referenceDesktop.data,'base64'));
+  await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'reference controls fit mobile');
+  await evaluate(`document.querySelector(${JSON.stringify(citationSelector)}).scrollIntoView({block:'start'})`);
+  const referenceMobile=await call('Page.captureScreenshot',{format:'png'});await writeFile(join(artifacts,'scripture-mobile.png'),Buffer.from(referenceMobile.data,'base64'));
+  await call('Emulation.clearDeviceMetricsOverride');
+  await evaluate(`document.querySelector(${JSON.stringify(citationSelector+' details')}).open=true;document.querySelector(${JSON.stringify(citationSelector+' .scripture-dismiss')}).click()`);
+  await until(()=>evaluate(`document.querySelector(${JSON.stringify(citationSelector+' .scripture-saved')})?.textContent.includes('Dismissed')`),'dismissal persisted');
+  assert.equal([...scriptureResolutions.values()][0].revision,4);
+  await evaluate('[...document.querySelectorAll(".saved-passage-note")].find(node=>node.querySelector(".reader-reopen").textContent==="tafsīr").querySelector(".scripture-toggle").click()');
+  const termManual='[...document.querySelectorAll(".saved-passage-note")].find(node=>node.querySelector(".reader-reopen").textContent==="tafsīr").querySelector("[data-candidate-key=manual]")';
+  await until(()=>evaluate(`!!${termManual}`),'manual reference mapping for a selected term');
+  await evaluate(`${termManual}.querySelector('details').open=true`);
+  for(const [index,value] of [[0,'4'],[1,'59']]) {
+    await evaluate(`{const field=${termManual}.querySelectorAll('input')[${index}];Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(field,${JSON.stringify(value)});field.dispatchEvent(new Event('input',{bubbles:true}));}`);
+  }
+  await evaluate(`${termManual}.querySelector('textarea').focus()`);
+  await call('Input.insertText',{text:'Synthetic manual connection, not a citation claim'});
+  await evaluate(`${termManual}.querySelector('.scripture-confirm').click()`);
+  await until(()=>evaluate(`${termManual}.querySelector('.scripture-saved')?.textContent.includes('Linked to Q 4:59')`),'manual verse connection persisted');
+  assert.equal([...scriptureResolutions.values()].filter(row=>row.detector_kind==='owner_mapping').length,1);
+  assert.equal(await evaluate('Object.values(localStorage).some(value=>value.includes("Synthetic owner reference resolution") || value.includes("Cloud reference correction"))'),false);
   await evaluate('document.querySelector("#my-note").focus()');
   await call('Input.insertText',{ text:'Synthetic browser note <img src=x onerror=alert(1)>' });
   await evaluate('document.querySelector(".workspace-note-actions button").click()');
@@ -380,7 +482,7 @@ try {
   assert.deepEqual(problems,[]);
   console.log(JSON.stringify({publicChecksPassed:true,checks:['actual approved-export fixture','anonymous read-only data requests','multi-project switching','Back/Forward and record reload','citations, locators and review limits','same record ID across projects','dark mobile layout','mismatched project refusal','all-withdrawn empty state','unsafe path refusal','unknown project recovery','no legacy fallback in approved mode','legacy RDF compatibility'],artifacts}));
   console.log(JSON.stringify({publicationChecksPassed:true,checks:['explicit record, summary, bibliography and relation choices','no automatic approval','sealed preview privacy and inert labels','stale head requires new preview','revision-bound acknowledgement and approval','reload without duplicate approval','withdrawal acknowledgement','390px overflow','private rationale outside localStorage','anonymous publication denial'],publicationAttempts,artifacts}));
-  console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','anonymous boundary'],artifacts }));
+  console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','Quran reference decision reload and retained draft','idempotent reference retry after lost response','reference conflict comparison and explicit resolution','reverse verse lookup to exact saved passage','reference dismissal and 390px controls','manual mapping distinct from citation claims','invalid verse bounds explained before saving','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','anonymous boundary'],artifacts }));
 } finally {
   socket?.close(); chrome.kill(); await preview.close();
   for (const item of pending.values()) { clearTimeout(item.timeout); item.reject(new Error('Review finished')); }

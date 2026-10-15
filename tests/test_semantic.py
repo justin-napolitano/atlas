@@ -25,6 +25,16 @@ class SemanticContractTests(unittest.TestCase):
         self.assertEqual(result["release_status"], "release_candidate")
         self.assertIn("not implemented", result["execution"])
 
+    def test_private_citation_lineage_has_project_scoped_composite_relationships(self):
+        content=self.model["semantic_model"][0]
+        datasets={row["name"]:row for row in content["datasets"]}
+        self.assertIn("scripture_citations",datasets)
+        self.assertNotIn("text_body",[row["name"] for row in datasets["reading_documents"]["fields"]])
+        for name in ["reading_document_source","reading_annotation_document","scripture_citation_annotation","scripture_citation_document"]:
+            relationship=next(row for row in content["relationships"] if row["name"]==name)
+            self.assertEqual(relationship["from_columns"][0],"project_id")
+            self.assertEqual(relationship["to_columns"][0],"project_id")
+
     def test_ambiguous_names_and_wrong_composite_grain_are_rejected(self):
         duplicate = copy.deepcopy(self.model)
         model = duplicate["semantic_model"][0]

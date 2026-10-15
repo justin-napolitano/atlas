@@ -127,7 +127,7 @@ function Workspace() {
           {property(record,'http://purl.org/dc/terms/source').filter(url => /^https?:\/\//i.test(url)).map(url => <a className="source-link" key={url} href={url} target="_blank" rel="noreferrer">Open source ↗</a>)}
           {(record.attributes?.recorded_review_status || []).map(text => <p className="workspace-review-scope" key={text}>{text}</p>)}
           {record.kind === 'question' && <EvidenceTrails trail={trail} onOpen={open} />}
-          {['source','work','edition'].includes(record.kind) && <SourceReader key={JSON.stringify([record.id,selectedAnnotation])} record={record} api={api} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} initialAnnotationId={selectedAnnotation} noteEditor={passageNotes.current} />}
+          {['source','work','edition'].includes(record.kind) && <SourceReader key={JSON.stringify([record.id,selectedAnnotation])} record={record} api={api} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} initialAnnotationId={selectedAnnotation} noteEditor={passageNotes.current} navigate={open} />}
           {entry && <section className="workspace-notes" aria-labelledby="my-notes-heading"><h3 id="my-notes-heading">My reading & notes</h3>
             <label>Reading progress<select value={entry.draft.reading} onChange={e => edit({ reading: e.target.value }, true)}><option value="unread">Unread</option><option value="reading">Reading</option><option value="read">Read by me</option></select></label>
             {entry.server.read_at && <small>Read {new Date(entry.server.read_at).toLocaleDateString()}</small>}

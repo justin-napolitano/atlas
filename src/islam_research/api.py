@@ -23,6 +23,7 @@ from .api_auth import IAPVerifier, IdentityUnavailable, InvalidIdentity
 from .api_store import PostgreSQLStore
 from .database import RevisionConflict
 from .graph_engine import rank, registered_policy
+from .quran_citations import PARSER_VERSION as QURAN_PARSER_VERSION, PROFILE_ID as QURAN_PROFILE_ID
 
 logger = logging.getLogger("research.api")
 Identifier = Annotated[str, Field(min_length=1, max_length=500, pattern=r"^[^\x00-\x1f\x7f]+$")]
@@ -126,6 +127,26 @@ class ReadingAnnotationUpdate(Input):
     project_id: Identifier
     body: Annotated[str, Field(max_length=10000)]
     expected_revision: Annotated[int, Field(ge=1)]
+
+
+class ScriptureResolutionInput(Input):
+    project_id: Identifier
+    annotation_id: Identifier
+    candidate_key: Annotated[str, Field(pattern=r"^(manual|[a-f0-9]{64})$")]
+    decision: Literal["confirmed","dismissed"]
+    chapter: Annotated[int, Field(ge=1,le=114)] | None = None
+    ayah_start: Annotated[int, Field(ge=1,le=286)] | None = None
+    ayah_end: Annotated[int, Field(ge=1,le=286)] | None = None
+    rationale: Annotated[str, Field(min_length=1,max_length=2000)]
+    expected_revision: Annotated[int, Field(ge=0)]
+    owner_confirmed: bool
+
+    @field_validator("owner_confirmed")
+    @classmethod
+    def explicit_resolution(cls,value):
+        if value is not True:
+            raise ValueError("Explicit owner reference decision required")
+        return value
 
 
 class PublicationSelection(Input):
@@ -372,6 +393,11 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         policy, digest = registered_policy()
         return {"policy_sha256": digest, "traversal_profiles": policy["traversal_profiles"],
                 "ranking_profiles": policy["ranking_profiles"],
+                "scripture_references": {"profile_id":QURAN_PROFILE_ID,"parser_version":QURAN_PARSER_VERSION,
+                    "candidates":"/v1/reading/scripture-candidates","reverse_lookup":"/v1/reading/scripture-citations",
+                    "owner_resolution":"/v1/reading/scripture-citation","max_reverse_lookup_page":25,
+                    "scope":"owner_only","confirmation":"explicit_owner_decision_with_revision_and_rationale",
+                    "review_effect":"none","graph_effect":"none","publication_effect":"none"},
                 "execution": "typed_traversal_and_owner_observation_scoring_v1"}
 
     @router.get("/search")
@@ -432,6 +458,26 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     @router.put("/reading/annotation")
     def update_reading_annotation(value: ReadingAnnotationUpdate, actor: str = Depends(owner)):
         return store.update_reading_annotation(actor=actor,**value.model_dump())
+
+    @router.get("/reading/scripture-candidates")
+    def scripture_candidates(project_id: Identifier, annotation_id: Identifier):
+        value = store.scripture_candidates(project_id,annotation_id)
+        if value is None:
+            raise HTTPException(404,"Reading annotation not found")
+        return value
+
+    @router.put("/reading/scripture-citation")
+    def resolve_scripture_citation(value: ScriptureResolutionInput, actor: str = Depends(owner)):
+        return store.resolve_scripture_citation(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
+
+    @router.get("/reading/scripture-citations")
+    def scripture_citations(project_id: Identifier, chapter: Annotated[int,Query(ge=1,le=114)],
+                            ayah_start: Annotated[int,Query(ge=1,le=286)],
+                            ayah_end: Annotated[int,Query(ge=1,le=286)],
+                            cursor: Annotated[str,Query(max_length=500)] = "",
+                            limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows = store.scripture_citations(project_id,chapter,ayah_start,ayah_end,cursor,limit+1)
+        return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
 
     @router.get("/publication/head")
     def publication_head(project_id: Identifier):

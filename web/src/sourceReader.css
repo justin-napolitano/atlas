@@ -27,4 +27,20 @@
 .passage-note-conflict { border-left:2px solid var(--accent); padding-left:12px; }
 .passage-note-conflict pre { white-space:pre-wrap; overflow-wrap:anywhere; font:15px/1.8 Georgia,serif; }
 .reader-message { font-size:13px; line-height:1.75; border-left:2px solid var(--accent); padding-left:12px; }
+.scripture-citations { margin-top:12px; min-width:0; }
+.scripture-citations p { font:13px/1.7 ui-sans-serif,system-ui,sans-serif; margin:8px 0; }
+.scripture-reference { border-left:2px solid var(--rule); padding:12px; margin:12px 0; min-width:0; }
+.scripture-reference h5,.scripture-related h5 { font:600 15px/1.6 ui-sans-serif,system-ui,sans-serif; margin:0; }
+.scripture-citations fieldset { border:0; padding:12px 0 0; margin:0; min-width:0; display:grid; gap:12px; }
+.scripture-citations legend { font-size:12px; color:var(--muted); padding:0; }
+.scripture-citations label { display:grid; gap:6px; font-size:12px; min-width:0; }
+.scripture-positions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.scripture-form summary { cursor:pointer; font-size:13px; padding-block:10px; }
+.scripture-saved { border-left:2px solid var(--accent); padding-left:12px; margin:10px 0; font-size:13px; }
+.scripture-saved a { display:inline-block; padding-block:8px; margin-right:10px; color:var(--accent); }
+.scripture-actions { display:flex; flex-wrap:wrap; }
+.scripture-confirm { border-color:var(--accent) !important; }
+.scripture-conflict { border:1px solid var(--accent); padding:10px; }
+.scripture-related blockquote { margin:10px 0; padding-left:12px; border-left:2px solid var(--rule); overflow-wrap:anywhere; }
+.scripture-related article { min-width:0; }
 @media(max-width:900px) { .reader-text { max-height:none; } .source-reader button { min-height:44px; } }

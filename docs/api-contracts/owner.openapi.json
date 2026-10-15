@@ -564,6 +564,103 @@
         "title": "RecordInput",
         "type": "object"
       },
+      "ScriptureResolutionInput": {
+        "additionalProperties": false,
+        "properties": {
+          "annotation_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Annotation Id",
+            "type": "string"
+          },
+          "ayah_end": {
+            "anyOf": [
+              {
+                "maximum": 286.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ayah End"
+          },
+          "ayah_start": {
+            "anyOf": [
+              {
+                "maximum": 286.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ayah Start"
+          },
+          "candidate_key": {
+            "pattern": "^(manual|[a-f0-9]{64})$",
+            "title": "Candidate Key",
+            "type": "string"
+          },
+          "chapter": {
+            "anyOf": [
+              {
+                "maximum": 114.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chapter"
+          },
+          "decision": {
+            "enum": [
+              "confirmed",
+              "dismissed"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "owner_confirmed": {
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "annotation_id",
+          "candidate_key",
+          "decision",
+          "rationale",
+          "expected_revision",
+          "owner_confirmed"
+        ],
+        "title": "ScriptureResolutionInput",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -1549,6 +1646,190 @@
           }
         },
         "summary": "Create Reading Document"
+      }
+    },
+    "/v1/reading/scripture-candidates": {
+      "get": {
+        "operationId": "scripture_candidates_v1_reading_scripture_candidates_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "annotation_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Annotation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Scripture Candidates"
+      }
+    },
+    "/v1/reading/scripture-citation": {
+      "put": {
+        "operationId": "resolve_scripture_citation_v1_reading_scripture_citation_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScriptureResolutionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve Scripture Citation"
+      }
+    },
+    "/v1/reading/scripture-citations": {
+      "get": {
+        "operationId": "scripture_citations_v1_reading_scripture_citations_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "chapter",
+            "required": true,
+            "schema": {
+              "maximum": 114,
+              "minimum": 1,
+              "title": "Chapter",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ayah_start",
+            "required": true,
+            "schema": {
+              "maximum": 286,
+              "minimum": 1,
+              "title": "Ayah Start",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ayah_end",
+            "required": true,
+            "schema": {
+              "maximum": 286,
+              "minimum": 1,
+              "title": "Ayah End",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 500,
+              "title": "Cursor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 25,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Scripture Citations"
       }
     },
     "/v1/record": {

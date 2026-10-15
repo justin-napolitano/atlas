@@ -5,6 +5,7 @@ from . import database as db
 from .graph_engine import registered_policy, traverse
 from . import passage_store
 from . import publication
+from . import citation_store
 
 
 class PostgreSQLStore:
@@ -226,7 +227,11 @@ class PostgreSQLStore:
 
     def reading_annotation(self, project_id, annotation_id):
         with db.connect(self.dsn) as connection:
-            return passage_store.annotation(connection,project_id,annotation_id)
+            value = passage_store.annotation(connection,project_id,annotation_id)
+            if value is not None:
+                rows = citation_store.candidates(connection,project_id,annotation_id)["resolutions"]
+                value["web_annotation"]["ir:scriptureReferences"] = [citation_store.export_resolution(row) for row in rows]
+            return value
 
     def create_reading_annotation(self, **values):
         with db.connect(self.dsn) as connection:
@@ -235,3 +240,15 @@ class PostgreSQLStore:
     def update_reading_annotation(self, **values):
         with db.connect(self.dsn) as connection:
             return passage_store.update_annotation(connection,**values)
+
+    def scripture_candidates(self, project_id, annotation_id):
+        with db.connect(self.dsn) as connection:
+            return citation_store.candidates(connection,project_id,annotation_id)
+
+    def resolve_scripture_citation(self, **values):
+        with db.connect(self.dsn) as connection:
+            return citation_store.resolve(connection,**values)
+
+    def scripture_citations(self, project_id, chapter, ayah_start, ayah_end, cursor, limit):
+        with db.connect(self.dsn) as connection:
+            return citation_store.for_verse(connection,project_id,chapter,ayah_start,ayah_end,cursor,limit)
