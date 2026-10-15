@@ -206,6 +206,19 @@ def history(connection,project_id,entity_kind,entity_id,before_revision,limit):
         (ENTITY_TABLES[entity_kind],entity_id,before_revision,limit)).fetchall()
 
 
+def annotation_links(connection,project_id,annotation_id,cursor,limit):
+    if passage_store.annotation(connection,project_id,annotation_id) is None: return None
+    return connection.execute("""WITH links AS (
+        SELECT o.id,'term_occurrence' AS link_kind,s.concept_id,o.exact AS original,o.review_state,NULL::text AS definition_kind
+        FROM research.lexicon_occurrences o JOIN research.lexicon_senses s ON s.project_id=o.project_id AND s.id=o.sense_id
+        WHERE o.project_id=%s AND o.annotation_id=%s AND o.state='active' AND s.state='active'
+        UNION ALL
+        SELECT d.id,'definition_assertion',d.concept_id,d.body,d.review_state,d.definition_kind FROM research.lexicon_definitions d
+        WHERE d.project_id=%s AND d.annotation_id=%s AND d.state='active')
+        SELECT l.*,r.title AS concept_title FROM links l JOIN research.records r ON r.project_id=%s AND r.id=l.concept_id AND r.kind='concept' AND r.deleted_at IS NULL
+        WHERE l.id>%s ORDER BY l.id LIMIT %s""",(project_id,annotation_id,project_id,annotation_id,project_id,cursor,limit)).fetchall()
+
+
 def senses(connection,project_id,concept_id,cursor,limit):
     return connection.execute("""SELECT s.*,e.entry_type,e.scope AS entry_scope,p.id AS representative_id,
         p.written_rep,p.language_tag,p.script_tag,p.transliteration_scheme FROM research.lexicon_senses s

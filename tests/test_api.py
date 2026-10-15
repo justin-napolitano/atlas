@@ -161,6 +161,7 @@ class APIBoundaryTests(unittest.TestCase):
                      "/v1/lexicon/captures", "/v1/lexicon/representations", "/v1/lexicon/concept", "/v1/lexicon/senses",
                      "/v1/lexicon/definitions", "/v1/lexicon/definition", "/v1/lexicon/connection", "/v1/lexicon/occurrences", "/v1/lexicon/search",
                      "/v1/lexicon/entity", "/v1/lexicon/history",
+                     "/v1/lexicon/annotation-links",
                      "/v1/publication/head", "/v1/publication/preview", "/v1/publication/previews", "/v1/publication/approve", "/v1/publication/withdraw", "/v1/publication/relations"]:
             self.assertEqual(public.get(path).status_code, 404)
             self.assertEqual(public.put(path, json={}).status_code, 404)
@@ -247,6 +248,9 @@ class APIDatabaseTests(unittest.TestCase):
         occurrence=other.get("/v1/lexicon/occurrences",params=params,headers=self.headers()).json()["items"][0]
         self.assertEqual(occurrence["exact"],"tafsīr");self.assertEqual(occurrence["annotation_id"],annotation["id"])
         self.assertEqual(occurrence["source_record_id"],source)
+        links=other.get("/v1/lexicon/annotation-links",params=dict(project_id=project,annotation_id=annotation["id"]),headers=self.headers()).json()
+        self.assertEqual(links["items"][0]["concept_id"],capture["concept_id"])
+        self.assertEqual(links["items"][0]["link_kind"],"term_occurrence")
         self.assertEqual(other.get("/v1/lexicon/search",params=dict(project_id=project,q="tafsir"),headers=self.headers()).json()["items"][0]["id"],capture["concept_id"])
         definition=dict(definition_uuid=str(uuid.uuid4()),**params,sense_id=capture["sense_id"],annotation_id=annotation["id"],definition_kind="owner_paraphrase",
             wording_mode="paraphrase",body="Synthetic scoped definition paraphrase.",attribution="Synthetic owner",scope="Only the fixture",rationale="Synthetic unreviewed support",owner_confirmed=True)

@@ -106,6 +106,11 @@ record, edition, locator, annotation, snapshot hash, and bounded quotation, so a
 client can reopen the exact reading passage. Withdrawn/deleted-source results are
 excluded from active concept views; no public counts are derived from them.
 
+`GET /v1/lexicon/annotation-links` lists the durable concept connections for one
+active captured passage, distinguishing term occurrences from definition
+assertions. It uses the same 25-item stable-ID pagination. A client can recover
+these links after reload instead of retaining only the last creation response.
+
 `GET /v1/lexicon/entity` reopens one typed private entity, including withdrawn
 assertions. `GET /v1/lexicon/history` returns at most 25 prior snapshots, newest
 first, with a numeric revision cursor. Both verify project membership before

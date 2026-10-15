@@ -292,3 +292,6 @@ class PostgreSQLStore:
 
     def lexicon_history(self, project_id, entity_kind, entity_id, before_revision, limit):
         with db.connect(self.dsn) as connection: return lexicon_store.history(connection,project_id,entity_kind,entity_id,before_revision,limit)
+
+    def lexicon_annotation_links(self, project_id, annotation_id, cursor, limit):
+        with db.connect(self.dsn) as connection: return lexicon_store.annotation_links(connection,project_id,annotation_id,cursor,limit)

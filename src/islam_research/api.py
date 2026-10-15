@@ -500,6 +500,7 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
                 "lexicon": {"version":1,"scope":"owner_only","search":"/v1/lexicon/search","concept":"/v1/lexicon/concept",
                     "senses":"/v1/lexicon/senses","representations":"/v1/lexicon/representations",
                     "definitions":"/v1/lexicon/definitions","occurrences":"/v1/lexicon/occurrences",
+                    "annotation_links":"/v1/lexicon/annotation-links","history":"/v1/lexicon/history",
                     "capture":"/v1/lexicon/captures","max_page":25,"max_search_results":30,
                     "review_effect":"none","graph_effect":"none","publication_effect":"none",
                     "retrieval":"versioned lexical normalization; no semantic equivalence inference"},
@@ -617,6 +618,13 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     def lexicon_senses(project_id: Identifier,concept_id: Identifier,cursor: Annotated[str,Query(max_length=500)] = "",
                        limit: Annotated[int,Query(ge=1,le=25)] = 25):
         return lexicon_page(store.lexicon_senses(project_id,concept_id,cursor,limit+1),limit)
+
+    @router.get("/lexicon/annotation-links")
+    def lexicon_annotation_links(project_id: Identifier,annotation_id: Identifier,cursor: Annotated[str,Query(max_length=500)] = "",
+                                limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows=store.lexicon_annotation_links(project_id,annotation_id,cursor,limit+1)
+        if rows is None: raise HTTPException(404,"Reading annotation not found")
+        return lexicon_page(rows,limit)
 
     @router.get("/lexicon/representations")
     def lexicon_representations(project_id: Identifier,entry_id: Identifier,cursor: Annotated[str,Query(max_length=500)] = "",

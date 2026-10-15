@@ -102,6 +102,7 @@ CREATE TABLE research.lexicon_definitions (
         OR (definition_kind<>'machine_proposed' AND proposal_tool='' AND proposal_version='' AND proposal_activity=''))
 );
 CREATE INDEX lexicon_definitions_concept ON research.lexicon_definitions(project_id,concept_id,id);
+CREATE INDEX lexicon_definitions_annotation ON research.lexicon_definitions(project_id,annotation_id,id);
 CREATE INDEX lexicon_definition_search ON research.lexicon_definitions USING gin(to_tsvector('simple',search_key));
 CREATE TABLE research.lexicon_occurrences (
     id text PRIMARY KEY CHECK (length(id) BETWEEN 1 AND 500),
