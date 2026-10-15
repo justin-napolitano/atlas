@@ -33,6 +33,8 @@ class MemoryBoundaryStore:
         return {"id": snapshot_id, "payload": {"nodes": []}}
     def evidence_path(self, project_id, record_id, profile_id):
         return {"project_id": project_id, "start_id": record_id, "profile": profile_id, "paths": []}
+    def search(self, project_id, query, scope, kind, limit):
+        return {"scope": scope, "items": []}
 
 
 @unittest.skipUnless(jwt, "Install api and test extras for HTTP contract tests")
@@ -83,7 +85,7 @@ class APIBoundaryTests(unittest.TestCase):
         public = TestClient(create_app(Settings("synthetic-not-a-live-dsn", mode="public"), store=MemoryBoundaryStore()))
         self.assertEqual(public.get("/v1/public/snapshots/test").status_code, 200)
         for path in ["/v1/projects", "/v1/personal-states", "/v1/records", "/v1/schema", "/openapi.json",
-                     "/v1/evidence-path", "/v1/research-operations", "/v1/rank"]:
+                     "/v1/evidence-path", "/v1/research-operations", "/v1/rank", "/v1/search"]:
             self.assertEqual(public.get(path).status_code, 404)
             self.assertEqual(public.put(path, json={}).status_code, 404)
             self.assertEqual(public.post(path, json={}).status_code, 404)
@@ -105,6 +107,16 @@ class APIBoundaryTests(unittest.TestCase):
         payload["profile_id"] = "graph_degree"
         payload["candidates"][0]["features"] = {"normalized_degree": {"value": True, "basis": "Synthetic"}}
         self.assertEqual(self.client.post("/v1/rank", json=payload, headers=self.headers()).status_code, 422)
+
+    def test_search_requires_owner_and_private_note_scope_is_explicit(self):
+        params = {"project_id": "synthetic", "q": "authority"}
+        self.assertEqual(self.client.get("/v1/search", params=params).status_code, 401)
+        result = self.client.get("/v1/search", params=params, headers=self.headers())
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(result.json()["scope"], "records")
+        self.assertEqual(self.client.get("/v1/search", params={**params, "scope": "notes"}, headers=self.headers()).json()["scope"], "notes")
+        for extra in [{"scope": "public"}, {"limit": 1000}, {"q": ""}, {"q": "x"*501}]:
+            self.assertEqual(self.client.get("/v1/search", params={**params, **extra}, headers=self.headers()).status_code, 422)
 
     def test_security_headers_and_schema(self):
         result = self.client.get("/v1/me", headers=self.headers())
