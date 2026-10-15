@@ -29,6 +29,7 @@ function Workspace() {
   const [project, setProject] = useState(fromURL().project || '');
   const [selected, setSelected] = useState(fromURL().record || '');
   const [selectedAnnotation,setSelectedAnnotation] = useState(fromURL().annotation || '');
+  const [selectedDocument,setSelectedDocument] = useState(fromURL().document || '');
   const [record, setRecord] = useState(null);
   const [rows, setRows] = useState([]);
   const [cursor, setCursor] = useState(null);
@@ -39,6 +40,7 @@ function Workspace() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [trail, setTrail] = useState(null);
+  const [readingFocus,setReadingFocus]=useState(false);
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem('research-theme') || 'light'; } catch { return 'light'; } });
   const generation = useRef(0);
   const reader = useRef(null);
@@ -57,7 +59,7 @@ function Workspace() {
   }, []);
   useEffect(() => {
     const unload = event => { if (store.current.hasDrafts() || passageNotes.current.hasDrafts() || readingDrafts.current.size) { event.preventDefault(); event.returnValue = ''; } };
-    const pop = () => { const state = fromURL(); setProject(state.project || ''); setSelected(state.record || ''); setSelectedAnnotation(state.annotation || ''); };
+    const pop = () => { const state = fromURL(); setProject(state.project || ''); setSelected(state.record || ''); setSelectedAnnotation(state.annotation || '');setSelectedDocument(state.document || ''); };
     addEventListener('beforeunload', unload); addEventListener('popstate', pop);
     return () => { removeEventListener('beforeunload', unload); removeEventListener('popstate', pop); };
   }, []);
@@ -100,9 +102,9 @@ function Workspace() {
     }).catch(err => { if (active) setError(err.message); });
     return () => { active = false; };
   }, [selected, project]);
-  function open(id, nextProject = project, annotationId = '') {
-    const url = new URL(location.href); url.search = new URLSearchParams({ project: nextProject, ...(id ? { record: id } : {}), ...(annotationId ? { annotation: annotationId } : {}) });
-    history.pushState(null, '', url); setSelected(id); setProject(nextProject); setSelectedAnnotation(annotationId);
+  function open(id, nextProject = project, annotationId = '',documentId='') {
+    const url = new URL(location.href); url.search = new URLSearchParams({ project: nextProject, ...(id ? { record: id } : {}), ...(annotationId ? { annotation: annotationId } : {}),...(documentId ? {document:documentId} : {}) });
+    history.pushState(null, '', url); setSelected(id); setProject(nextProject); setSelectedAnnotation(annotationId);setSelectedDocument(documentId);
   }
   const entry = record && store.current.entries.get(record.id);
   function edit(patch, save = false) { store.current.edit(record.id, patch); if (save) store.current.save(record.id); }
@@ -122,7 +124,7 @@ function Workspace() {
       <label>Type<select value={kind} disabled={scope==='lexicon'} onChange={e => setKind(e.target.value)}><option value="">All types</option>{['source','question','claim','evidence','concept','person'].map(k => <option key={k}>{k}</option>)}</select></label>
       <button type="submit" disabled={!project || searching}>{searching ? 'Loading…' : 'Search'}</button><button type="button" disabled={!project || searching} onClick={() => { setQuery(''); setScope('records'); setKind(''); loadRows(); }}>Browse all</button>
     </form>
-    <ResizablePanes storageKey="research:hosted-pane-width" className="owner-panes">
+    <ResizablePanes storageKey="research:hosted-pane-width" className={`owner-panes${readingFocus && ['source','work','edition'].includes(record?.kind) ? ' reading-focus' : ''}`}>
       <section id="workspace-results" className="workspace-results" aria-label="Research records">
         <p className="workspace-result-count" role="status">{searching ? 'Loading records…' : `${rows.length} records shown`}{notice && ` · ${notice}`}</p>
         {rows.map(row => <article key={row.id} className="workspace-hit"><button className="workspace-row" aria-pressed={selected === row.id} onClick={() => open(row.id)}><small>{row.kind} · {row.review_state}{store.current.entries.has(row.id) && ` · ${store.current.entries.get(row.id).draft.reading}`}</small><strong>{row.title}</strong>{row.matches?.filter(match=>match.channel!=='private_annotation').map((match,i) => <span key={match.channel+':'+i}><b>{match.channel === 'private_note' ? 'My note' : match.channel==='lexicon' ? 'Matched wording' : 'Record'}</b> · {match.excerpt}{match.assertion_kind && ` · ${match.assertion_kind.replaceAll('_',' ')}`}</span>)}</button>
@@ -140,7 +142,7 @@ function Workspace() {
           {(record.attributes?.recorded_review_status || []).map(text => <p className="workspace-review-scope" key={text}>{text}</p>)}
           {record.kind === 'question' && <EvidenceTrails trail={trail} onOpen={open} />}
           {record.kind === 'concept' && <ConceptPanel key={JSON.stringify([record.project_id,record.id])} record={record} api={api} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} navigate={open} />}
-          {['source','work','edition'].includes(record.kind) && <SourceReader key={JSON.stringify([record.id,selectedAnnotation])} record={record} api={api} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} initialAnnotationId={selectedAnnotation} noteEditor={passageNotes.current} navigate={open} />}
+          {['source','work','edition'].includes(record.kind) && <SourceReader key={JSON.stringify([record.id,selectedAnnotation,selectedDocument])} record={record} api={api} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} initialAnnotationId={selectedAnnotation} initialDocumentId={selectedDocument} noteEditor={passageNotes.current} navigate={open} focused={readingFocus} onFocusChange={setReadingFocus} />}
           {entry && <section className="workspace-notes" aria-labelledby="my-notes-heading"><h3 id="my-notes-heading">My reading & notes</h3>
             <label>Reading progress<select value={entry.draft.reading} onChange={e => edit({ reading: e.target.value }, true)}><option value="unread">Unread</option><option value="reading">Reading</option><option value="read">Read by me</option></select></label>
             {entry.server.read_at && <small>Read {new Date(entry.server.read_at).toLocaleDateString()}</small>}

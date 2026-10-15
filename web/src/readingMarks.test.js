@@ -31,6 +31,12 @@ test('empty text and invalid active selection do not create invented source char
   assert.equal(readingMarks(document,[],{start:-1,end:4}).runs.length,1);
 });
 
+test('margin-only notes retain clickable identity without claiming a persistent highlight',()=>{
+  const marked=readingMarks(document,[note('margin',9,15,{mark_style:'none'})]);
+  const term=marked.runs.find(run=>run.text==='tafsīr');
+  assert.deepEqual(term.ids,['margin']);assert.equal(term.highlight,false);assert.equal(term.underline,false);assert.equal(term.selected,false);
+});
+
 test('capture acknowledgement must preserve source, selected text and submitted body',()=>{
   const sent={annotation_uuid:'request',project_id:'project',document_id:'document',text_sha256:'hash',start:2,end:8,exact:'tafsīr',capture_kind:'comment',body:'My note',mark_style:'underline'};
   const row={...sent,id:'urn:research:annotation:request',start_pos:2,end_pos:8,revision:1};
