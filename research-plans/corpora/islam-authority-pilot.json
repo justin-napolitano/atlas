@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "id": "islam-authority-pilot",
+  "question_id": "https://islam-research.local/id/pilot-question",
+  "scope": "Selected interpretations of ulu al-amr in Q 4:59; not representative of all Islamic traditions",
+  "core_references": [
+    "Q 4:59"
+  ],
+  "proposed_extensions": [
+    {
+      "reference": "Q 4:83",
+      "status": "requires separate text, commentary, and locator review"
+    }
+  ],
+  "sources": [
+    {
+      "id": "https://islam-research.local/id/qurancom-sahih-4-59",
+      "label": "Quran.com, An-Nisa 4:59, Saheeh International rendering",
+      "role": "English translation display",
+      "language": "en",
+      "url": "https://quran.com/id/an-nisa/59/translations/en-sahih-international",
+      "recorded_review_status": "metadata_and_locator_verified",
+      "status_provenance": "existing graph/research.ttl; not a new source review",
+      "rights": "metadata and links only; full-text redistribution not approved by this manifest",
+      "evidence": [
+        {
+          "id": "https://islam-research.local/id/q4-59-translation-observation",
+          "locator": "Q 4:59; Saheeh International translation display; accessed 2026-10-14"
+        }
+      ]
+    },
+    {
+      "id": "https://islam-research.local/id/sirry-2021-ulul-amr",
+      "label": "Sirry, 'Who Are Those in Authority?' (2021)",
+      "role": "peer-reviewed historical study of early Sunni and Shi'i tafsir",
+      "language": "en",
+      "url": "https://www.mdpi.com/2077-1444/12/7/483",
+      "recorded_review_status": "metadata_and_abstract_verified; full argument requires section-level review",
+      "status_provenance": "existing graph/research.ttl; not a new source review",
+      "rights": "metadata and links only; full-text redistribution not approved by this manifest",
+      "evidence": [
+        {
+          "id": "https://islam-research.local/id/sirry-diversity-evidence",
+          "locator": "Abstract and Introduction, especially scope and stated argument; accessed 2026-10-14"
+        }
+      ]
+    },
+    {
+      "id": "https://islam-research.local/id/tabari-tafsir-4-59",
+      "label": "Al-Tabari, Jami' al-bayan, commentary on Q 4:59",
+      "role": "classical tafsir; primary source for al-Tabari's interpretation",
+      "language": "ar",
+      "url": "https://quran.ksu.edu.sa/tafseer/tabary/sura4-aya59.html",
+      "recorded_review_status": "text_and_locator_verified",
+      "status_provenance": "existing graph/research.ttl; not a new source review",
+      "rights": "metadata and links only; full-text redistribution not approved by this manifest",
+      "evidence": [
+        {
+          "id": "https://islam-research.local/id/tabari-ulul-amr-evidence",
+          "locator": "Commentary on Q 4:59; paragraphs beginning 'واختلف أهل التأويل' and 'وأولى الأقوال' (online text, accessed 2026-10-14)"
+        }
+      ]
+    },
+    {
+      "id": "https://islam-research.local/id/tabatabai-almizan-4-59",
+      "label": "Al-Tabataba'i, Al-Mizan, commentary on Q 4:59",
+      "role": "modern Twelver Shi'i tafsir in English translation; primary source for the author's interpretation",
+      "language": "en",
+      "url": "https://al-islam.org/who-are-ulul-amr-sayyid-muhammad-husayn-tabatabai/who-are-ulul-amr",
+      "recorded_review_status": "text_and_locator_verified; print edition details not yet verified",
+      "status_provenance": "existing graph/research.ttl; not a new source review",
+      "rights": "metadata and links only; full-text redistribution not approved by this manifest",
+      "evidence": [
+        {
+          "id": "https://islam-research.local/id/tabatabai-ulul-amr-evidence",
+          "locator": "Commentary 'O You Who Believe! Obey Allah And Obey The Messenger', especially argument at paragraphs 106-128 and conclusion at 279 (web text, accessed 2026-10-14)"
+        }
+      ]
+    }
+  ],
+  "gaps": [
+    "full section-level review of the Sirry article",
+    "print-edition details for online representations",
+    "perspective and later reception coverage beyond the selected sample"
+  ],
+  "selection_policy": "methods/corpus-scope.md",
+  "editorial_policy": "methods/editorial-review.md"
+}

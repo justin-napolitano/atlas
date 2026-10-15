@@ -23,6 +23,7 @@ The research should understand traditions in context before evaluating them. “
 - `methods/programmatic-workflow.md` — repeatable literature search and local document triage.
 - `methods/research-workbench.md` — unified CLI for saved search plans, screening, document intake, passage annotations, graph validation, and reports.
 - `docs/adr/0001-research-platform-standards.md` — standards and storage decisions before expanding the tooling.
+- `docs/adr/0002-hosted-research-and-ossie.md` — accepted hosted-workspace architecture, Apache Ossie semantic contracts, configurable rankings, typed graph traversals, and revision-aware Obsidian integration; implementation pending.
 - `research-plans/revelation-prophetic-authority.json` — first versioned multi-query research plan.
 - `research-plans/background-question-seeds.json` — 48 paced queries across eight broad research questions for repeatable literature harvesting.
 - `src/islam_research/` — modular local workflow CLI; `scripts/research.py` runs it directly from a checkout.
@@ -31,6 +32,10 @@ The research should understand traditions in context before evaluating them. “
 - `src/islam_research/net.py` — sequential per-host request pacing persisted across runs, with a default two-second cooldown and bounded retry/backoff.
 - `scripts/review_document.py` — extract text from PDF, DOCX, Markdown, TXT, HTML, or CSV and produce a deterministic review aid.
 - `methods/source-evaluation.md` — source evaluation and note-taking method.
+- `methods/corpus-scope.md` — Islam-first source selection and bounded expansion into philosophy/religion.
+- `methods/editorial-review.md` — source/passage/claim review, uncertainty, publication, and corrections.
+- `research-plans/corpora/islam-authority-pilot.json` — existing source IDs and located evidence for the first Q 4:59 reading pilot; not a new review of those sources.
+- `templates/editorial-review.md` — concise evidence record for an editorial decision.
 - `questions/open-questions.md` — initial question map.
 
 ## Initial scope
