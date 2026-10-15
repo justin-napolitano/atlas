@@ -25,6 +25,7 @@ def approved_rows(connection):
     # A named cursor bounds transfer to one payload at a time. The SQL byte limit
     # prevents an unexpectedly large value from reaching Python in the first place.
     with connection.cursor(name="approved_release_heads") as cursor:
+        cursor.itersize = 1
         cursor.execute("""SELECT h.project_id,h.revision,h.status,h.snapshot_id,
             h.changed_at::text,s.published_at::text,
             CASE WHEN octet_length(s.payload::text)<=%s THEN s.payload::text END AS payload_text,
