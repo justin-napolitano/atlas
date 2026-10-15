@@ -32,7 +32,7 @@ export default function RecoverableDraft(props) {
   async function inspect(row){
     const token=++generation.current;setMessage('');setPreview(null);setHistory(null);
     try{const fresh=verifyRecoveredDraft(await api.request('reading/draft',{project_id:projectId,draft_id:row.id}),context);let current=null;
-      if(contextKind==='record_note'){try{current=await api.request('personal-state',{project_id:projectId,record_id:recordId});if(current.project_id!==projectId || current.record_id!==recordId)throw new Error('The current note belongs to another record.');}catch(error){if(error.status===404)current={note:'',revision:0};else throw error;}}
+      if(contextKind==='record_note'){try{current=await api.request('personal-state',{project_id:projectId,record_id:recordId});if(current.project_id!==projectId || current.record_id!==recordId)throw new Error('The current note belongs to another record.');}catch(error){if(error.status===404)current={project_id:projectId,record_id:recordId,note:'',reading:'unread',decision:'unreviewed',revision:0,read_at:null};else throw error;}}
       else if(contextKind==='annotation'){const value=await api.request('reading/annotation',{project_id:projectId,annotation_id:annotation.id});current=value.annotation;if(!value.anchor?.anchored || current.id!==annotation.id || current.project_id!==projectId || current.document_id!==document.id || current.text_sha256!==document.text_sha256)throw new Error('The current passage note could not be verified.');}
       let existingAnnotation=null;
       if(contextKind==='capture'){
