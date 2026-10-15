@@ -122,6 +122,42 @@ class ReadingCaptureInput(Input):
     body: Annotated[str, Field(max_length=10000)] = ""
 
 
+class SourceIntakeExcerpt(Input):
+    edition: Annotated[str, Field(min_length=1,max_length=1000)]
+    locator: Annotated[str, Field(min_length=1,max_length=2000)]
+    representation_url: Annotated[str, Field(max_length=2000)] = ""
+    text: Annotated[str, Field(min_length=1,max_length=12000)]
+
+
+class SourceIntakeInput(Input):
+    intake_uuid: Annotated[str, Field(pattern=r"^[a-fA-F0-9-]{36}$")]
+    project_id: Identifier
+    title: Annotated[str, Field(min_length=1,max_length=2000)]
+    creators: Annotated[str, Field(max_length=2000)] = ""
+    publication: Annotated[str, Field(max_length=2000)] = ""
+    publication_date: Annotated[str, Field(max_length=200)] = ""
+    edition: Annotated[str, Field(min_length=1,max_length=1000)]
+    identifier: Annotated[str, Field(max_length=2000)] = ""
+    source_url: Annotated[str, Field(max_length=2000)] = ""
+    source_role: Literal["primary_text","translation","commentary","scholarship","reference","undetermined"] = "undetermined"
+    access_status: Literal["unknown","open","subscription","owned_copy","unavailable"] = "unknown"
+    rights_status: Literal["unknown","metadata_only","permitted_excerpt","public_domain","open_license"] = "metadata_only"
+    rights_basis: Annotated[str, Field(max_length=2000)] = ""
+    coverage_scope: Literal["metadata_only","abstract","selected_passage","full_work_read"] = "metadata_only"
+    rationale: Annotated[str, Field(min_length=1,max_length=2000)]
+    distinct_source_rationale: Annotated[str, Field(max_length=2000)] = ""
+    existing_source_record_id: Identifier | None = None
+    excerpt: SourceIntakeExcerpt | None = None
+    owner_confirmed: Literal[True]
+
+    @field_validator("owner_confirmed",mode="before")
+    @classmethod
+    def literal_owner_confirmation(cls, value):
+        if value is not True:
+            raise ValueError("Explicit owner confirmation is required")
+        return value
+
+
 class ReadingAnnotationUpdate(Input):
     annotation_id: Identifier
     project_id: Identifier
@@ -532,6 +568,24 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
                           cursor: Annotated[str, Query(max_length=500)] = "",limit: Annotated[int, Query(ge=1,le=50)] = 25):
         rows = store.reading_documents(project_id,source_record_id,cursor,limit+1)
         return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
+
+    @router.post("/source-intakes",status_code=201)
+    def create_source_intake(value: SourceIntakeInput, actor: str = Depends(owner)):
+        return store.source_intake(actor=actor,**value.model_dump())
+
+    @router.get("/source-intakes/candidates")
+    def source_intake_candidates(project_id: Identifier,
+        source_url: Annotated[str,Query(max_length=2000)]="",identifier: Annotated[str,Query(max_length=2000)]="",
+        limit: Annotated[int,Query(ge=1,le=20)]=20):
+        rows=store.source_candidates(project_id,source_url,identifier,limit+1)
+        return {"items":rows[:limit],"truncated":len(rows)>limit,
+                "scope":"exact_manual_intake_hints_only; search titles separately for older or imported sources"}
+
+    @router.get("/source-intakes")
+    def source_intake_history(project_id: Identifier,source_record_id: Identifier,
+        cursor: Annotated[str,Query(max_length=36)]="",limit: Annotated[int,Query(ge=1,le=25)]=25):
+        rows=store.source_intake_history(project_id,source_record_id,cursor,limit+1)
+        return {"items":rows[:limit],"next_cursor":str(rows[limit-1]["request_uuid"]) if len(rows)>limit else None}
 
     @router.post("/reading/documents",status_code=201)
     def create_reading_document(value: ReadingDocumentInput, actor: str = Depends(owner)):

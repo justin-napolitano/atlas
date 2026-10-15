@@ -16,6 +16,7 @@ READ_TABLES = (
     "scripture_citations", "scripture_citation_revisions",
     "lexicon_entries", "lexicon_forms", "lexicon_representations", "lexicon_senses",
     "lexicon_definitions", "lexicon_occurrences", "lexicon_revisions", "lexicon_captures",
+    "source_intakes",
 )
 PUBLIC_TABLES = ("snapshots", "publication_heads")
 OWNER_FUNCTIONS = (
@@ -25,6 +26,7 @@ OWNER_FUNCTIONS = (
     "research.withdraw_publication(text,integer,text,text)",
 )
 INSERT_COLUMNS = {
+    "source_intakes": "request_uuid project_id input_sha256 source_record_id document_id declarations changed_by",
     "projects": "id title scope",
     "records": "id project_id kind title summary attributes changed_by",
     "personal_states": "record_id project_id reading read_at decision note changed_by",
