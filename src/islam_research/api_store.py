@@ -56,6 +56,11 @@ class PostgreSQLStore:
         with db.connect(self.dsn) as connection:
             return db.save_personal_state(connection, **values)
 
+    def state(self, project_id: str, record_id: str) -> dict | None:
+        with db.connect(self.dsn) as connection:
+            return connection.execute("SELECT * FROM research.personal_states WHERE project_id=%s AND record_id=%s",
+                                      (project_id, record_id)).fetchone()
+
     def evidence_path(self, project_id: str, record_id: str, profile_id: str) -> dict | None:
         policy, _ = registered_policy()
         if profile_id not in {p["id"] for p in policy["traversal_profiles"]}:
