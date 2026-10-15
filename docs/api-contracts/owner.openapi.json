@@ -153,7 +153,6 @@
             "type": "string"
           },
           "rights_checked": {
-            "const": true,
             "title": "Rights Checked",
             "type": "boolean"
           }

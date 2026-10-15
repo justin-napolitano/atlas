@@ -1,4 +1,3 @@
-import copy
 import json
 import os
 from pathlib import Path
@@ -179,3 +178,28 @@ class PublicationDatabaseTests(unittest.TestCase):
         self.assertTrue(all(e["predicate"].startswith("http") for e in payload["edges"]))
         self.assertNotIn("synthetic-importer",json.dumps(payload));self.assertNotIn("rdf_properties",json.dumps(payload))
         self.assertEqual(self.approve(preview)["status"],"published")
+
+    def test_signed_owner_http_approval_and_public_withdrawal_use_restricted_roles(self):
+        import time
+        import jwt
+        from cryptography.hazmat.primitives.asymmetric import ec
+        from fastapi.testclient import TestClient
+        from islam_research.api import Settings,create_app
+        from islam_research.api_auth import IAPVerifier,IAP_ISSUER
+        key=ec.generate_private_key(ec.SECP256R1());audience="/projects/123456789012/locations/us-central1/services/synthetic-owner"
+        subject="synthetic-owner";origin="https://research.example.invalid";now=int(time.time())
+        token=jwt.encode(dict(iss=IAP_ISSUER,aud=audience,sub=subject,iat=now,exp=now+600),key,algorithm="ES256",headers={"kid":"test-key"})
+        headers={"x-goog-iap-jwt-assertion":token,"x-research-write":"1","origin":origin}
+        owner=TestClient(create_app(Settings(self.owner_dsn,owner_subject=subject,iap_audience=audience,owner_origin=origin),verifier=IAPVerifier(audience,subject,loader=lambda:{"test-key":key.public_key()})))
+        public=TestClient(create_app(Settings(self.publisher_dsn,mode="public")))
+        preview_response=owner.post("/v1/publication/previews",json={"project_id":self.project,"selections":[{"record_id":self.source,"include_summary":True}]},headers=headers)
+        self.assertEqual(preview_response.status_code,201,preview_response.text)
+        preview=preview_response.json()
+        self.assertEqual(owner.get("/v1/publication/preview",params={"project_id":"different","preview_id":preview["id"]},headers=headers).status_code,404)
+        self.assertEqual(public.get("/v1/public/snapshots/"+preview["id"]).status_code,404)
+        result=owner.post("/v1/publication/approve",json={"preview_id":preview["id"],"expected_sha256":preview["payload_sha256"],"expected_revision":0,"rationale":"Synthetic visibility review","rights_checked":True},headers=headers)
+        self.assertEqual(result.status_code,200,result.text)
+        result=public.get("/v1/public/snapshots/"+preview["id"])
+        self.assertEqual(result.status_code,200);self.assertNotIn("PRIVATE_",result.text)
+        self.assertEqual(owner.post("/v1/publication/withdraw",json={"project_id":self.project,"expected_revision":1,"rationale":"Synthetic correction"},headers=headers).status_code,200)
+        self.assertEqual(public.get("/v1/public/snapshots/"+preview["id"]).status_code,404)

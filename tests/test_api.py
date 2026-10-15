@@ -35,6 +35,12 @@ class MemoryBoundaryStore:
         return {"project_id": project_id, "start_id": record_id, "profile": profile_id, "paths": []}
     def search(self, project_id, query, scope, kind, limit):
         return {"scope": scope, "items": []}
+    def publication_preview(self, **value):
+        return {"actor":value["actor"],"id":"publication-"+"a"*32,"payload":{}}
+    def publication_approve(self, **value):
+        return {"revision":1,"actor":value["actor"],"status":"published"}
+    def publication_withdraw(self, **value):
+        return {"revision":2,"actor":value["actor"],"status":"withdrawn"}
 
 
 @unittest.skipUnless(jwt, "Install api and test extras for HTTP contract tests")
@@ -71,6 +77,24 @@ class APIBoundaryTests(unittest.TestCase):
         result = self.client.put("/v1/personal-states", json=payload, headers=self.headers())
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.json()["actor"], OWNER)
+
+    def test_publication_requires_owner_write_boundary_and_literal_rights_acknowledgement(self):
+        preview={"project_id":"synthetic","selections":[{"record_id":"synthetic:source"}]}
+        approval={"preview_id":"publication-"+"a"*32,"expected_sha256":"b"*64,"expected_revision":0,"rationale":"Synthetic privacy and rights review","rights_checked":True}
+        withdrawal={"project_id":"synthetic","expected_revision":1,"rationale":"Synthetic correction"}
+        for path,payload in [("previews",preview),("approve",approval),("withdraw",withdrawal)]:
+            route="/v1/publication/"+path
+            self.assertEqual(self.client.post(route,json=payload).status_code,401)
+            self.assertEqual(self.client.post(route,json=payload,headers=self.headers(sub="other")).status_code,403)
+            headers=self.headers();headers.pop("x-research-write")
+            self.assertEqual(self.client.post(route,json=payload,headers=headers).status_code,403)
+            self.assertEqual(self.client.post(route,json=payload,headers=self.headers(origin="https://other.example.invalid")).status_code,403)
+            result=self.client.post(route,json=payload,headers=self.headers())
+            self.assertIn(result.status_code,(200,201));self.assertEqual(result.json()["actor"],OWNER)
+            self.assertEqual(self.client.post(route,json={**payload,"actor":"forged-owner"},headers=self.headers()).status_code,422)
+        for value in [False,0,1,"true",None]:
+            self.assertEqual(self.client.post("/v1/publication/approve",json={**approval,"rights_checked":value},headers=self.headers()).status_code,422)
+        self.assertEqual(self.client.post("/v1/publication/previews",json={**preview,"payload":{"private":"PRIVATE"}},headers=self.headers()).status_code,422)
 
     def test_input_errors_do_not_echo_notes_and_payload_is_bounded(self):
         payload = {"record_id": "synthetic", "project_id": "synthetic", "note": "SYNTHETIC-PRIVATE-NOTE" * 1000}

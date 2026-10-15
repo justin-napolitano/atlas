@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from psycopg import IntegrityError
 
 from .api_auth import IAPVerifier, IdentityUnavailable, InvalidIdentity
@@ -145,7 +145,14 @@ class PublicationApprovalInput(Input):
     expected_sha256: Annotated[str,Field(pattern=r"^[a-f0-9]{64}$")]
     expected_revision: Annotated[int,Field(ge=0)]
     rationale: Annotated[str,Field(min_length=1,max_length=2000)]
-    rights_checked: Literal[True]
+    rights_checked: Annotated[bool,Field(strict=True)]
+
+    @field_validator("rights_checked")
+    @classmethod
+    def explicit_rights_acknowledgement(cls,value):
+        if value is not True:
+            raise ValueError("Explicit rights and privacy review required")
+        return value
 
 
 class PublicationWithdrawalInput(Input):
