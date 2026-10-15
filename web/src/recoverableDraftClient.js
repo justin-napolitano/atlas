@@ -1,3 +1,8 @@
+/** Reuse the actual pending capture identity so committing it is detectable. */
+export function retainedCaptureUUID(selection) {
+  return typeof selection?.annotation_uuid==='string' && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(selection.annotation_uuid) ? selection.annotation_uuid : null;
+}
+
 /** Stable identity for unfinished writing; source selection is never relocated. */
 export function recoveryContext({projectId,recordId,contextKind,document,annotation,selection,baseRevision=0}) {
   const passage=contextKind!=='record_note',selected=contextKind==='annotation' ? annotation : selection;

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {draftRowPayload,recoveryContext,saveRecoverableDraft,verifyRecoveredDraft} from './recoverableDraftClient.js';
+import {draftRowPayload,recoveryContext,retainedCaptureUUID,saveRecoverableDraft,verifyRecoveredDraft} from './recoverableDraftClient.js';
 const uuid='12345678-1234-4123-8123-123456789012';
 const context={project_id:'p',record_id:'s',context_kind:'capture',document_id:'d',annotation_id:null,text_sha256:'a'.repeat(64),start:2,end:8,exact:'tafsīr',capture_kind:'comment',base_revision:0};
 const payload={...context,draft_uuid:uuid,body:'My unfinished note 😀',mark_style:'underline',state:'active',expected_revision:0};
@@ -39,4 +39,10 @@ test('wrong successful acknowledgement stays uncertain; only initial validation 
 test('discard and restore use the complete immutable context but omit server-controlled baseline content',()=>{
   const value=draftRowPayload({...row,state:'discarded',revision:4});assert.equal(value.expected_revision,4);assert.equal(value.state,'discarded');assert.equal(value.draft_uuid,uuid);
   assert.equal(value.base_snapshot,undefined);assert.equal(value.id,undefined);assert.equal(value.start,2);
+});
+
+test('pending source capture UUID is retained and a document-only finder has no invented selection',()=>{
+  assert.equal(retainedCaptureUUID({annotation_uuid:uuid}),uuid);assert.equal(retainedCaptureUUID({annotation_uuid:'not-a-capture-id'}),null);
+  const finder=recoveryContext({projectId:'p',recordId:'s',contextKind:'capture',document:{id:'d',text_sha256:'a'.repeat(64)}});
+  assert.equal(finder.start,undefined);assert.equal(finder.end,undefined);assert.equal(finder.annotation_id,null);assert.equal(verifyRecoveredDraft(row,finder),row);
 });
