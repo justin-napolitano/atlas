@@ -33,7 +33,7 @@ Failures do not echo driver errors, connection strings, paths, or payload values
 The root contains `current.json` and `releases/release-<sha256>/`. Each release has:
 
 - `data/projects.json`: all active explicitly approved projects, each pointing to a
-  project-ID-hashed graph filename. There is no automatic first-project selection.
+  project-ID-hashed graph filename. The index retains all active approved projects.
 - `data/graph-<sha256>.json`: the exact approved payload represented as deterministic
   UTF-8 JSON. No private attributes, personal reading state or discoveries are added.
 - `data/release.json`: successful export time, active/withdrawn counts and delivery
@@ -92,9 +92,9 @@ release. Older immutable release directories remain as operator-held history.
 **Do not serve the export root or its history directory publicly.** A subsequent
 public image builder must copy only one independently verified release's current
 files and the read-only frontend, excluding owner pages and legacy graph data.
-The existing public frontend still needs approved-bundle multi-project and empty
-withdrawal handling. Until that integration exists, this artifact is not a runnable
-public site. Build/deploy must recheck current heads after image construction;
+The [public frontend](public-viewer.md) supports approved-bundle multi-project and
+empty-withdrawal handling. Public-only image construction and runtime integration
+remain; an exported directory alone is not a built site. Build/deploy must recheck current heads after image construction;
 this local lock does not guard a later remote deploy. Withdrawal must also replace
 the served image and invalidate caches. Restoring an older release can republish
 withdrawn content and requires fresh approval/head verification.
