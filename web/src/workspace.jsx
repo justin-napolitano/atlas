@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import ResizablePanes from './ResizablePanes.jsx';
 import SourceReader from './SourceReader.jsx';
 import AddSource from './AddSource.jsx';
+import ReadingPlace from './ReadingPlace.jsx';
 import PilotReading from './PilotReading.jsx';
 import {sirryPilotPreset} from './researchPilot.js';
 import ConceptPanel from './ConceptPanel.jsx';
@@ -18,6 +19,7 @@ const property = (record, key) => (record.attributes?.rdf_properties?.[key] || [
   const literal = value.match(/^"(?:[^"\\]|\\.)*"/);
   try { return literal ? JSON.parse(literal[0]) : value.replace(/^<|>$/g, ''); } catch { return value; }
 });
+const verseFromURL=()=>{const value=fromURL(),chapter=Number(value.chapter),start=Number(value.ayah_start),end=Number(value.ayah_end || value.ayah_start);return Number.isInteger(chapter) && chapter>=1 && chapter<=114 && Number.isInteger(start) && start>=1 && Number.isInteger(end) && end>=start && end<=286 ? {chapter,ayah_start:start,ayah_end:end} : null;};
 const ir = 'https://islam-research.local/vocab/';
 const statuses = { saved: 'Saved to your workspace', unsaved: 'Unsaved changes', saving: 'Saving…', conflict: 'Changed on another device', error: 'Save failed. Your draft is still here.' };
 
@@ -44,7 +46,9 @@ function Workspace() {
   const [notice, setNotice] = useState('');
   const [trail, setTrail] = useState(null);
   const [readingFocus,setReadingFocus]=useState(false);
+  const [currentReadingPlace,setCurrentReadingPlace]=useState(null);
   const [libraryView,setLibraryView]=useState(fromURL().view || '');
+  const [verseReference,setVerseReference]=useState(verseFromURL());
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem('research-theme') || 'light'; } catch { return 'light'; } });
   const generation = useRef(0);
   const reader = useRef(null);
@@ -63,7 +67,7 @@ function Workspace() {
   }, []);
   useEffect(() => {
     const unload = event => { if (store.current.hasDrafts() || passageNotes.current.hasDrafts() || readingDrafts.current.size) { event.preventDefault(); event.returnValue = ''; } };
-    const pop = () => { const state = fromURL(); setProject(state.project || ''); setSelected(state.record || ''); setSelectedAnnotation(state.annotation || '');setSelectedDocument(state.document || '');setLibraryView(['add-source','article-pilot','pilot'].includes(state.view) ? state.view : ''); };
+    const pop = () => { const state = fromURL(); setProject(state.project || ''); setSelected(state.record || ''); setSelectedAnnotation(state.annotation || '');setSelectedDocument(state.document || '');setLibraryView(['add-source','article-pilot','pilot'].includes(state.view) ? state.view : '');setVerseReference(verseFromURL()); };
     addEventListener('beforeunload', unload); addEventListener('popstate', pop);
     return () => { removeEventListener('beforeunload', unload); removeEventListener('popstate', pop); };
   }, []);
@@ -110,8 +114,10 @@ function Workspace() {
     const url = new URL(location.href); url.search = new URLSearchParams({ project: nextProject, ...(id ? { record: id } : {}), ...(annotationId ? { annotation: annotationId } : {}),...(documentId ? {document:documentId} : {}) });
     history.pushState(null, '', url); setLibraryView('');setSelected(id); setProject(nextProject); setSelectedAnnotation(annotationId);setSelectedDocument(documentId);
   }
-  function showLibrary(view) {
+  function showLibrary(view,reference=null) {
     const url=new URL(location.href);url.searchParams.set('project',project);url.searchParams.set('view',view);
+    for(const key of ['chapter','ayah_start','ayah_end']) {if(reference)url.searchParams.set(key,reference[key]);else url.searchParams.delete(key);}
+    setVerseReference(reference);
     history.pushState(null,'',url);setLibraryView(view);setReadingFocus(false);
   }
   function closeLibrary() {const url=new URL(location.href);url.searchParams.delete('view');history.pushState(null,'',url);setLibraryView('');}
@@ -133,8 +139,9 @@ function Workspace() {
       <label>Type<select value={kind} disabled={scope==='lexicon'} onChange={e => setKind(e.target.value)}><option value="">All types</option>{['source','question','claim','evidence','concept','person'].map(k => <option key={k}>{k}</option>)}</select></label>
       <button type="submit" disabled={!project || searching}>{searching ? 'Loading…' : 'Search'}</button><button type="button" disabled={!project || searching} onClick={() => { setQuery(''); setScope('records'); setKind(''); loadRows(); }}>Browse all</button>
     </form>
+    {project && <ReadingPlace key={project} api={api} projectId={project} place={!libraryView && currentReadingPlace?.project_id===project && currentReadingPlace.record_id===record?.id ? currentReadingPlace : null} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onResume={open} />}
     <nav className="workspace-library-actions" aria-label="Reading library actions"><button disabled={!project} onClick={()=>showLibrary('add-source')}>Add a source</button><button disabled={!project} onClick={()=>showLibrary('article-pilot')}>Read the Sirry article</button><button disabled={!project} onClick={()=>showLibrary('pilot')}>Start Qur’an pilot</button></nav>
-    {['add-source','article-pilot'].includes(libraryView) ? <AddSource key={project+libraryView} initialPreset={libraryView==='article-pilot' ? sirryPilotPreset : undefined} api={api} projectId={project} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onCancel={closeLibrary} onCreated={result=>{loadRows();open(result.record_id,result.project_id,'',result.document_id || '');}} /> : libraryView==='pilot' ? <PilotReading key={project} api={api} projectId={project} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onOpen={open} onCancel={closeLibrary} /> : <ResizablePanes storageKey="research:hosted-pane-width" className={`owner-panes${readingFocus && ['source','work','edition'].includes(record?.kind) ? ' reading-focus' : ''}`}>
+    {['add-source','article-pilot'].includes(libraryView) ? <AddSource key={project+libraryView} initialPreset={libraryView==='article-pilot' ? sirryPilotPreset : undefined} api={api} projectId={project} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onCancel={closeLibrary} onCreated={result=>{loadRows();open(result.record_id,result.project_id,'',result.document_id || '');}} /> : libraryView==='pilot' ? <PilotReading key={JSON.stringify([project,verseReference])} initialReference={verseReference} api={api} projectId={project} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onOpen={open} onCancel={closeLibrary} /> : <ResizablePanes storageKey="research:hosted-pane-width" className={`owner-panes${readingFocus && ['source','work','edition'].includes(record?.kind) ? ' reading-focus' : ''}`}>
       <section id="workspace-results" className="workspace-results" aria-label="Research records">
         <p className="workspace-result-count" role="status">{searching ? 'Loading records…' : `${rows.length} records shown`}{notice && ` · ${notice}`}</p>
         {rows.map(row => <article key={row.id} className="workspace-hit"><button className="workspace-row" aria-pressed={selected === row.id} onClick={() => open(row.id)}><small>{row.kind} · {row.review_state}{store.current.entries.has(row.id) && ` · ${store.current.entries.get(row.id).draft.reading}`}</small><strong>{row.title}</strong>{row.matches?.filter(match=>match.channel!=='private_annotation').map((match,i) => <span key={match.channel+':'+i}><b>{match.channel === 'private_note' ? 'My note' : match.channel==='lexicon' ? 'Matched wording' : 'Record'}</b> · {match.excerpt}{match.assertion_kind && ` · ${match.assertion_kind.replaceAll('_',' ')}`}</span>)}</button>
@@ -152,7 +159,7 @@ function Workspace() {
           {(record.attributes?.recorded_review_status || []).map(text => <p className="workspace-review-scope" key={text}>{text}</p>)}
           {record.kind === 'question' && <EvidenceTrails trail={trail} onOpen={open} />}
           {record.kind === 'concept' && <ConceptPanel key={JSON.stringify([record.project_id,record.id])} record={record} api={api} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} navigate={open} />}
-          {['source','work','edition'].includes(record.kind) && <SourceReader key={JSON.stringify([record.id,selectedAnnotation,selectedDocument])} record={record} api={api} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} initialAnnotationId={selectedAnnotation} initialDocumentId={selectedDocument} noteEditor={passageNotes.current} navigate={open} focused={readingFocus} onFocusChange={setReadingFocus} />}
+          {['source','work','edition'].includes(record.kind) && <SourceReader key={JSON.stringify([record.id,selectedAnnotation,selectedDocument])} record={record} api={api} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} initialAnnotationId={selectedAnnotation} initialDocumentId={selectedDocument} noteEditor={passageNotes.current} navigate={open} focused={readingFocus} onFocusChange={setReadingFocus} onReadingPlace={setCurrentReadingPlace} onOpenVerse={reference=>showLibrary('pilot',reference)} />}
           {entry && <section className="workspace-notes" aria-labelledby="my-notes-heading"><h3 id="my-notes-heading">My reading & notes</h3>
             <label>Reading progress<select value={entry.draft.reading} onChange={e => edit({ reading: e.target.value }, true)}><option value="unread">Unread</option><option value="reading">Reading</option><option value="read">Read by me</option></select></label>
             {entry.server.read_at && <small>Read {new Date(entry.server.read_at).toLocaleDateString()}</small>}
