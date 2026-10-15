@@ -353,6 +353,7 @@ api = [
     { name = "fastapi" },
     { name = "jsonschema" },
     { name = "pyjwt", extra = ["crypto"] },
+    { name = "rdflib" },
     { name = "uvicorn" },
 ]
 database = [
@@ -378,6 +379,7 @@ requires-dist = [
     { name = "psycopg", extras = ["binary"], marker = "extra == 'database'", specifier = "==3.3.6" },
     { name = "pyjwt", extras = ["crypto"], marker = "extra == 'api'", specifier = "==2.15.1" },
     { name = "pyshacl", marker = "extra == 'graph'", specifier = ">=0.25,<1" },
+    { name = "rdflib", marker = "extra == 'api'", specifier = ">=7,<8" },
     { name = "rdflib", marker = "extra == 'graph'", specifier = ">=7,<8" },
     { name = "uvicorn", marker = "extra == 'api'", specifier = "==0.54.0" },
 ]
