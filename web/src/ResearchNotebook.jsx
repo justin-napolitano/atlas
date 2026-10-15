@@ -7,7 +7,8 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
   const [rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[query,setQuery]=useState(initialQuery),[kind,setKind]=useState(''),[state,setState]=useState('active');
   const [selected,setSelected]=useState(null),[cloud,setCloud]=useState(null),[message,setMessage]=useState(''),[loading,setLoading]=useState(false),[history,setHistory]=useState(null);
   const [link,setLink]=useState({kind:'record',id:'',rationale:''});
-  const [,render]=useState(0),generation=useRef(0),mounted=useRef(true),busy=useRef(false);
+  const [,render]=useState(0),generation=useRef(0),mounted=useRef(true),busy=useRef(false),selection=useRef(null),activeProject=useRef(projectId);
+  activeProject.current=projectId;
   const key=notebookKey(projectId,selected || 'new'),draft=drafts.current.get(key);
   function remember(value,at=key){drafts.current.set(at,value);changed();render(v=>v+1);}
   function clear(at=key){drafts.current.delete(at);changed();render(v=>v+1);}
@@ -19,28 +20,28 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
     catch(error){if(mounted.current && token===generation.current)setMessage(error.message);}
     finally{if(mounted.current && token===generation.current)setLoading(false);}
   }
-  useEffect(()=>{mounted.current=true;setQuery(initialQuery);setSelected(null);setCloud(null);setRows([]);setHistory(null);load('',initialQuery);return()=>{mounted.current=false;generation.current++;};},[projectId,initialQuery]);
-  function start(useAnchor){setSelected(null);setCloud(null);setHistory(null);const at=notebookKey(projectId);
+  useEffect(()=>{mounted.current=true;selection.current=null;setQuery(initialQuery);setSelected(null);setCloud(null);setRows([]);setHistory(null);load('',initialQuery);return()=>{mounted.current=false;generation.current++;};},[projectId,initialQuery]);
+  function start(useAnchor){selection.current=null;setSelected(null);setCloud(null);setHistory(null);const at=notebookKey(projectId);
     if(drafts.current.has(at)){setMessage('Your unfinished new thought is retained. Save it before starting another.');return;}
     remember({value:newThought(useAnchor || {}),base:null,sent:null,saving:false,error:'',current:null},at);
   }
   async function open(row){
     if(row.item_kind==='passage_note' || row.item_kind==='record_note'){onOpenSource?.(row.record_id,projectId,row.annotation_id || '',row.document_id || '');return;}
-    setSelected(row.id);setCloud(null);setHistory(null);setMessage('');
+    selection.current=row.id;setSelected(row.id);setCloud(null);setHistory(null);setMessage('');
     const token=++generation.current;
     try{const result=verifyThought(await api.request('notebook/entry',{project_id:projectId,entry_id:row.id}),projectId,row.id);
-      if(mounted.current && token===generation.current)setCloud(result);}
+      if(mounted.current && token===generation.current && selection.current===row.id && activeProject.current===projectId)setCloud(result);}
     catch(error){if(mounted.current && token===generation.current)setMessage(error.message);}
   }
   function edit(patch){const next=draft || {value:notebookMetadata(cloud),base:cloud,sent:null,saving:false,error:'',current:null};remember({...next,value:{...next.value,...patch}});}
   async function save(){if(!draft || busy.current || draft.current)return;busy.current=true;const at=key,id=selected;
     const row=await saveThought({api,projectId,id,draft,update:value=>remember(value,at)});busy.current=false;
-    if(row){clear(at);if(mounted.current){setSelected(row.id);setCloud(row);setHistory(null);setMessage('Notebook thought saved across devices.');load();}}}
-  function resolve(choice){const current=draft.current;verifyThought(current,projectId,current.id);clear();setSelected(current.id);setCloud(current);
+    if(row){clear(at);if(mounted.current && activeProject.current===projectId && selection.current===id){selection.current=row.id;setSelected(row.id);setCloud(row);setHistory(null);setMessage('Notebook thought saved across devices.');load();}}}
+  function resolve(choice){const current=draft.current;verifyThought(current,projectId,current.id);clear();selection.current=current.id;setSelected(current.id);setCloud(current);
     if(choice==='draft')remember({...draft,base:current,value:{...draft.value},sent:null,current:null,error:'',saving:false},notebookKey(projectId,current.id));}
   async function revisions(before){try{const page=await api.request('notebook/history',{project_id:projectId,entry_id:selected,limit:10,...(before?{before_revision:before}:{})});
     if(page.items.some(r=>r.snapshot.project_id!==projectId || r.snapshot.id!==selected))throw new Error('History did not match this thought.');
-    setHistory(old=>({items:before?[...(old?.items || []),...page.items]:page.items,next:page.next_before_revision}));}catch(error){setMessage(error.message);}}
+    if(mounted.current && activeProject.current===projectId && selection.current===selected)setHistory(old=>({items:before?[...(old?.items || []),...page.items]:page.items,next:page.next_before_revision}));}catch(error){setMessage(error.message);}}
   async function follow(item){try{
     if(item.kind==='entry'){await open({id:item.id,item_kind:'entry'});return;}
     if(item.kind==='record'){onOpenSource?.(item.id,projectId,'','');return;}
@@ -48,7 +49,7 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
     if(bundle.annotation?.project_id!==projectId || bundle.annotation.id!==item.id || !bundle.anchor?.anchored)throw new Error('Connection did not resolve to its exact saved passage.');
     const document=await api.request('reading/document',{project_id:projectId,document_id:bundle.annotation.document_id});
     if(document.project_id!==projectId || document.id!==bundle.annotation.document_id || document.text_sha256!==bundle.annotation.text_sha256)throw new Error('Connection source document did not match.');
-    onOpenSource?.(document.source_record_id,projectId,item.id,document.id);
+    if(mounted.current && activeProject.current===projectId)onOpenSource?.(document.source_record_id,projectId,item.id,document.id);
   }catch(error){setMessage(error.message);}}
   const value=draft?.value || (cloud?notebookMetadata(cloud):null),locked=!!draft?.saving || !!draft?.sent;
   const context=selected?cloud:draft?.value;
