@@ -1,0 +1,77 @@
+import os
+import unittest
+import uuid
+
+
+@unittest.skipUnless(os.environ.get("RESEARCH_TEST_DATABASE_URL"), "Requires real isolated PostgreSQL")
+class PassageStoreTests(unittest.TestCase):
+    def setUp(self):
+        from islam_research import database as db
+        from islam_research import passage_store as store
+        self.db,self.store=db,store
+        self.dsn=os.environ["RESEARCH_TEST_DATABASE_URL"]
+        self.project,self.source="test:"+uuid.uuid4().hex,"test:"+uuid.uuid4().hex
+        with db.connect(self.dsn) as connection:
+            db.migrate(connection)
+            db.create_project(connection,self.project,"Synthetic passage project")
+            db.save_record(connection,record_id=self.source,project_id=self.project,kind="source",title="Synthetic source",actor="test-owner")
+            self.document=store.create_document(connection,project_id=self.project,source_record_id=self.source,
+                edition="Synthetic edition",locator="Abstract",representation_url="https://example.invalid/source",
+                text="😀 A note about tafsīr, evidence, and authority.",actor="test-owner")
+
+    def capture(self,connection,**patch):
+        text=self.document["text_body"]; start=text.index("tafsīr")
+        payload=dict(annotation_uuid=str(uuid.uuid4()),project_id=self.project,document_id=self.document["id"],
+            text_sha256=self.document["text_sha256"],start=start,end=start+6,exact="tafsīr",capture_kind="term_candidate",body="Synthetic private note",actor="test-owner")
+        return self.store.create_annotation(connection,**{**payload,**patch})
+
+    def test_immutable_snapshot_import_is_idempotent_and_project_scoped(self):
+        with self.db.connect(self.dsn) as connection:
+            again=self.store.create_document(connection,project_id=self.project,source_record_id=self.source,
+                edition="Synthetic edition",locator="Abstract",representation_url="https://example.invalid/source",text=self.document["text_body"],actor="test-owner")
+            self.assertEqual(again["id"],self.document["id"])
+            self.assertIsNone(self.store.get_document(connection,"another-project",self.document["id"]))
+            self.assertNotIn("text_body",self.store.documents(connection,self.project,self.source,"",26)[0])
+            from psycopg.errors import CheckViolation
+            with self.assertRaises(CheckViolation):
+                with connection.transaction():
+                    connection.execute("UPDATE research.reading_documents SET text_body='changed' WHERE id=%s",(self.document["id"],))
+
+    def test_capture_retry_revision_history_and_stale_write(self):
+        identifier=str(uuid.uuid4())
+        with self.db.connect(self.dsn) as connection:
+            first=self.capture(connection,annotation_uuid=identifier)
+            repeated=self.capture(connection,annotation_uuid=identifier)
+            self.assertEqual(first["id"],repeated["id"])
+            count=connection.execute("SELECT count(*) AS n FROM research.reading_annotation_revisions WHERE annotation_id=%s",(first["id"],)).fetchone()["n"]
+            self.assertEqual(count,1)
+            from psycopg.errors import CheckViolation
+            with self.assertRaises(CheckViolation):
+                with connection.transaction():
+                    connection.execute("""INSERT INTO research.reading_annotations
+                        (id,project_id,document_id,text_sha256,start_pos,end_pos,exact,prefix,suffix,capture_kind,body,changed_by)
+                        SELECT %s,project_id,document_id,text_sha256,start_pos,end_pos,'WRONG!',prefix,suffix,capture_kind,body,changed_by
+                        FROM research.reading_annotations WHERE id=%s""",("urn:synthetic:"+uuid.uuid4().hex,first["id"]))
+            bundle=self.store.annotation(connection,self.project,first["id"])
+            self.assertTrue(bundle["anchor"]["anchored"])
+            self.assertEqual(bundle["web_annotation"]["ir:edition"],"Synthetic edition")
+            updated=self.store.update_annotation(connection,annotation_id=first["id"],project_id=self.project,
+                body="Updated private observation",expected_revision=1,actor="test-owner")
+            self.assertEqual(updated["revision"],2)
+            with self.assertRaises(self.db.RevisionConflict):
+                self.store.update_annotation(connection,annotation_id=first["id"],project_id=self.project,
+                    body="Stale note",expected_revision=1,actor="test-owner")
+            self.assertEqual(connection.execute("SELECT count(*) AS n FROM research.reading_annotation_revisions WHERE annotation_id=%s",(first["id"],)).fetchone()["n"],2)
+
+    def test_bad_quotes_versions_kinds_and_project_targets_do_not_create_captures(self):
+        with self.db.connect(self.dsn) as connection:
+            for patch in [{"exact":"wrong"},{"text_sha256":"0"*64},{"project_id":"other"},{"capture_kind":"verified_definition"}]:
+                with self.assertRaises(ValueError):
+                    self.capture(connection,**patch)
+            self.assertEqual(self.store.annotations(connection,self.project,self.document["id"],"",101),[])
+
+    def test_snapshot_and_annotation_tables_are_not_granted_to_public(self):
+        with self.db.connect(self.dsn) as connection:
+            for table in ["reading_documents","reading_annotations","reading_annotation_revisions"]:
+                grants=connection.execute("SELECT * FROM information_schema.table_privileges WHERE table_schema='research' AND table_name=%s AND grantee='PUBLIC'",(table,)).fetchall()
+                self.assertEqual(grants,[])

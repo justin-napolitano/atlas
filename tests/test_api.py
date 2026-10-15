@@ -85,7 +85,8 @@ class APIBoundaryTests(unittest.TestCase):
         public = TestClient(create_app(Settings("synthetic-not-a-live-dsn", mode="public"), store=MemoryBoundaryStore()))
         self.assertEqual(public.get("/v1/public/snapshots/test").status_code, 200)
         for path in ["/v1/projects", "/v1/personal-states", "/v1/records", "/v1/schema", "/openapi.json",
-                     "/v1/evidence-path", "/v1/research-operations", "/v1/rank", "/v1/search", "/v1/personal-state"]:
+                     "/v1/evidence-path", "/v1/research-operations", "/v1/rank", "/v1/search", "/v1/personal-state",
+                     "/v1/reading/documents", "/v1/reading/document", "/v1/reading/annotations", "/v1/reading/annotation"]:
             self.assertEqual(public.get(path).status_code, 404)
             self.assertEqual(public.put(path, json={}).status_code, 404)
             self.assertEqual(public.post(path, json={}).status_code, 404)
@@ -235,3 +236,33 @@ class APIDatabaseTests(unittest.TestCase):
             self.assertEqual(result["status"],"conflict")
             self.assertIn("Synthetic app edit",(path.parent/result["cloud_copy"]).read_text())
             self.assertEqual(client.get("/v1/personal-state",params={"project_id":project,"record_id":record},headers=self.headers()).json()["note"],"Synthetic app edit")
+
+    def test_private_passage_capture_roundtrip_and_revision_conflict(self):
+        dsn=os.environ["RESEARCH_TEST_DATABASE_URL"]
+        with db.connect(dsn) as connection:
+            db.migrate(connection)
+        client=TestClient(create_app(Settings(dsn,owner_subject=OWNER,iap_audience=AUDIENCE,owner_origin=ORIGIN),verifier=self.verifier))
+        project,source="test:"+uuid.uuid4().hex,"test:"+uuid.uuid4().hex
+        self.assertEqual(client.post("/v1/projects",json={"project_id":project,"title":"Synthetic reader"},headers=self.headers()).status_code,201)
+        self.assertEqual(client.put("/v1/records",json={"record_id":source,"project_id":project,"kind":"source","title":"Synthetic source"},headers=self.headers()).status_code,200)
+        text="😀 PRIVATE EXCERPT MARKER "+"x"*100+" tafsīr "+"z"*100
+        payload=dict(project_id=project,source_record_id=source,edition="Synthetic edition",locator="Abstract",text=text)
+        self.assertEqual(client.post("/v1/reading/documents",json=payload).status_code,401)
+        response=client.post("/v1/reading/documents",json=payload,headers=self.headers())
+        self.assertEqual(response.status_code,201)
+        document=response.json()
+        self.assertEqual(client.get("/v1/reading/document",params={"project_id":"other","document_id":document["id"]},headers=self.headers()).status_code,404)
+        start=text.index("tafsīr")
+        capture=dict(annotation_uuid=str(uuid.uuid4()),project_id=project,document_id=document["id"],text_sha256=document["text_sha256"],start=start,end=start+6,exact="tafsīr",capture_kind="term_candidate",body="Synthetic personal definition question")
+        bad=client.post("/v1/reading/annotations",json={**capture,"exact":"invented"},headers=self.headers())
+        self.assertEqual(bad.status_code,422)
+        response=client.post("/v1/reading/annotations",json=capture,headers=self.headers())
+        self.assertEqual(response.status_code,201)
+        captured=response.json()
+        bundle=client.get("/v1/reading/annotation",params={"project_id":project,"annotation_id":captured["id"]},headers=self.headers()).json()
+        self.assertTrue(bundle["anchor"]["anchored"])
+        self.assertNotIn("PRIVATE EXCERPT MARKER",json.dumps(bundle["web_annotation"]))
+        update=dict(annotation_id=captured["id"],project_id=project,body="Updated private question",expected_revision=1)
+        self.assertEqual(client.put("/v1/reading/annotation",json=update,headers=self.headers()).status_code,200)
+        self.assertEqual(client.put("/v1/reading/annotation",json=update,headers=self.headers()).status_code,409)
+        self.assertEqual(client.get("/v1/reading/document",params={"project_id":project,"document_id":document["id"]}).status_code,401)

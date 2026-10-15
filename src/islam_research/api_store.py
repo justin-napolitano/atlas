@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from . import database as db
 from .graph_engine import registered_policy, traverse
+from . import passage_store
 
 
 class PostgreSQLStore:
@@ -137,3 +138,31 @@ class PostgreSQLStore:
         with db.connect(self.dsn) as connection:
             return connection.execute("SELECT id,project_id,payload,published_at FROM research_public.snapshots WHERE id=%s",
                                       (snapshot_id,)).fetchone()
+
+    def reading_documents(self, project_id, source_record_id, cursor, limit):
+        with db.connect(self.dsn) as connection:
+            return passage_store.documents(connection,project_id,source_record_id,cursor,limit)
+
+    def reading_document(self, project_id, document_id):
+        with db.connect(self.dsn) as connection:
+            return passage_store.get_document(connection,project_id,document_id)
+
+    def create_reading_document(self, **values):
+        with db.connect(self.dsn) as connection:
+            return passage_store.create_document(connection,**values)
+
+    def reading_annotations(self, project_id, document_id, cursor, limit):
+        with db.connect(self.dsn) as connection:
+            return passage_store.annotations(connection,project_id,document_id,cursor,limit)
+
+    def reading_annotation(self, project_id, annotation_id):
+        with db.connect(self.dsn) as connection:
+            return passage_store.annotation(connection,project_id,annotation_id)
+
+    def create_reading_annotation(self, **values):
+        with db.connect(self.dsn) as connection:
+            return passage_store.create_annotation(connection,**values)
+
+    def update_reading_annotation(self, **values):
+        with db.connect(self.dsn) as connection:
+            return passage_store.update_annotation(connection,**values)

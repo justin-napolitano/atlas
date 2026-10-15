@@ -47,6 +47,12 @@ Store one atomic proposition per claim. Record speaker/author, scope, source loc
 
 A hypothesis must state scope, mechanism, predicted observations, disconfirming observations, alternatives, evidence needed, method, and current status. Metaphysical commitments may be reasoned about but must not be mislabeled empirically testable. See `hypotheses/README.md`.
 
+## Private reading snapshots and captured annotations
+
+The hosted workspace may retain private, immutable plain-text excerpts as application state, keyed to an existing source/work/edition record. Each snapshot records an owner-declared edition/version, domain locator, representation URL when available, input/text checksums, extraction/normalization description, and importing actor/time. Initial capture accepts manually supplied plain text; it does not verify bibliography, OCR, translation, or a full argument. These snapshots do not enter canonical curated RDF or public exports automatically.
+
+Private annotations use W3C Web Annotation TextQuoteSelector and TextPositionSelector, with positions counted in Unicode code points in logical order. They retain the snapshot ID/checksum and edition/locator. Capture kind distinguishes a comment, term candidate, or scripture-reference candidate. An exact anchor verifies selection against the stored text, not a claim or scholarly interpretation. Captures stay unreviewed, with revisions and actor attribution. Changed, ambiguous, or missing anchors require review and never relocate silently. Private reading tables remain separate from public projections and canonical graph authority.
+
 ## Files
 
 `research.ttl` is the RDF source of truth. `shapes.ttl` contains SHACL validation shapes. `templates/` has reusable source, claim/evidence, concept, hypothesis, and argument templates. `argument-networks.csv` carries the AIF-style node and edge model before export to AIF RDF. CSV node, edge, and evidence indexes remain header-only until records are authored; never fabricate evidence just to populate a graph.
