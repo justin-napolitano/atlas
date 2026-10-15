@@ -131,7 +131,7 @@ class APIBoundaryTests(unittest.TestCase):
         self.assertEqual(self.client.put(route,json=value,headers=missing).status_code,403)
         self.assertEqual(self.client.put(route,json=value,headers=self.headers(origin="https://other.example.invalid")).status_code,403)
         result=self.client.put(route,json=value,headers=self.headers());self.assertEqual(result.status_code,200);self.assertEqual(result.json()["actor"],OWNER)
-        for patch in ({"actor":"forged"},{"review_state":"reviewed"},{"base_snapshot":{"body":"forged"}},{"body":"SYNTHETIC"*10001},{"expected_revision":True}):
+        for patch in ({"actor":"forged"},{"review_state":"reviewed"},{"base_snapshot":{"body":"forged"}},{"body":"x"*10001},{"expected_revision":True}):
             response=self.client.put(route,json={**value,**patch},headers=self.headers());self.assertEqual(response.status_code,422);self.assertNotIn('SYNTHETIC unfinished',response.text)
         public=TestClient(create_app(Settings("synthetic",mode="public"),store=MemoryBoundaryStore()))
         for path in ('draft','drafts','draft-history'):
