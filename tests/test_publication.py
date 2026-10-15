@@ -179,6 +179,8 @@ class PublicationDatabaseTests(unittest.TestCase):
         preview=self.preview(project_id=project,selections=[{"record_id":v,"include_summary":True,"include_bibliography":True} for v in ids],relation_ids=[r["id"] for r in edges])
         payload=preview["payload"]
         self.assertEqual(payload["curated_graph"],"canonical_rdf")
+        import hashlib
+        self.assertEqual(payload["canonical_snapshot_sha256"],[hashlib.sha256((Path(__file__).resolve().parents[1]/"graph/research.ttl").read_bytes()).hexdigest()])
         self.assertTrue(any(n["locator"] for n in payload["nodes"] if n["type"]=="evidence"))
         self.assertTrue(any(n["links"] for n in payload["nodes"] if n["type"]=="source"))
         self.assertTrue(all(e["predicate"].startswith("http") for e in payload["edges"]))

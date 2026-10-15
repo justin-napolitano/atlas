@@ -33,6 +33,8 @@ CREATE FUNCTION research.publication_inputs(project_key text, records text[], re
 LANGUAGE sql STABLE SET search_path=pg_catalog,research AS $$
     SELECT jsonb_build_object(
         'project',(SELECT to_jsonb(p) FROM research.projects p WHERE p.id=project_key),
+        'canonical_snapshot_sha256',COALESCE((SELECT jsonb_agg(i.sha256 ORDER BY i.sha256)
+            FROM research.import_snapshots i WHERE i.project_id=project_key AND i.format='turtle'),'[]'::jsonb),
         'records',COALESCE((SELECT jsonb_agg(to_jsonb(r) ORDER BY r.id) FROM research.records r
             WHERE r.project_id=project_key AND r.id=ANY(records) AND r.deleted_at IS NULL),'[]'::jsonb),
         'relations',COALESCE((SELECT jsonb_agg(to_jsonb(e) ORDER BY e.id) FROM research.relations e
@@ -67,9 +69,10 @@ BEGIN
        OR jsonb_typeof(NEW.payload->'generated_at') IS DISTINCT FROM 'string' OR length(NEW.payload->>'generated_at')>100
        OR NEW.payload->'project' IS DISTINCT FROM jsonb_build_object('id',NEW.project_id,'title',NEW.inputs->'project'->>'title')
        OR NEW.payload->>'curated_graph' IS DISTINCT FROM NEW.inputs->'project'->>'graph_authority'
+       OR NEW.payload->'canonical_snapshot_sha256' IS DISTINCT FROM NEW.inputs->'canonical_snapshot_sha256'
        OR NEW.payload->'candidates' IS DISTINCT FROM '[]'::jsonb
        OR EXISTS(SELECT 1 FROM jsonb_object_keys(NEW.payload) k WHERE k NOT IN
-           ('format_version','snapshot_id','generated_at','curated_graph','project','nodes','edges','candidates','publication'))
+           ('format_version','snapshot_id','generated_at','curated_graph','canonical_snapshot_sha256','project','nodes','edges','candidates','publication'))
        OR jsonb_typeof(NEW.payload->'nodes') IS DISTINCT FROM 'array'
        OR jsonb_typeof(NEW.payload->'edges') IS DISTINCT FROM 'array'
        OR jsonb_array_length(NEW.payload->'nodes')<>cardinality(NEW.record_ids)

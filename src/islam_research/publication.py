@@ -94,6 +94,7 @@ def project_payload(inputs: dict, selections: list[dict], relation_ids: list[str
     project = inputs["project"]
     payload = {"format_version": 1, "snapshot_id": snapshot_id, "generated_at": generated_at,
                "curated_graph": project["graph_authority"], "project": {"id": project["id"], "title": project["title"]},
+               "canonical_snapshot_sha256": inputs.get("canonical_snapshot_sha256",[]),
                "nodes": nodes, "edges": relations, "candidates": [], "publication": PUBLICATION_POLICY.copy()}
     if len(json.dumps(payload, ensure_ascii=False, allow_nan=False).encode())>1_000_000:
         raise ValueError("Public projection exceeds one megabyte; select a smaller release")
