@@ -37,11 +37,16 @@ The research should understand traditions in context before evaluating them. “
 - `docs/research-operations.md` — executable typed evidence trails, non-AI local graph exploration, and transparent owner-observation scoring with unknown inputs preserved.
 - `docs/research-search.md` — bounded, signed-owner lexical retrieval across research records and explicitly selected private notes, with channel/revision provenance.
 - `docs/reading-workspace.md` — resizable owner reading UI, revision-aware notes and reading decisions, evidence trails, Markdown export, browser verification, and hosting prerequisites.
+- `docs/reading-place.md` — private revisioned reading bookmarks with exact document/annotation targets and explicit cross-session conflict handling.
 - `docs/obsidian-notes.md` — shared versioned private Markdown notes and explicit revision-aware Obsidian/file pull/push; no daemon or live cloud authentication is presumed.
 - `docs/passage-capture.md` — private immutable source excerpts and W3C passage anchors with Unicode positions, edition/locator checks, revision history, and changed-source diagnostics.
+- `docs/passage-marks.md` — revisioned private highlight/underline presentation on those exact passage anchors; no review or publication promotion.
+- `docs/reader-margin-workflow.md` — persistent source marks, overlapping selections, adjacent notes, resizable/collapsible margins, exact source links, retry/conflict handling, and remaining resume/pilot verification work.
 - `docs/quran-reference-capture.md` — offline Qur’an reference candidates, private revisioned owner decisions, exact source provenance, reverse verse lookup, and reader controls; commentary and translation reading remain separate work.
 - `docs/scoped-concept-lexicon.md` — private scoped lexical entries, source-grounded term occurrences, attributed definitions, revision history, and bounded owner API retrieval; public lexical projection remains pending.
 - `docs/lexicon-reader.md` — owner reading controls for concept connections, attributed definitions, source reopening, draft/conflict recovery, private history, and lexical search; public lexical projection remains pending.
+- `docs/source-intake-workflow.md` — reviewed manual bibliography/URL/identifier intake, explicit existing-source reuse, optional permitted located excerpts, and atomic retry receipts; provider resolution and file import remain pending.
+- `docs/passage-verse-links.md` — scoped owner discussion/interpretation links from exact saved passages to verse ranges, pending review with source-bound save verification and retained retries.
 - `docs/postgres.md` — migration-managed PostgreSQL records, retained RDF imports, revision-safe personal state, and real-database test commands; hosted authentication/deployment remain separate slices.
 - `docs/postgres-observability.md` — PostgreSQL 17/18 contract matrix and real native log checks for private bound values, error paths, and shared redaction settings.
 - `docs/runtime-sql-permissions.md` — previewable post-migration grants, restricted owner/publisher logins, and real PostgreSQL permission tests.
@@ -96,3 +101,9 @@ Run `python3 scripts/literature_search.py "Qur'an revelation prophetic authority
 For the unified flow, install the optional RDF tooling with `python3 -m pip install -e '.[graph]'`, then run `islam-research search research-plans/revelation-prophetic-authority.json`, `islam-research candidates RUN_ID`, `islam-research intake /path/to/document.pdf`, `islam-research annotate --help`, `islam-research validate`, `islam-research export`, or `islam-research report initial-authority-question`. Search, screening, local intake, and annotation are available without the optional graph dependencies. See `methods/research-workbench.md`.
 
 For the public React research studio, see `web/README.md`. Its GitHub Actions workflow harvests the seed plan daily, builds a sanitized static snapshot, and commits changed public data to `main`; a Git-connected Vercel project deploys that commit. Local preview uses `cd web && npm install && npm run dev`. Unreviewed search candidates remain separate from the curated RDF graph.
+
+The owner reading workspace now connects [source intake, the bounded article preset, and the attributed Qur’an pilot](docs/reader-library-integration.md) to exact reading documents and margin annotations. These private workflows require the corresponding owner API migrations and authentication; the anonymous public artifact remains selected read-only research.
+
+The authenticated owner runtime, isolated build, native-IAP/private-SQL delivery configuration and remaining live rollout gates are documented in [owner service delivery](docs/owner-service-delivery.md).
+
+The [linked reading workflow](docs/linked-reading-workflow.md) follows saved passage → scoped verse discussion/interpretation → exact source and adds an explicit per-project server bookmark with retry/conflict controls. Unsaved notes and scrolling are not synchronized by the bookmark.

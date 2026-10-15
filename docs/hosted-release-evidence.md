@@ -4,6 +4,22 @@ Status: combined source candidate; **not deployed and not launch complete**. The
 
 ## Integrated source
 
+The working-reader integration combines persistent highlight/underline/margin
+styles, universal source-intake receipts, the bounded article preset and attributed
+Q 4:59/Q 4:83 Arabic resource, saved passage-to-verse links and scoped material
+navigation, and explicit server-backed per-project reading bookmarks. The reader
+opens the exact stored document/annotation after source intake or following a
+verse connection. Passage mark style and source-resource notice are retained
+together in private exports and the combined runtime grants. Private semantic
+metadata includes both verse materials and reading desks; joins describe lineage,
+not scholarly entailment. OpenAPI is regenerated from the combined executable API.
+The authenticated owner image and disabled-by-default native-IAP/private-SQL cloud
+configuration are included in the same source candidate. None of these merges
+provisions resources, establishes a live owner session, promotes review, or
+publishes private reading state. Real restricted PostgreSQL, combined browser and
+actual owner/public image checks must pass against this integration's exact ref;
+earlier component checks do not establish the merged result.
+
 This branch combines the application stack through PR #75 with the infrastructure branch from PR #61 and the current `main` nightly public-snapshot commit (`ea769a9`). It resolves the README index conflict by retaining both documentation sets and retains that already-published snapshot unchanged. The existing component PRs remain independently reviewable; this integration does not merge them into `main`, change the authoritative RDF, publish research, or provision resources. The pre-existing dirty frontend experiment and harvested data in the original worktree are not integration inputs.
 
 The workflow `.github/workflows/hosted-release-validation.yml` calls the actual PostgreSQL, frontend/browser, Terraform/security, and graph workflows rather than copying their test commands. Local relative reusable workflows use the caller's commit, as documented by [GitHub](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows). The caller grants only repository contents read and passes no secrets or cloud identity. Its aggregate check fails when any required workflow fails, is cancelled/skipped, or is missing. The summary explicitly distinguishes source verification from deployment and launch verification.
@@ -17,11 +33,20 @@ The integration workflow runs on changes to itself or this evidence ledger and c
 | PostgreSQL | All existing contracts on 17 and 18, real restricted-role saves, CAS conflicts/history, private passage selectors, public approval/withdrawal | Ephemeral isolated PostgreSQL, not Cloud SQL IAM or a production capacity test |
 | Native database logs | Synthetic private bound-value marker absent; sentinel and error paths present; shared flags enforced | Cloud SQL pgAudit literal masking and extension installation still require live verification |
 | Owner/public API | Signed synthetic IAP assertions, anonymous/non-owner denial, CSRF/origin/write boundary, public route exclusion and approved-head reads | No live IAP/OAuth session or browser cookie flow |
+| Owner service delivery | Separate bounded frontend, signed-owner page/asset tests, isolated real Linux image runtime/OS/Python/npm scan, native-IAP/private-SQL Terraform contracts | No pushed image, credentialed cloud plan, live identity/database connection, or release approval |
 | Reading/publication UI | Frontend contracts, production build, owned headless Chrome reading/notes/selection/search/publication/conflict/mobile flows | Synthetic API interception; no actual multi-machine hosted editing |
 | Graph/semantic | SHACL and deterministic canonical exports, pinned Ossie/model/policy checks | Structural correctness is not scholarly review, semantic completeness, or a graph-authority cutover |
 | Infrastructure | Formatting/schema validation, six credential-free mock plans, exact SQL logging flags, Checkov policy checks | Not a credentialed cloud plan/apply, live cost/capacity proof, backup restore, or completed security review |
 
 Record the successful run URL, tested commit, and actual results in the issue/PR after CI finishes. This ledger intentionally does not hardcode a self-referential future commit hash or claim a run before it exists.
+
+The [owner delivery slice](owner-service-delivery.md) adds the owner-container
+workflow to the required aggregate alongside the existing public-container gate.
+Its optional native-IAP and IAM SQL sidecar configuration is disabled by default;
+the expanded infrastructure suite has fourteen credential-free mock tests. An
+image/scanner result is source evidence, not a live IAP, Cloud SQL, cost or recovery
+verification. Personal Google projects require initial Console OAuth setup as
+documented in the runbook; no authentication bypass substitutes for it.
 
 An intermediate candidate's browser failed to expose its owned debug port within the former ten-second startup window, and the aggregate correctly failed despite the other components passing. Cold runner startup now has a bounded thirty-second observation window for the same process; UI waits and assertions are unchanged. A startup timeout retains bounded stderr diagnostics. No browser retry, sandbox disabling, test suppression, or skipped-check waiver was added. This addresses the observation budget and diagnostics; it does not establish the cause of slow runner startup.
 

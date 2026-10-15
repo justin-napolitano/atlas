@@ -40,9 +40,12 @@ jobs:
       - run: python infra/tools/validate_logging_policy.py
       - run: uv sync --project infra/tools --frozen
       - run: uv run --project infra/tools --no-sync python -m unittest discover -s infra/tools -p test_public_runtime_check.py -v
+      - run: uv run --project infra/tools --no-sync python -m unittest discover -s infra/tools -p test_owner_runtime_check.py -v
       - run: mkdir -p research-library/security
       - run: uv run --project infra/tools --no-sync checkov --directory infra/gcp --framework terraform --external-checks-dir infra/checks --output json > research-library/security/checkov.json
       - run: python infra/tools/validate_public_check_evidence.py research-library/security/checkov.json
+        if: ${{ always() }}
+      - run: python infra/tools/validate_owner_check_evidence.py research-library/security/checkov.json
         if: ${{ always() }}
       - name: Retain source-only Terraform policy evidence
         if: ${{ always() }}

@@ -7,6 +7,9 @@ from . import passage_store
 from . import publication
 from . import citation_store
 from . import lexicon_store
+from . import verse_store
+from . import source_intake
+from . import reading_desk
 
 
 class PostgreSQLStore:
@@ -42,6 +45,15 @@ class PostgreSQLStore:
         with db.connect(self.dsn) as connection:
             return db.create_project(connection, **values)
 
+    def reading_desk(self,project_id):
+        with db.connect(self.dsn) as connection: return reading_desk.get(connection,project_id)
+
+    def save_reading_desk(self,**values):
+        with db.connect(self.dsn) as connection: return reading_desk.save(connection,**values)
+
+    def reading_desk_history(self,project_id,before_revision,limit):
+        with db.connect(self.dsn) as connection: return reading_desk.history(connection,project_id,before_revision,limit)
+
     def records(self, project_id: str, kind: str | None, cursor: str, limit: int) -> list[dict]:
         with db.connect(self.dsn) as connection:
             return connection.execute("""SELECT * FROM research.records
@@ -55,6 +67,18 @@ class PostgreSQLStore:
     def save_record(self, **values) -> dict:
         with db.connect(self.dsn) as connection:
             return db.save_record(connection, **values)
+
+    def source_intake(self, **values) -> dict:
+        with db.connect(self.dsn) as connection:
+            return source_intake.create(connection, **values)
+
+    def source_candidates(self, project_id, source_url, identifier, limit):
+        with db.connect(self.dsn) as connection:
+            return source_intake.candidates(connection,project_id,source_url,identifier,limit)
+
+    def source_intake_history(self, project_id, source_record_id, cursor, limit):
+        with db.connect(self.dsn) as connection:
+            return source_intake.history(connection,project_id,source_record_id,cursor,limit)
 
     def states(self, project_id: str, cursor: str, limit: int) -> list[dict]:
         with db.connect(self.dsn) as connection:
@@ -253,6 +277,27 @@ class PostgreSQLStore:
     def scripture_citations(self, project_id, chapter, ayah_start, ayah_end, cursor, limit):
         with db.connect(self.dsn) as connection:
             return citation_store.for_verse(connection,project_id,chapter,ayah_start,ayah_end,cursor,limit)
+
+    def verse_create(self, **values):
+        with db.connect(self.dsn) as connection: return verse_store.create(connection,**values)
+
+    def verse_import_pilot(self, **values):
+        with db.connect(self.dsn) as connection: return verse_store.import_pilot(connection,**values)
+
+    def verse_update(self, **values):
+        with db.connect(self.dsn) as connection: return verse_store.update(connection,**values)
+
+    def verse_material(self, project_id, material_id):
+        with db.connect(self.dsn) as connection: return verse_store.get_material(connection,project_id,material_id)
+
+    def verse_materials(self, project_id, chapter, ayah_start, ayah_end, material_kind, link_kind, cursor, limit):
+        with db.connect(self.dsn) as connection: return verse_store.for_verse(connection,project_id,chapter,ayah_start,ayah_end,material_kind,link_kind,cursor,limit)
+
+    def verse_annotation_links(self, project_id, annotation_id, cursor, limit):
+        with db.connect(self.dsn) as connection: return verse_store.annotation_links(connection,project_id,annotation_id,cursor,limit)
+
+    def verse_history(self, project_id, material_id, before_revision, limit):
+        with db.connect(self.dsn) as connection: return verse_store.history(connection,project_id,material_id,before_revision,limit)
 
     def lexicon_capture(self, **values):
         with db.connect(self.dsn) as connection: return lexicon_store.capture(connection,**values)

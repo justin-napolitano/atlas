@@ -75,3 +75,56 @@ class PassageStoreTests(unittest.TestCase):
             for table in ["reading_documents","reading_annotations","reading_annotation_revisions"]:
                 grants=connection.execute("SELECT * FROM information_schema.table_privileges WHERE table_schema='research' AND table_name=%s AND grantee='PUBLIC'",(table,)).fetchall()
                 self.assertEqual(grants,[])
+
+    def test_mark_style_and_note_are_revisioned_together_without_moving_the_source(self):
+        identifier=str(uuid.uuid4())
+        with self.db.connect(self.dsn) as connection:
+            first=self.capture(connection,annotation_uuid=identifier,mark_style="underline")
+            self.assertEqual(first["mark_style"],"underline")
+            self.assertEqual(first,self.capture(connection,annotation_uuid=identifier,mark_style="underline"))
+            with self.assertRaises(self.db.RevisionConflict):
+                self.capture(connection,annotation_uuid=identifier,mark_style="highlight")
+            values=dict(annotation_id=first["id"],project_id=self.project,body="Revised margin note",expected_revision=1,actor="test-owner",mark_style="none")
+            revised=self.store.update_annotation(connection,**values)
+            self.assertEqual(revised["revision"],2)
+            self.assertEqual(revised["mark_style"],"none")
+            self.assertEqual(self.store.update_annotation(connection,**values),revised)
+            for field in ["document_id","text_sha256","start_pos","end_pos","exact","prefix","suffix"]:
+                self.assertEqual(first[field],revised[field])
+            with self.assertRaises(self.db.RevisionConflict):
+                self.store.update_annotation(connection,**{**values,"mark_style":"highlight"})
+            body_only=self.store.update_annotation(connection,**{**values,"mark_style":None,"expected_revision":2,"body":"Body only preserves style"})
+            self.assertEqual(body_only["mark_style"],"none")
+            bundle=self.store.annotation(connection,self.project,first["id"])
+            self.assertEqual(bundle["web_annotation"]["ir:markStyle"],"none")
+            history=connection.execute("SELECT snapshot FROM research.reading_annotation_revisions WHERE annotation_id=%s ORDER BY revision",(first["id"],)).fetchall()
+            self.assertEqual([r["snapshot"]["mark_style"] for r in history],["underline","none","none"])
+            self.assertEqual(self.store.annotations(connection,self.project,self.document["id"],"",101)[0]["mark_style"],"none")
+
+    def test_unknown_style_is_rejected_by_storage_and_database(self):
+        from psycopg.errors import CheckViolation
+        with self.db.connect(self.dsn) as connection:
+            for style in ["reviewed","",True,123]:
+                with self.assertRaises(ValueError): self.capture(connection,mark_style=style)
+            first=self.capture(connection)
+            self.assertEqual(first["mark_style"],"highlight")
+            with self.assertRaises(CheckViolation):
+                with connection.transaction():
+                    connection.execute("UPDATE research.reading_annotations SET mark_style='reviewed',revision=revision+1 WHERE id=%s",(first["id"],))
+
+    def test_notice_remains_with_immutable_representation_and_selected_quote_export(self):
+        notice="Synthetic provider notice; attribution https://example.invalid/notice"
+        values=dict(project_id=self.project,source_record_id=self.source,edition="Synthetic noticed edition",locator="Paragraph 1",
+            representation_url="https://example.invalid/source",text="tafsīr and evidence",actor="test-owner",source_notice=notice)
+        with self.db.connect(self.dsn) as connection:
+            document=self.store.create_document(connection,**values)
+            self.assertEqual(self.store.create_document(connection,**values)["id"],document["id"])
+            other=self.store.create_document(connection,**{**values,"source_notice":"Different synthetic notice"})
+            self.assertNotEqual(other["id"],document["id"])
+            self.assertEqual(self.store.get_document(connection,self.project,document["id"])["source_notice"],notice)
+            annotation=self.store.create_annotation(connection,annotation_uuid=str(uuid.uuid4()),project_id=self.project,document_id=document["id"],
+                text_sha256=document["text_sha256"],start=0,end=6,exact="tafsīr",capture_kind="comment",body="Private note",actor="test-owner")
+            self.assertEqual(self.store.annotation(connection,self.project,annotation["id"])["web_annotation"]["ir:sourceNotice"],notice)
+            from psycopg.errors import CheckViolation
+            with self.assertRaises(CheckViolation):
+                with connection.transaction(): connection.execute("UPDATE research.reading_documents SET source_notice='' WHERE id=%s",(document["id"],))

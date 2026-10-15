@@ -55,8 +55,9 @@ class RuntimePermissionsTests(unittest.TestCase):
             self.db.save_personal_state(connection, project_id=project, record_id=source, actor="test-owner", reading="read", note="Synthetic private note")
             self.db.save_personal_state(connection, project_id=project, record_id=source, actor="test-owner", expected_revision=1, reading="reading", note="Updated note")
             document = passage_store.create_document(connection, project_id=project, source_record_id=source, edition="Synthetic", locator="Abstract", representation_url="", text="tafsīr and evidence", actor="test-owner")
-            annotation = passage_store.create_annotation(connection, annotation_uuid=str(uuid.uuid4()), project_id=project, document_id=document["id"], text_sha256=document["text_sha256"], start=0, end=6, exact="tafsīr", capture_kind="term_candidate", body="Define this", actor="test-owner")
-            passage_store.update_annotation(connection, annotation_id=annotation["id"], project_id=project, body="Updated question", expected_revision=1, actor="test-owner")
+            annotation = passage_store.create_annotation(connection, annotation_uuid=str(uuid.uuid4()), project_id=project, document_id=document["id"], text_sha256=document["text_sha256"], start=0, end=6, exact="tafsīr", capture_kind="term_candidate", body="Define this", actor="test-owner",mark_style="underline")
+            updated=passage_store.update_annotation(connection, annotation_id=annotation["id"], project_id=project, body="Updated question", expected_revision=1, actor="test-owner",mark_style="none")
+            self.assertEqual(updated["mark_style"],"none")
             for table, key, identifier in [("record_revisions", "record_id", source), ("personal_state_revisions", "record_id", source), ("reading_annotation_revisions", "annotation_id", annotation["id"])]:
                 count = connection.execute(self.sql.SQL("SELECT count(*) AS n FROM research.{} WHERE {}=%s").format(self.sql.Identifier(table), self.sql.Identifier(key)), (identifier,)).fetchone()["n"]
                 self.assertEqual(count, 2)

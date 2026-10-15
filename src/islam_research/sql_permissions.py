@@ -12,10 +12,13 @@ READ_TABLES = (
     "projects", "records", "record_revisions", "relation_types", "relations",
     "personal_states", "personal_state_revisions", "import_snapshots",
     "reading_documents", "reading_annotations", "reading_annotation_revisions",
+    "reading_desks", "reading_desk_revisions",
     "publication_previews", "publication_events",
     "scripture_citations", "scripture_citation_revisions",
+    "verse_materials", "verse_material_revisions",
     "lexicon_entries", "lexicon_forms", "lexicon_representations", "lexicon_senses",
     "lexicon_definitions", "lexicon_occurrences", "lexicon_revisions", "lexicon_captures",
+    "source_intakes",
 )
 PUBLIC_TABLES = ("snapshots", "publication_heads")
 OWNER_FUNCTIONS = (
@@ -25,11 +28,14 @@ OWNER_FUNCTIONS = (
     "research.withdraw_publication(text,integer,text,text)",
 )
 INSERT_COLUMNS = {
+    "verse_materials": "id project_id annotation_id document_id text_sha256 creation_sha256 profile_id chapter ayah_start ayah_end material_kind link_kind citation_basis citation_id citation_snapshot marker_start marker_end marker_text attribution language_tag source_scope assertion_mode assertion_text reading_note period_note tradition_note context_basis rationale state changed_by",
+    "source_intakes": "request_uuid project_id input_sha256 source_record_id document_id declarations changed_by",
+    "reading_desks": "project_id record_id document_id annotation_id start_pos end_pos changed_by",
     "projects": "id title scope",
     "records": "id project_id kind title summary attributes changed_by",
     "personal_states": "record_id project_id reading read_at decision note changed_by",
-    "reading_documents": "id project_id source_record_id edition locator representation_url text_body input_sha256 text_sha256 normalization content_key changed_by",
-    "reading_annotations": "id project_id document_id text_sha256 start_pos end_pos exact prefix suffix capture_kind body changed_by",
+    "reading_documents": "id project_id source_record_id edition locator representation_url text_body input_sha256 text_sha256 normalization content_key changed_by source_notice",
+    "reading_annotations": "id project_id document_id text_sha256 start_pos end_pos exact prefix suffix capture_kind body changed_by mark_style",
     "scripture_citations": "id project_id annotation_id document_id text_sha256 candidate_key parser_version detector_kind match_start match_end matched_text proposal profile_id decision chapter ayah_start ayah_end rationale changed_by",
     "lexicon_entries": "id project_id entry_type scope changed_by",
     "lexicon_forms": "id project_id entry_id form_kind rationale changed_by",
@@ -41,9 +47,11 @@ INSERT_COLUMNS = {
     "publication_previews": "id project_id record_ids relation_ids inputs payload payload_sha256 created_by",
 }
 UPDATE_COLUMNS = {
+    "verse_materials": "attribution language_tag source_scope assertion_mode assertion_text reading_note period_note tradition_note context_basis rationale state revision changed_by",
+    "reading_desks": "record_id document_id annotation_id start_pos end_pos changed_by revision",
     "records": "title summary attributes changed_by revision",
     "personal_states": "reading read_at decision note changed_by revision",
-    "reading_annotations": "body revision changed_by",
+    "reading_annotations": "body revision changed_by mark_style",
     "scripture_citations": "decision chapter ayah_start ayah_end rationale revision changed_by",
     "lexicon_entries": "entry_type scope revision changed_by",
     "lexicon_forms": "form_kind rationale revision changed_by",

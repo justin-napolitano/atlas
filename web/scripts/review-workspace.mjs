@@ -30,7 +30,7 @@ async function until(fn, label, attempts=100) {
   const diagnostics=label==='owned Chrome debug port' ? ` · owned browser startup: ${chromeStartupDiagnostics || '(no stderr received)'}` : '';
   throw new Error(`Timed out: ${label}${diagnostics}`);
 }
-let serial=0, navigation=0; const pending=new Map(); const problems=[]; const saved=new Map(); let conflict=false, authenticated=true;
+let serial=0, navigation=0, unloadPrompts=0; const pending=new Map(); const problems=[]; const saved=new Map(); let conflict=false, authenticated=true;
 const records = [
   { id:'synthetic:question',project_id:'synthetic',kind:'question',title:'Synthetic question about authority',summary:'A bounded synthetic question.',revision:1,review_state:'pending',attributes:{} },
   { id:'synthetic:source',project_id:'synthetic',kind:'source',title:'Synthetic source <script>not HTML</script>',summary:'Synthetic source summary.',revision:1,review_state:'pending',attributes:{} },
@@ -39,9 +39,13 @@ const claim={ ...records[0],id:'synthetic:claim',kind:'claim',title:'Synthetic a
 const evidence={ ...records[0],id:'synthetic:evidence',kind:'evidence',title:'Synthetic located evidence',summary:'Synthetic fair paraphrase',attributes:{ rdf_properties:{ 'https://islam-research.local/vocab/locator':['"Synthetic section 2, paragraph 3"'] } } };
 const readingDocument={ id:'synthetic:document',project_id:'synthetic',source_record_id:records[1].id,
   edition:'Synthetic edition',locator:'Abstract',representation_url:'https://example.invalid/source',
+  source_notice:'Synthetic attribution retained verbatim.\n<b>This notice is plain text.</b>',
   text_body:'😀 Before tafsīr and التفسير; Q 4:59. After.',review_scope:'Synthetic private unverified excerpt' };
 readingDocument.text_sha256=createHash('sha256').update(readingDocument.text_body).digest('hex');
-const captures=[];
+const pilotResource={resource_id:'synthetic:resource',label:'Synthetic Arabic fixture',publisher:'Synthetic',source_notice:'Synthetic source notice',reading_note:'No edition inference',review_limit:'Synthetic test text, not Quran text',attribution_url:'https://tanzil.net/',verses:[59,83].map(ayah=>({chapter:4,ayah_start:ayah,ayah_end:ayah,text:`اختبار ${ayah}`,text_sha256:createHash('sha256').update(`اختبار ${ayah}`).digest('hex'),reference:{id:`synthetic:4:${ayah}`,label:`Q 4:${ayah}`}}))};
+const captures=[];let captureLostResponse=false;
+let readingDesk=null,deskLostResponse=true;const deskRequests=[];
+const verseMaterials=new Map(),verseRequests=[];let verseLostResponse=true;
 const lexicalConcepts=new Map(),lexicalEntities=new Map(),lexicalRequests=new Map(),lexicalHistory=new Map();
 let lexicalLostResponse=false,definitionLostResponse=false,definitionUpdateLostResponse=false;
 const lexicalSource=row=>({...row,source_record_id:readingDocument.source_record_id,source_title:records[1].title,
@@ -72,6 +76,7 @@ async function reload() {
   await call('Page.reload');
   await until(() => navigation>previous,'new document committed');
 }
+async function click(text) { await evaluate(`[...document.querySelectorAll('button')].find(button=>button.textContent===${JSON.stringify(text)})?.click()`); }
 async function fixture(event) {
   const url=new URL(event.request.url), path=url.pathname;
   let status=200,data;
@@ -90,6 +95,7 @@ async function fixture(event) {
   else if(publicTesting) throw new Error('Public viewer attempted an owner API request');
   else if (!authenticated) { status=401; data={ detail:'Owner sign-in required' }; }
   else if (path==='/v1/me') data={ mode:'owner',can_edit:true };
+  else if (path==='/v1/verses/pilot') data=pilotResource;
   else if (path==='/v1/projects') data={ items:[{ id:'synthetic',title:'Synthetic research project' }] };
   else if (path==='/v1/records') data={ items:records,next_cursor:null };
   else if (path==='/v1/search') {
@@ -98,6 +104,28 @@ async function fixture(event) {
       target_id:c.id,document_id:c.document_id,capture_kind:c.capture_kind,revision:c.revision,excerpt:c.exact+' · '+c.body }));
     data={ items:scope==='annotations' ? (matches.length ? [{...records[1],matches}] : []) : records,next_cursor:null };
   }
+  else if(path==='/v1/reading/desk' && event.request.method==='PUT') {
+    const value=JSON.parse(event.request.postData);deskRequests.push(value);
+    assert.equal(event.request.headers['X-Research-Write'] || event.request.headers['x-research-write'],'1');
+    const same=readingDesk && ['project_id','record_id','document_id','annotation_id'].every(key=>(readingDesk[key] || null)===(value[key] || null));
+    if(readingDesk && readingDesk.revision===value.expected_revision+1 && same)data=readingDesk;
+    else if(value.expected_revision!==(readingDesk?.revision || 0)){status=409;data={current:readingDesk};}
+    else {const capture=captures.find(row=>row.id===value.annotation_id);readingDesk={...value,start_pos:capture?.start_pos || 0,end_pos:capture?.end_pos || 0,revision:value.expected_revision+1};data=readingDesk;
+      if(deskLostResponse){deskLostResponse=false;status=503;data={detail:'Synthetic lost bookmark response'};}}
+  }
+  else if(path==='/v1/reading/desk'){if(readingDesk)data=readingDesk;else {status=404;data={};}}
+  else if(path==='/v1/verses/materials' && event.request.method==='POST') {
+    const value=JSON.parse(event.request.postData);verseRequests.push(value);const id='synthetic:material:'+value.request_uuid;
+    const previous=verseMaterials.get(id);
+    if(previous)data={id,project_id:previous.project_id,revision:previous.revision};
+    else {const a=captures.find(row=>row.id===value.annotation_id);assert.ok(a);assert.equal(value.owner_confirmed,true);assert.equal(value.citation_basis,'none');
+      const reference={id:`synthetic:quran:${value.chapter}:${value.ayah_start}-${value.ayah_end}`,label:`Q ${value.chapter}:${value.ayah_start}${value.ayah_end!==value.ayah_start ? '–'+value.ayah_end : ''}`,chapter:value.chapter,ayah_start:value.ayah_start,ayah_end:value.ayah_end};
+      verseMaterials.set(id,{...value,id,document_id:a.document_id,text_sha256:a.text_sha256,selected_quote:a.exact,reference,revision:1,review_state:'pending',edition:readingDocument.edition,locator:readingDocument.locator,source_record_id:readingDocument.source_record_id});
+      data={id,project_id:value.project_id,revision:1};if(verseLostResponse){verseLostResponse=false;status=503;data={detail:'Synthetic lost verse connection response'};}}
+  }
+  else if(path==='/v1/verses/material')data=verseMaterials.get(url.searchParams.get('material_id'));
+  else if(path==='/v1/verses/annotation-links')data={items:[...verseMaterials.values()].filter(row=>row.annotation_id===url.searchParams.get('annotation_id')),next_cursor:null};
+  else if(path==='/v1/verses/materials')data={items:[...verseMaterials.values()].filter(row=>row.project_id===url.searchParams.get('project_id') && row.chapter===Number(url.searchParams.get('chapter')) && row.ayah_start<=Number(url.searchParams.get('ayah_end')) && row.ayah_end>=Number(url.searchParams.get('ayah_start'))),next_cursor:null};
   else if (path==='/v1/reading/documents') data={ items:url.searchParams.get('source_record_id')===readingDocument.source_record_id ? [readingDocument] : [],next_cursor:null };
   else if (path==='/v1/reading/document') data=readingDocument;
   else if (path==='/v1/reading/annotations' && event.request.method==='POST') {
@@ -105,10 +133,13 @@ async function fixture(event) {
     assert.equal(value.text_sha256,readingDocument.text_sha256);
     assert.equal(characters.slice(value.start,value.end).join(''),value.exact);
     assert.equal(value.start,Array.from(readingDocument.text_body.slice(0,readingDocument.text_body.indexOf(value.exact))).length);
-    data={...value,id:'urn:research:annotation:'+value.annotation_uuid,start_pos:value.start,end_pos:value.end,
+    const existing=captures.find(row=>row.id==='urn:research:annotation:'+value.annotation_uuid);
+    data=existing || {...value,mark_style:value.mark_style || 'highlight',id:'urn:research:annotation:'+value.annotation_uuid,start_pos:value.start,end_pos:value.end,
       prefix:characters.slice(Math.max(0,value.start-40),value.start).join(''),suffix:characters.slice(value.end,value.end+40).join(''),
       revision:1,created_at:'2026-10-15T00:00:00Z',changed_by:'synthetic-owner'};
-    captures.push(data);
+    if(existing) {assert.equal(existing.body,value.body);assert.equal(existing.mark_style,value.mark_style);}
+    else captures.push(data);
+    if(captureLostResponse) {captureLostResponse=false;status=503;data={detail:'Synthetic lost capture response'};}
   }
   else if (path==='/v1/reading/annotations') data={ items:captures,next_cursor:null };
   else if (path==='/v1/reading/annotation' && event.request.method==='PUT') {
@@ -116,7 +147,7 @@ async function fixture(event) {
     assert.equal(event.request.headers['X-Research-Write'] || event.request.headers['x-research-write'],'1');
     assert.ok(index>=0);
     if(value.expected_revision!==captures[index].revision) {status=409;data={current:captures[index]};}
-    else {data={...captures[index],body:value.body,revision:captures[index].revision+1};captures[index]=data;}
+    else {data={...captures[index],body:value.body,mark_style:value.mark_style || captures[index].mark_style,revision:captures[index].revision+1};captures[index]=data;}
   }
   else if (path==='/v1/reading/annotation') {
     const row=captures.find(c=>c.id===url.searchParams.get('annotation_id'));
@@ -274,6 +305,7 @@ try {
     const message=JSON.parse(event.data);
     if (message.id) { const item=pending.get(message.id); if (!item) return; pending.delete(message.id); clearTimeout(item.timeout); message.error ? item.reject(new Error(message.error.message)) : item.resolve(message.result); }
     else if (message.method==='Fetch.requestPaused') fixture(message.params).catch(error => problems.push(error.message));
+    else if (message.method==='Page.javascriptDialogOpening' && message.params.type==='beforeunload') {unloadPrompts++;call('Page.handleJavaScriptDialog',{accept:true}).catch(error=>problems.push(error.message));}
     else if (message.method==='Runtime.exceptionThrown') problems.push('Unexpected browser runtime exception');
     else if (message.method==='Page.frameNavigated' && !message.params.frame.parentId) navigation++;
   });
@@ -288,6 +320,11 @@ try {
   await until(() => evaluate('!!document.querySelector("#my-note")'),'source reading notes');
   assert.equal(await evaluate('document.querySelectorAll(".workspace-record-heading script").length'),0);
   await until(()=>evaluate('!!document.querySelector(".reader-text")'),'private passage reader');
+  assert.equal(await evaluate('document.querySelector(".reader-source-notice").open'),false);
+  await evaluate('document.querySelector(".reader-source-notice summary").click()');
+  assert.equal(await evaluate('document.querySelector(".reader-source-notice pre").textContent'),readingDocument.source_notice);
+  assert.equal(await evaluate('document.querySelectorAll(".reader-source-notice b").length'),0);
+  await evaluate('document.querySelector(".reader-source-notice summary").click()');
   await evaluate(`const textRoot=document.querySelector('.reader-text'), range=document.createRange();
     const start=textRoot.textContent.indexOf('tafsīr'); range.setStart(textRoot.firstChild,start); range.setEnd(textRoot.firstChild,start+6);
     const selection=window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
@@ -303,7 +340,7 @@ try {
   await until(()=>evaluate('document.querySelector(".reader-annotations")?.textContent.includes("Synthetic anchored term note")'),'persisted passage note');
   assert.equal(captures.length,1);
   await evaluate('document.querySelector(".reader-reopen").click()');
-  await until(()=>evaluate('document.querySelector(".reader-text mark")?.textContent==="tafsīr"'),'reopen exact passage');
+  await until(()=>evaluate('document.querySelector(".reader-text mark.is-selected")?.textContent==="tafsīr"'),'reopen exact passage');
   await evaluate(`const scope=document.querySelector('.workspace-search label:nth-child(3) select');
     scope.value='annotations'; scope.dispatchEvent(new Event('change',{bubbles:true}));
     document.querySelector('.workspace-query input').focus();`);
@@ -311,9 +348,9 @@ try {
   await evaluate('document.querySelector(".workspace-search").requestSubmit()');
   await until(()=>evaluate('!!document.querySelector(".workspace-passage-hit")'),'private annotation search result');
   await evaluate('document.querySelector(".workspace-passage-hit").click()');
-  await until(()=>evaluate('new URLSearchParams(location.search).has("annotation") && document.querySelector(".reader-text mark")?.textContent==="tafsīr"'),'search opens exact saved passage');
+  await until(()=>evaluate('new URLSearchParams(location.search).has("annotation") && document.querySelector(".reader-text mark.is-selected")?.textContent==="tafsīr"'),'search opens exact saved passage');
   await reload();
-  await until(()=>evaluate('document.querySelector(".reader-text mark")?.textContent==="tafsīr"'),'annotation bookmark survives reload');
+  await until(()=>evaluate('document.querySelector(".reader-text mark.is-selected")?.textContent==="tafsīr"'),'annotation bookmark survives reload');
   await until(()=>evaluate('!!document.querySelector(".passage-note-open")'),'saved passage edit button');
   await evaluate('document.querySelector(".passage-note-open").click()');
   await until(()=>evaluate('!!document.querySelector(".passage-note-edit textarea")'),'saved passage editor');
@@ -380,7 +417,7 @@ try {
   await evaluate(`document.querySelector(${JSON.stringify(citationSelector+' .scripture-saved button')}).click()`);
   await until(()=>evaluate('document.querySelector(".scripture-related")?.textContent.includes("Synthetic edition · Abstract")'),'reverse verse lookup retains source location');
   await evaluate('document.querySelector(".scripture-related button").click()');
-  await until(()=>evaluate('document.querySelector(".reader-text mark")?.textContent==="Q 4:59"'),'reverse lookup opens exact saved passage');
+  await until(()=>evaluate('document.querySelector(".reader-text mark.is-selected")?.textContent==="Q 4:59"'),'reverse lookup opens exact saved passage');
   await evaluate('[...document.querySelectorAll(".saved-passage-note")].find(node=>node.querySelector(".reader-reopen").textContent==="Q 4:59").querySelector(".scripture-toggle").click()');
   await until(()=>evaluate(`!!document.querySelector(${JSON.stringify(citationSelector+' .scripture-saved')})`),'reference reopen');
   await evaluate(`document.querySelector(${JSON.stringify(citationSelector+' details')}).open=true;document.querySelector(${JSON.stringify(citationSelector)}).scrollIntoView({block:'start'})`);
@@ -455,7 +492,7 @@ try {
   await until(()=>evaluate('!!document.querySelector(".concept-machine-proposals")'),'machine proposal remains separated');
   assert.equal(await evaluate('!!document.querySelector(".concept-definition-gap")'),true);
   await evaluate('document.querySelector(".concept-occurrence-source").click()');
-  await until(()=>evaluate('document.querySelector(".reader-text mark")?.textContent==="tafsīr"'),'concept occurrence returns to the exact source passage');
+  await until(()=>evaluate('document.querySelector(".reader-text mark.is-selected")?.textContent==="tafsīr"'),'concept occurrence returns to the exact source passage');
   await evaluate(`${termLexicon}.querySelector('.lexicon-toggle').click()`);
   await until(()=>evaluate(`!!${termLexicon}.querySelector('.lexicon-mode')`),'definition action selector');
   await chooseLexicon('.lexicon-mode','definition');
@@ -545,7 +582,7 @@ try {
   await evaluate('document.querySelector(".header-tools button").click()');
   await call('Emulation.clearDeviceMetricsOverride');
   await evaluate('document.querySelector(".concept-source").click()');
-  await until(()=>evaluate('document.querySelector(".reader-text mark")?.textContent==="tafsīr"'),'corrected definition source remains unchanged');
+  await until(()=>evaluate('document.querySelector(".reader-text mark.is-selected")?.textContent==="tafsīr"'),'corrected definition source remains unchanged');
   async function captureWord(word) {
     await evaluate(`{const walker=document.createTreeWalker(document.querySelector('.reader-text'),NodeFilter.SHOW_TEXT);let node;while((node=walker.nextNode()) && !node.textContent.includes(${JSON.stringify(word)})){}
       const offset=node.textContent.indexOf(${JSON.stringify(word)}),range=document.createRange();range.setStart(node,offset);range.setEnd(node,offset+${word.length});
@@ -612,9 +649,99 @@ try {
   assert.equal(await evaluate('[...document.querySelectorAll(".workspace-row")].filter(node=>node.textContent.includes("Synthetic scoped concept")).length'),1);
   assert.equal(await evaluate('Object.values(localStorage).some(value=>value.includes("Synthetic scoped") || value.includes("My corrected synthetic") || value.includes("explicitly scoped Arabic"))'),false);
   await evaluate('document.querySelector(".concept-source").click()');
-  await until(()=>evaluate('document.querySelector(".reader-text mark")?.textContent==="tafsīr"'),'definition follows its exact attributed source');
+  await until(()=>evaluate('document.querySelector(".reader-text mark.is-selected")?.textContent==="tafsīr"'),'definition follows its exact attributed source');
   await reload();
   await until(()=>evaluate('!!document.querySelector("#my-note")'),'resume existing reading workflow after lexical navigation');
+  // Real compiled reader interactions; intercepted transport remains synthetic.
+  // PostgreSQL/API tests separately exercise the same anchored style contract.
+  await until(()=>evaluate('document.querySelectorAll(".reader-text mark[role=button]").length>=3'),'all saved annotations rendered as persistent source marks');
+  assert.equal(await evaluate('document.querySelector(".reader-text").textContent'),readingDocument.text_body);
+  const beforeOverlap=captures.length;
+  await evaluate(`{const root=document.querySelector('.reader-text'),text=root.textContent,start=text.indexOf('Before tafsīr'),end=start+'Before tafsīr'.length;
+    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),range=document.createRange();let node,total=0,started=false;
+    while((node=walker.nextNode())) {const next=total+node.textContent.length;
+      if(!started && start>=total && start<next) {range.setStart(node,start-total);started=true;}
+      if(started && end<=next) {range.setEnd(node,end-total);break;}total=next;}
+    const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
+    document.querySelector('.reader-underline').click();}`);
+  await until(()=>evaluate('document.querySelector(".reader-capture textarea")===document.activeElement'),'selection opens adjacent margin composer');
+  assert.equal(await evaluate('document.querySelector(".reader-capture select").value'),'underline');
+  await call('Input.insertText',{text:'My synthetic margin note crossing an existing marked word.'});
+  captureLostResponse=true;
+  await evaluate('document.querySelector(".reader-capture button").click()');
+  await until(()=>evaluate('document.querySelector(".reader-capture button")?.textContent==="Retry original save"'),'uncertain capture preserves original request');
+  assert.equal(captures.length,beforeOverlap+1);
+  assert.equal(await evaluate('document.querySelector(".reader-capture textarea").disabled'),true);
+  await evaluate('document.querySelectorAll(".workspace-row")[0].click()');
+  await until(()=>evaluate('!document.querySelector(".reader-text")'),'leave uncertain capture');
+  await evaluate('document.querySelectorAll(".workspace-row")[1].click()');
+  await until(()=>evaluate('document.querySelector(".reader-capture button")?.textContent==="Retry original save"'),'uncertain margin draft survives record navigation');
+  await evaluate('document.querySelector(".reader-capture button").click()');
+  await until(()=>evaluate('!document.querySelector(".reader-capture")'),'original capture retry confirmed');
+  assert.equal(captures.length,beforeOverlap+1);
+  const marginId=captures.at(-1).id;
+  assert.equal(captures.at(-1).mark_style,'underline');
+  await reload();
+  await until(()=>evaluate('!!document.querySelector(".reader-text mark.has-overlap.has-underline")'),'overlapping underline survives reload');
+  assert.equal(await evaluate('document.querySelector(".reader-text").textContent'),readingDocument.text_body);
+  await evaluate('[...document.querySelectorAll(".reader-text mark")].find(node=>node.textContent==="Before ").click()');
+  await until(()=>evaluate(`document.activeElement===document.querySelector('[data-annotation-id="${marginId}"] textarea')`),'click source mark focuses its saved margin note');
+  await evaluate(`document.querySelector('[data-annotation-id="${marginId}"] .reader-reopen').click()`);
+  await until(()=>evaluate('document.activeElement===document.querySelector(".reader-text")'),'note quotation returns keyboard focus to source');
+  assert.equal(await evaluate('[...document.querySelectorAll(".reader-text mark.is-selected")].map(node=>node.textContent).join("")'),'Before tafsīr');
+  assert.equal(await evaluate('new URLSearchParams(location.search).get("annotation")'),marginId);
+  assert.equal(await evaluate('new URLSearchParams(location.search).get("document")'),readingDocument.id);
+  await until(()=>evaluate('[...document.querySelectorAll(".reading-place button")].some(button=>button.textContent==="Bookmark this passage" && !button.disabled)'),'saved annotation is bookmarkable');
+  await click('Bookmark this passage');
+  await until(()=>evaluate('document.querySelector(".reading-place").textContent.includes("not confirmed")'),'bookmark response lost after commit');
+  assert.equal(readingDesk.revision,1);assert.equal(readingDesk.annotation_id,marginId);
+  await click('Retry original bookmark');await until(()=>evaluate('document.querySelector(".reading-place").textContent.includes("revision 1")'),'exact bookmark retry confirmed');
+  assert.deepEqual(deskRequests[0],deskRequests[1]);assert.equal(readingDesk.revision,1);
+  await reload();await until(()=>evaluate('!!document.querySelector(".reader-text mark.is-selected")'),'saved source reloaded');
+  await evaluate('document.querySelectorAll(".workspace-row")[0].click()');await until(()=>evaluate('!document.querySelector(".reader-text")'),'leave bookmarked reading');
+  await click('Resume saved reading');await until(()=>evaluate(`new URL(location.href).searchParams.get('annotation')===${JSON.stringify(marginId)} && !!document.querySelector('.reader-text mark.is-selected')`),'server bookmark resumes exact annotation and document');
+  readingDesk={...readingDesk,annotation_id:captures[0].id,start_pos:captures[0].start_pos,end_pos:captures[0].end_pos,revision:2};
+  await until(()=>evaluate('[...document.querySelectorAll(".reading-place button")].some(button=>button.textContent==="Bookmark this passage" && !button.disabled)'),'ready to save updated reading place');
+  await click('Bookmark this passage');await until(()=>evaluate('!!document.querySelector(".reading-place-conflict")'),'other-device bookmark conflict shown');
+  assert.equal(readingDesk.revision,2,'conflict does not silently overwrite other device');
+  await click('Replace with my requested bookmark');await until(()=>evaluate('document.querySelector(".reading-place").textContent.includes("revision 3") && !document.querySelector(".reading-place-conflict")'),'explicit bookmark conflict replacement');
+  assert.equal(readingDesk.annotation_id,marginId);assert.equal(readingDesk.revision,3);
+  await evaluate(`document.querySelector('[data-annotation-id="${marginId}"] .verse-links > button').click()`);
+  await until(()=>evaluate(`!!document.querySelector('[data-annotation-id="${marginId}"] .verse-links form')`),'verse connection form beside source note');
+  for(const [name,text] of [['chapter','2'],['ayah_start','255'],['attribution','Synthetic source attribution'],['source_scope','Bounded owner discussion, not an explicit citation'],['rationale','Synthetic paragraph-to-verse research link']]) {
+    await evaluate(`{const field=document.querySelector('[data-annotation-id="${marginId}"] .verse-links [name="${name}"]');field.focus();field.select();}`);await call('Input.insertText',{text});
+  }
+  await evaluate(`document.querySelector('[data-annotation-id="${marginId}"] .verse-links-confirm input').click()`);
+  await click('Save verse connection');await until(()=>evaluate(`document.querySelector('[data-annotation-id="${marginId}"] .verse-links [role=alert]')?.textContent.includes('not be confirmed')`),'uncertain source-to-verse connection');
+  assert.equal(verseMaterials.size,1);await click('Retry exact connection save');
+  await until(()=>evaluate(`!!document.querySelector('[data-annotation-id="${marginId}"] .verse-links-saved button')`),'source-bound verse connection readback');
+  assert.deepEqual(verseRequests[0],verseRequests[1]);
+  await evaluate(`document.querySelector('[data-annotation-id="${marginId}"] .verse-links-saved button').click()`);
+  await until(()=>evaluate('document.querySelector(".selected-verse-material h3")?.textContent.includes("Q 2:255") && !!document.querySelector(".selected-verse-material blockquote")'),'source passage to selected verse range');
+  assert.equal(await evaluate('new URL(location.href).searchParams.get("chapter")'),'2');
+  assert.equal(await evaluate('document.querySelector(".selected-verse-material blockquote").textContent'),captures.at(-1).exact);
+  assert.equal(await evaluate('document.querySelectorAll(".pilot-arabic").length'),0,'unbundled range never shows unrelated Arabic text');
+  await evaluate('document.querySelector(".selected-verse-material button").click()');
+  await until(()=>evaluate(`new URL(location.href).searchParams.get('annotation')===${JSON.stringify(marginId)} && !!document.querySelector('.reader-text mark.is-selected')`),'verse material returns to exact source annotation');
+  await evaluate('document.querySelector(".reader-focus").click()');
+  await until(()=>evaluate('getComputedStyle(document.querySelector(".workspace-results")).display==="none"'),'focus mode gives source and margin the reading desk');
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".reader-desk")).display'),'grid');
+  const marginWidth=await evaluate('document.querySelector(".reader-desk").style.getPropertyValue("--list-width")');
+  await evaluate('document.querySelector(".reader-desk .pane-divider").focus()');
+  await call('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowLeft',code:'ArrowLeft'});
+  assert.notEqual(await evaluate('document.querySelector(".reader-desk").style.getPropertyValue("--list-width")'),marginWidth);
+  await evaluate('document.querySelector(".reader-margin-toggle").click()');
+  assert.equal(await evaluate('document.querySelector(".reader-margin").hidden'),true);
+  await evaluate('[...document.querySelectorAll(".reader-text mark")].find(node=>node.textContent==="Before ").click()');
+  await until(()=>evaluate('!document.querySelector(".reader-margin").hidden'),'clicking mark reopens collapsed margin');
+  const marginDesktop=await call('Page.captureScreenshot',{format:'png'});await writeFile(join(artifacts,'reader-margin-desktop.png'),Buffer.from(marginDesktop.data,'base64'));
+  await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  await sleep(100);
+  assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'margin reader mobile horizontal overflow');
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".reader-desk")).display'),'block');
+  const marginMobile=await call('Page.captureScreenshot',{format:'png'});await writeFile(join(artifacts,'reader-margin-mobile.png'),Buffer.from(marginMobile.data,'base64'));
+  await call('Emulation.clearDeviceMetricsOverride');
+  await evaluate('document.querySelector(".reader-focus").click()');
   await evaluate('document.querySelector("#my-note").focus()');
   await call('Input.insertText',{ text:'Synthetic browser note <img src=x onerror=alert(1)>' });
   await evaluate('document.querySelector(".workspace-note-actions button").click()');
@@ -654,7 +781,25 @@ try {
   await until(()=>navigation>previousNavigation,'mismatched source document committed');
   await until(()=>evaluate('document.querySelector(".reader-message")?.textContent.includes("belongs to another source")'),'mismatched source rejected');
   assert.equal(await evaluate('!!document.querySelector(".reader-text")'),false);
+  await click('Read the Sirry article');
+  await until(()=>evaluate('document.querySelector("[name=title]")?.value.includes("Who Are Those in Authority")'),'real article preset reachable from workspace');
+  assert.ok(await evaluate('document.querySelector(".intake-preset-note").textContent.includes("manual transcription")'));
+  assert.equal(await evaluate('new URL(location.href).searchParams.get("view")'),'article-pilot');
+  await click('Back to reading');await click('Add a source');
+  await until(()=>evaluate('!!document.querySelector("[name=title]")'),'workspace source intake');
+  await evaluate('document.querySelector("[name=title]").focus()');await call('Input.insertText',{text:'Private retained source draft'});
+  await click('Back to reading');await click('Read the Sirry article');
+  await until(()=>evaluate('document.querySelector("[name=title]")?.value==="Private retained source draft"'),'article preset never overwrites retained intake');
+  await click('Back to reading');await click('Start Qur’an pilot');
+  await until(()=>evaluate('document.querySelectorAll(".pilot-arabic").length===2'),'Arabic pilot reachable from workspace');
+  assert.equal(await evaluate('new URL(location.href).searchParams.get("view")'),'pilot');
+  await evaluate('history.back()');await until(()=>evaluate('!document.querySelector(".pilot-reading")'),'Back restores reading view');
+  await evaluate('history.forward()');await until(()=>evaluate('document.querySelectorAll(".pilot-arabic").length===2'),'Forward restores pilot view');
+  assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'workspace pilot fits mobile width');
+  assert.equal(await evaluate('Object.values(localStorage).some(value=>value.includes("Private retained source draft"))'),false);
+  await click('Back to reading');
   authenticated=false; await reload();
+  assert.ok(unloadPrompts>=1,'unsaved intake warns before leaving the page');
   await until(() => evaluate('document.querySelector("[role=alert]")?.textContent.includes("Owner sign-in")'),'anonymous sign-in boundary');
   assert.equal(await evaluate('!!document.querySelector("#my-note")'),false);
   authenticated=true;
@@ -768,7 +913,7 @@ try {
   assert.deepEqual(problems,[]);
   console.log(JSON.stringify({publicChecksPassed:true,checks:['actual approved-export fixture','anonymous read-only data requests','multi-project switching','Back/Forward and record reload','citations, locators and review limits','same record ID across projects','dark mobile layout','mismatched project refusal','all-withdrawn empty state','unsafe path refusal','unknown project recovery','no legacy fallback in approved mode','legacy RDF compatibility'],artifacts}));
   console.log(JSON.stringify({publicationChecksPassed:true,checks:['explicit record, summary, bibliography and relation choices','no automatic approval','sealed preview privacy and inert labels','stale head requires new preview','revision-bound acknowledgement and approval','reload without duplicate approval','withdrawal acknowledgement','390px overflow','private rationale outside localStorage','anonymous publication denial'],publicationAttempts,artifacts}));
-  console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','Quran reference decision reload and retained draft','idempotent reference retry after lost response','reference conflict comparison and explicit resolution','reverse verse lookup to exact saved passage','reference dismissal and 390px controls','manual mapping distinct from citation claims','invalid verse bounds explained before saving','word to scoped concept and durable passage links','idempotent concept and definition creation after lost responses','explicit definition gaps and separate machine proposals','attributed definitions and exact source reopening','definition correction conflict, retry and history','existing lexical connection reuse and Arabic source preservation','normalized and combined research search','lexical pagination and dark/mobile/RTL layout','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','anonymous boundary'],artifacts }));
+  console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','Quran reference decision reload and retained draft','idempotent reference retry after lost response','reference conflict comparison and explicit resolution','reverse verse lookup to exact saved passage','reference dismissal and 390px controls','manual mapping distinct from citation claims','invalid verse bounds explained before saving','word to scoped concept and durable passage links','idempotent concept and definition creation after lost responses','explicit definition gaps and separate machine proposals','attributed definitions and exact source reopening','definition correction conflict, retry and history','existing lexical connection reuse and Arabic source preservation','normalized and combined research search','lexical pagination and dark/mobile/RTL layout','persistent source marks and overlapping underline reload','direct margin writing and frozen idempotent capture retry','mark-to-note and note-to-source focus with stable bookmarks','resizable collapsible margin and focused mobile reading','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','margin source-to-verse discussion save and exact retry','generic selected verse-range view and source return','no unrelated Arabic text for unbundled ranges','durable bookmark exact retry and reload','server bookmark to exact source passage','other-device bookmark conflict requires explicit replacement','workspace source intake and real article preset','retained intake never overwritten by preset','Arabic pilot URL Back and Forward','anonymous boundary'],artifacts }));
 } finally {
   socket?.close(); chrome.kill(); await preview.close();
   for (const item of pending.values()) { clearTimeout(item.timeout); item.reject(new Error('Review finished')); }

@@ -76,4 +76,6 @@ def web_annotation(document, annotation):
         "ir:sourceRecord":document["source_record_id"],"ir:representationUrl":document["representation_url"],
         "ir:edition":document["edition"],"ir:locator":document["locator"],
         "ir:textSha256":document["text_sha256"],"ir:captureKind":annotation["capture_kind"],
-        "ir:reviewStatus":"captured_unreviewed","ir:revision":annotation["revision"]}
+        "ir:reviewStatus":"captured_unreviewed","ir:revision":annotation["revision"],
+        "ir:markStyle":annotation.get("mark_style","highlight"),
+        **({"ir:sourceNotice":document["source_notice"]} if document.get("source_notice") else {})}
