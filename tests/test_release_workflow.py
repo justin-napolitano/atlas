@@ -22,7 +22,7 @@ class ReleaseResultTests(unittest.TestCase):
             return result,json.loads(result.stdout),summary.read_text(encoding="utf-8")
 
     def successful(self):
-        return {name:{"result":"success","outputs":{}} for name in ("database","frontend","infrastructure","graph","container")}
+        return {name:{"result":"success","outputs":{}} for name in ("database","frontend","infrastructure","graph","container","owner-container")}
 
     def test_success_is_source_evidence_without_deployment_or_launch_claim(self):
         result,report,summary=self.gate(self.successful())
@@ -42,10 +42,12 @@ class ReleaseResultTests(unittest.TestCase):
                     self.assertIn(f"| {name} | {status} |",summary)
 
     def test_missing_or_unexpected_evidence_requires_an_explicit_gate_update(self):
-        results=self.successful();del results["infrastructure"]
-        result,report,summary=self.gate(results)
-        self.assertNotEqual(result.returncode,0);self.assertFalse(report["combined_source_passed"])
-        self.assertIn("| infrastructure | missing |",summary)
+        for component in self.successful():
+            with self.subTest(missing=component):
+                results=self.successful();del results[component]
+                result,report,summary=self.gate(results)
+                self.assertNotEqual(result.returncode,0);self.assertFalse(report["combined_source_passed"])
+                self.assertIn(f"| {component} | missing |",summary)
         results=self.successful();results["unreviewed_extra"]={"result":"success"}
         result,report,_=self.gate(results)
         self.assertNotEqual(result.returncode,0);self.assertFalse(report["combined_source_passed"])
