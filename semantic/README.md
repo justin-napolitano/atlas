@@ -15,7 +15,7 @@ At this pinned revision, model documents contain a `semantic_model` array and cu
 | File | Role |
 | --- | --- |
 | `research.ossie.json` | Four PostgreSQL datasets with keys, scoped fields, composite joins, and two descriptive metrics |
-| `research-policy.json` | RDF kind/predicate mappings and named ranking/traversal definitions |
+| `../src/islam_research/policies/research-policy.json` | Packaged RDF kind/predicate mappings and named ranking/traversal definitions |
 | `upstream.lock.json` | Immutable upstream identity, release status, licenses, and file checksums |
 
 The dataset joins describe storage grain. For example, a relation's `(project_id, from_id)` joins the record's declared `(project_id, id)` key. That join does not mean scholarly support or intellectual influence. The explicit predicate and located provenance carry research meaning. Personal reading/screening is separate from review and publication, and the private model is not the anonymous publication projection.
@@ -25,7 +25,7 @@ Current path definitions:
 - `question_evidence_trail`: incoming addresses-question, outgoing evidence, then outgoing source. Each step composes typed endpoints and preserves original direction. A broad topic link cannot replace a located evidence step.
 - `claim_attribution`: direct attribution to a source/person, explicitly different from a located evidence argument.
 
-Limits, cycle handling, and authorization-before-traversal are declared, not implemented by a JSON schema. The backend must execute only registered operations under its own identity/policy checks and return exact paths, provenance, review scope, and truncation/no-path information. Never execute arbitrary SQL from a loaded semantic model or treat `ai_context` as permission.
+Limits, cycle handling, and authorization-before-traversal are declared, not implemented by a JSON schema. The bounded owner executor is documented in `../docs/research-operations.md`; its implementation is separate from schema validation. Never execute arbitrary SQL from a loaded semantic model or treat `ai_context` as permission.
 
 Ranking definitions cover discovery relevance, personal reading priority, article reading demands, personal preparation, and unique-neighbor connectivity. Features/weights are explicit, total weight is one, missing required observations propagate an unknown score, and ties use stable IDs. They are marked `definition_only` until the actual feature extraction/executor/evaluation fixtures land in #36/#55. In particular, absent full text or sparse history metadata is not an easy article, and unfamiliar Arabic names/transliterations are not an inherent quality penalty.
 

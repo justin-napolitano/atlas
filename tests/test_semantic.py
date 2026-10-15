@@ -18,7 +18,7 @@ class SemanticContractTests(unittest.TestCase):
     def setUp(self):
         self.schema = load_json(ROOT / "vendor/apache-ossie/osi-schema.json")
         self.model = load_json(ROOT / "research.ossie.json")
-        self.policy = load_json(ROOT / "research-policy.json")
+        self.policy = load_json(ROOT.parent / "src/islam_research/policies/research-policy.json")
 
     def test_pinned_model_validates_offline_and_reports_candidate_status(self):
         result = validate_directory(ROOT)

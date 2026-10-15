@@ -433,7 +433,7 @@
       "custom_extensions": [
         {
           "vendor_name": "COMMON",
-          "data": "{\"research_platform\": {\"policy_document\": \"research-policy.json\", \"policy_version\": 1, \"authorization\": \"backend-enforced; metadata is not permission\", \"execution\": \"registered operations only; never execute model-supplied SQL\"}}"
+          "data": "{\"research_platform\": {\"policy_document\": \"../src/islam_research/policies/research-policy.json\", \"policy_version\": 1, \"authorization\": \"backend-enforced; metadata is not permission\", \"execution\": \"registered operations only; never execute model-supplied SQL\"}}"
         }
       ]
     }

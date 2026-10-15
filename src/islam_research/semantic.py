@@ -9,6 +9,7 @@ import hashlib
 import json
 import math
 import re
+from importlib.resources import files
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
@@ -168,7 +169,8 @@ def validate_directory(root: Path) -> dict:
         if hashlib.sha256((root / "vendor/apache-ossie" / name).read_bytes()).hexdigest() != digest:
             raise ValueError(f"Vendored upstream content drift: {name}")
     schema = load_json(root / "vendor/apache-ossie/osi-schema.json")
-    model, policy = load_json(root / "research.ossie.json"), load_json(root / "research-policy.json")
+    model = load_json(root / "research.ossie.json")
+    policy = load_json(Path(str(files("islam_research").joinpath("policies/research-policy.json"))))
     validate_model(model, schema)
     validate_policy(policy)
     return {"upstream_commit": manifest["commit"], "release_status": manifest["release_status"],
