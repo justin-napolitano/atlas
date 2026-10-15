@@ -22,6 +22,7 @@ TABLES = {
     "personal_states": {"record_id", "project_id", "reading", "read_at", "decision", "note", "revision"},
     "reading_documents": {"id", "project_id", "source_record_id", "edition", "locator", "representation_url", "text_sha256", "review_scope"},
     "reading_annotations": {"id", "project_id", "document_id", "text_sha256", "start_pos", "end_pos", "exact", "capture_kind", "body", "revision", "mark_style"},
+    "reading_desks": {"project_id","record_id","document_id","annotation_id","start_pos","end_pos","revision","updated_at"},
     "scripture_citations": {"id", "project_id", "annotation_id", "document_id", "text_sha256", "candidate_key", "detector_kind", "profile_id", "decision", "chapter", "ayah_start", "ayah_end", "rationale", "revision"},
     "verse_materials": {"id","project_id","annotation_id","document_id","text_sha256","profile_id","chapter","ayah_start","ayah_end",
         "material_kind","link_kind","citation_basis","citation_id","citation_snapshot","attribution","language_tag","source_scope",
