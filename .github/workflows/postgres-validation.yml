@@ -3,10 +3,10 @@ name: PostgreSQL contracts
 on:
   workflow_call:
   pull_request:
-    paths: ['src/**', 'tests/**', 'scripts/export_api_schema.py', 'scripts/export_approved_release.py', 'scripts/validate_semantic.py', 'scripts/check_postgres_logging.py', 'config/postgres-observability.json', 'semantic/**', 'docs/api-contracts/**', 'pyproject.toml', 'uv.lock', '.github/workflows/postgres-validation.yml']
+    paths: ['src/**', 'tests/**', 'web/scripts/fixtures/approved-release.json', 'scripts/export_api_schema.py', 'scripts/export_approved_release.py', 'scripts/validate_semantic.py', 'scripts/check_postgres_logging.py', 'config/postgres-observability.json', 'semantic/**', 'docs/api-contracts/**', 'pyproject.toml', 'uv.lock', '.github/workflows/postgres-validation.yml']
   push:
     branches: [main]
-    paths: ['src/**', 'tests/**', 'scripts/export_api_schema.py', 'scripts/export_approved_release.py', 'scripts/validate_semantic.py', 'scripts/check_postgres_logging.py', 'config/postgres-observability.json', 'semantic/**', 'docs/api-contracts/**', 'pyproject.toml', 'uv.lock', '.github/workflows/postgres-validation.yml']
+    paths: ['src/**', 'tests/**', 'web/scripts/fixtures/approved-release.json', 'scripts/export_api_schema.py', 'scripts/export_approved_release.py', 'scripts/validate_semantic.py', 'scripts/check_postgres_logging.py', 'config/postgres-observability.json', 'semantic/**', 'docs/api-contracts/**', 'pyproject.toml', 'uv.lock', '.github/workflows/postgres-validation.yml']
 
 permissions:
   contents: read

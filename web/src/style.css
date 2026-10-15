@@ -45,6 +45,11 @@ h1 { font-size: 32px; line-height: 1.2; margin: 0 0 12px; font-weight: 650; }
 h2 { font: 600 22px/1.35 ui-sans-serif, system-ui, sans-serif; margin: 0 0 14px; }
 h3 { font: 600 14px/1.4 ui-sans-serif, system-ui, sans-serif; }
 .index-meta { font-size: 13px; color: var(--muted); margin: 0; line-height: 1.7; }
+.public-project-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 0; color: var(--muted); font-size: 13px; }
+.public-project-picker label { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-width: 0; max-width: 100%; }
+.public-project-picker select { min-width: 0; max-width: min(100%, 32rem); padding: 6px 8px; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); }
+.detail-section p { overflow-wrap: anywhere; }
+.review-limits { border-left: 2px solid var(--accent); padding-left: 12px; }
 .workbench { border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--rule); }
 .toolbar:empty { display: none; }

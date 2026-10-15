@@ -44,6 +44,9 @@ readingDocument.text_sha256=createHash('sha256').update(readingDocument.text_bod
 const captures=[];
 const publicationPreviews=new Map();let publicationHead={project_id:'synthetic',revision:0,status:'private',snapshot_id:null};
 let publicationAttempts=0,publicationConflict=true;
+const approvedRelease=JSON.parse(await readFile(join(root,'scripts/fixtures/approved-release.json'),'utf8'));
+let publicScenario='approved',publicTesting=false;
+const publicRequests=[];
 function call(method,params={}) { return new Promise((resolve,reject) => {
   const id=++serial; const timeout=setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)); },8000);
   pending.set(id,{ resolve,reject,timeout }); socket.send(JSON.stringify({ id,method,params }));
@@ -61,7 +64,20 @@ async function reload() {
 async function fixture(event) {
   const url=new URL(event.request.url), path=url.pathname;
   let status=200,data;
-  if (!authenticated) { status=401; data={ detail:'Owner sign-in required' }; }
+  if(path.startsWith('/data/')) {
+    publicRequests.push({path,method:event.request.method});
+    if(publicScenario==='legacy') return call('Fetch.continueRequest',{requestId:event.requestId});
+    data=structuredClone(approvedRelease[path]);
+    if(publicScenario==='withdrawn') {
+      if(path==='/data/projects.json') data.projects=[];
+      else if(path==='/data/release.json') {data.active_projects=0;data.withdrawn_projects=2;}
+      else {data={};status=404;}
+    } else if(publicScenario==='wrong-project' && path.includes('/graph-')) data.project.id='synthetic-unselected';
+    else if(publicScenario==='unsafe-index' && path==='/data/projects.json') data.projects[0].graph_data='https://example.invalid/unselected.json';
+    if(!data) {status=404;data={};}
+  }
+  else if(publicTesting) throw new Error('Public viewer attempted an owner API request');
+  else if (!authenticated) { status=401; data={ detail:'Owner sign-in required' }; }
   else if (path==='/v1/me') data={ mode:'owner',can_edit:true };
   else if (path==='/v1/projects') data={ items:[{ id:'synthetic',title:'Synthetic research project' }] };
   else if (path==='/v1/records') data={ items:records,next_cursor:null };
@@ -305,7 +321,64 @@ try {
   authenticated=false;await reload();
   await until(()=>evaluate('document.querySelector("[role=alert]")?.textContent.includes("Owner sign-in")'),'anonymous publication boundary');
   assert.equal(await evaluate('!!document.querySelector(".publication-picker")'),false);
+  // Anonymous public browsing uses the real exporter's synthetic data fixture.
+  publicTesting=true;
+  await call('Emulation.clearDeviceMetricsOverride');
+  await call('Fetch.enable',{patterns:[{urlPattern:'*/v1/*'},{urlPattern:'*/data/*'}]});
+  await call('Page.navigate',{url:testOrigin+'/?project=synthetic-islam&record=shared%3Asource#records'});
+  await until(()=>evaluate('document.querySelector(".details")?.textContent.includes("Synthetic bibliography, edition 1")'),'approved source citation');
+  assert.match(await evaluate('document.querySelector(".details").textContent'),/abstract only; full argument not verified/);
+  assert.match(await evaluate('document.querySelector(".details").textContent'),/Synthetic section 2/);
+  assert.equal(await evaluate('document.querySelectorAll(".details script").length'),0);
+  assert.equal(await evaluate('[...document.querySelectorAll("nav button")].some(button=>button.textContent==="Discovery")'),false);
+  assert.equal(await evaluate('!!document.querySelector(".screening-box")'),false);
+  assert.match(await evaluate('document.querySelector(".index-meta").textContent'),/2 published records/);
+  await evaluate('const picker=document.querySelector(".public-project-picker select");picker.value="synthetic-philosophy";picker.dispatchEvent(new Event("change",{bubbles:true}))');
+  await until(()=>evaluate('document.querySelector(".intro h1")?.textContent==="Synthetic philosophy research"'),'switch actual project graph');
+  assert.equal(await evaluate('new URL(location.href).searchParams.has("record")'),false);
+  assert.equal(await evaluate('document.querySelector(".details").textContent.includes("Synthetic Islam research source")'),false);
+  await evaluate('history.back()');
+  await until(()=>evaluate('document.querySelector(".details")?.textContent.includes("Synthetic Islam research source")'),'Back restores project and record');
+  await evaluate('history.forward()');
+  await until(()=>evaluate('document.querySelector(".intro h1")?.textContent==="Synthetic philosophy research"'),'Forward restores other project');
+  await evaluate('[...document.querySelectorAll("nav button")].find(button=>button.textContent==="Records").click()');
+  await until(()=>evaluate('document.querySelectorAll(".record-row").length===2'),'all approved record kinds');
+  await evaluate('[...document.querySelectorAll(".record-row")].find(button=>button.textContent.includes("Synthetic philosophy research source")).click()');
+  await until(()=>evaluate('document.querySelector(".details")?.textContent.includes("Synthetic philosophy research source")'),'same record ID scoped to selected project');
+  await reload();
+  await until(()=>evaluate('document.querySelector(".details")?.textContent.includes("Synthetic philosophy research source")'),'reload restores exact project/record');
+  await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await sleep(100);
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".details")).display!=="none"'),true,'deep-linked record details visible on mobile after reload');
+  assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'public mobile horizontal overflow');
+  const publicRecord=await call('Page.captureScreenshot',{format:'png'});await writeFile(join(artifacts,'public-mobile-record.png'),Buffer.from(publicRecord.data,'base64'));
+  await evaluate('document.querySelector(".details .close-panel").click()');
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".details")).display'), 'none');
+  const publicMobile=await call('Page.captureScreenshot',{format:'png'});await writeFile(join(artifacts,'public-mobile.png'),Buffer.from(publicMobile.data,'base64'));
+  assert.equal(await evaluate('document.documentElement.dataset.theme'),'dark');
+  publicScenario='wrong-project';await reload();
+  await until(()=>evaluate('document.querySelector("h1")?.textContent==="Snapshot unavailable"'),'mismatched public project rejected');
+  assert.equal(await evaluate('!!document.querySelector(".record-row")'),false);
+  publicScenario='withdrawn';publicRequests.length=0;await reload();
+  await until(()=>evaluate('document.querySelector("h1")?.textContent==="Nothing is published right now"'),'all withdrawn release');
+  assert.equal(publicRequests.some(request=>request.path.includes('/graph-') || request.path.endsWith('/public-graph.json')),false);
+  assert.equal(await evaluate('document.body.textContent.includes("Synthetic philosophy research source")'),false);
+  publicScenario='unsafe-index';publicRequests.length=0;await reload();
+  await until(()=>evaluate('document.querySelector("h1")?.textContent==="Snapshot unavailable"'),'unsafe graph path rejected before fetch');
+  assert.deepEqual(publicRequests.map(request=>request.path),['/data/projects.json']);
+  publicScenario='approved';publicRequests.length=0;
+  await call('Page.navigate',{url:testOrigin+'/?project=not-published#records'});
+  await until(()=>evaluate('document.body.textContent.includes("not in the current public release")'),'unknown project does not fall back');
+  assert.equal(publicRequests.some(request=>request.path.includes('/graph-')),false);
+  await evaluate('const recover=document.querySelector(".public-project-picker select");recover.value="synthetic-islam";recover.dispatchEvent(new Event("change",{bubbles:true}))');
+  await until(()=>evaluate('document.querySelector(".intro h1")?.textContent==="Synthetic Islam research"'),'recover by choosing published project');
+  assert.equal(publicRequests.some(request=>request.method!=='GET'),false);
+  assert.equal(publicRequests.some(request=>request.path.endsWith('/public-graph.json')),false);
+  publicScenario='legacy';await call('Page.navigate',{url:testOrigin+'/#records'});
+  await until(()=>evaluate('document.querySelectorAll(".record-row").length>0'),'legacy RDF snapshot remains usable');
+  assert.match(await evaluate('document.querySelector(".index-meta").textContent'),/curated records/);
+  assert.equal(await evaluate('[...document.querySelectorAll("nav button")].some(button=>button.textContent==="Discovery")'),true);
   assert.deepEqual(problems,[]);
+  console.log(JSON.stringify({publicChecksPassed:true,checks:['actual approved-export fixture','anonymous read-only data requests','multi-project switching','Back/Forward and record reload','citations, locators and review limits','same record ID across projects','dark mobile layout','mismatched project refusal','all-withdrawn empty state','unsafe path refusal','unknown project recovery','no legacy fallback in approved mode','legacy RDF compatibility'],artifacts}));
   console.log(JSON.stringify({publicationChecksPassed:true,checks:['explicit record, summary, bibliography and relation choices','no automatic approval','sealed preview privacy and inert labels','stale head requires new preview','revision-bound acknowledgement and approval','reload without duplicate approval','withdrawal acknowledgement','390px overflow','private rationale outside localStorage','anonymous publication denial'],publicationAttempts,artifacts}));
   console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','anonymous boundary'],artifacts }));
 } finally {
