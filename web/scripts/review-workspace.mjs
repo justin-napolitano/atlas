@@ -1,23 +1,25 @@
 // Headless Chrome checks with synthetic API responses. Never bypasses production auth.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
+import { preview as startPreview } from 'vite';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const profile = await mkdtemp(join(tmpdir(),'research-browser-'));
 const artifacts = process.env.RESEARCH_BROWSER_ARTIFACT_DIR || await mkdtemp(join(tmpdir(),'research-workspace-artifacts-'));
 await mkdir(artifacts,{ recursive:true });
 const chromePath = process.env.CHROME_PATH || (process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : '/usr/bin/google-chrome');
-const preview = spawn('npm',['run','preview','--','--port','5187','--strictPort'],{ cwd:root, stdio:'ignore' });
+const preview = await startPreview({ root,logLevel:'silent',preview:{ host:'127.0.0.1',port:0,strictPort:true } });
+const testOrigin = `http://127.0.0.1:${preview.httpServer.address().port}`;
 const chrome = spawn(chromePath,['--headless=new','--disable-background-networking','--disable-component-update',
-  '--no-first-run','--no-default-browser-check','--remote-debugging-port=9338',`--user-data-dir=${profile}`,
+  '--no-first-run','--no-default-browser-check','--remote-debugging-port=0',`--user-data-dir=${profile}`,
   '--window-size=1440,1000','about:blank'],{ stdio:'ignore' });
 let socket;
 let processFailure;
-preview.on('error',error => { processFailure = error; });
 chrome.on('error',error => { processFailure = error; });
 const sleep = ms => new Promise(resolve => setTimeout(resolve,ms));
 async function until(fn, label) {
@@ -31,6 +33,11 @@ const records = [
 ];
 const claim={ ...records[0],id:'synthetic:claim',kind:'claim',title:'Synthetic attributed finding',summary:'Synthetic finding about authority' };
 const evidence={ ...records[0],id:'synthetic:evidence',kind:'evidence',title:'Synthetic located evidence',summary:'Synthetic fair paraphrase',attributes:{ rdf_properties:{ 'https://islam-research.local/vocab/locator':['"Synthetic section 2, paragraph 3"'] } } };
+const readingDocument={ id:'synthetic:document',project_id:'synthetic',source_record_id:records[1].id,
+  edition:'Synthetic edition',locator:'Abstract',representation_url:'https://example.invalid/source',
+  text_body:'😀 Before tafsīr and التفسير; Q 4:59. After.',review_scope:'Synthetic private unverified excerpt' };
+readingDocument.text_sha256=createHash('sha256').update(readingDocument.text_body).digest('hex');
+const captures=[];
 function call(method,params={}) { return new Promise((resolve,reject) => {
   const id=++serial; const timeout=setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)); },8000);
   pending.set(id,{ resolve,reject,timeout }); socket.send(JSON.stringify({ id,method,params }));
@@ -52,6 +59,23 @@ async function fixture(event) {
   else if (path==='/v1/me') data={ mode:'owner',can_edit:true };
   else if (path==='/v1/projects') data={ items:[{ id:'synthetic',title:'Synthetic research project' }] };
   else if (path==='/v1/records' || path==='/v1/search') data={ items:records,next_cursor:null };
+  else if (path==='/v1/reading/documents') data={ items:[readingDocument],next_cursor:null };
+  else if (path==='/v1/reading/document') data=readingDocument;
+  else if (path==='/v1/reading/annotations' && event.request.method==='POST') {
+    const value=JSON.parse(event.request.postData), characters=Array.from(readingDocument.text_body);
+    assert.equal(value.text_sha256,readingDocument.text_sha256);
+    assert.equal(characters.slice(value.start,value.end).join(''),value.exact);
+    assert.equal(value.start,Array.from(readingDocument.text_body.slice(0,readingDocument.text_body.indexOf('tafsīr'))).length);
+    data={...value,id:'urn:research:annotation:'+value.annotation_uuid,start_pos:value.start,end_pos:value.end,
+      prefix:characters.slice(Math.max(0,value.start-40),value.start).join(''),suffix:characters.slice(value.end,value.end+40).join(''),
+      revision:1,created_at:'2026-10-15T00:00:00Z',changed_by:'synthetic-owner'};
+    captures.push(data);
+  }
+  else if (path==='/v1/reading/annotations') data={ items:captures,next_cursor:null };
+  else if (path==='/v1/reading/annotation') {
+    const row=captures.find(c=>c.id===url.searchParams.get('annotation_id'));
+    data={annotation:row,anchor:{anchored:true,start:row.start_pos,end:row.end_pos},web_annotation:{ id:row.id,type:'Annotation' }};
+  }
   else if (path==='/v1/record') data=[...records,claim,evidence].find(r => r.id===url.searchParams.get('record_id'));
   else if (path==='/v1/personal-state') { data=saved.get(url.searchParams.get('record_id')); if (!data) { status=404; data={}; } }
   else if (path==='/v1/personal-states') {
@@ -67,8 +91,9 @@ async function fixture(event) {
     responseHeaders:[{ name:'Content-Type',value:'application/json' }],body:Buffer.from(JSON.stringify(data || {})).toString('base64') });
 }
 try {
-  await until(async () => (await fetch('http://127.0.0.1:5187/workspace.html')).ok,'preview server');
-  const pages=await until(async () => { const p=await (await fetch('http://127.0.0.1:9338/json/list')).json(); return p.find(x => x.type==='page'); },'Chrome CDP');
+  await until(async () => (await fetch(testOrigin+'/workspace.html')).ok,'preview server');
+  const debugPort=await until(async () => Number((await readFile(join(profile,'DevToolsActivePort'),'utf8')).split('\n')[0]),'owned Chrome debug port');
+  const pages=await until(async () => { const p=await (await fetch(`http://127.0.0.1:${debugPort}/json/list`)).json(); return p.find(x => x.type==='page'); },'Chrome CDP');
   socket=new WebSocket(pages.webSocketDebuggerUrl);
   await new Promise((resolve,reject) => { socket.addEventListener('open',resolve,{ once:true }); socket.addEventListener('error',reject,{ once:true }); });
   socket.addEventListener('message',event => {
@@ -79,7 +104,7 @@ try {
     else if (message.method==='Page.frameNavigated' && !message.params.frame.parentId) navigation++;
   });
   await call('Runtime.enable'); await call('Page.enable'); await call('Fetch.enable',{ patterns:[{ urlPattern:'*/v1/*' }] });
-  await call('Page.navigate',{ url:'http://127.0.0.1:5187/workspace.html' });
+  await call('Page.navigate',{ url:testOrigin+'/workspace.html' });
   await until(() => evaluate('document.querySelectorAll(".workspace-row").length===2'),'project record list');
   await evaluate('document.querySelectorAll(".workspace-row")[0].click()');
   await until(() => evaluate('document.querySelector(".workspace-trails")?.textContent.includes("Synthetic section 2, paragraph 3")'),'located question evidence trail');
@@ -88,6 +113,23 @@ try {
   await until(() => evaluate('document.querySelector(".workspace-record-heading")?.textContent.includes("Synthetic source")'),'open source from evidence trail');
   await until(() => evaluate('!!document.querySelector("#my-note")'),'source reading notes');
   assert.equal(await evaluate('document.querySelectorAll(".workspace-record-heading script").length'),0);
+  await until(()=>evaluate('!!document.querySelector(".reader-text")'),'private passage reader');
+  await evaluate(`const textRoot=document.querySelector('.reader-text'), range=document.createRange();
+    const start=textRoot.textContent.indexOf('tafsīr'); range.setStart(textRoot.firstChild,start); range.setEnd(textRoot.firstChild,start+6);
+    const selection=window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
+    document.querySelector('.reader-select').click();`);
+  await until(()=>evaluate('!!document.querySelector(".reader-capture textarea")'),'passage selection form');
+  await evaluate('document.querySelector(".reader-capture textarea").focus()');
+  await call('Input.insertText',{text:'Synthetic anchored term note'});
+  await evaluate('document.querySelectorAll(".workspace-row")[0].click()');
+  await until(()=>evaluate('document.querySelector(".workspace-record-heading")?.textContent.includes("Synthetic question")'),'leave capture draft');
+  await evaluate('document.querySelectorAll(".workspace-row")[1].click()');
+  await until(()=>evaluate('document.querySelector(".reader-capture textarea")?.value.includes("Synthetic anchored term note")'),'capture draft retained through navigation');
+  await evaluate('document.querySelector(".reader-capture button").click()');
+  await until(()=>evaluate('document.querySelector(".reader-annotations")?.textContent.includes("Synthetic anchored term note")'),'persisted passage note');
+  assert.equal(captures.length,1);
+  await evaluate('document.querySelector(".reader-reopen").click()');
+  await until(()=>evaluate('document.querySelector(".reader-text mark")?.textContent==="tafsīr"'),'reopen exact passage');
   await evaluate('document.querySelector("#my-note").focus()');
   await call('Input.insertText',{ text:'Synthetic browser note <img src=x onerror=alert(1)>' });
   await evaluate('document.querySelector(".workspace-note-actions button").click()');
@@ -121,14 +163,14 @@ try {
   await sleep(100);
   assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'mobile horizontal overflow');
   const mobile=await call('Page.captureScreenshot',{ format:'png' }); await writeFile(join(artifacts,'mobile.png'),Buffer.from(mobile.data,'base64'));
-  assert.equal(await evaluate('Object.values(localStorage).some(v=>v.includes("Synthetic browser note")||v.includes("Cloud edit"))'),false);
+  assert.equal(await evaluate('Object.values(localStorage).some(v=>v.includes("Synthetic browser note")||v.includes("Cloud edit")||v.includes("Synthetic anchored term note"))'),false);
   authenticated=false; await reload();
   await until(() => evaluate('document.querySelector("[role=alert]")?.textContent.includes("Owner sign-in")'),'anonymous sign-in boundary');
   assert.equal(await evaluate('!!document.querySelector("#my-note")'),false);
   assert.deepEqual(problems,[]);
-  console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','anonymous boundary'],artifacts }));
+  console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','anonymous boundary'],artifacts }));
 } finally {
-  socket?.close(); chrome.kill(); preview.kill();
+  socket?.close(); chrome.kill(); await preview.close();
   for (const item of pending.values()) { clearTimeout(item.timeout); item.reject(new Error('Review finished')); }
   await sleep(200); await rm(profile,{ recursive:true,force:true });
 }

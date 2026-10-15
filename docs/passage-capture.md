@@ -1,6 +1,16 @@
 # Private reading excerpts and passage capture
 
-The owner API can import a plain-text excerpt, select an exact passage, and retain a private annotation with a stable target. This is reading application state: it neither changes canonical curated RDF nor publishes imported text or scholarly claims. Text/HTML extraction, arbitrary third-party page annotation, full-document/PDF reading, and the selection UI are separate follow-up work in #43.
+The owner API and reading workspace can import a plain-text excerpt, select an exact passage, and retain a private annotation with a stable target. This is reading application state: it neither changes canonical curated RDF nor publishes imported text or scholarly claims. HTML extraction, arbitrary third-party page annotation, and full-document/PDF reading remain follow-up work in #43.
+
+## Reader flow
+
+Open a source in the owner workspace, expand **Add text to read here**, and supply edition/version, location, optional original URL, and a short plain-text excerpt. Saved versions remain separately selectable. Select a word or passage, choose **Annotate selected text**, then add a private note or label it as a term/reference candidate. Saving attaches it to that immutable version. **Saved passage notes** reopen and highlight the exact stored range; an export button downloads its private Web Annotation JSON-LD. A late response from another selected version cannot highlight the new version.
+
+DOM selection ranges convert UTF-16 offsets into Unicode code points; where available, Intl.Segmenter rejects partial grapheme boundaries, including emoji/Arabic marks. Source text and comments render as escaped text, never executable imported HTML. The original source link remains available when no excerpt is imported. This is not a browser extension for annotating external sites.
+
+Unsaved excerpt/capture drafts stay in page memory when switching records and trigger a reload warning; they are not saved offline. Import/capture buttons report saved only after owner API acknowledgement. A repeated capture uses its original UUID. Refreshing the saved list helps reconcile a lost response; conflicting versions retain the draft. Notes can be captured and reopened; editing a saved passage comment is currently an API operation with expected revisions. No browser deletion or automatic graph promotion is included.
+
+The compiled browser check verifies selection on text containing emoji, persistence/reopening, and draft retention across record navigation using synthetic responses. PostgreSQL tests separately verify the actual durable API and anchor constraints. Hosted IAP routing and cross-device deployment remain prerequisites.
 
 `POST /v1/reading/documents` requires a project/source ID, owner-declared edition/version, domain locator, optional HTTP(S) representation URL, and 1–12,000 characters of supplied plain text. The source must be an active source/work/edition in that project. There is no URL fetch or embedded HTML execution. The existing 64 KiB request limit also applies. Only line endings normalize to LF; characters, diacritics, and other whitespace are retained. Both input and normalized text hashes are recorded, along with actor/time and explicit unverified-source review scope. These are excerpt hashes, not claims to have checksummed a full published edition.
 

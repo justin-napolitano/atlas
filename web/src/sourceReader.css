@@ -1,0 +1,25 @@
+.source-reader { border-top:1px solid var(--rule); padding:22px 0; margin-top:22px; }
+.reader-help,.reader-import small { color:var(--muted); font-size:13px; line-height:1.7; }
+.reader-import { border:1px solid var(--rule); padding:12px; margin:16px 0; }
+.reader-import summary { cursor:pointer; font-size:14px; }
+.reader-import form,.reader-capture { display:grid; gap:12px; padding-top:14px; }
+.reader-import label,.reader-version,.reader-capture label { display:grid; gap:6px; font-size:12px; min-width:0; }
+.source-reader input,.source-reader select,.source-reader textarea { width:100%; min-width:0; box-sizing:border-box; padding:9px; color:var(--ink); background:var(--paper); border:1px solid var(--rule); font:14px/1.6 ui-sans-serif,system-ui,sans-serif; }
+.source-reader textarea { font:16px/1.8 Georgia,serif; resize:vertical; }
+.source-reader button { padding:8px 10px; min-height:40px; border:1px solid var(--rule); font-size:12px; margin:4px 8px 4px 0; }
+.source-reader button:hover { border-color:var(--accent); }
+.reader-version { margin:16px 0; }
+.reader-text { font:17px/1.95 Georgia,serif; white-space:pre-wrap; overflow-wrap:anywhere; border-block:1px solid var(--rule); padding:18px 0; max-height:65dvh; overflow-y:auto; scrollbar-gutter:stable; }
+.reader-text mark { background:var(--accent-wash); color:var(--ink); text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:4px; }
+.reader-text::selection,.reader-text *::selection { background:var(--accent); color:var(--paper); }
+.reader-select { border-color:var(--accent) !important; }
+.reader-capture { border:1px solid var(--accent); padding:14px; margin:16px 0; }
+.reader-capture blockquote { margin:0; padding:10px 0 10px 12px; border-left:2px solid var(--accent); font:17px/1.8 Georgia,serif; overflow-wrap:anywhere; white-space:pre-wrap; }
+.reader-annotations { margin-top:22px; }
+.reader-annotations h4 { font:600 14px ui-sans-serif,system-ui,sans-serif; }
+.reader-annotations article { padding:12px 0; border-top:1px solid var(--rule); }
+.reader-annotations p { white-space:pre-wrap; overflow-wrap:anywhere; font:15px/1.8 Georgia,serif; }
+.reader-annotations .reader-reopen { font:600 17px/1.6 Georgia,serif; border:0; padding:0; text-decoration:underline; text-decoration-color:var(--accent); display:block; text-align:start; overflow-wrap:anywhere; max-width:100%; }
+.reader-annotations small { display:block; }
+.reader-message { font-size:13px; line-height:1.75; border-left:2px solid var(--accent); padding-left:12px; }
+@media(max-width:900px) { .reader-text { max-height:none; } .source-reader button { min-height:44px; } }

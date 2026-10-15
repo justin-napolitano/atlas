@@ -62,7 +62,7 @@ def resolve_anchor(text, selector):
 
 
 def web_annotation(document, annotation):
-    """Export the selected span and private comment, never the entire excerpt."""
+    """Export selection/comment metadata without attaching an unselected full text."""
     quote = {"type":"TextQuoteSelector",**{key:annotation[key] for key in ["exact","prefix","suffix"]}}
     position = {"type":"TextPositionSelector","start":annotation["start_pos"],"end":annotation["end_pos"]}
     created = annotation["created_at"]

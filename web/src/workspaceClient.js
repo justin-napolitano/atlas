@@ -8,17 +8,17 @@ export class WorkspaceError extends Error {
 }
 
 export function workspaceAPI(fetcher = globalThis.fetch) {
-  async function request(path, params = {}, value) {
+  async function request(path, params = {}, value, method = 'PUT') {
     const response = await fetcher(`/v1/${path}?${new URLSearchParams(params)}`, {
       credentials: 'same-origin', headers: { Accept: 'application/json', ...(value ? { 'Content-Type': 'application/json', 'X-Research-Write': '1' } : {}) },
-      ...(value ? { method: 'PUT', body: JSON.stringify(value) } : {}),
+      ...(value ? { method, body: JSON.stringify(value) } : {}),
     });
     if (!response.headers.get('content-type')?.includes('json')) throw new WorkspaceError(401);
     const data = await response.json();
     if (!response.ok) throw new WorkspaceError(response.status, response.status === 409 ? data.current : null);
     return data;
   }
-  return { request, save: value => request('personal-states', {}, value) };
+  return { request, save: value => request('personal-states', {}, value), post: (path,value) => request(path,{},value,'POST') };
 }
 
 const fields = ['record_id', 'project_id', 'reading', 'decision', 'note'];
