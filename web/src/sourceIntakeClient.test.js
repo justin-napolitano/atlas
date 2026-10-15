@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {saveSourceIntake,sourceIntakePayload,verifySourceIntake} from './sourceIntakeClient.js';
+import {applySourcePreset,saveSourceIntake,sourceIntakePayload,verifySourceIntake} from './sourceIntakeClient.js';
+import {sirryPilotPreset} from './researchPilot.js';
 
 const form={intake_uuid:'synthetic-request',title:'A source',creators:'Author',publication:'Publisher',publication_date:'2026',edition:'Edition 1',
   identifier:'10.1234/test',source_url:'https://example.invalid/source',source_role:'scholarship',access_status:'unknown',rights_status:'permitted_excerpt',rights_basis:'Synthetic fixture',
@@ -14,6 +15,19 @@ test('payload sends explicit source declarations without UI state; metadata fall
   const value=sourceIntakePayload(form,'project');
   assert.equal(value.owner_confirmed,true);assert.equal(value.existing_source_record_id,null);assert.equal(value.step,undefined);
   assert.equal(value.excerpt.text,form.text);assert.equal(sourceIntakePayload({...form,include_excerpt:false},'project').excerpt,null);
+});
+
+test('real article preset retains capture limitations and cannot preconfirm or replace request identity',()=>{
+  const value=applySourcePreset({...form,confirmed:false}, {...sirryPilotPreset,confirmed:true,intake_uuid:'injected',sent:{owner_confirmed:true},existing_source_record_id:'injected'});
+  assert.equal(value.intake_uuid,form.intake_uuid);assert.equal(value.confirmed,false);assert.equal(value.step,1);
+  assert.equal(value.sent,undefined);assert.equal(value.existing_source_record_id,'');
+  assert.equal(value.coverage_scope,'abstract');assert.equal(value.rights_status,'permitted_excerpt');
+  assert.match(value.intake_context,/manual transcription/);assert.match(value.intake_context,/No full-argument verification/);
+  const sent=sourceIntakePayload(value,'project');
+  assert.equal(sent.identifier,'doi:10.3390/rel12070483');assert.equal(sent.existing_source_record_id,null);
+  assert.equal(sent.intake_context,value.intake_context);assert.equal(sent.preset_id,undefined);
+  assert.match(sent.excerpt.locator,/not independently checked/);assert.equal(sent.excerpt.text,value.text);
+  assert.match(sent.excerpt.text,/verses 59 and 83 of chapter 4/);assert.match(sent.excerpt.text,/tafsīr/);
 });
 
 test('readback verifies project, source, original wording, edition, and locator',async()=>{

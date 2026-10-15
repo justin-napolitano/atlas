@@ -1,5 +1,5 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
-import {saveSourceIntake,sourceIntakePayload} from './sourceIntakeClient.js';
+import {applySourcePreset,saveSourceIntake,sourceIntakePayload} from './sourceIntakeClient.js';
 import './sourceIntake.css';
 
 const labels={primary_text:'Primary text',translation:'Translation',commentary:'Commentary',scholarship:'Scholarship',reference:'Reference work',undetermined:'Role not yet determined',
@@ -7,15 +7,15 @@ const labels={primary_text:'Primary text',translation:'Translation',commentary:'
   permitted_excerpt:'Permitted excerpt',public_domain:'Public domain',open_license:'Open license',abstract:'Abstract',selected_passage:'Selected passage',full_work_read:'Full work read by me'};
 
 /** Owner-only source intake. Pass the workspace's page-memory drafts ref and API.
- * @param {{api:object,projectId:string,drafts?:object,changed?:function,onCreated:function,onCancel?:function}} props
+ * @param {{api:object,projectId:string,drafts?:object,changed?:function,onCreated:function,onCancel?:function,initialPreset?:object}} props
  * @remarks onCreated receives {project_id,record_id,document_id}; no automatic publication or scholarly review occurs.
  */
-export default function AddSource({api,projectId,drafts,changed=()=>{},onCreated,onCancel}) {
+export default function AddSource({api,projectId,drafts,changed=()=>{},onCreated,onCancel,initialPreset}) {
   const localDrafts=useRef(new Map()),store=drafts || localDrafts;
   const key=`source-intake:${JSON.stringify(projectId)}`;
-  const initial=useMemo(()=>({intake_uuid:crypto.randomUUID(),title:'',creators:'',publication:'',publication_date:'',language:'',accessed_on:'',edition:'',identifier:'',source_url:'',
+  const initial=useMemo(()=>applySourcePreset({intake_uuid:crypto.randomUUID(),title:'',creators:'',publication:'',publication_date:'',language:'',accessed_on:'',intake_context:'',edition:'',identifier:'',source_url:'',
     source_role:'undetermined',access_status:'unknown',rights_status:'metadata_only',rights_basis:'',coverage_scope:'metadata_only',rationale:'',
-    distinct_source_rationale:'',existing_source_record_id:'',existing_title:'',include_excerpt:false,text:'',locator:'',step:1,identity_checked:false,confirmed:false}),[projectId]);
+    distinct_source_rationale:'',existing_source_record_id:'',existing_title:'',include_excerpt:false,text:'',locator:'',step:1,identity_checked:false,confirmed:false},initialPreset),[projectId,initialPreset]);
   const [,render]=useState(0),[matches,setMatches]=useState([]),[searchResults,setSearchResults]=useState([]),[search,setSearch]=useState(''),[message,setMessage]=useState(''),[checking,setChecking]=useState(false);
   const alive=useRef(true),generation=useRef(0),saving=useRef(false);
   const form=store.current.get(key) || initial,locked=!!form.sent || !!form.saving;
@@ -28,6 +28,10 @@ export default function AddSource({api,projectId,drafts,changed=()=>{},onCreated
     setChecking(true);setMessage('');const token=++generation.current;
     try {
       const value=await api.request('source-intakes/candidates',{project_id:projectId,source_url:form.source_url,identifier:form.identifier});
+      if(form.preferred_record_id && !value.items.some(row=>row.id===form.preferred_record_id)){
+        const preferred=await api.request('record',{record_id:form.preferred_record_id}).catch(error=>{if(error.status===404)return null;throw error;});
+        if(preferred && preferred.project_id===projectId && !preferred.deleted_at && ['source','work','edition'].includes(preferred.kind))value.items.unshift(preferred);
+      }
       if(value.items.some(row=>row.project_id!==projectId || !['source','work','edition'].includes(row.kind)))throw new Error('Source matches did not belong to this project.');
       if(alive.current && generation.current===token){setMatches(value.items);update({...form,identity_checked:true,step:2,confirmed:false});setMessage(value.truncated ? 'More than 20 sources share these hints. Search existing source titles before proceeding.' : 'Identity hints checked. Matching hints do not establish that editions are the same.');}
     }catch(error){if(alive.current)setMessage(error.message);}finally{if(alive.current)setChecking(false);}
@@ -55,11 +59,13 @@ export default function AddSource({api,projectId,drafts,changed=()=>{},onCreated
   return <section className="source-intake" aria-labelledby="source-intake-heading">
     <header><div><p className="eyebrow">Your research library</p><h2 id="source-intake-heading">Add a source</h2></div>{onCancel && <button type="button" disabled={form.saving} onClick={onCancel}>Back to reading</button>}</header>
     <p>Record the source, identify its edition, then optionally bring a located excerpt into the reader. Metadata stays private and pending review.</p>
+    {form.preset_note && <p className="intake-preset-note">{form.preset_note}</p>}
     <ol className="intake-steps" aria-label="Source intake steps">{['Source','Identity & access','Review & read'].map((label,i)=><li key={label} aria-current={form.step===i+1 ? 'step' : undefined}>{i+1}. {label}</li>)}</ol>
     {form.step===1 && <form onSubmit={checkIdentity}>
       <p>Enter details yourself. URLs and identifiers are recorded, not fetched or automatically resolved. You can save metadata when text is unavailable.</p>
       {input('title','Title',2000,true)}{input('source_url','Source URL (optional)',2000)}{input('identifier','DOI, ISBN, or another identifier (optional)',2000)}
       <div className="intake-grid">{input('creators','Author / editor / translator',2000)}{input('publication','Publication / publisher',2000)}{input('publication_date','Publication date or uncertainty',200)}{input('edition','Edition / translation / version (say if unknown)',1000,true)}{input('language','Language (optional, as declared)',200)}{input('accessed_on','Date you accessed it (YYYY-MM-DD, optional)',10)}</div>
+      {input('intake_context','Metadata / capture provenance (optional)',2000)}
       {select('source_role','Role of this source',['undetermined','primary_text','translation','commentary','scholarship','reference'])}
       <label>Why add this source?<textarea name="rationale" value={form.rationale} maxLength={2000} required disabled={locked} onChange={event=>edit({rationale:event.target.value})}/></label>
       <button disabled={checking || locked}>{checking ? 'Checking identity hints…' : 'Check identity & continue'}</button>

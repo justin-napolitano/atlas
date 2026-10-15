@@ -75,6 +75,22 @@ try{
   assert.equal(await evaluate('[...window.__intakeTest.records.values()][0].title'),'Synthetic article <script>inert</script>','reuse preserves bibliography');
   assert.equal(await evaluate('window.__intakeTest.documents.size'),1);
   assert.equal(await evaluate('Object.values(localStorage).some(value=>value.includes("Synthetic evidence"))'),false);
+  const requestsBeforePreset=await evaluate('window.__intakeTest.requests.length');
+  await evaluate('window.__intakeTest.startPilot()');
+  await until(()=>evaluate('document.querySelector("[name=identifier]")?.value==="doi:10.3390/rel12070483"'),'real article descriptive preset');
+  assert.equal(await evaluate('window.__intakeTest.requests.length'),requestsBeforePreset,'preset mount cannot import');
+  assert.equal(await evaluate('document.body.textContent.includes("manual transcription")'),true);
+  await click('Check identity & continue');
+  await until(()=>evaluate('document.body.textContent.includes("Existing canonical bibliography fixture")'),'canonical source offered without overwriting');
+  await click('Reuse this source');await click('Review source');
+  await until(()=>evaluate('document.body.textContent.includes("Located excerpt: Abstract, sentences 1–4")'),'bounded abstract review');
+  assert.equal(await evaluate('[...document.querySelectorAll("button")].find(button=>button.textContent==="Save & start reading").disabled'),true,'preset still requires explicit acknowledgement');
+  await checkbox('I reviewed these declarations');await click('Save & start reading');
+  await until(()=>evaluate('document.querySelector("#intake-created blockquote")?.textContent.includes("verses 59 and 83 of chapter 4")'),'real provided abstract saved');
+  assert.equal(await evaluate('window.__intakeTest.requests.at(-1).existing_source_record_id'),'https://islam-research.local/id/sirry-2021-ulul-amr');
+  assert.equal(await evaluate('window.__intakeTest.requests.at(-1).coverage_scope'),'abstract');
+  assert.equal(await evaluate('window.__intakeTest.requests.at(-1).intake_context.includes("No full-argument verification")'),true);
+  assert.equal(await evaluate('window.__intakeTest.records.get("https://islam-research.local/id/sirry-2021-ulul-amr").title'),'Existing canonical bibliography fixture');
   assert.deepEqual(problems,[]);
   console.log(JSON.stringify({sourceIntakeChecksPassed:true,checks:['compiled AddSource component','metadata-only fallback','explicit review before save','lost-response exact retry','one durable source receipt','project-scoped page-memory drafts','existing-source identity choice','rights gate before excerpt','located Unicode/Arabic excerpt readback','reuse without bibliography overwrite','390px layout','no private localStorage'],artifacts}));
 }finally{
