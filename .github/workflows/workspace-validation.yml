@@ -3,10 +3,10 @@ name: Reading workspace
 on:
   workflow_call:
   pull_request:
-    paths: ['web/**', '.github/workflows/workspace-validation.yml']
+    paths: ['web/**', 'runtime/**', 'src/**', 'scripts/build_public_site.py', 'scripts/test_public_site.py', 'config/public-build.json', 'semantic/**', 'pyproject.toml', 'uv.lock', '.github/workflows/workspace-validation.yml']
   push:
     branches: [main]
-    paths: ['web/**', '.github/workflows/workspace-validation.yml']
+    paths: ['web/**', 'runtime/**', 'src/**', 'scripts/build_public_site.py', 'scripts/test_public_site.py', 'config/public-build.json', 'semantic/**', 'pyproject.toml', 'uv.lock', '.github/workflows/workspace-validation.yml']
 
 permissions:
   contents: read
@@ -29,5 +29,15 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: node scripts/review-workspace.mjs
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'uv==0.9.21'
+      - run: uv sync --frozen --extra semantic
+        working-directory: .
+      - run: uv run --no-sync python scripts/test_public_site.py
+        working-directory: .
         env:
           CHROME_PATH: /usr/bin/google-chrome
