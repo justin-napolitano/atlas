@@ -43,6 +43,7 @@ const readingDocument={ id:'synthetic:document',project_id:'synthetic',source_re
 readingDocument.text_sha256=createHash('sha256').update(readingDocument.text_body).digest('hex');
 const captures=[];
 const scriptureResolutions=new Map();let scriptureLostResponse=false;
+const scriptureStructure=JSON.parse(await readFile(join(root,'../src/islam_research/resources/quran-structure-v1.json'),'utf8'));
 const publicationPreviews=new Map();let publicationHead={project_id:'synthetic',revision:0,status:'private',snapshot_id:null};
 let publicationAttempts=0,publicationConflict=true;
 const approvedRelease=JSON.parse(await readFile(join(root,'scripts/fixtures/approved-release.json'),'utf8'));
@@ -115,7 +116,7 @@ async function fixture(event) {
   }
   else if(path==='/v1/reading/scripture-candidates') {
     const row=captures.find(item=>item.id===url.searchParams.get('annotation_id'));
-    data={annotation_id:row.id,structure_profile:{profile_id:'tanzil-structure-1.0'},
+    data={annotation_id:row.id,structure_profile:scriptureStructure,
       candidates:row.exact==='Q 4:59' ? [{key:'c'.repeat(64),detector_kind:'explicit_numeric',matched_text:row.exact,status:'candidate',reason:'Owner confirmation required',reference:{chapter:4,ayah_start:59,ayah_end:59,label:'Q 4:59'}}] : [],
       resolutions:[...scriptureResolutions.values()].filter(item=>item.annotation_id===row.id)};
   }
@@ -274,6 +275,11 @@ try {
   await until(()=>evaluate('document.querySelectorAll(".scripture-toggle").length===2'),'return to reference source');
   await evaluate('[...document.querySelectorAll(".saved-passage-note")].find(node=>node.querySelector(".reader-reopen").textContent==="Q 4:59").querySelector(".scripture-toggle").click()');
   await until(()=>evaluate(`document.querySelector(${JSON.stringify(citationSelector+' textarea')})?.value==='Synthetic owner reference resolution'`),'reference draft retained');
+  await evaluate(`{const field=document.querySelector(${JSON.stringify(citationSelector)}).querySelectorAll('input')[2];Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(field,'177');field.dispatchEvent(new Event('input',{bubbles:true}));}`);
+  await evaluate(`document.querySelector(${JSON.stringify(citationSelector+' .scripture-confirm')}).click()`);
+  await until(()=>evaluate(`document.querySelector(${JSON.stringify(citationSelector+' [role=alert]')})?.textContent.includes('valid surah and ayah range')`),'invalid verse bounds explain the correction');
+  assert.equal(scriptureResolutions.size,0);
+  await evaluate(`{const field=document.querySelector(${JSON.stringify(citationSelector)}).querySelectorAll('input')[2];Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(field,'59');field.dispatchEvent(new Event('input',{bubbles:true}));}`);
   scriptureLostResponse=true;
   await evaluate(`document.querySelector(${JSON.stringify(citationSelector+' .scripture-confirm')}).click()`);
   await until(()=>evaluate(`document.querySelector(${JSON.stringify(citationSelector+' [role=alert]')})?.textContent.includes('draft is still here')`),'lost acknowledgement keeps reference draft');
@@ -476,7 +482,7 @@ try {
   assert.deepEqual(problems,[]);
   console.log(JSON.stringify({publicChecksPassed:true,checks:['actual approved-export fixture','anonymous read-only data requests','multi-project switching','Back/Forward and record reload','citations, locators and review limits','same record ID across projects','dark mobile layout','mismatched project refusal','all-withdrawn empty state','unsafe path refusal','unknown project recovery','no legacy fallback in approved mode','legacy RDF compatibility'],artifacts}));
   console.log(JSON.stringify({publicationChecksPassed:true,checks:['explicit record, summary, bibliography and relation choices','no automatic approval','sealed preview privacy and inert labels','stale head requires new preview','revision-bound acknowledgement and approval','reload without duplicate approval','withdrawal acknowledgement','390px overflow','private rationale outside localStorage','anonymous publication denial'],publicationAttempts,artifacts}));
-  console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','Quran reference decision reload and retained draft','idempotent reference retry after lost response','reference conflict comparison and explicit resolution','reverse verse lookup to exact saved passage','reference dismissal and 390px controls','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','anonymous boundary'],artifacts }));
+  console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','Quran reference decision reload and retained draft','idempotent reference retry after lost response','reference conflict comparison and explicit resolution','reverse verse lookup to exact saved passage','reference dismissal and 390px controls','manual mapping distinct from citation claims','invalid verse bounds explained before saving','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','anonymous boundary'],artifacts }));
 } finally {
   socket?.close(); chrome.kill(); await preview.close();
   for (const item of pending.values()) { clearTimeout(item.timeout); item.reject(new Error('Review finished')); }

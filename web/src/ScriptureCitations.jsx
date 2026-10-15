@@ -38,6 +38,13 @@ export default function ScriptureCitations({ annotation,sourceId,api,drafts,chan
       ayah_start:decision==='confirmed' ? Number(form.ayah_start) : null,
       ayah_end:decision==='confirmed' ? Number(form.ayah_end || form.ayah_start) : null,
       rationale:form.rationale,expected_revision:form.expected_revision};
+    if(decision==='confirmed') {
+      const maximum=data.structure_profile.ayah_counts?.[sent.chapter-1];
+      if(!Number.isInteger(sent.chapter) || !Number.isInteger(sent.ayah_start) || !Number.isInteger(sent.ayah_end) ||
+        !maximum || sent.ayah_start<1 || sent.ayah_end<sent.ayah_start || sent.ayah_end>maximum) {
+        remember(candidate.key,{...form,error:'Choose a valid surah and ayah range for this structure profile.'});return;
+      }
+    }
     remember(candidate.key,{...form,saving:true,error:''});
     try {
       const row=await api.request('reading/scripture-citation',{},sent);
