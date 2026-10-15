@@ -1375,6 +1375,7 @@
               "enum": [
                 "records",
                 "notes",
+                "annotations",
                 "all"
               ],
               "title": "Scope",

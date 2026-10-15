@@ -338,7 +338,7 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
 
     @router.get("/search")
     def search(project_id: Identifier, q: Annotated[str, Query(min_length=1, max_length=500)],
-               scope: Literal["records", "notes", "all"] = "records", kind: Identifier | None = None,
+               scope: Literal["records", "notes", "annotations", "all"] = "records", kind: Identifier | None = None,
                limit: Annotated[int, Query(ge=1, le=100)] = 30):
         return store.search(project_id, q, scope, kind, limit)
 
