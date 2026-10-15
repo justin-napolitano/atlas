@@ -24,7 +24,7 @@ async function until(fn, label) {
   for (let i=0;i<100;i++) { if (processFailure) throw processFailure; try { const value=await fn(); if (value) return value; } catch {} await sleep(100); }
   throw new Error(`Timed out: ${label}`);
 }
-let serial=0; const pending=new Map(); const problems=[]; const saved=new Map(); let conflict=false, authenticated=true;
+let serial=0, navigation=0; const pending=new Map(); const problems=[]; const saved=new Map(); let conflict=false, authenticated=true;
 const records = [
   { id:'synthetic:question',project_id:'synthetic',kind:'question',title:'Synthetic question about authority',summary:'A bounded synthetic question.',revision:1,review_state:'pending',attributes:{} },
   { id:'synthetic:source',project_id:'synthetic',kind:'source',title:'Synthetic source <script>not HTML</script>',summary:'Synthetic source summary.',revision:1,review_state:'pending',attributes:{} },
@@ -39,6 +39,11 @@ async function evaluate(expression) {
   const result=await call('Runtime.evaluate',{ expression,returnByValue:true,awaitPromise:true });
   if (result.exceptionDetails) throw new Error('Browser evaluation failed');
   return result.result.value;
+}
+async function reload() {
+  const previous=navigation;
+  await call('Page.reload');
+  await until(() => navigation>previous,'new document committed');
 }
 async function fixture(event) {
   const url=new URL(event.request.url), path=url.pathname;
@@ -71,6 +76,7 @@ try {
     if (message.id) { const item=pending.get(message.id); if (!item) return; pending.delete(message.id); clearTimeout(item.timeout); message.error ? item.reject(new Error(message.error.message)) : item.resolve(message.result); }
     else if (message.method==='Fetch.requestPaused') fixture(message.params).catch(error => problems.push(error.message));
     else if (message.method==='Runtime.exceptionThrown') problems.push('Unexpected browser runtime exception');
+    else if (message.method==='Page.frameNavigated' && !message.params.frame.parentId) navigation++;
   });
   await call('Runtime.enable'); await call('Page.enable'); await call('Fetch.enable',{ patterns:[{ urlPattern:'*/v1/*' }] });
   await call('Page.navigate',{ url:'http://127.0.0.1:5187/workspace.html' });
@@ -91,7 +97,8 @@ try {
   await until(() => saved.get('synthetic:source')?.decision==='not_relevant','skip persisted');
   await evaluate(`const reading=document.querySelector('.workspace-notes select'); reading.value='read'; reading.dispatchEvent(new Event('change',{bubbles:true}));`);
   await until(() => saved.get('synthetic:source')?.reading==='read','read persisted');
-  await call('Page.reload');
+  await until(() => evaluate('document.querySelector(".workspace-note-actions").textContent.includes("Saved to your workspace")'),'read save acknowledged');
+  await reload();
   await until(() => evaluate('document.querySelector("#my-note")?.value.includes("Synthetic browser note")'),'reload retains cloud note');
   assert.equal(await evaluate('document.querySelector(".workspace-notes select").value'),'read');
   assert.equal(await evaluate('document.querySelector(".workspace-decisions button:nth-child(2)").getAttribute("aria-pressed")'),'true');
@@ -115,7 +122,7 @@ try {
   assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'mobile horizontal overflow');
   const mobile=await call('Page.captureScreenshot',{ format:'png' }); await writeFile(join(artifacts,'mobile.png'),Buffer.from(mobile.data,'base64'));
   assert.equal(await evaluate('Object.values(localStorage).some(v=>v.includes("Synthetic browser note")||v.includes("Cloud edit"))'),false);
-  authenticated=false; await call('Page.reload');
+  authenticated=false; await reload();
   await until(() => evaluate('document.querySelector("[role=alert]")?.textContent.includes("Owner sign-in")'),'anonymous sign-in boundary');
   assert.equal(await evaluate('!!document.querySelector("#my-note")'),false);
   assert.deepEqual(problems,[]);
