@@ -75,8 +75,10 @@ class CollectionLinkTests(unittest.TestCase):
             self.assertEqual(retry['material_id'],first['material_id']);self.assertEqual(retry['revision'],2)
             self.assertEqual(self.passages.annotation(connection,self.project,first['annotation_id'])['annotation']['body'],'My later private reading note')
             self.assertEqual(self.verses.get_material(connection,self.project,first['material_id'])['reading_note'],revised['reading_note'])
+            alternate=self.intake(connection,'rodwell-4-59');different_reading=self.intake(connection,'rodwell-4-83')
             baseline=self.counts(connection)
-            for patch in [dict(rationale='Changed original request'),dict(reading_id='rodwell-4-83'),dict(document_id='other'),dict(project_id='other')]:
+            for patch in [dict(rationale='Changed original request'),dict(reading_id='rodwell-4-83'),dict(document_id=alternate['document_id']),
+                          dict(reading_id='rodwell-4-83',document_id=different_reading['document_id']),dict(document_id='other'),dict(project_id='other')]:
                 args=dict(reading_id='rodwell-4-59',document_id=imported['document_id'],request_uuid=request);args.update(patch)
                 with self.subTest(patch=patch),self.assertRaises(ValueError):self.link(connection,**args)
                 self.assertEqual(self.counts(connection),baseline)
