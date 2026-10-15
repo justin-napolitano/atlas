@@ -2,6 +2,7 @@
 import React,{useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import AddSource from '../../src/AddSource.jsx';
+import {sirryPilotPreset} from '../../src/researchPilot.js';
 
 const records=new Map(),documents=new Map(),receipts=new Map(),requests=[];
 let loseResponse=true;
@@ -31,9 +32,10 @@ const api={
   },
 };
 function Harness(){
-  const drafts=useRef(new Map()),[project,setProject]=useState('synthetic-project'),[created,setCreated]=useState(null),[round,setRound]=useState(0);
+  const drafts=useRef(new Map()),[project,setProject]=useState('synthetic-project'),[created,setCreated]=useState(null),[round,setRound]=useState(0),[preset,setPreset]=useState(null);
   test.drafts=drafts;test.setProject=setProject;test.reset=()=>{setCreated(null);setRound(value=>value+1);};
+  test.startPilot=()=>{records.set(sirryPilotPreset.preferred_record_id,{id:sirryPilotPreset.preferred_record_id,project_id:project,kind:'source',title:'Existing canonical bibliography fixture',attributes:{}});setCreated(null);setPreset(sirryPilotPreset);setRound(value=>value+1);};
   return <><p style={{margin:'1rem'}}>Synthetic browser fixture · no real sources or sign-in.</p>{created ? <section id="intake-created"><h2>Source saved</h2><p>{created.record_id}</p><p>{created.document_id || 'Metadata only'}</p>{created.document_id && <blockquote>{documents.get(created.document_id).text_body}</blockquote>}</section>
-    : <AddSource key={project+round} api={api} projectId={project} drafts={drafts} onCreated={setCreated}/>}</>;
+    : <AddSource key={project+round} api={api} projectId={project} drafts={drafts} onCreated={setCreated} initialPreset={preset}/>}</>;
 }
 createRoot(document.getElementById('root')).render(<Harness/>);

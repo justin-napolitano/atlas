@@ -1,11 +1,19 @@
 /** Build an explicit owner-declared intake; no URL fetching or metadata inference. */
 export function sourceIntakePayload(form,projectId) {
-  const {intake_uuid,title,creators,publication,publication_date,language='',accessed_on='',edition,identifier,source_url,source_role,
+  const {intake_uuid,title,creators,publication,publication_date,language='',accessed_on='',intake_context='',edition,identifier,source_url,source_role,
     access_status,rights_status,rights_basis,coverage_scope,rationale,distinct_source_rationale,existing_source_record_id}=form;
-  return {intake_uuid,project_id:projectId,title,creators,publication,publication_date,language,accessed_on,edition,identifier,source_url,source_role,
+  return {intake_uuid,project_id:projectId,title,creators,publication,publication_date,language,accessed_on,intake_context,edition,identifier,source_url,source_role,
     access_status,rights_status,rights_basis,coverage_scope,rationale,distinct_source_rationale,
     existing_source_record_id:existing_source_record_id || null,owner_confirmed:true,
     excerpt:form.include_excerpt ? {text:form.text,edition,locator:form.locator,representation_url:source_url} : null};
+}
+
+/** Prefill only descriptive fields; a preset cannot confirm, replay, or create data. */
+export function applySourcePreset(base,preset) {
+  if(!preset)return base;
+  const allowed=['title','creators','publication','publication_date','language','accessed_on','intake_context','edition','identifier','source_url','source_role',
+    'access_status','rights_status','rights_basis','coverage_scope','rationale','include_excerpt','text','locator','preset_id','preset_note','preferred_record_id'];
+  return {...base,...Object.fromEntries(allowed.filter(key=>Object.hasOwn(preset,key)).map(key=>[key,preset[key]])),confirmed:false,step:1};
 }
 
 /** Confirm source/snapshot identity before navigating away from a saved draft. */

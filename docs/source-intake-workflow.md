@@ -9,7 +9,13 @@ First manual vertical slice of #88 / #100. It uses existing private source/work/
 3. Declare access, reading coverage, and reuse status. Keep useful metadata when full text is unavailable. To import text, explicitly declare a permitted-excerpt/public-domain/open-license basis and provide the exact edition, location, and a plain-text excerpt of at most 12,000 Unicode code points. Capturing a selected excerpt does not mean the full work was read.
 4. Inspect the preview and confirm the declarations. Save a new pending private source, or retain the reused source's bibliography unchanged. The optional immutable excerpt becomes available for the existing source reader and located annotations.
 
-The component exports `onCreated({project_id,record_id,document_id,replayed})`; `document_id` is null for metadata-only intake. The workspace integrates this callback with its project/source/snapshot URL navigation. `AddSource` takes `api`, `projectId`, the shared `drafts` ref, `changed`, `onCreated`, and optional `onCancel`.
+The component exports `onCreated({project_id,record_id,document_id,replayed})`; `document_id` is null for metadata-only intake. The workspace integrates this callback with its project/source/snapshot URL navigation. `AddSource` takes `api`, `projectId`, the shared `drafts` ref, `changed`, `onCreated`, and optional `onCancel` and `initialPreset`. Existing project drafts take priority over a preset; presets never confirm or submit a request.
+
+### Bounded real-article preset
+
+`web/src/researchPilot.js` supplies `sirryPilotPreset`: Mun’im Sirry, “Who Are Those in Authority? Early Muslim Exegesis of the Qur’anic Ulū’l-Amr,” *Religions* 12(7), 483 (2021), DOI `10.3390/rel12070483`, [publisher record](https://www.mdpi.com/2077-1444/12/7/483). Its reading text is only the first four sentences of the abstract manually transcribed from the screenshot supplied by the owner on 2026-10-15. Italic formatting is flattened. This is not a publisher-file extraction, independently checked transcription, or full-argument review. The prose records the author's claims rather than adopting them as research conclusions.
+
+The preset starts at the source-review step, shows its origin and limits, and requires the owner to inspect wording and confirm a private excerpt storage basis. No import occurs on mount. When the existing canonical Sirry source is available in the chosen project, it appears as an additional candidate for deliberate reuse; its bibliography and existing review status are never overwritten. The optional `intake_context` field persists capture provenance in the immutable receipt even when the canonical bibliography is reused. No automatic public redistribution permission, open-access status, or new scholarly review is asserted.
 
 ## Persistence and recovery
 
