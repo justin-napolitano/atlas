@@ -357,6 +357,8 @@ try {
   // Compare actual immutable version identities independently and restore them from URL.
   await click('Compare readings');
   await until(()=>evaluate('document.querySelectorAll(".comparison-pane").length===2'),'independent comparison panes');
+  assert.equal(await evaluate('document.querySelector(".skip-link").getAttribute("href")'), '#workspace-view');
+  assert.ok(await evaluate('!!document.querySelector("#workspace-view")'));
   await until(()=>evaluate('[...document.querySelectorAll(".comparison-pane")[1].querySelector("select").options].some(option=>option.value==="synthetic:source")'),'comparison source choices loaded');
   await evaluate(`{const select=document.querySelectorAll('.comparison-pane')[1].querySelector('select');select.value='synthetic:source';select.dispatchEvent(new Event('change',{bubbles:true}));}`);
   await until(()=>evaluate('document.querySelectorAll(".comparison-text").length===2'),'both source versions loaded');
