@@ -32,6 +32,7 @@ The research should understand traditions in context before evaluating them. “
 - `src/islam_research/net.py` — sequential per-host request pacing persisted across runs, with a default two-second cooldown and bounded retry/backoff.
 - `scripts/review_document.py` — extract text from PDF, DOCX, Markdown, TXT, HTML, or CSV and produce a deterministic review aid.
 - `methods/source-evaluation.md` — source evaluation and note-taking method.
+- `docs/postgres.md` — migration-managed PostgreSQL records, retained RDF imports, revision-safe personal state, and real-database test commands; hosted authentication/deployment remain separate slices.
 - `methods/corpus-scope.md` — Islam-first source selection and bounded expansion into philosophy/religion.
 - `methods/editorial-review.md` — source/passage/claim review, uncertainty, publication, and corrections.
 - `research-plans/corpora/islam-authority-pilot.json` — existing source IDs and located evidence for the first Q 4:59 reading pilot; not a new review of those sources.
