@@ -1,0 +1,441 @@
+{
+  "version": "0.1.1",
+  "semantic_model": [
+    {
+      "name": "research_workspace",
+      "description": "Private owner research state. Public readers consume explicit published projections, not these tables.",
+      "ai_context": {
+        "instructions": "Interpret source, owner, and machine-proposed statements separately. These definitions are metadata; execute only registered permission-scoped API operations."
+      },
+      "datasets": [
+        {
+          "name": "projects",
+          "source": "research.projects",
+          "description": "One scoped project per id.",
+          "primary_key": [
+            "id"
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "title",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "title"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "scope",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "scope"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "graph_authority",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "graph_authority"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "records",
+          "source": "research.records",
+          "description": "One stable work/edition/passage/concept/claim/note identity per row; kind and source-specific attributes retain their distinctions.",
+          "primary_key": [
+            "id"
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "kind",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "kind"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "title",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "title"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "summary",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "summary"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "review_state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "review_state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "origin",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "origin"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "updated_at",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "updated_at"
+                  }
+                ]
+              }
+            }
+          ],
+          "unique_keys": [
+            [
+              "project_id",
+              "id"
+            ]
+          ]
+        },
+        {
+          "name": "relations",
+          "source": "research.relations",
+          "description": "One explicit directed assertion; its predicate and provenance determine its meaning.",
+          "primary_key": [
+            "id"
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "from_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "from_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "predicate",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "predicate"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "to_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "to_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "provenance",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "provenance"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "review_state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "review_state"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "personal_states",
+          "source": "research.personal_states",
+          "description": "Private personal progress and screening; never a scholarly quality score.",
+          "primary_key": [
+            "record_id"
+          ],
+          "fields": [
+            {
+              "name": "record_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "record_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "reading",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "reading"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "read_at",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "read_at"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "decision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "decision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "note",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "note"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "relationships": [
+        {
+          "name": "record_project",
+          "from": "records",
+          "to": "projects",
+          "from_columns": [
+            "project_id"
+          ],
+          "to_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "relation_source",
+          "from": "relations",
+          "to": "records",
+          "from_columns": [
+            "project_id",
+            "from_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "relation_target",
+          "from": "relations",
+          "to": "records",
+          "from_columns": [
+            "project_id",
+            "to_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "personal_record",
+          "from": "personal_states",
+          "to": "records",
+          "from_columns": [
+            "project_id",
+            "record_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        }
+      ],
+      "metrics": [
+        {
+          "name": "record_count",
+          "expression": {
+            "dialects": [
+              {
+                "dialect": "ANSI_SQL",
+                "expression": "COUNT(DISTINCT records.id)"
+              }
+            ]
+          },
+          "description": "Count of visible records at record grain; apply permission/project filters before aggregation."
+        },
+        {
+          "name": "read_count",
+          "expression": {
+            "dialects": [
+              {
+                "dialect": "ANSI_SQL",
+                "expression": "COUNT(DISTINCT CASE WHEN personal_states.reading = 'read' THEN personal_states.record_id END)"
+              }
+            ]
+          },
+          "description": "Private owner reading progress; not evaluation or verification."
+        }
+      ],
+      "custom_extensions": [
+        {
+          "vendor_name": "COMMON",
+          "data": "{\"research_platform\": {\"policy_document\": \"research-policy.json\", \"policy_version\": 1, \"authorization\": \"backend-enforced; metadata is not permission\", \"execution\": \"registered operations only; never execute model-supplied SQL\"}}"
+        }
+      ]
+    }
+  ]
+}

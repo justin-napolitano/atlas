@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "project": "Apache Ossie (formerly Open Semantic Interchange)",
+  "upstream_repository": "https://github.com/apache/ossie",
+  "tag": "osi-0.1.1-rc1",
+  "commit": "faf581054dcf7964d5fe0ceae7d6f415c8ce32a5",
+  "core_version": "0.1.1",
+  "release_status": "release_candidate",
+  "usage": "pinned interchange metadata and offline validation; not an execution engine or production stability claim",
+  "schema_license": "CC-BY-4.0 (specification/documentation)",
+  "code_license": "Apache-2.0",
+  "modifications": "none to vendored files",
+  "files": {
+    "osi-schema.json": "c1e9adec39562786aa78809665fba568797b15f4c53a0847d9cbcf2dead1bc94",
+    "LICENSE": "09e8a9bcec8067104652c168685ab0931e7868f9c8284b66f5ae6edae5f1130b",
+    "LICENSE-Docs": "419896aea50c15d6e40c5b4baf4bd346f78223b9a354c7357ad00262afdc08ec",
+    "NOTICE": "7019182b26179b19aae062a2d677f27435ff091c4de9ed1b6bd2734263d455a5"
+  }
+}

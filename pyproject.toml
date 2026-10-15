@@ -22,6 +22,9 @@ api = [
 test = [
     "httpx==0.28.1",
 ]
+semantic = [
+    "jsonschema==4.26.0",
+]
 
 [project.scripts]
 islam-research = "islam_research.cli:main"
