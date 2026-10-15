@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import ResizablePanes from './ResizablePanes.jsx';
 import SourceReader from './SourceReader.jsx';
+import { PassageNoteEditor } from './passageNoteEditor.js';
 import { ReadingWorkspace, blankState, markdownDraft, workspaceAPI } from './workspaceClient.js';
 import './style.css';
 import './workspace.css';
@@ -19,6 +20,8 @@ function Workspace() {
   const [, redraw] = useState(0);
   const store = useRef(null);
   const readingDrafts = useRef(new Map());
+  const passageNotes = useRef(null);
+  if (!passageNotes.current) passageNotes.current = new PassageNoteEditor(api, () => redraw(n => n + 1));
   if (!store.current) store.current = new ReadingWorkspace(api, () => redraw(n => n + 1));
   const [projects, setProjects] = useState([]);
   const [project, setProject] = useState(fromURL().project || '');
@@ -51,7 +54,7 @@ function Workspace() {
     return () => { active = false; };
   }, []);
   useEffect(() => {
-    const unload = event => { if (store.current.hasDrafts() || readingDrafts.current.size) { event.preventDefault(); event.returnValue = ''; } };
+    const unload = event => { if (store.current.hasDrafts() || passageNotes.current.hasDrafts() || readingDrafts.current.size) { event.preventDefault(); event.returnValue = ''; } };
     const pop = () => { const state = fromURL(); setProject(state.project || ''); setSelected(state.record || ''); setSelectedAnnotation(state.annotation || ''); };
     addEventListener('beforeunload', unload); addEventListener('popstate', pop);
     return () => { removeEventListener('beforeunload', unload); removeEventListener('popstate', pop); };
@@ -124,7 +127,7 @@ function Workspace() {
           {property(record,'http://purl.org/dc/terms/source').filter(url => /^https?:\/\//i.test(url)).map(url => <a className="source-link" key={url} href={url} target="_blank" rel="noreferrer">Open source ↗</a>)}
           {(record.attributes?.recorded_review_status || []).map(text => <p className="workspace-review-scope" key={text}>{text}</p>)}
           {record.kind === 'question' && <EvidenceTrails trail={trail} onOpen={open} />}
-          {['source','work','edition'].includes(record.kind) && <SourceReader key={JSON.stringify([record.id,selectedAnnotation])} record={record} api={api} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} initialAnnotationId={selectedAnnotation} />}
+          {['source','work','edition'].includes(record.kind) && <SourceReader key={JSON.stringify([record.id,selectedAnnotation])} record={record} api={api} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} initialAnnotationId={selectedAnnotation} noteEditor={passageNotes.current} />}
           {entry && <section className="workspace-notes" aria-labelledby="my-notes-heading"><h3 id="my-notes-heading">My reading & notes</h3>
             <label>Reading progress<select value={entry.draft.reading} onChange={e => edit({ reading: e.target.value }, true)}><option value="unread">Unread</option><option value="reading">Reading</option><option value="read">Read by me</option></select></label>
             {entry.server.read_at && <small>Read {new Date(entry.server.read_at).toLocaleDateString()}</small>}
