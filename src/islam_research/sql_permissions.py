@@ -14,6 +14,7 @@ READ_TABLES = (
     "reading_documents", "reading_annotations", "reading_annotation_revisions",
     "reading_desks", "reading_desk_revisions",
     "notebook_entries", "notebook_revisions",
+    "reading_drafts", "reading_draft_revisions",
     "publication_previews", "publication_events",
     "scripture_citations", "scripture_citation_revisions",
     "verse_materials", "verse_material_revisions",
@@ -30,6 +31,7 @@ OWNER_FUNCTIONS = (
 )
 INSERT_COLUMNS = {
     "notebook_entries": "id project_id creation_sha256 record_id document_id annotation_id thought_type title body links changed_by",
+    "reading_drafts": "id project_id record_id context_kind document_id annotation_id text_sha256 start_pos end_pos exact prefix suffix capture_kind base_revision body mark_style state changed_by",
     "verse_materials": "id project_id annotation_id document_id text_sha256 creation_sha256 profile_id chapter ayah_start ayah_end material_kind link_kind citation_basis citation_id citation_snapshot marker_start marker_end marker_text attribution language_tag source_scope assertion_mode assertion_text reading_note period_note tradition_note context_basis rationale state changed_by",
     "source_intakes": "request_uuid project_id input_sha256 source_record_id document_id declarations changed_by",
     "reading_desks": "project_id record_id document_id annotation_id start_pos end_pos changed_by",
@@ -50,6 +52,7 @@ INSERT_COLUMNS = {
 }
 UPDATE_COLUMNS = {
     "notebook_entries": "thought_type title body links state revision changed_by",
+    "reading_drafts": "body mark_style state revision changed_by",
     "verse_materials": "attribution language_tag source_scope assertion_mode assertion_text reading_note period_note tradition_note context_basis rationale state revision changed_by",
     "reading_desks": "record_id document_id annotation_id start_pos end_pos changed_by revision",
     "records": "title summary attributes changed_by revision",

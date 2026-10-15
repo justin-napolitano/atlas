@@ -1,0 +1,9 @@
+.recoverable-draft { border-top:1px solid var(--rule); margin-block:14px; padding-block:12px; font:13px/1.7 ui-sans-serif,system-ui,sans-serif; }
+.recoverable-draft button { min-height:38px; padding:8px 10px; border:1px solid var(--rule); font-size:12px; }
+.recoverable-draft button:hover { border-color:var(--accent); }
+.recoverable-draft .draft-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.recoverable-draft small { display:block; color:var(--muted); margin-block:8px; }
+.recoverable-draft article { border-top:1px solid var(--rule); padding-block:12px; }
+.recoverable-draft pre { font:14px/1.8 Georgia,serif; white-space:pre-wrap; overflow-wrap:anywhere; max-height:240px; overflow:auto; }
+.recoverable-draft blockquote { margin:10px 0; border-inline-start:2px solid var(--accent); padding-inline-start:10px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.recoverable-draft .draft-conflict,.recoverable-draft .draft-preview { border:1px solid var(--accent); padding:12px; margin-block:12px; }

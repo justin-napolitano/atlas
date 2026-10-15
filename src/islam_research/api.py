@@ -173,6 +173,25 @@ class ReadingAnnotationUpdate(Input):
     mark_style: Literal["highlight","underline","none"] | None = None
 
 
+class ReadingDraftInput(Input):
+    draft_uuid: Annotated[str,Field(pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")]
+    project_id: Identifier
+    record_id: Identifier
+    context_kind: Literal["record_note","capture","annotation"]
+    document_id: Identifier | None = None
+    annotation_id: Identifier | None = None
+    text_sha256: Annotated[str,Field(pattern=r"^[0-9a-f]{64}$")] | None = None
+    start: Annotated[int,Field(ge=0,le=12000)] | None = None
+    end: Annotated[int,Field(ge=1,le=12000)] | None = None
+    exact: Annotated[str,Field(max_length=500)] = ""
+    capture_kind: Literal["comment","term_candidate","citation_candidate"] | None = None
+    base_revision: Annotated[int,Field(ge=0)]
+    body: Annotated[str,Field(max_length=10000)]
+    mark_style: Literal["highlight","underline","none"] = "none"
+    state: Literal["active","discarded"] = "active"
+    expected_revision: Annotated[int,Field(ge=0)]
+
+
 class ReadingDeskInput(Input):
     project_id: Identifier
     record_id: Identifier
@@ -579,6 +598,30 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     @router.get("/me")
     def me():
         return {"mode": "owner", "can_edit": True}
+
+    @router.get("/reading/draft")
+    def reading_draft(project_id: Identifier,draft_id: Identifier):
+        value=store.reading_draft(project_id,draft_id)
+        if value is None: raise HTTPException(404,"Draft not found in this project")
+        return value
+
+    @router.put("/reading/draft")
+    def save_reading_draft(value: ReadingDraftInput,actor: str=Depends(owner)):
+        return store.save_reading_draft(actor=actor,**value.model_dump())
+
+    @router.get("/reading/drafts")
+    def reading_drafts(project_id: Identifier,record_id: Identifier | None = None,document_id: Identifier | None = None,
+        annotation_id: Identifier | None = None,context_kind: Literal["record_note","capture","annotation"] | None = None,
+        state: Literal["active","discarded"] = "active",cursor: Annotated[str,Query(max_length=500)] = "",limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows=store.reading_drafts(project_id=project_id,record_id=record_id,document_id=document_id,annotation_id=annotation_id,context_kind=context_kind,state=state,cursor=cursor,limit=limit+1)
+        return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
+
+    @router.get("/reading/draft-history")
+    def reading_draft_history(project_id: Identifier,draft_id: Identifier,before_revision: Annotated[int,Query(ge=1)] | None = None,
+        limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows=store.reading_draft_history(project_id,draft_id,before_revision,limit+1)
+        if rows is None: raise HTTPException(404,"Draft history not found in this project")
+        return {"items":rows[:limit],"next_before_revision":rows[limit-1]["revision"] if len(rows)>limit else None}
 
     @router.get("/reading/desk")
     def reading_desk(project_id: Identifier):
