@@ -95,8 +95,11 @@ def create(connection, **values):
     after later source edits. Identity hints require a deliberate reuse/distinct
     choice, not automatic merging of editions. No network operations occur.
     """
+    values.setdefault("intake_context", "")
     request,keys = validate(values)
-    digest = hashlib.sha256(json.dumps(values,sort_keys=True,ensure_ascii=False,allow_nan=False).encode()).hexdigest()
+    # An optional empty field must not invalidate a pre-upgrade frozen request.
+    fingerprint_values = {k:v for k,v in values.items() if k!="intake_context" or v}
+    digest = hashlib.sha256(json.dumps(fingerprint_values,sort_keys=True,ensure_ascii=False,allow_nan=False).encode()).hexdigest()
     with connection.transaction():
         if connection.execute("SHOW transaction_isolation").fetchone()["transaction_isolation"] != "read committed":
             raise ValueError("Source intake requires read committed isolation")

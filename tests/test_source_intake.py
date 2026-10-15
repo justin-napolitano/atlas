@@ -1,4 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
+import hashlib
+import json
 import os
 import unittest
 import uuid
@@ -88,6 +90,18 @@ class SourceIntakeStoreTests(unittest.TestCase):
             self.assertEqual(reused["document_id"],result["document_id"])
             self.assertEqual(self.db.get_record(connection,result["record_id"])["title"],values["title"])
             self.assertEqual(self.store.candidates(connection,"other",values["source_url"],values["identifier"]),[])
+
+    def test_empty_optional_context_preserves_pre_upgrade_retry_fingerprint(self):
+        values=payload(self.project)
+        values.pop("intake_context")
+        old_digest=hashlib.sha256(json.dumps(values,sort_keys=True,ensure_ascii=False,allow_nan=False).encode()).hexdigest()
+        with self.db.connect(self.owner_dsn) as connection:
+            saved=self.store.create(connection,**values)
+            receipt=connection.execute("SELECT input_sha256 FROM research.source_intakes WHERE request_uuid=%s",(values["intake_uuid"],)).fetchone()
+            self.assertEqual(receipt["input_sha256"],old_digest)
+            replay=self.store.create(connection,**values,intake_context="")
+            self.assertTrue(replay["replayed"]);self.assertEqual(replay["record_id"],saved["record_id"])
+            with self.assertRaises(ValueError):self.store.create(connection,**values,intake_context="Different capture provenance")
 
     def test_atomic_invalid_source_and_new_source_failure_leave_no_receipts_or_records(self):
         with self.db.connect(self.owner_dsn) as connection:
