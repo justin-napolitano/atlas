@@ -85,8 +85,23 @@ try {
   assert.ok(requests.every(request=>!request.url.endsWith('/data/public-graph.json')));
   console.log(JSON.stringify({isolated_public_browser_passed:true,checks:['actual portable artifact and runtime','CSP without inline scripts','external theme bootstrap','source citations and review limits','project/record navigation','anonymous public GETs only','no owner API or legacy graph','dark mobile layout'],artifacts}));
 } finally {
-  socket?.close();chrome.kill();
+  socket?.close();
+  // Chrome flushes its profile during shutdown. Wait for the owned process to
+  // close before deleting it; a fixed sleep races the profile writer on CI.
+  const closed=new Promise(resolve=>{
+    if(chrome.exitCode!==null || chrome.signalCode!==null)return resolve();
+    chrome.once('close',resolve);
+  });
+  chrome.kill('SIGTERM');
+  const force=setTimeout(()=>chrome.kill('SIGKILL'),5000);
+  force.unref();
+  try {
+    await Promise.race([closed,new Promise((_,reject)=>{
+      const timeout=setTimeout(()=>reject(new Error('Owned Chrome did not stop')),10000);
+      timeout.unref();closed.finally(()=>clearTimeout(timeout));
+    })]);
+  } finally {clearTimeout(force);}
   if(server){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
   for(const item of pending.values()){clearTimeout(item.timeout);item.reject(new Error('Public browser review finished'));}
-  await sleep(200);await rm(profile,{recursive:true,force:true});
+  await rm(profile,{recursive:true,force:true,maxRetries:3,retryDelay:100});
 }
