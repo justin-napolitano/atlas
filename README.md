@@ -43,6 +43,7 @@ The research should understand traditions in context before evaluating them. “
 - `docs/postgres-observability.md` — PostgreSQL 17/18 contract matrix and real native log checks for private bound values, error paths, and shared redaction settings.
 - `docs/runtime-sql-permissions.md` — previewable post-migration grants, restricted owner/publisher logins, and real PostgreSQL permission tests.
 - `docs/publication.md` — owner publication screen, sealed previews, explicit visibility approval, revisioned publication heads, and withdrawal; public image deployment remains pending.
+- `docs/hosted-release-evidence.md` — combined application/infrastructure verification and the unchanged Q 4:59 launch requirements; no deployed release is claimed.
 - `infra/gcp/` — reviewable private GCP/PostgreSQL foundation, pinned tooling, credential-free plan tests, and cost/recovery worksheet; no resources provisioned.
 - `docs/adr/0003-immutable-public-delivery.md` — approved snapshots in immutable public builds, isolated publisher reads, and a public runtime with no data credentials; deployment gates remain explicit.
 - `methods/corpus-scope.md` — Islam-first source selection and bounded expansion into philosophy/religion.
