@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "entry": "web/index.html",
+  "modules": [
+    "web/index.html",
+    "web/src/GraphAnalysis.jsx",
+    "web/src/GraphMap.jsx",
+    "web/src/NetworkLayer.jsx",
+    "web/src/graphAlgorithms.js",
+    "web/src/graphGeometry.js",
+    "web/src/graphLayout.js",
+    "web/src/graphNavigation.js",
+    "web/src/main.jsx",
+    "web/src/networkLayout.js",
+    "web/src/publicData.js",
+    "web/src/style.css"
+  ],
+  "dependency_packages": ["react", "react-dom", "scheduler"]
+}
