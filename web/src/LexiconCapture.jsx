@@ -5,7 +5,7 @@ import './lexicon.css';
 
 export default function LexiconCapture({annotation,sourceId,api,drafts,changed,navigate}) {
   const [open,setOpen]=useState(false),[links,setLinks]=useState([]),[cursor,setCursor]=useState(null),[message,setMessage]=useState('');
-  const [results,setResults]=useState([]),[query,setQuery]=useState(''),[senses,setSenses]=useState([]),[representations,setRepresentations]=useState([]);
+  const [results,setResults]=useState([]),[query,setQuery]=useState(()=>Array.from(annotation.exact).length<=80 ? annotation.exact : ''),[senses,setSenses]=useState([]),[representations,setRepresentations]=useState([]);
   const [searching,setSearching]=useState(false);
   const [sensesCursor,setSensesCursor]=useState(null),[representationsCursor,setRepresentationsCursor]=useState(null);
   const alive=useRef(true),generation=useRef(0),quoteRoot=useRef(null);
@@ -73,7 +73,7 @@ export default function LexiconCapture({annotation,sourceId,api,drafts,changed,n
     try {
       const selected=selectedPassage(quoteRoot.current,getSelection());
       if(!selected) {setMessage('Select the word or phrase inside the quotation.');return;}
-      edit({...selected,...(form.title===annotation.exact ? {title:selected.exact} : {}),representation_id:'',sense_id:''});setRepresentations([]);setMessage('Selected wording retained exactly.');
+      edit({...selected,...(form.title===annotation.exact ? {title:selected.exact} : {}),representation_id:'',sense_id:''});setRepresentations([]);setQuery(selected.exact);setResults([]);setMessage('Selected wording retained exactly.');
     } catch(error) {setMessage(error.message);}
   }
   async function save(event) {

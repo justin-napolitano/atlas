@@ -120,7 +120,7 @@ function Workspace() {
       <label className="workspace-query">Find in my research<input value={query} onChange={e => setQuery(e.target.value)} maxLength={500} placeholder="Words from a title, finding, or note" /></label>
       <label>Search in<select value={scope} onChange={e => {setScope(e.target.value);if(e.target.value==='lexicon')setKind('');}}><option value="records">Records</option><option value="notes">My record notes</option><option value="annotations">My passage notes</option><option value="lexicon">Concept words & definitions</option><option value="all">All my research</option></select></label>
       <label>Type<select value={kind} disabled={scope==='lexicon'} onChange={e => setKind(e.target.value)}><option value="">All types</option>{['source','question','claim','evidence','concept','person'].map(k => <option key={k}>{k}</option>)}</select></label>
-      <button type="submit" disabled={!project || searching}>{searching ? 'Loading…' : 'Search'}</button><button type="button" disabled={!project || searching} onClick={() => { setQuery(''); loadRows(); }}>Browse all</button>
+      <button type="submit" disabled={!project || searching}>{searching ? 'Loading…' : 'Search'}</button><button type="button" disabled={!project || searching} onClick={() => { setQuery(''); setScope('records'); setKind(''); loadRows(); }}>Browse all</button>
     </form>
     <ResizablePanes storageKey="research:hosted-pane-width" className="owner-panes">
       <section id="workspace-results" className="workspace-results" aria-label="Research records">
@@ -133,7 +133,7 @@ function Workspace() {
       </section>
       <section ref={reader} tabIndex={-1} className="workspace-reader" aria-label="Selected record and private notes">
         {!record ? <div className="workspace-empty"><h2>{selected ? 'Opening record…' : 'Start with a question or a source.'}</h2><p>Select a record on the left. Questions show the claims, evidence, and sources behind them.</p></div> : <>
-          <div className="workspace-record-heading"><small>{record.kind} · {record.review_state}</small><h2>{record.title}</h2></div>
+          <div className="workspace-record-heading"><small>{record.kind} · {record.review_state}</small><h2 dir="auto">{record.title}</h2></div>
           <p className="workspace-summary">{record.kind==='concept' && <small>Concept description</small>}{record.summary || 'No summary recorded yet.'}</p>
           {[['Citation', 'http://purl.org/dc/terms/bibliographicCitation'], ['Location', ir+'locator'], ['Scope', ir+'scope']].map(([label, key]) => property(record, key).length > 0 && <section className="workspace-context" key={key}><h3>{label}</h3>{property(record,key).map((text,i) => <p key={i}>{text}</p>)}</section>)}
           {property(record,'http://purl.org/dc/terms/source').filter(url => /^https?:\/\//i.test(url)).map(url => <a className="source-link" key={url} href={url} target="_blank" rel="noreferrer">Open source ↗</a>)}

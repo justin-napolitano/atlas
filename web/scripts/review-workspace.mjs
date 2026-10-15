@@ -175,7 +175,7 @@ async function fixture(event) {
   }
   else if(path==='/v1/lexicon/annotation-links') {
     const annotationId=url.searchParams.get('annotation_id');
-    data=lexicalPage([...lexicalEntities.values()].filter(row=>row.annotation_id===annotationId && ['occurrence','definition'].includes(row.entity_kind)).map(row=>({id:row.id,concept_id:row.concept_id,
+    data=lexicalPage([...lexicalEntities.values()].filter(row=>row.annotation_id===annotationId && row.state==='active' && ['occurrence','definition'].includes(row.entity_kind)).map(row=>({id:row.id,concept_id:row.concept_id,
       concept_title:lexicalConcepts.get(row.concept_id).title,link_kind:row.entity_kind==='occurrence' ? 'term_occurrence' : 'definition_assertion',definition_kind:row.definition_kind,review_state:'pending'})),url);
   }
   else if(path==='/v1/lexicon/search') {
@@ -185,7 +185,7 @@ async function fixture(event) {
       return {...row,match_id:term?.id || row.id,original:term?.written_rep || row.title};}),truncated:false};
   }
   else if(path==='/v1/lexicon/concept') {
-    const id=url.searchParams.get('concept_id');data={concept:lexicalConcepts.get(id),definition_gap:![...lexicalEntities.values()].some(row=>row.entity_kind==='definition' && row.concept_id===id && row.definition_kind!=='machine_proposed'),coverage:'Synthetic private indexed reading coverage'};
+    const id=url.searchParams.get('concept_id');data={concept:lexicalConcepts.get(id),definition_gap:![...lexicalEntities.values()].some(row=>row.entity_kind==='definition' && row.concept_id===id && row.definition_kind!=='machine_proposed' && row.state==='active'),coverage:'Synthetic private indexed reading coverage'};
   }
   else if(path==='/v1/lexicon/entity') data=lexicalEntities.get(url.searchParams.get('entity_id'));
   else if(path==='/v1/lexicon/definitions' && event.request.method==='POST') {
@@ -213,7 +213,7 @@ async function fixture(event) {
   }
   else if(['/v1/lexicon/definitions','/v1/lexicon/occurrences','/v1/lexicon/senses','/v1/lexicon/representations'].includes(path)) {
     const kind=path.split('/').at(-1).replace(/ies$/,'y').replace(/s$/,''),id=url.searchParams.get('concept_id'),entryId=url.searchParams.get('entry_id');
-    data=lexicalPage([...lexicalEntities.values()].filter(row=>row.entity_kind===kind && (entryId ? row.entry_id===entryId : row.concept_id===id))
+    data=lexicalPage([...lexicalEntities.values()].filter(row=>row.entity_kind===kind && (!row.state || row.state==='active') && (entryId ? row.entry_id===entryId : row.concept_id===id))
       .map(row=>['definition','occurrence'].includes(kind) ? lexicalSource(row) : row),url);
   }
   else if (path==='/v1/record') data=[...records,...lexicalConcepts.values(),claim,evidence,{...records[1],id:'synthetic:other',title:'Another synthetic source'}].find(r => r.id===url.searchParams.get('record_id'));
@@ -516,6 +516,24 @@ try {
   await until(()=>evaluate('document.querySelector(".concept-history")?.textContent.includes("Revision 3")'),'definition revision history');
   await evaluate('document.querySelector(".concept-history button").click()');
   await until(()=>evaluate('document.querySelector(".concept-history")?.textContent.includes("Cloud definition edit")'),'earlier cloud revision retained in history');
+  await evaluate('document.querySelector(".concept-edit-open").click()');
+  await until(()=>evaluate('!!document.querySelector(".concept-edit-body")'),'reopen definition correction for withdrawal comparison');
+  await evaluate('document.querySelector(".concept-edit-body").focus();document.querySelector(".concept-edit-body").select()');
+  await call('Input.insertText',{text:'A local draft while another device withdraws the assertion.'});
+  const withdrawnDefinition={...lexicalEntities.get(recordedDefinition.id),state:'withdrawn',rationale:'Withdrawn from another synthetic owner client for review.',revision:4};
+  lexicalEntities.set(recordedDefinition.id,withdrawnDefinition);lexicalHistory.get(recordedDefinition.id).unshift(structuredClone(withdrawnDefinition));
+  await evaluate('document.querySelector(".concept-edit-save").click()');
+  await until(()=>evaluate('document.querySelector(".concept-definition-conflict")?.textContent.includes("withdrawn")'),'remote withdrawal is visible during conflict comparison');
+  await evaluate('document.querySelector(".concept-definition-conflict button").click()');
+  assert.equal(lexicalEntities.get(recordedDefinition.id).state,'withdrawn');
+  await evaluate('document.querySelector(".concept-panel-heading button").click()');
+  await until(()=>evaluate('!!document.querySelector(".concept-definition-gap") && document.querySelectorAll(".concept-panel > .concept-definition").length===0'),'withdrawn assertion leaves the active definition gap visible');
+  // Another authorized client can explicitly restore via the existing owner API;
+  // the reader itself never silently reactivates a withdrawn assertion.
+  const restoredDefinition={...withdrawnDefinition,state:'active',rationale:'Explicitly restored in a second synthetic owner client.',revision:5};
+  lexicalEntities.set(recordedDefinition.id,restoredDefinition);lexicalHistory.get(recordedDefinition.id).unshift(structuredClone(restoredDefinition));
+  await evaluate('document.querySelector(".concept-panel-heading button").click()');
+  await until(()=>evaluate('document.querySelector(".concept-definition-text")?.textContent.includes("My corrected synthetic reading")'),'explicit remote reactivation can be refreshed');
   await reload();
   await until(()=>evaluate('document.querySelector(".concept-definition-text")?.textContent.includes("My corrected synthetic reading")'),'corrected definition persists on reload');
   const lexicalDesktop=await call('Page.captureScreenshot',{format:'png'});await writeFile(join(artifacts,'lexicon-desktop.png'),Buffer.from(lexicalDesktop.data,'base64'));

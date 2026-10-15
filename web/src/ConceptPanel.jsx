@@ -1,5 +1,5 @@
 import React,{useEffect,useRef,useState} from 'react';
-import {appendLexicalPage,definitionKinds,lexicalKey} from './lexiconClient.js';
+import {appendLexicalPage,definitionKinds,exportLexiconDraft,lexicalKey} from './lexiconClient.js';
 import './lexicon.css';
 
 const fields=['body','attribution','scope','dating_note','rationale','wording_mode'];
@@ -31,6 +31,14 @@ export default function ConceptPanel({record,api,drafts,changed,navigate}) {
       if(alive.current && token===generation.current)setData(old=>({...old,[kind]:{items:appendLexicalPage(old[kind].items,value.items),next_cursor:value.next_cursor}}));
     } catch(error) {if(alive.current && token===generation.current)setError(error.message);}
   }
+  async function refreshGap() {
+    const token=generation.current;
+    try {
+      const value=await api.request('lexicon/concept',params);
+      if(value.concept.id!==record.id || value.concept.project_id!==record.project_id)throw new Error('Concept coverage did not match this project.');
+      if(alive.current && token===generation.current)setData(old=>old ? {...old,concept:value} : old);
+    } catch(error){if(alive.current && token===generation.current)setError(error.message);}
+  }
   function edit(row,patch) {
     const key=lexicalKey(record.project_id,row.id,'definition-edit'),current=drafts.current.get(key);
     if(current?.saving)return;
@@ -48,6 +56,7 @@ export default function ConceptPanel({record,api,drafts,changed,navigate}) {
       if(value.id!==row.id || value.project_id!==record.project_id || value.annotation_id!==row.annotation_id || value.concept_id!==record.id || !same(value,sent) || value.revision!==sent.expected_revision+1) throw new Error('Definition response did not match this correction.');
       drafts.current.delete(key);changed();
       if(alive.current)setData(old=>({...old,definitions:{...old.definitions,items:old.definitions.items.map(item=>item.id===row.id ? {...item,...value} : item)}}));
+      if(value.state!=='active')refreshGap();
     } catch(error) {
       const current=error.status===409 && error.current?.id===row.id && error.current?.project_id===record.project_id && error.current?.concept_id===record.id && error.current?.annotation_id===row.annotation_id ? error.current : null;
       drafts.current.set(key,{...draft,saving:false,current,error:error.message});changed();
@@ -69,13 +78,14 @@ export default function ConceptPanel({record,api,drafts,changed,navigate}) {
     setData(old=>({...old,definitions:{...old.definitions,items:old.definitions.items.map(item=>item.id===row.id ? {...item,...current} : item)}}));
     if(choice==='cloud')drafts.current.delete(key);
     else drafts.current.set(key,{...draft,server:current,expected_revision:current.revision,current:null,error:''});
+    if(current.state!=='active'){setError('The cloud assertion is withdrawn. A correction will retain that state.');refreshGap();}
     changed();
   }
   function definition(row) {
     const key=lexicalKey(record.project_id,row.id,'definition-edit'),draft=drafts.current.get(key);
     const versions=history.get(row.id);
     return <article className="concept-definition" key={row.id}>
-      <small>{definitionKinds[row.definition_kind]} · {row.wording_mode} · {row.review_state} · revision {row.revision}</small>
+      <small>{definitionKinds[row.definition_kind]} · {row.wording_mode} · {row.review_state}{row.state!=='active' && ` · ${row.state}`} · revision {row.revision}</small>
       {row.wording_mode==='quotation' ? <blockquote dir="auto">{row.body}</blockquote> : <p className="concept-definition-text" dir="auto">{row.body}</p>}
       <p><strong>{row.attribution}</strong> · {row.scope}</p>{row.dating_note && <p>{row.dating_note}</p>}
       {row.definition_kind==='machine_proposed' && <p>Declared proposal: {row.proposal_tool} · {row.proposal_version} · {row.proposal_activity}</p>}
@@ -87,10 +97,11 @@ export default function ConceptPanel({record,api,drafts,changed,navigate}) {
         <label>Definition text<textarea className="concept-edit-body" rows={4} maxLength={5000} value={draft.form.body} onChange={event=>edit(row,{body:event.target.value})} /></label>
         {fields.filter(name=>!['body','wording_mode'].includes(name)).map(name=><label key={name}>{({attribution:'Who says this?',scope:'Scope',dating_note:'Dating uncertainty',rationale:'Why this correction?'})[name]}
           <textarea className={'concept-edit-'+name} rows={2} maxLength={name==='scope' ? 10000 : 2000} value={draft.form[name]} onChange={event=>edit(row,{[name]:event.target.value})} /></label>)}
-        {draft.current && <div className="concept-definition-conflict" role="alert"><p>Changed on another device. Cloud revision {draft.current.revision}:</p><pre>{draft.current.body}</pre><p>{draft.current.attribution} · {draft.current.scope}</p><p>{draft.current.rationale}</p>
+        {draft.current && <div className="concept-definition-conflict" role="alert"><p>Changed on another device. Cloud revision {draft.current.revision} · {draft.current.state}:</p><small>{definitionKinds[draft.current.definition_kind]} · {draft.current.wording_mode} · {draft.current.dating_note || 'No dating recorded'}</small><pre>{draft.current.body}</pre><p>{draft.current.attribution} · {draft.current.scope}</p><p>{draft.current.rationale}</p>
           <button onClick={()=>resolve(row,'cloud')}>Use cloud version</button><button onClick={()=>resolve(row,'draft')}>Keep my draft against this revision</button></div>}
         {draft.error && <p role="alert">{draft.error} Your draft is retained.</p>}
         <button className="concept-edit-save" disabled={!!draft.current || !draft.form.body.trim() || !draft.form.rationale.trim() || !draft.form.scope.trim() || !draft.form.attribution.trim()} onClick={()=>save(row)}>Save private correction</button>
+        <button onClick={()=>exportLexiconDraft({...draft,projectId:record.project_id,conceptId:record.id,definitionId:row.id,annotationId:row.annotation_id,sourceQuotation:row.source_quotation})}>Export correction draft</button>
         <button onClick={()=>{drafts.current.delete(key);changed();}}>Discard correction draft</button>
       </fieldset></div> : <button className="concept-edit-open" onClick={()=>edit(row,{})}>Correct this definition</button>}
       <button className="concept-history-open" onClick={()=>showHistory(row)}>Revision history</button>
