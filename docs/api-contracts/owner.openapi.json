@@ -1306,6 +1306,224 @@
         "title": "ScriptureResolutionInput",
         "type": "object"
       },
+      "SourceIntakeExcerpt": {
+        "additionalProperties": false,
+        "properties": {
+          "edition": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Edition",
+            "type": "string"
+          },
+          "locator": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Locator",
+            "type": "string"
+          },
+          "representation_url": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Representation Url",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 12000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "edition",
+          "locator",
+          "text"
+        ],
+        "title": "SourceIntakeExcerpt",
+        "type": "object"
+      },
+      "SourceIntakeInput": {
+        "additionalProperties": false,
+        "properties": {
+          "access_status": {
+            "default": "unknown",
+            "enum": [
+              "unknown",
+              "open",
+              "subscription",
+              "owned_copy",
+              "unavailable"
+            ],
+            "title": "Access Status",
+            "type": "string"
+          },
+          "accessed_on": {
+            "default": "",
+            "maxLength": 10,
+            "title": "Accessed On",
+            "type": "string"
+          },
+          "coverage_scope": {
+            "default": "metadata_only",
+            "enum": [
+              "metadata_only",
+              "abstract",
+              "selected_passage",
+              "full_work_read"
+            ],
+            "title": "Coverage Scope",
+            "type": "string"
+          },
+          "creators": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Creators",
+            "type": "string"
+          },
+          "distinct_source_rationale": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Distinct Source Rationale",
+            "type": "string"
+          },
+          "edition": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Edition",
+            "type": "string"
+          },
+          "excerpt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceIntakeExcerpt"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "existing_source_record_id": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Existing Source Record Id"
+          },
+          "identifier": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Identifier",
+            "type": "string"
+          },
+          "intake_context": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Intake Context",
+            "type": "string"
+          },
+          "intake_uuid": {
+            "pattern": "^[a-fA-F0-9-]{36}$",
+            "title": "Intake Uuid",
+            "type": "string"
+          },
+          "language": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Language",
+            "type": "string"
+          },
+          "owner_confirmed": {
+            "const": true,
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "publication": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Publication",
+            "type": "string"
+          },
+          "publication_date": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Publication Date",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "rights_basis": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Rights Basis",
+            "type": "string"
+          },
+          "rights_status": {
+            "default": "metadata_only",
+            "enum": [
+              "unknown",
+              "metadata_only",
+              "permitted_excerpt",
+              "public_domain",
+              "open_license"
+            ],
+            "title": "Rights Status",
+            "type": "string"
+          },
+          "source_role": {
+            "default": "undetermined",
+            "enum": [
+              "primary_text",
+              "translation",
+              "commentary",
+              "scholarship",
+              "reference",
+              "undetermined"
+            ],
+            "title": "Source Role",
+            "type": "string"
+          },
+          "source_url": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Source Url",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "intake_uuid",
+          "project_id",
+          "title",
+          "edition",
+          "rationale",
+          "owner_confirmed"
+        ],
+        "title": "SourceIntakeInput",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -3960,9 +4178,15 @@
         "summary": "Search"
       }
     },
+<<<<<<< HEAD
     "/v1/verses/annotation-links": {
       "get": {
         "operationId": "verse_annotation_links_v1_verses_annotation_links_get",
+=======
+    "/v1/source-intakes": {
+      "get": {
+        "operationId": "source_intake_history_v1_source_intakes_get",
+>>>>>>> feat/source-intake-workflow
         "parameters": [
           {
             "in": "query",
@@ -3978,13 +4202,21 @@
           },
           {
             "in": "query",
+<<<<<<< HEAD
             "name": "annotation_id",
+=======
+            "name": "source_record_id",
+>>>>>>> feat/source-intake-workflow
             "required": true,
             "schema": {
               "maxLength": 500,
               "minLength": 1,
               "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+<<<<<<< HEAD
               "title": "Annotation Id",
+=======
+              "title": "Source Record Id",
+>>>>>>> feat/source-intake-workflow
               "type": "string"
             }
           },
@@ -3994,7 +4226,11 @@
             "required": false,
             "schema": {
               "default": "",
+<<<<<<< HEAD
               "maxLength": 500,
+=======
+              "maxLength": 36,
+>>>>>>> feat/source-intake-workflow
               "title": "Cursor",
               "type": "string"
             }
@@ -4032,6 +4268,7 @@
             "description": "Validation Error"
           }
         },
+<<<<<<< HEAD
         "summary": "Verse Annotation Links"
       }
     },
@@ -4119,11 +4356,21 @@
     "/v1/verses/import-pilot": {
       "post": {
         "operationId": "verse_import_pilot_v1_verses_import_pilot_post",
+=======
+        "summary": "Source Intake History"
+      },
+      "post": {
+        "operationId": "create_source_intake_v1_source_intakes_post",
+>>>>>>> feat/source-intake-workflow
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
+<<<<<<< HEAD
                 "$ref": "#/components/schemas/VersePilotImport"
+=======
+                "$ref": "#/components/schemas/SourceIntakeInput"
+>>>>>>> feat/source-intake-workflow
               }
             }
           },
@@ -4149,12 +4396,21 @@
             "description": "Validation Error"
           }
         },
+<<<<<<< HEAD
         "summary": "Verse Import Pilot"
       }
     },
     "/v1/verses/material": {
       "get": {
         "operationId": "verse_material_v1_verses_material_get",
+=======
+        "summary": "Create Source Intake"
+      }
+    },
+    "/v1/source-intakes/candidates": {
+      "get": {
+        "operationId": "source_intake_candidates_v1_source_intakes_candidates_get",
+>>>>>>> feat/source-intake-workflow
         "parameters": [
           {
             "in": "query",
@@ -4170,6 +4426,7 @@
           },
           {
             "in": "query",
+<<<<<<< HEAD
             "name": "material_id",
             "required": true,
             "schema": {
@@ -4340,6 +4597,25 @@
               "default": "",
               "maxLength": 500,
               "title": "Cursor",
+=======
+            "name": "source_url",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 2000,
+              "title": "Source Url",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "identifier",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 2000,
+              "title": "Identifier",
+>>>>>>> feat/source-intake-workflow
               "type": "string"
             }
           },
@@ -4348,8 +4624,13 @@
             "name": "limit",
             "required": false,
             "schema": {
+<<<<<<< HEAD
               "default": 25,
               "maximum": 25,
+=======
+              "default": 20,
+              "maximum": 20,
+>>>>>>> feat/source-intake-workflow
               "minimum": 1,
               "title": "Limit",
               "type": "integer"
@@ -4376,6 +4657,7 @@
             "description": "Validation Error"
           }
         },
+<<<<<<< HEAD
         "summary": "Verse Materials"
       },
       "post": {
@@ -4427,6 +4709,9 @@
           }
         },
         "summary": "Verse Pilot"
+=======
+        "summary": "Source Intake Candidates"
+>>>>>>> feat/source-intake-workflow
       }
     }
   }

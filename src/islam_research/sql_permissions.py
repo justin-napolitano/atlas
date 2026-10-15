@@ -17,6 +17,7 @@ READ_TABLES = (
     "verse_materials", "verse_material_revisions",
     "lexicon_entries", "lexicon_forms", "lexicon_representations", "lexicon_senses",
     "lexicon_definitions", "lexicon_occurrences", "lexicon_revisions", "lexicon_captures",
+    "source_intakes",
 )
 PUBLIC_TABLES = ("snapshots", "publication_heads")
 OWNER_FUNCTIONS = (
@@ -27,6 +28,7 @@ OWNER_FUNCTIONS = (
 )
 INSERT_COLUMNS = {
     "verse_materials": "id project_id annotation_id document_id text_sha256 creation_sha256 profile_id chapter ayah_start ayah_end material_kind link_kind citation_basis citation_id citation_snapshot marker_start marker_end marker_text attribution language_tag source_scope assertion_mode assertion_text reading_note period_note tradition_note context_basis rationale state changed_by",
+    "source_intakes": "request_uuid project_id input_sha256 source_record_id document_id declarations changed_by",
     "projects": "id title scope",
     "records": "id project_id kind title summary attributes changed_by",
     "personal_states": "record_id project_id reading read_at decision note changed_by",

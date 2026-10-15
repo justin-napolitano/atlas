@@ -8,6 +8,7 @@ from . import publication
 from . import citation_store
 from . import lexicon_store
 from . import verse_store
+from . import source_intake
 
 
 class PostgreSQLStore:
@@ -56,6 +57,18 @@ class PostgreSQLStore:
     def save_record(self, **values) -> dict:
         with db.connect(self.dsn) as connection:
             return db.save_record(connection, **values)
+
+    def source_intake(self, **values) -> dict:
+        with db.connect(self.dsn) as connection:
+            return source_intake.create(connection, **values)
+
+    def source_candidates(self, project_id, source_url, identifier, limit):
+        with db.connect(self.dsn) as connection:
+            return source_intake.candidates(connection,project_id,source_url,identifier,limit)
+
+    def source_intake_history(self, project_id, source_record_id, cursor, limit):
+        with db.connect(self.dsn) as connection:
+            return source_intake.history(connection,project_id,source_record_id,cursor,limit)
 
     def states(self, project_id: str, cursor: str, limit: int) -> list[dict]:
         with db.connect(self.dsn) as connection:

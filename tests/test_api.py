@@ -25,6 +25,12 @@ class MemoryBoundaryStore:
     """Only a transport test adapter; database guarantees have separate real-PG tests."""
     def ready(self, mode):
         return True
+    def source_intake(self, **values):
+        return {"project_id":values["project_id"],"record_id":"synthetic:source","document_id":None,"actor":values["actor"]}
+    def source_candidates(self,*args):
+        return []
+    def source_intake_history(self,*args):
+        return []
     def projects(self):
         return [{"id": "synthetic", "title": "Synthetic project"}]
     def save_state(self, **value):
@@ -87,6 +93,23 @@ class APIBoundaryTests(unittest.TestCase):
         self.assertEqual(result.status_code, 401)
         self.assertEqual(self.client.get("/v1/projects", headers=self.headers(sub="other")).status_code, 403)
         self.assertEqual(self.client.get("/v1/projects", headers=self.headers()).status_code, 200)
+
+    def test_source_intake_is_owner_only_strict_confirmed_and_never_promotes_review(self):
+        from test_source_intake import payload
+        value=payload();value.pop("actor")
+        self.assertEqual(self.client.post("/v1/source-intakes",json=value).status_code,401)
+        self.assertEqual(self.client.post("/v1/source-intakes",json=value,headers=self.headers(sub="other")).status_code,403)
+        missing=self.headers();missing.pop("x-research-write")
+        self.assertEqual(self.client.post("/v1/source-intakes",json=value,headers=missing).status_code,403)
+        for patch in (dict(owner_confirmed=1),dict(owner_confirmed=False),dict(review_state="reviewed"),dict(actor="spoof")):
+            self.assertEqual(self.client.post("/v1/source-intakes",json={**value,**patch},headers=self.headers()).status_code,422)
+        result=self.client.post("/v1/source-intakes",json=value,headers=self.headers())
+        self.assertEqual(result.status_code,201);self.assertEqual(result.json()["actor"],OWNER)
+        for route in ("/v1/source-intakes","/v1/source-intakes/candidates"):
+            self.assertEqual(self.client.get(route,params={"project_id":"synthetic","source_record_id":"synthetic:source"}).status_code,401)
+        public=TestClient(create_app(Settings("synthetic",mode="public"),store=MemoryBoundaryStore()))
+        self.assertEqual(public.post("/v1/source-intakes",json=value).status_code,404)
+        self.assertEqual(public.get("/v1/source-intakes/candidates").status_code,404)
 
     def test_write_requires_csrf_boundary_and_owner(self):
         payload = {"record_id": "synthetic", "project_id": "synthetic", "note": "Synthetic private note"}
@@ -273,6 +296,31 @@ class APIBoundaryTests(unittest.TestCase):
 
 @unittest.skipUnless(jwt and os.environ.get("RESEARCH_TEST_DATABASE_URL"), "Requires API extras and real PostgreSQL")
 class APIDatabaseTests(unittest.TestCase):
+    def test_real_source_intake_reopens_located_source_across_sessions_and_replays(self):
+        from test_source_intake import payload
+        dsn=os.environ["RESEARCH_TEST_DATABASE_URL"]
+        with db.connect(dsn) as connection:db.migrate(connection)
+        client=TestClient(create_app(Settings(dsn,owner_subject=OWNER,iap_audience=AUDIENCE,owner_origin=ORIGIN),verifier=self.verifier))
+        other=TestClient(create_app(Settings(dsn,owner_subject=OWNER,iap_audience=AUDIENCE,owner_origin=ORIGIN),verifier=self.verifier))
+        project="test:"+uuid.uuid4().hex
+        self.assertEqual(client.post("/v1/projects",json={"project_id":project,"title":"Synthetic intake"},headers=self.headers()).status_code,201)
+        values=payload(project,rights_status="permitted_excerpt",rights_basis="Authored synthetic fixture",coverage_scope="selected_passage",
+            excerpt=dict(text="A synthetic source passage.",edition="Synthetic edition",locator="p. 3",representation_url=""))
+        values.pop("actor")
+        result=client.post("/v1/source-intakes",json=values,headers=self.headers())
+        self.assertEqual(result.status_code,201,result.text);ids=result.json()
+        again=other.post("/v1/source-intakes",json=values,headers=self.headers()).json()
+        self.assertEqual(again["record_id"],ids["record_id"]);self.assertTrue(again["replayed"])
+        record=other.get("/v1/record",params={"record_id":ids["record_id"]},headers=self.headers()).json()
+        self.assertEqual(record["review_state"],"pending")
+        document=other.get("/v1/reading/document",params={"project_id":project,"document_id":ids["document_id"]},headers=self.headers()).json()
+        self.assertEqual(document["text_body"],values["excerpt"]["text"])
+        history=other.get("/v1/source-intakes",params={"project_id":project,"source_record_id":ids["record_id"]},headers=self.headers()).json()["items"]
+        self.assertEqual(history[0]["declarations"]["rights_basis"],values["rights_basis"])
+        candidates=other.get("/v1/source-intakes/candidates",params={"project_id":project,"identifier":values["identifier"]},headers=self.headers()).json()["items"]
+        self.assertEqual(candidates[0]["id"],ids["record_id"])
+        self.assertEqual(other.get("/v1/reading/document",params={"project_id":"other","document_id":ids["document_id"]},headers=self.headers()).status_code,404)
+
     setUp = APIBoundaryTests.setUp
     headers = APIBoundaryTests.headers
     def test_marks_roundtrip_between_sessions_and_preserve_style_on_body_only_update(self):
