@@ -17,10 +17,13 @@ const preview = await startPreview({ root,logLevel:'silent',preview:{ host:'127.
 const testOrigin = `http://127.0.0.1:${preview.httpServer.address().port}`;
 const chrome = spawn(chromePath,['--headless=new','--disable-background-networking','--disable-component-update',
   '--no-first-run','--no-default-browser-check','--remote-debugging-port=0',`--user-data-dir=${profile}`,
-  '--window-size=1440,1000','about:blank'],{ stdio:'ignore' });
+  '--window-size=1440,1000','about:blank'],{ stdio:['ignore','ignore','pipe'] });
 let socket;
 let processFailure;
+let chromeStartupDiagnostics='';
+chrome.stderr.on('data',chunk=>{chromeStartupDiagnostics=(chromeStartupDiagnostics+chunk.toString()).slice(-4000);});
 chrome.on('error',error => { processFailure = error; });
+chrome.on('exit',(code,signal)=>{processFailure=new Error(`Owned test Chrome exited (${code ?? signal}): ${chromeStartupDiagnostics}`);});
 const sleep = ms => new Promise(resolve => setTimeout(resolve,ms));
 async function until(fn, label) {
   for (let i=0;i<100;i++) { if (processFailure) throw processFailure; try { const value=await fn(); if (value) return value; } catch {} await sleep(100); }
