@@ -13,6 +13,9 @@
 .workspace-results,.workspace-reader { min-width:0; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
 .workspace-results { padding-right:14px; }
 .workspace-reader { padding:22px 12px 32px 20px; }
+.owner-panes.reading-focus { grid-template-columns:minmax(0,1fr); }
+.owner-panes.reading-focus > .workspace-results,.owner-panes.reading-focus > .pane-divider { display:none; }
+.owner-panes.reading-focus > .workspace-reader { padding-inline:0; }
 .pane-divider { cursor:col-resize; touch-action:none; border-left:1px solid var(--rule); position:relative; }
 .pane-divider::after { content:''; display:block; width:3px; height:44px; margin:auto; background:var(--rule); position:absolute; top:45%; left:3px; }
 .pane-divider:hover::after,.pane-divider:focus-visible::after { background:var(--accent); }
