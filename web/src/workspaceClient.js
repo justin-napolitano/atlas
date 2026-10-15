@@ -30,6 +30,7 @@ export class ReadingWorkspace {
   constructor(api, changed = () => {}) { this.api = api; this.changed = changed; this.entries = new Map(); }
   adopt(row) {
     if (!this.entries.has(row.record_id)) this.entries.set(row.record_id, { server: row, draft: values(row), status: 'saved', current: null, pending: null, again: false });
+    else {const entry=this.entries.get(row.record_id);if(entry.status==='saved' && !entry.pending && row.project_id===entry.server.project_id && row.revision>entry.server.revision){entry.server=row;entry.draft=values(row);entry.current=null;}}
     this.changed();
     return this.entries.get(row.record_id);
   }

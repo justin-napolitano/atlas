@@ -6,6 +6,14 @@ const initial = () => blankState('urn:test:source', 'test-project');
 const deferred = () => { let resolve, reject; const promise = new Promise((a,b) => { resolve = a; reject = b; }); return { promise, resolve, reject }; };
 const tick = () => new Promise(resolve => setTimeout(resolve, 0));
 
+test('reopening a saved record adopts the newer notebook-visible note without replacing unfinished writing',()=>{
+  const store=new ReadingWorkspace({}),first=initial();store.adopt(first);
+  const newer={...first,revision:3,note:'New note from another session',reading:'read'};store.adopt(newer);
+  assert.equal(store.entries.get(first.record_id).draft.note,newer.note);
+  store.edit(first.record_id,{note:'Unfinished local interpretation'});store.adopt({...newer,revision:4,note:'Later cloud version'});
+  assert.equal(store.entries.get(first.record_id).draft.note,'Unfinished local interpretation');assert.equal(store.entries.get(first.record_id).server.revision,3);
+});
+
 test('signed-owner client uses same-origin cookies and explicit JSON write header', async () => {
   const calls = [];
   const api = workspaceAPI(async (url, options) => { calls.push({ url, options }); return new Response(JSON.stringify({ revision: 1 }), { headers: { 'content-type': 'application/json' } }); });

@@ -46,6 +46,7 @@ const comparisonDocument={...readingDocument,id:'synthetic:comparison',edition:'
 const graphEdges=[{id:'1',project_id:'synthetic',from_id:claim.id,to_id:records[0].id,predicate:'https://islam-research.local/vocab/addressesQuestion',review_state:'pending',provenance:{basis:'Synthetic bounded claim'}},{id:'2',project_id:'synthetic',from_id:claim.id,to_id:evidence.id,predicate:'https://islam-research.local/vocab/evidence',review_state:'pending',provenance:{basis:'Synthetic located evidence'}},{id:'3',project_id:'synthetic',from_id:evidence.id,to_id:records[1].id,predicate:'https://islam-research.local/vocab/source',review_state:'pending',provenance:{basis:'Synthetic source identity'}}];
 const readingCollection=JSON.parse(await readFile(join(root,'../src/islam_research/resources/reading-collection-v1.json'),'utf8'));readingCollection.artifact_sha256=createHash('sha256').update(await readFile(join(root,'../src/islam_research/resources/reading-collection-v1.json'))).digest('hex');
 const pilotResource={resource_id:'synthetic:resource',label:'Synthetic Arabic fixture',publisher:'Synthetic',source_notice:'Synthetic source notice',reading_note:'No edition inference',review_limit:'Synthetic test text, not Quran text',attribution_url:'https://tanzil.net/',verses:[59,83].map(ayah=>({chapter:4,ayah_start:ayah,ayah_end:ayah,text:`اختبار ${ayah}`,text_sha256:createHash('sha256').update(`اختبار ${ayah}`).digest('hex'),reference:{id:`synthetic:4:${ayah}`,label:`Q 4:${ayah}`}}))};
+const recoveryCopies=new Map();
 const captures=[];let captureLostResponse=false;
 let readingDesk=null,deskLostResponse=true;const deskRequests=[];
 const verseMaterials=new Map(),verseRequests=[];let verseLostResponse=true;
@@ -110,6 +111,14 @@ async function fixture(event) {
       target_id:c.id,document_id:c.document_id,capture_kind:c.capture_kind,revision:c.revision,excerpt:c.exact+' · '+c.body }));
     data={ items:scope==='annotations' ? (matches.length ? [{...records[1],matches}] : []) : records,next_cursor:null };
   }
+  else if(path==='/v1/reading/draft' && event.request.method==='PUT'){
+    const value=JSON.parse(event.request.postData),id='urn:research:draft:'+value.draft_uuid,previous=recoveryCopies.get(id);
+    const base=saved.get(value.record_id) || {note:'',revision:0};
+    if(previous && previous.revision!==value.expected_revision){if(previous.revision===value.expected_revision+1 && previous.body===value.body)data=previous;else {status=409;data={current:previous};}}
+    else {data={...value,id,revision:value.expected_revision+1,start_pos:value.start,end_pos:value.end,base_snapshot:{note:base.note,revision:base.revision},record_title:records[1].title};recoveryCopies.set(id,data);}
+  }
+  else if(path==='/v1/reading/drafts')data={items:[...recoveryCopies.values()].filter(row=>row.project_id===url.searchParams.get('project_id') && row.record_id===url.searchParams.get('record_id') && row.context_kind===url.searchParams.get('context_kind') && row.state===url.searchParams.get('state')),next_cursor:null};
+  else if(path==='/v1/reading/draft'){data=recoveryCopies.get(url.searchParams.get('draft_id'));if(!data){status=404;data={};}}
   else if(path==='/v1/reading/desk' && event.request.method==='PUT') {
     const value=JSON.parse(event.request.postData);deskRequests.push(value);
     assert.equal(event.request.headers['X-Research-Write'] || event.request.headers['x-research-write'],'1');
@@ -347,6 +356,11 @@ try {
 
   await reload();
   await until(()=>evaluate('document.querySelectorAll(".comparison-text")[1]?.textContent.includes("different rendering")'),'comparison URL reload');
+  await evaluate(`{const select=document.querySelectorAll('.comparison-pane')[1].querySelector('select');select.value='';select.dispatchEvent(new Event('change',{bubbles:true}));}`);
+  await until(()=>evaluate('!new URL(location.href).searchParams.has("right_source") && !new URL(location.href).searchParams.has("right_document")'),'cleared comparison removes stale URL target');
+  await reload();
+  await until(()=>evaluate('document.querySelectorAll(".comparison-pane")[1]?.querySelector("select").value==="" && document.querySelectorAll(".comparison-text").length===1'),'cleared comparison stays empty after reload');
+
   await click('Back to my reading');
   await until(()=>evaluate('!!document.querySelector(".reader-text")'),'return from comparison to source');
   await evaluate(`const textRoot=document.querySelector('.reader-text'), range=document.createRange();
@@ -785,6 +799,20 @@ try {
   await until(() => evaluate('document.querySelector("#my-note")?.value.includes("Synthetic browser note")'),'reload retains cloud note');
   assert.equal(await evaluate('document.querySelector(".workspace-notes select").value'),'read');
   assert.equal(await evaluate('document.querySelector(".workspace-decisions button:nth-child(2)").getAttribute("aria-pressed")'),'true');
+  await evaluate('document.querySelector("#my-note").focus()');await call('Input.insertText',{text:' Recoverable unfinished interpretation.'});
+  await evaluate('document.querySelector(".workspace-notes .recoverable-draft .draft-actions button").click()');
+  await until(()=>recoveryCopies.size===1,'private recovery copy saved independently');
+  assert.ok(!saved.get('synthetic:source').note.includes('Recoverable unfinished'));
+  await reload();
+  await until(()=>evaluate('!!document.querySelector("#my-note")'),'record editor reopens after draft save');
+  assert.ok(!(await evaluate('document.querySelector("#my-note").value')).includes('Recoverable unfinished'));
+  await evaluate(`[...document.querySelector('.workspace-notes .recoverable-draft').querySelectorAll('button')].find(button=>button.textContent==='Find saved drafts').click()`);
+  await until(()=>evaluate('document.querySelector(".workspace-notes .recoverable-draft article")?.textContent.includes("Recoverable unfinished")'),'durable writing found after reload');
+  await evaluate(`[...document.querySelector('.workspace-notes .recoverable-draft').querySelectorAll('button')].find(button=>button.textContent==='Inspect & recover').click()`);
+  await until(()=>evaluate('!!document.querySelector(".workspace-notes .draft-preview")'),'recovery compares actual cloud note');
+  await evaluate(`[...document.querySelector('.workspace-notes .draft-preview').querySelectorAll('button')].find(button=>button.textContent==='Recover into editor').click()`);
+  await until(()=>evaluate('document.querySelector("#my-note").value.includes("Recoverable unfinished")'),'draft restored into actual record editor');
+  assert.ok(!saved.get('synthetic:source').note.includes('Recoverable unfinished'),'recovery never commits actual note');
   const width=await evaluate('document.querySelector(".owner-panes").style.getPropertyValue("--list-width")');
   await evaluate('document.querySelector(".pane-divider").focus()');
   await call('Input.dispatchKeyEvent',{ type:'keyDown',key:'ArrowRight',code:'ArrowRight' });
@@ -817,6 +845,11 @@ try {
   await until(()=>evaluate('document.querySelectorAll(".collection-readings article").length===2'),'collection Q4:83 choices');
   await reload();
   await until(()=>evaluate('document.querySelector(".reading-collection select")?.value==="83"'),'collection verse survives reload');
+  await evaluate('document.querySelector(".collection-readings article button").click()');
+  await until(()=>evaluate('document.querySelector("[name=title]")?.value.includes("Rodwell")'),'real translation mapped to reviewed intake');
+  await evaluate('history.back()');
+  await until(()=>evaluate('document.querySelector(".reading-collection select")?.value==="83"'),'collection verse retained when returning from intake');
+
   await click('Back to my reading');
   await click('My notebook');
   await until(()=>evaluate('document.querySelectorAll(".research-notebook .notebook-title").length>0'),'workspace notebook shows live passage notes');
@@ -954,7 +987,7 @@ try {
   assert.deepEqual(problems,[]);
   console.log(JSON.stringify({publicChecksPassed:true,checks:['actual approved-export fixture','anonymous read-only data requests','multi-project switching','Back/Forward and record reload','citations, locators and review limits','same record ID across projects','dark mobile layout','mismatched project refusal','all-withdrawn empty state','unsafe path refusal','unknown project recovery','no legacy fallback in approved mode','legacy RDF compatibility'],artifacts}));
   console.log(JSON.stringify({publicationChecksPassed:true,checks:['explicit record, summary, bibliography and relation choices','no automatic approval','sealed preview privacy and inert labels','stale head requires new preview','revision-bound acknowledgement and approval','reload without duplicate approval','withdrawal acknowledgement','390px overflow','private rationale outside localStorage','anonymous publication denial'],publicationAttempts,artifacts}));
-  console.log(JSON.stringify({ passed:true,checks:['independent comparison versions and URL reload','comparison 390px layout and exact passage return','question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','Quran reference decision reload and retained draft','idempotent reference retry after lost response','reference conflict comparison and explicit resolution','reverse verse lookup to exact saved passage','reference dismissal and 390px controls','manual mapping distinct from citation claims','invalid verse bounds explained before saving','word to scoped concept and durable passage links','idempotent concept and definition creation after lost responses','explicit definition gaps and separate machine proposals','attributed definitions and exact source reopening','definition correction conflict, retry and history','existing lexical connection reuse and Arabic source preservation','normalized and combined research search','lexical pagination and dark/mobile/RTL layout','persistent source marks and overlapping underline reload','direct margin writing and frozen idempotent capture retry','mark-to-note and note-to-source focus with stable bookmarks','resizable collapsible margin and focused mobile reading','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','margin source-to-verse discussion save and exact retry','generic selected verse-range view and source return','no unrelated Arabic text for unbundled ranges','durable bookmark exact retry and reload','server bookmark to exact source passage','other-device bookmark conflict requires explicit replacement','workspace source intake and real article preset','retained intake never overwritten by preset','Arabic pilot URL Back and Forward','anonymous boundary'],artifacts }));
+  console.log(JSON.stringify({ passed:true,checks:['actual collection readings and verse reload','notebook passage backlinks','record writing draft save/reload/recover without actual-note write','independent comparison versions and URL reload','comparison 390px layout and exact passage return','question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','Quran reference decision reload and retained draft','idempotent reference retry after lost response','reference conflict comparison and explicit resolution','reverse verse lookup to exact saved passage','reference dismissal and 390px controls','manual mapping distinct from citation claims','invalid verse bounds explained before saving','word to scoped concept and durable passage links','idempotent concept and definition creation after lost responses','explicit definition gaps and separate machine proposals','attributed definitions and exact source reopening','definition correction conflict, retry and history','existing lexical connection reuse and Arabic source preservation','normalized and combined research search','lexical pagination and dark/mobile/RTL layout','persistent source marks and overlapping underline reload','direct margin writing and frozen idempotent capture retry','mark-to-note and note-to-source focus with stable bookmarks','resizable collapsible margin and focused mobile reading','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','margin source-to-verse discussion save and exact retry','generic selected verse-range view and source return','no unrelated Arabic text for unbundled ranges','durable bookmark exact retry and reload','server bookmark to exact source passage','other-device bookmark conflict requires explicit replacement','workspace source intake and real article preset','retained intake never overwritten by preset','Arabic pilot URL Back and Forward','anonymous boundary'],artifacts }));
 } finally {
   socket?.close(); chrome.kill(); await preview.close();
   for (const item of pending.values()) { clearTimeout(item.timeout); item.reject(new Error('Review finished')); }
