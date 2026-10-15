@@ -41,6 +41,8 @@ const readingDocument={ id:'synthetic:document',project_id:'synthetic',source_re
   text_body:'😀 Before tafsīr and التفسير; Q 4:59. After.',review_scope:'Synthetic private unverified excerpt' };
 readingDocument.text_sha256=createHash('sha256').update(readingDocument.text_body).digest('hex');
 const captures=[];
+const publicationPreviews=new Map();let publicationHead={project_id:'synthetic',revision:0,status:'private',snapshot_id:null};
+let publicationAttempts=0,publicationConflict=true;
 function call(method,params={}) { return new Promise((resolve,reject) => {
   const id=++serial; const timeout=setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout: ${method}`)); },8000);
   pending.set(id,{ resolve,reject,timeout }); socket.send(JSON.stringify({ id,method,params }));
@@ -93,6 +95,38 @@ async function fixture(event) {
     data={annotation:row,anchor:{anchored:true,start:row.start_pos,end:row.end_pos},web_annotation:{ id:row.id,type:'Annotation' }};
   }
   else if (path==='/v1/record') data=[...records,claim,evidence,{...records[1],id:'synthetic:other',title:'Another synthetic source'}].find(r => r.id===url.searchParams.get('record_id'));
+  else if (path==='/v1/publication/head') data=publicationHead;
+  else if (path==='/v1/publication/preview') data=publicationPreviews.get(url.searchParams.get('preview_id'));
+  else if (path==='/v1/publication/relations') {
+    const value=JSON.parse(event.request.postData);
+    data={items:records.every(row=>value.record_ids.includes(row.id)) ? [{id:'synthetic:connection',from_id:records[0].id,to_id:records[1].id,
+      source_title:records[0].title,target_title:records[1].title,predicate:'https://example.invalid/relatedSource',review_state:'pending'}] : [],truncated:false};
+  }
+  else if (path==='/v1/publication/previews') {
+    const value=JSON.parse(event.request.postData),id='publication-'+String(publicationPreviews.size+1).padStart(32,'0');
+    assert.equal(value.project_id,'synthetic');
+    for(const selected of value.selections) assert.deepEqual(Object.keys(selected).sort(),['include_bibliography','include_summary','record_id']);
+    const payload={format_version:1,snapshot_id:id,generated_at:'2026-10-15T00:00:00Z',curated_graph:'canonical_rdf',canonical_snapshot_sha256:[],
+      project:{id:'synthetic',title:'Synthetic research project'},nodes:value.selections.map(selection=>{const row=records.find(r=>r.id===selection.record_id);return {
+        id:row.id,label:row.title,type:row.kind,status:row.review_state,source_revision:row.revision,origin:'owner',
+        summary:selection.include_summary ? row.summary : '',scope:'',people:[],role:'',locator:selection.include_bibliography ? 'Synthetic abstract' : '',
+        citation:selection.include_bibliography ? 'Synthetic citation' : '',links:[],review_limits:['Synthetic visibility approval is not scholarly review']};}),
+      edges:value.relation_ids.map(id=>({id,from:records[0].id,to:records[1].id,predicate:'https://example.invalid/relatedSource',label:'relatedSource',status:'pending'})),candidates:[],
+      publication:{policy:'explicit_owner_selection_v1',review:'Visibility approval is not a new scholarly review'}};
+    data={id,project_id:'synthetic',payload,payload_sha256:createHash('sha256').update(JSON.stringify(payload)).digest('hex')};publicationPreviews.set(id,data);status=201;
+  }
+  else if (path==='/v1/publication/approve') {
+    const value=JSON.parse(event.request.postData),preview=publicationPreviews.get(value.preview_id);publicationAttempts++;
+    assert.equal(event.request.headers['X-Research-Write'] || event.request.headers['x-research-write'],'1');
+    assert.equal(value.expected_sha256,preview.payload_sha256);assert.equal(value.rights_checked,true);
+    assert.ok(value.rationale.trim());
+    if(publicationConflict) {publicationConflict=false;publicationHead={...publicationHead,revision:1,status:'published',snapshot_id:'synthetic-concurrent'};status=409;data={current:{publication_changed:true}};}
+    else {assert.equal(value.expected_revision,publicationHead.revision);publicationHead={...publicationHead,revision:publicationHead.revision+1,status:'published',snapshot_id:preview.id};data=publicationHead;}
+  }
+  else if (path==='/v1/publication/withdraw') {
+    const value=JSON.parse(event.request.postData);assert.equal(value.expected_revision,publicationHead.revision);
+    assert.ok(value.rationale.trim());publicationHead={...publicationHead,revision:publicationHead.revision+1,status:'withdrawn',snapshot_id:null};data=publicationHead;
+  }
   else if (path==='/v1/personal-state') { data=saved.get(url.searchParams.get('record_id')); if (!data) { status=404; data={}; } }
   else if (path==='/v1/personal-states') {
     const value=JSON.parse(event.request.postData);
@@ -216,6 +250,58 @@ try {
   authenticated=false; await reload();
   await until(() => evaluate('document.querySelector("[role=alert]")?.textContent.includes("Owner sign-in")'),'anonymous sign-in boundary');
   assert.equal(await evaluate('!!document.querySelector("#my-note")'),false);
+  authenticated=true;
+  await call('Emulation.clearDeviceMetricsOverride');
+  await call('Page.navigate',{url:testOrigin+'/publish.html?project=synthetic'});
+  await until(()=>evaluate('document.querySelectorAll(".publication-pick input").length===2'),'publication record picker');
+  await evaluate('document.querySelectorAll(".publication-pick input").forEach(input=>input.click())');
+  await until(()=>evaluate('document.querySelectorAll(".publication-selection").length===2'),'explicit publication selection');
+  assert.equal(await evaluate('[...document.querySelectorAll(".publication-selection input")].some(input=>input.checked)'),false);
+  await evaluate('document.querySelectorAll(".publication-selection")[1].querySelectorAll("input").forEach(input=>input.click())');
+  await evaluate('document.querySelector(".publication-relations button").click()');
+  await until(()=>evaluate('!!document.querySelector(".publication-edge input")'),'recorded relation picker');
+  assert.equal(await evaluate('document.querySelector(".publication-edge input").checked'),false);
+  await evaluate('document.querySelector(".publication-edge input").click();document.querySelector(".publication-preview-button").click()');
+  await until(()=>evaluate('!!document.querySelector(".publication-preview")'),'sealed publication preview');
+  assert.equal(publicationAttempts,0);
+  assert.equal(await evaluate('document.querySelectorAll(".public-record-preview script").length'),0);
+  assert.equal(await evaluate('document.querySelector(".publication-approve").disabled'),true);
+  assert.ok(!JSON.stringify([...publicationPreviews.values()]).includes('Synthetic anchored term note'));
+  assert.ok(!JSON.stringify([...publicationPreviews.values()]).includes('Cloud edit from another synthetic machine'));
+  await evaluate('document.querySelector(".publication-approval textarea").focus()');await call('Input.insertText',{text:'Synthetic private publication rationale'});
+  await evaluate('document.querySelector(".publication-approval .publication-ack input").click()');
+  await until(()=>evaluate('!document.querySelector(".publication-approve").disabled'),'explicit publication acknowledgement');
+  await evaluate('document.querySelector(".publication-approve").click()');
+  await until(()=>evaluate('document.querySelector(".publication-message")?.textContent.includes("research or public revision changed")'),'stale publication prevents approval');
+  assert.equal(await evaluate('document.querySelector(".publication-approve").disabled'),true);
+  await evaluate('document.querySelector(".publication-head button").click()');
+  await until(()=>evaluate('document.querySelector(".publication-head")?.textContent.includes("revision 1")'),'refresh concurrent public head');
+  await evaluate('document.querySelector(".publication-preview-button").click()');
+  await until(()=>publicationPreviews.size===2 && evaluate('!document.querySelector(".publication-preview-button").disabled'),'fresh publication preview');
+  await evaluate('document.querySelector(".publication-approval .publication-ack input").click()');
+  await until(()=>evaluate('!document.querySelector(".publication-approve").disabled'),'fresh preview acknowledgement');
+  await evaluate('document.querySelector(".publication-approve").click()');
+  await until(()=>evaluate('!!document.querySelector(".publication-current")'),'explicit snapshot approval');
+  assert.equal(publicationAttempts,2);assert.equal(publicationHead.revision,2);
+  await reload();
+  await until(()=>evaluate('!!document.querySelector(".publication-current")'),'sealed preview and current head survive reload');
+  assert.equal(publicationAttempts,2);
+  const publicationDesktop=await call('Page.captureScreenshot',{format:'png'});await writeFile(join(artifacts,'publication-desktop.png'),Buffer.from(publicationDesktop.data,'base64'));
+  await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await sleep(100);
+  assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'publication mobile horizontal overflow');
+  const publicationMobile=await call('Page.captureScreenshot',{format:'png'});await writeFile(join(artifacts,'publication-mobile.png'),Buffer.from(publicationMobile.data,'base64'));
+  await evaluate('document.querySelector(".publication-withdraw").open=true;document.querySelector(".publication-withdraw textarea").focus()');
+  await call('Input.insertText',{text:'Synthetic private withdrawal rationale'});
+  assert.equal(await evaluate('document.querySelector(".publication-withdraw-button").disabled'),true);
+  await evaluate('document.querySelector(".publication-withdraw .publication-ack input").click()');
+  await until(()=>evaluate('!document.querySelector(".publication-withdraw-button").disabled'),'explicit withdrawal acknowledgement');
+  await evaluate('document.querySelector(".publication-withdraw-button").click()');
+  await until(()=>evaluate('document.querySelector(".publication-head")?.textContent.includes("withdrawn")'),'explicit publication withdrawal');
+  assert.equal(publicationHead.revision,3);
+  assert.equal(await evaluate('Object.values(localStorage).some(v=>v.includes("private publication rationale")||v.includes("private withdrawal rationale"))'),false);
+  authenticated=false;await reload();
+  await until(()=>evaluate('document.querySelector("[role=alert]")?.textContent.includes("Owner sign-in")'),'anonymous publication boundary');
+  assert.equal(await evaluate('!!document.querySelector(".publication-picker")'),false);
   assert.deepEqual(problems,[]);
   console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','anonymous boundary'],artifacts }));
 } finally {
