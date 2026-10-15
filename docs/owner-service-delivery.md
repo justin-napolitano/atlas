@@ -25,10 +25,13 @@ CI and bind the resulting image ID, scanner evidence and registry digest before
 deployment. Frontend output is bounded to four megabytes and 100 files.
 
 The multi-stage image restores API/database dependencies from uv.lock with exact
-versions, archive hashes and binary-only wheels. Its Python 3.12 slim-bookworm
+versions, archive hashes and binary-only wheels. Its Python 3.12 Alpine
 linux/amd64 base is pinned by the architecture-specific manifest digest observed
-from the [official Python registry](https://hub.docker.com/_/python). No new Python
-runtime dependency is introduced. It runs as UID/GID1000, with root-owned
+from the [official Python registry](https://hub.docker.com/_/python). The first Debian12 candidate was rejected by the actual CI scanner for
+unsuppressed High/Critical OS findings; the smaller Alpine candidate retains the
+same complete gate with no exception or ignore. Binary-only musllinux wheel
+availability and actual execution are verified by CI. No new Python runtime
+dependency is introduced. It runs as UID/GID1000, with root-owned
 read-only application/package files and no bytecode writes. One Uvicorn worker
 uses bounded concurrency/backlog, no default request/access logging, no proxy
 header trust, and ten-second graceful shutdown. Application request logs retain

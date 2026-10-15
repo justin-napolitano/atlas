@@ -8,7 +8,7 @@ def owner_contract(kind, conf):
     if kind == 'google_iap_web_cloud_run_service_iam_binding':
         members = value(conf, 'members', [])
         return (value(conf, 'role') == 'roles/iap.httpsResourceAccessor' and isinstance(members, list)
-                and len(members) == 1 and members[0] == 'user:${var.owner_release.owner_email}')
+                and len(members) == 1 and members[0] in {'user:${var.owner_release.owner_email}', 'user:var.owner_release.owner_email'})
     labels = value(conf, 'labels', {})
     if labels.get('visibility') != 'private-owner': return True
     template = value(conf, 'template', {})
@@ -16,7 +16,7 @@ def owner_contract(kind, conf):
     names = {value(container, 'name'): container for container in containers}
     return (value(conf, 'iap_enabled') is True and value(conf, 'invoker_iam_disabled') is False
             and value(conf, 'deletion_protection') is True
-            and value(template, 'service_account') == '${google_service_account.runtime["owner-api"].email}'
+            and value(template, 'service_account') in {'${google_service_account.runtime["owner-api"].email}', 'google_service_account.runtime["owner-api"].email'}
             and value(template, 'max_instance_request_concurrency') == 8
             and value(template, 'vpc_access', {}).get('egress') == ['PRIVATE_RANGES_ONLY']
             and set(names) == {'owner', 'sql-proxy'}

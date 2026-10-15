@@ -23,7 +23,7 @@ def main():
     load_frontend(frontend)
     if output.exists(): raise ValueError('Choose a new owner context directory')
     policy = json.loads((ROOT / 'config/owner-container.json').read_text())
-    if policy['platform'] != 'linux/amd64' or not re.fullmatch(r'python:3\.12-slim-bookworm@sha256:[a-f0-9]{64}', policy['base_image']):
+    if policy['platform'] != 'linux/amd64' or not re.fullmatch(r'python:3\.12-alpine@sha256:[a-f0-9]{64}', policy['base_image']):
         raise ValueError('Invalid owner image policy')
     output.mkdir(parents=True)
     shutil.copytree(frontend, output / 'frontend')
