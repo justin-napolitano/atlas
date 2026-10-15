@@ -1,9 +1,10 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {savePilotWrite,verifyPilotImport,verifyPilotResource,verifyVerseRows} from './pilotClient.js';
 import './pilotReading.css';
+import VerseMaterialList from './VerseMaterialList.jsx';
 
 /** Explicitly import attributed pilot verses, then follow located owner links. */
-export default function PilotReading({api,projectId,drafts,changed,onOpen,onCancel}) {
+export default function PilotReading({api,projectId,drafts,changed,onOpen,onCancel,initialReference}) {
   const [resource,setResource]=useState(null),[message,setMessage]=useState(''),[related,setRelated]=useState({}),[cursors,setCursors]=useState({});
   const alive=useRef(true),generation=useRef(0),saving=useRef(new Set());
   useEffect(()=>{
@@ -31,14 +32,16 @@ export default function PilotReading({api,projectId,drafts,changed,onOpen,onCanc
       if(alive.current && token===generation.current){setRelated(old=>({...old,[ayah]:append ? [...new Map([...(old[ayah] || []),...value.items].map(row=>[row.id,row])).values()] : value.items}));setCursors(old=>({...old,[ayah]:value.next_cursor}));}
     }catch(error){if(alive.current && token===generation.current)setMessage(error.message);}
   }
+  const visibleVerses=resource?.verses.filter(verse=>!initialReference || (verse.chapter===initialReference.chapter && verse.ayah_start<=initialReference.ayah_end && verse.ayah_end>=initialReference.ayah_start)) || [];
   return <section className="pilot-reading" aria-labelledby="pilot-reading-heading"><header><div><p className="eyebrow">Bounded reading pilot</p><h2 id="pilot-reading-heading">A verse, its sources, your notes.</h2></div><button onClick={onCancel}>Back to reading</button></header>
     <p>Start with Q 4:59 and Q 4:83. Arabic text, translations, commentary and your own connections retain separate identities. Nothing here is automatically published or marked reviewed.</p>
+    {initialReference && <VerseMaterialList api={api} projectId={projectId} reference={initialReference} onOpen={onOpen} />}
     {message && <p role="status">{message}</p>}
-    {!resource ? <p role="status">{message ? 'Pilot material is unavailable. Reopen this panel to retry.' : 'Loading the identified Arabic resource…'}</p> : <>
+    {!resource ? <p role="status">{message ? 'Pilot material is unavailable. Reopen this panel to retry.' : 'Loading the identified Arabic resource…'}</p> : !visibleVerses.length ? <p>No bundled Arabic text is available for this selected range. The identified Arabic pilot currently contains Q 4:59 and Q 4:83 only. Located source links above remain available independently.</p> : <>
       <p><strong>{resource.label}</strong> · {resource.publisher}<br/><a href={resource.attribution_url} target="_blank" rel="noreferrer">Source: Tanzil Project ↗</a></p>
       <p className="pilot-limit">{resource.reading_note}<br/>{resource.review_limit}</p>
       <details className="pilot-notice"><summary>Full source notice & attribution</summary><pre dir="auto">{resource.source_notice}</pre></details>
-      <div className="pilot-verses">{resource.verses.map(verse=>{
+      <div className="pilot-verses">{visibleVerses.map(verse=>{
         const value=form(verse.ayah_start),locked=!!value.sent || !!value.saving,rows=related[verse.ayah_start];
         return <article key={verse.reference.id} data-pilot-ayah={verse.ayah_start}><h3>{verse.reference.label}</h3><p className="pilot-arabic" dir="rtl" lang="ar">{verse.text}</p>
           <form onSubmit={event=>importVerse(event,verse)}><label>Why add this verse to your reading project?<textarea required maxLength={2000} value={value.rationale} disabled={locked} onChange={event=>update(verse.ayah_start,{...value,rationale:event.target.value,confirmed:false})}/></label>

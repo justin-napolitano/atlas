@@ -105,3 +105,5 @@ For the public React research studio, see `web/README.md`. Its GitHub Actions wo
 The owner reading workspace now connects [source intake, the bounded article preset, and the attributed Qur’an pilot](docs/reader-library-integration.md) to exact reading documents and margin annotations. These private workflows require the corresponding owner API migrations and authentication; the anonymous public artifact remains selected read-only research.
 
 The authenticated owner runtime, isolated build, native-IAP/private-SQL delivery configuration and remaining live rollout gates are documented in [owner service delivery](docs/owner-service-delivery.md).
+
+The [linked reading workflow](docs/linked-reading-workflow.md) follows saved passage → scoped verse discussion/interpretation → exact source and adds an explicit per-project server bookmark with retry/conflict controls. Unsaved notes and scrolling are not synchronized by the bookmark.

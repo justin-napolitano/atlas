@@ -23,3 +23,11 @@
 .pilot-related blockquote { margin:10px 0; border-inline-start:2px solid var(--accent); padding-inline-start:12px; font:16px/1.8 Georgia,serif; white-space:pre-wrap; overflow-wrap:anywhere; }
 .workspace-library-actions { display:flex; flex-wrap:wrap; gap:6px; padding-block:12px; border-bottom:1px solid var(--rule); }
 @media(max-width:700px) { .pilot-verses { display:block; } .pilot-reading header { flex-wrap:wrap; } }
+
+.reading-place { padding-block:12px; border-bottom:1px solid var(--rule); }
+.reading-place > div:first-child { display:flex; align-items:center; flex-wrap:wrap; gap:10px; }
+.reading-place button { min-height:38px; padding:8px 10px; border:1px solid var(--rule); font-size:12px; }
+.reading-place small { font:12px/1.7 ui-sans-serif,system-ui,sans-serif; color:var(--muted); }
+.reading-place p { font:13px/1.7 ui-sans-serif,system-ui,sans-serif; overflow-wrap:anywhere; }
+.reading-place-conflict { border-left:2px solid var(--accent); padding-left:12px; margin-bottom:12px; }
+.selected-verse-material { padding:16px; border:1px solid var(--accent); margin-bottom:24px; }

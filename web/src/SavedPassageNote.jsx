@@ -1,10 +1,11 @@
 import React from 'react';
 import ScriptureCitations from './ScriptureCitations.jsx';
 import LexiconCapture from './LexiconCapture.jsx';
+import VerseLinks from './VerseLinks.jsx';
 
 const statuses={saved:'Saved to your workspace',unsaved:'Unsaved changes',saving:'Saving…',conflict:'Changed on another device',error:'Save failed. Your draft is still here.'};
 /** A revisioned margin note; source selection and note identity remain immutable. */
-export default function SavedPassageNote({ row,sourceId,editor,reopen,api,drafts,changed,navigate,active=false }) {
+export default function SavedPassageNote({ row,sourceId,editor,reopen,api,drafts,changed,navigate,onOpenVerse,active=false }) {
   const entry=editor.adopt(row,sourceId), value=entry.server;
   return <article className={`saved-passage-note${active ? ' is-active' : ''}`} data-annotation-id={value.id} aria-label={active ? 'Selected passage note' : 'Passage note'}>
     <a className="reader-reopen" dir="auto" href={`?${new URLSearchParams({project:value.project_id,record:sourceId,document:value.document_id,annotation:value.id})}`} onClick={event=>{
@@ -29,6 +30,7 @@ export default function SavedPassageNote({ row,sourceId,editor,reopen,api,drafts
     </div> : <>{value.body && <p>{value.body}</p>}<button className="passage-note-open" onClick={()=>editor.open(value.id)}>Edit note</button></>}
     <button onClick={()=>reopen(value,true)}>Export private annotation</button>
     <ScriptureCitations annotation={value} sourceId={sourceId} api={api} drafts={drafts} changed={changed} navigate={navigate} />
+    <VerseLinks api={api} projectId={value.project_id} annotation={value} drafts={drafts} changed={changed} onOpenVerse={onOpenVerse} />
     <LexiconCapture annotation={value} sourceId={sourceId} api={api} drafts={drafts} changed={changed} navigate={navigate} />
   </article>;
 }

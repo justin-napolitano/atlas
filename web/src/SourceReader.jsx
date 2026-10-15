@@ -6,7 +6,7 @@ import ResizablePanes from './ResizablePanes.jsx';
 import './sourceReader.css';
 
 /** Edition-bound reading surface with saved inline marks and adjacent private notes. */
-export default function SourceReader({ record, api, drafts, changed, noteEditor, navigate, initialAnnotationId = '',initialDocumentId='',focused=false,onFocusChange }) {
+export default function SourceReader({ record, api, drafts, changed, noteEditor, navigate, initialAnnotationId = '',initialDocumentId='',focused=false,onFocusChange,onOpenVerse,onReadingPlace }) {
   const [snapshots,setSnapshots]=useState([]), [cursor,setCursor]=useState(null), [documentId,setDocumentId]=useState('');
   const [document,setDocument]=useState(null), [annotations,setAnnotations]=useState([]), [annotationCursor,setAnnotationCursor]=useState(null);
   const [message,setMessage]=useState(''), [highlight,setHighlight]=useState(null);
@@ -16,6 +16,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
   const margin=useRef(null), composer=useRef(null);
   const requestedAnchor=useRef(null);
   const importKey=`import:${record.id}`, captureKey=`capture:${documentId}`;
+  useEffect(()=>{onReadingPlace?.(document ? {project_id:record.project_id,record_id:record.id,document_id:document.id,annotation_id:activeAnnotation || null} : null);return()=>onReadingPlace?.(null);},[document?.id,record.id,activeAnnotation,onReadingPlace]);
   const importDraft=drafts.current.get(importKey) || { edition:'',locator:'',representation_url:'',text:'',saving:false };
   const capture=drafts.current.get(captureKey);
   useEffect(()=>{
@@ -198,7 +199,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
             {capture.submitted && !capture.saving && <small>The response was not confirmed. Retry sends the original note and ID, so it cannot create a second note. Discarding removes this local draft; a committed note may still exist in the cloud. Refresh saved notes to check.</small>}
             <small>Your note stays attached to this exact source version. Capturing it does not create a reviewed claim.</small></div>}
           <div className="reader-annotations"><h4>Saved passage notes <span>{annotations.length}{annotationCursor ? '+' : ''}</span></h4>{!annotations.length && <p>Select a passage and write here. Your saved notes will stay beside this source.</p>}
-            {saved.map(row=><SavedPassageNote key={row.id} row={row} sourceId={record.id} editor={noteEditor} reopen={reopen} api={api} drafts={drafts} changed={changed} navigate={navigate} active={activeAnnotation===row.id} />)}
+            {saved.map(row=><SavedPassageNote key={row.id} row={row} sourceId={record.id} editor={noteEditor} reopen={reopen} api={api} drafts={drafts} changed={changed} navigate={navigate} onOpenVerse={onOpenVerse} active={activeAnnotation===row.id} />)}
             {annotationCursor && <><p className="reader-help">More notes exist. Load them to see their marks in the text.</p><button onClick={moreAnnotations}>More passage notes</button></>}</div>
         </aside>
       </ResizablePanes>
