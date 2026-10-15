@@ -2,21 +2,28 @@ import React, { useEffect, useRef, useState } from 'react';
 import { selectedPassage } from './passageSelection.js';
 import './sourceReader.css';
 
-export default function SourceReader({ record, api, drafts, changed }) {
+export default function SourceReader({ record, api, drafts, changed, initialAnnotationId = '' }) {
   const [snapshots,setSnapshots]=useState([]), [cursor,setCursor]=useState(null), [documentId,setDocumentId]=useState('');
   const [document,setDocument]=useState(null), [annotations,setAnnotations]=useState([]), [annotationCursor,setAnnotationCursor]=useState(null);
   const [message,setMessage]=useState(''), [highlight,setHighlight]=useState(null);
   const textRoot=useRef(null), mark=useRef(null), alive=useRef(true), currentDocument=useRef('');
+  const requestedAnchor=useRef(null);
   const importKey=`import:${record.id}`, captureKey=`capture:${documentId}`;
   const importDraft=drafts.current.get(importKey) || { edition:'',locator:'',representation_url:'',text:'',saving:false };
   const capture=drafts.current.get(captureKey);
   useEffect(()=>{
     alive.current=true;
-    api.request('reading/documents',{ project_id:record.project_id,source_record_id:record.id }).then(data=>{
+    api.request('reading/documents',{ project_id:record.project_id,source_record_id:record.id }).then(async data=>{
+      let requested=null;
+      if(initialAnnotationId) {
+        try { requested=await api.request('reading/annotation',{ project_id:record.project_id,annotation_id:initialAnnotationId }); }
+        catch(error) { if(alive.current) setMessage('The requested passage could not be opened. Select a saved version or check its link.'); }
+      }
       if (!alive.current) return;
+      requestedAnchor.current=requested;
       setSnapshots(data.items); setCursor(data.next_cursor);
       const retained=[...drafts.current.values()].find(d=>d.sourceRecordId===record.id && d.documentId);
-      setDocumentId(retained?.documentId || data.items[0]?.id || '');
+      setDocumentId(requested?.annotation.document_id || retained?.documentId || data.items[0]?.id || '');
     }).catch(error=>{ if(alive.current) setMessage(error.message); });
     return ()=>{ alive.current=false; };
   },[record.id]);
@@ -26,9 +33,16 @@ export default function SourceReader({ record, api, drafts, changed }) {
     Promise.all([api.request('reading/document',{ project_id:record.project_id,document_id:documentId }),
       api.request('reading/annotations',{ project_id:record.project_id,document_id:documentId })]).then(([value,notes])=>{
       if(!active) return;
+      if(value.project_id!==record.project_id || value.source_record_id!==record.id) {
+        setMessage('This passage belongs to another source. Its text was not opened under this record.'); return;
+      }
       setDocument(value); setAnnotations(notes.items); setAnnotationCursor(notes.next_cursor);
       setSnapshots(rows=>rows.some(r=>r.id===value.id) ? rows : [...rows,value]);
-      const retained=drafts.current.get(`capture:${documentId}`); if(retained) setHighlight(retained);
+      const retained=drafts.current.get(`capture:${documentId}`), requested=requestedAnchor.current;
+      if(requested?.annotation.document_id===value.id) {
+        if(requested.anchor.anchored) { setHighlight(requested.anchor); setMessage('Opened the saved source version and exact passage.'); requestAnimationFrame(()=>mark.current?.scrollIntoView({block:'nearest'})); }
+        else setMessage('The requested passage needs anchor review. Its position was not changed.');
+      } else if(retained) setHighlight(retained);
     }).catch(error=>{ if(active) setMessage(error.message); });
     return ()=>{ active=false; };
   },[documentId]);

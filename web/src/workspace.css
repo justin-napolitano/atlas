@@ -43,6 +43,10 @@
 .workspace-alert small { display:block; margin-top:8px; }
 .workspace-empty { max-width:45ch; padding:12px; }
 .workspace-empty p { font:16px/1.8 Georgia,serif; color:var(--muted); }
+.workspace-passage-hit { display:grid; gap:6px; margin:0 8px 12px; padding:12px; border-left:2px solid var(--accent); background:var(--accent-wash); font-size:13px; line-height:1.7; overflow-wrap:anywhere; }
+.workspace-passage-hit small,.workspace-match-limit { color:var(--muted); font-size:11px; }
+.workspace-passage-hit b { color:var(--accent); font-size:12px; font-weight:500; }
+.workspace-match-limit { display:block; padding:0 8px 12px; line-height:1.7; }
 @media(max-width:900px) {
   .owner-panes { display:block; height:auto; }
   .owner-panes .pane-divider { display:none; }

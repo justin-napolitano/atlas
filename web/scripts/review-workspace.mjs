@@ -58,8 +58,14 @@ async function fixture(event) {
   if (!authenticated) { status=401; data={ detail:'Owner sign-in required' }; }
   else if (path==='/v1/me') data={ mode:'owner',can_edit:true };
   else if (path==='/v1/projects') data={ items:[{ id:'synthetic',title:'Synthetic research project' }] };
-  else if (path==='/v1/records' || path==='/v1/search') data={ items:records,next_cursor:null };
-  else if (path==='/v1/reading/documents') data={ items:[readingDocument],next_cursor:null };
+  else if (path==='/v1/records') data={ items:records,next_cursor:null };
+  else if (path==='/v1/search') {
+    const scope=url.searchParams.get('scope'), q=url.searchParams.get('q').toLowerCase();
+    const matches=captures.filter(c=>(c.exact+' '+c.body).toLowerCase().includes(q)).map(c=>({ channel:'private_annotation',
+      target_id:c.id,document_id:c.document_id,capture_kind:c.capture_kind,revision:c.revision,excerpt:c.exact+' · '+c.body }));
+    data={ items:scope==='annotations' ? (matches.length ? [{...records[1],matches}] : []) : records,next_cursor:null };
+  }
+  else if (path==='/v1/reading/documents') data={ items:url.searchParams.get('source_record_id')===readingDocument.source_record_id ? [readingDocument] : [],next_cursor:null };
   else if (path==='/v1/reading/document') data=readingDocument;
   else if (path==='/v1/reading/annotations' && event.request.method==='POST') {
     const value=JSON.parse(event.request.postData), characters=Array.from(readingDocument.text_body);
@@ -76,7 +82,7 @@ async function fixture(event) {
     const row=captures.find(c=>c.id===url.searchParams.get('annotation_id'));
     data={annotation:row,anchor:{anchored:true,start:row.start_pos,end:row.end_pos},web_annotation:{ id:row.id,type:'Annotation' }};
   }
-  else if (path==='/v1/record') data=[...records,claim,evidence].find(r => r.id===url.searchParams.get('record_id'));
+  else if (path==='/v1/record') data=[...records,claim,evidence,{...records[1],id:'synthetic:other',title:'Another synthetic source'}].find(r => r.id===url.searchParams.get('record_id'));
   else if (path==='/v1/personal-state') { data=saved.get(url.searchParams.get('record_id')); if (!data) { status=404; data={}; } }
   else if (path==='/v1/personal-states') {
     const value=JSON.parse(event.request.postData);
@@ -130,6 +136,16 @@ try {
   assert.equal(captures.length,1);
   await evaluate('document.querySelector(".reader-reopen").click()');
   await until(()=>evaluate('document.querySelector(".reader-text mark")?.textContent==="tafsīr"'),'reopen exact passage');
+  await evaluate(`const scope=document.querySelector('.workspace-search label:nth-child(3) select');
+    scope.value='annotations'; scope.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('.workspace-query input').focus();`);
+  await call('Input.insertText',{text:'anchored'});
+  await evaluate('document.querySelector(".workspace-search").requestSubmit()');
+  await until(()=>evaluate('!!document.querySelector(".workspace-passage-hit")'),'private annotation search result');
+  await evaluate('document.querySelector(".workspace-passage-hit").click()');
+  await until(()=>evaluate('new URLSearchParams(location.search).has("annotation") && document.querySelector(".reader-text mark")?.textContent==="tafsīr"'),'search opens exact saved passage');
+  await reload();
+  await until(()=>evaluate('document.querySelector(".reader-text mark")?.textContent==="tafsīr"'),'annotation bookmark survives reload');
   await evaluate('document.querySelector("#my-note").focus()');
   await call('Input.insertText',{ text:'Synthetic browser note <img src=x onerror=alert(1)>' });
   await evaluate('document.querySelector(".workspace-note-actions button").click()');
@@ -164,11 +180,16 @@ try {
   assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'mobile horizontal overflow');
   const mobile=await call('Page.captureScreenshot',{ format:'png' }); await writeFile(join(artifacts,'mobile.png'),Buffer.from(mobile.data,'base64'));
   assert.equal(await evaluate('Object.values(localStorage).some(v=>v.includes("Synthetic browser note")||v.includes("Cloud edit")||v.includes("Synthetic anchored term note"))'),false);
+  const previousNavigation=navigation;
+  await call('Page.navigate',{url:testOrigin+'/workspace.html?'+new URLSearchParams({project:'synthetic',record:'synthetic:other',annotation:captures[0].id})});
+  await until(()=>navigation>previousNavigation,'mismatched source document committed');
+  await until(()=>evaluate('document.querySelector(".reader-message")?.textContent.includes("belongs to another source")'),'mismatched source rejected');
+  assert.equal(await evaluate('!!document.querySelector(".reader-text")'),false);
   authenticated=false; await reload();
   await until(() => evaluate('document.querySelector("[role=alert]")?.textContent.includes("Owner sign-in")'),'anonymous sign-in boundary');
   assert.equal(await evaluate('!!document.querySelector("#my-note")'),false);
   assert.deepEqual(problems,[]);
-  console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','anonymous boundary'],artifacts }));
+  console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','anonymous boundary'],artifacts }));
 } finally {
   socket?.close(); chrome.kill(); await preview.close();
   for (const item of pending.values()) { clearTimeout(item.timeout); item.reject(new Error('Review finished')); }

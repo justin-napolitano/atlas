@@ -23,6 +23,7 @@ function Workspace() {
   const [projects, setProjects] = useState([]);
   const [project, setProject] = useState(fromURL().project || '');
   const [selected, setSelected] = useState(fromURL().record || '');
+  const [selectedAnnotation,setSelectedAnnotation] = useState(fromURL().annotation || '');
   const [record, setRecord] = useState(null);
   const [rows, setRows] = useState([]);
   const [cursor, setCursor] = useState(null);
@@ -51,7 +52,7 @@ function Workspace() {
   }, []);
   useEffect(() => {
     const unload = event => { if (store.current.hasDrafts() || readingDrafts.current.size) { event.preventDefault(); event.returnValue = ''; } };
-    const pop = () => { const state = fromURL(); setProject(state.project || ''); setSelected(state.record || ''); };
+    const pop = () => { const state = fromURL(); setProject(state.project || ''); setSelected(state.record || ''); setSelectedAnnotation(state.annotation || ''); };
     addEventListener('beforeunload', unload); addEventListener('popstate', pop);
     return () => { removeEventListener('beforeunload', unload); removeEventListener('popstate', pop); };
   }, []);
@@ -84,9 +85,9 @@ function Workspace() {
     }).catch(err => { if (active) setError(err.message); });
     return () => { active = false; };
   }, [selected, project]);
-  function open(id, nextProject = project) {
-    const url = new URL(location.href); url.search = new URLSearchParams({ project: nextProject, ...(id ? { record: id } : {}) });
-    history.pushState(null, '', url); setSelected(id); setProject(nextProject);
+  function open(id, nextProject = project, annotationId = '') {
+    const url = new URL(location.href); url.search = new URLSearchParams({ project: nextProject, ...(id ? { record: id } : {}), ...(annotationId ? { annotation: annotationId } : {}) });
+    history.pushState(null, '', url); setSelected(id); setProject(nextProject); setSelectedAnnotation(annotationId);
   }
   const entry = record && store.current.entries.get(record.id);
   function edit(patch, save = false) { store.current.edit(record.id, patch); if (save) store.current.save(record.id); }
@@ -102,14 +103,17 @@ function Workspace() {
     <form className="workspace-search" onSubmit={e => { e.preventDefault(); loadRows({ search: true }); }}>
       <label>Project<select value={project} onChange={e => open('', e.target.value)}>{projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}</select></label>
       <label className="workspace-query">Find in my research<input value={query} onChange={e => setQuery(e.target.value)} maxLength={500} placeholder="Words from a title, finding, or note" /></label>
-      <label>Search in<select value={scope} onChange={e => setScope(e.target.value)}><option value="records">Records</option><option value="notes">My notes</option><option value="all">Records + my notes</option></select></label>
+      <label>Search in<select value={scope} onChange={e => setScope(e.target.value)}><option value="records">Records</option><option value="notes">My record notes</option><option value="annotations">My passage notes</option><option value="all">All my research</option></select></label>
       <label>Type<select value={kind} onChange={e => setKind(e.target.value)}><option value="">All types</option>{['source','question','claim','evidence','concept','person'].map(k => <option key={k}>{k}</option>)}</select></label>
       <button type="submit" disabled={!project || searching}>{searching ? 'Loading…' : 'Search'}</button><button type="button" disabled={!project || searching} onClick={() => { setQuery(''); loadRows(); }}>Browse all</button>
     </form>
     <ResizablePanes storageKey="research:hosted-pane-width" className="owner-panes">
       <section id="workspace-results" className="workspace-results" aria-label="Research records">
         <p className="workspace-result-count" role="status">{searching ? 'Loading records…' : `${rows.length} records shown`}{notice && ` · ${notice}`}</p>
-        {rows.map(row => <button key={row.id} className="workspace-row" aria-pressed={selected === row.id} onClick={() => open(row.id)}><small>{row.kind} · {row.review_state}{store.current.entries.has(row.id) && ` · ${store.current.entries.get(row.id).draft.reading}`}</small><strong>{row.title}</strong>{row.matches?.map(match => <span key={match.channel}><b>{match.channel === 'private_note' ? 'My note' : 'Record'}</b> · {match.excerpt}</span>)}</button>)}
+        {rows.map(row => <article key={row.id} className="workspace-hit"><button className="workspace-row" aria-pressed={selected === row.id} onClick={() => open(row.id)}><small>{row.kind} · {row.review_state}{store.current.entries.has(row.id) && ` · ${store.current.entries.get(row.id).draft.reading}`}</small><strong>{row.title}</strong>{row.matches?.filter(match=>match.channel!=='private_annotation').map(match => <span key={match.channel}><b>{match.channel === 'private_note' ? 'My note' : 'Record'}</b> · {match.excerpt}</span>)}</button>
+          {row.matches?.filter(match=>match.channel==='private_annotation').map(match=><a key={match.target_id} className="workspace-passage-hit" href={`?${new URLSearchParams({project,record:row.id,annotation:match.target_id})}`} onClick={event=>{ if(event.button===0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) { event.preventDefault(); open(row.id,project,match.target_id); } }}><small>My passage note · {match.capture_kind?.replaceAll('_',' ')} · revision {match.revision}</small><span>{match.excerpt}</span><b>Open exact passage →</b></a>)}
+          {row.matches_truncated && <small className="workspace-match-limit">More matches exist in this source. Narrow your search.</small>}
+        </article>)}
         {cursor && <button className="workspace-load" disabled={searching} onClick={() => loadRows({ append: true })}>Load next 50 records</button>}
       </section>
       <section ref={reader} tabIndex={-1} className="workspace-reader" aria-label="Selected record and private notes">
@@ -120,7 +124,7 @@ function Workspace() {
           {property(record,'http://purl.org/dc/terms/source').filter(url => /^https?:\/\//i.test(url)).map(url => <a className="source-link" key={url} href={url} target="_blank" rel="noreferrer">Open source ↗</a>)}
           {(record.attributes?.recorded_review_status || []).map(text => <p className="workspace-review-scope" key={text}>{text}</p>)}
           {record.kind === 'question' && <EvidenceTrails trail={trail} onOpen={open} />}
-          {['source','work','edition'].includes(record.kind) && <SourceReader key={record.id} record={record} api={api} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} />}
+          {['source','work','edition'].includes(record.kind) && <SourceReader key={JSON.stringify([record.id,selectedAnnotation])} record={record} api={api} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} initialAnnotationId={selectedAnnotation} />}
           {entry && <section className="workspace-notes" aria-labelledby="my-notes-heading"><h3 id="my-notes-heading">My reading & notes</h3>
             <label>Reading progress<select value={entry.draft.reading} onChange={e => edit({ reading: e.target.value }, true)}><option value="unread">Unread</option><option value="reading">Reading</option><option value="read">Read by me</option></select></label>
             {entry.server.read_at && <small>Read {new Date(entry.server.read_at).toLocaleDateString()}</small>}

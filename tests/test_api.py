@@ -116,6 +116,7 @@ class APIBoundaryTests(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.json()["scope"], "records")
         self.assertEqual(self.client.get("/v1/search", params={**params, "scope": "notes"}, headers=self.headers()).json()["scope"], "notes")
+        self.assertEqual(self.client.get("/v1/search", params={**params, "scope": "annotations"}, headers=self.headers()).json()["scope"], "annotations")
         for extra in [{"scope": "public"}, {"limit": 1000}, {"q": ""}, {"q": "x"*501}]:
             self.assertEqual(self.client.get("/v1/search", params={**params, **extra}, headers=self.headers()).status_code, 422)
 
