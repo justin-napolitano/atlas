@@ -30,7 +30,7 @@ async function until(fn, label, attempts=100) {
   const diagnostics=label==='owned Chrome debug port' ? ` · owned browser startup: ${chromeStartupDiagnostics || '(no stderr received)'}` : '';
   throw new Error(`Timed out: ${label}${diagnostics}`);
 }
-let serial=0, navigation=0; const pending=new Map(); const problems=[]; const saved=new Map(); let conflict=false, authenticated=true;
+let serial=0, navigation=0, unloadPrompts=0; const pending=new Map(); const problems=[]; const saved=new Map(); let conflict=false, authenticated=true;
 const records = [
   { id:'synthetic:question',project_id:'synthetic',kind:'question',title:'Synthetic question about authority',summary:'A bounded synthetic question.',revision:1,review_state:'pending',attributes:{} },
   { id:'synthetic:source',project_id:'synthetic',kind:'source',title:'Synthetic source <script>not HTML</script>',summary:'Synthetic source summary.',revision:1,review_state:'pending',attributes:{} },
@@ -42,6 +42,7 @@ const readingDocument={ id:'synthetic:document',project_id:'synthetic',source_re
   source_notice:'Synthetic attribution retained verbatim.\n<b>This notice is plain text.</b>',
   text_body:'😀 Before tafsīr and التفسير; Q 4:59. After.',review_scope:'Synthetic private unverified excerpt' };
 readingDocument.text_sha256=createHash('sha256').update(readingDocument.text_body).digest('hex');
+const pilotResource={resource_id:'synthetic:resource',label:'Synthetic Arabic fixture',publisher:'Synthetic',source_notice:'Synthetic source notice',reading_note:'No edition inference',review_limit:'Synthetic test text, not Quran text',attribution_url:'https://tanzil.net/',verses:[59,83].map(ayah=>({chapter:4,ayah_start:ayah,ayah_end:ayah,text:`اختبار ${ayah}`,text_sha256:createHash('sha256').update(`اختبار ${ayah}`).digest('hex'),reference:{id:`synthetic:4:${ayah}`,label:`Q 4:${ayah}`}}))};
 const captures=[];let captureLostResponse=false;
 const lexicalConcepts=new Map(),lexicalEntities=new Map(),lexicalRequests=new Map(),lexicalHistory=new Map();
 let lexicalLostResponse=false,definitionLostResponse=false,definitionUpdateLostResponse=false;
@@ -73,6 +74,7 @@ async function reload() {
   await call('Page.reload');
   await until(() => navigation>previous,'new document committed');
 }
+async function click(text) { await evaluate(`[...document.querySelectorAll('button')].find(button=>button.textContent===${JSON.stringify(text)})?.click()`); }
 async function fixture(event) {
   const url=new URL(event.request.url), path=url.pathname;
   let status=200,data;
@@ -91,6 +93,7 @@ async function fixture(event) {
   else if(publicTesting) throw new Error('Public viewer attempted an owner API request');
   else if (!authenticated) { status=401; data={ detail:'Owner sign-in required' }; }
   else if (path==='/v1/me') data={ mode:'owner',can_edit:true };
+  else if (path==='/v1/verses/pilot') data=pilotResource;
   else if (path==='/v1/projects') data={ items:[{ id:'synthetic',title:'Synthetic research project' }] };
   else if (path==='/v1/records') data={ items:records,next_cursor:null };
   else if (path==='/v1/search') {
@@ -278,6 +281,7 @@ try {
     const message=JSON.parse(event.data);
     if (message.id) { const item=pending.get(message.id); if (!item) return; pending.delete(message.id); clearTimeout(item.timeout); message.error ? item.reject(new Error(message.error.message)) : item.resolve(message.result); }
     else if (message.method==='Fetch.requestPaused') fixture(message.params).catch(error => problems.push(error.message));
+    else if (message.method==='Page.javascriptDialogOpening' && message.params.type==='beforeunload') {unloadPrompts++;call('Page.handleJavaScriptDialog',{accept:true}).catch(error=>problems.push(error.message));}
     else if (message.method==='Runtime.exceptionThrown') problems.push('Unexpected browser runtime exception');
     else if (message.method==='Page.frameNavigated' && !message.params.frame.parentId) navigation++;
   });
@@ -721,7 +725,25 @@ try {
   await until(()=>navigation>previousNavigation,'mismatched source document committed');
   await until(()=>evaluate('document.querySelector(".reader-message")?.textContent.includes("belongs to another source")'),'mismatched source rejected');
   assert.equal(await evaluate('!!document.querySelector(".reader-text")'),false);
+  await click('Read the Sirry article');
+  await until(()=>evaluate('document.querySelector("[name=title]")?.value.includes("Who Are Those in Authority")'),'real article preset reachable from workspace');
+  assert.ok(await evaluate('document.querySelector(".intake-preset-note").textContent.includes("manual transcription")'));
+  assert.equal(await evaluate('new URL(location.href).searchParams.get("view")'),'article-pilot');
+  await click('Back to reading');await click('Add a source');
+  await until(()=>evaluate('!!document.querySelector("[name=title]")'),'workspace source intake');
+  await evaluate('document.querySelector("[name=title]").focus()');await call('Input.insertText',{text:'Private retained source draft'});
+  await click('Back to reading');await click('Read the Sirry article');
+  await until(()=>evaluate('document.querySelector("[name=title]")?.value==="Private retained source draft"'),'article preset never overwrites retained intake');
+  await click('Back to reading');await click('Start Qur’an pilot');
+  await until(()=>evaluate('document.querySelectorAll(".pilot-arabic").length===2'),'Arabic pilot reachable from workspace');
+  assert.equal(await evaluate('new URL(location.href).searchParams.get("view")'),'pilot');
+  await evaluate('history.back()');await until(()=>evaluate('!document.querySelector(".pilot-reading")'),'Back restores reading view');
+  await evaluate('history.forward()');await until(()=>evaluate('document.querySelectorAll(".pilot-arabic").length===2'),'Forward restores pilot view');
+  assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'workspace pilot fits mobile width');
+  assert.equal(await evaluate('Object.values(localStorage).some(value=>value.includes("Private retained source draft"))'),false);
+  await click('Back to reading');
   authenticated=false; await reload();
+  assert.ok(unloadPrompts>=1,'unsaved intake warns before leaving the page');
   await until(() => evaluate('document.querySelector("[role=alert]")?.textContent.includes("Owner sign-in")'),'anonymous sign-in boundary');
   assert.equal(await evaluate('!!document.querySelector("#my-note")'),false);
   authenticated=true;
@@ -835,7 +857,7 @@ try {
   assert.deepEqual(problems,[]);
   console.log(JSON.stringify({publicChecksPassed:true,checks:['actual approved-export fixture','anonymous read-only data requests','multi-project switching','Back/Forward and record reload','citations, locators and review limits','same record ID across projects','dark mobile layout','mismatched project refusal','all-withdrawn empty state','unsafe path refusal','unknown project recovery','no legacy fallback in approved mode','legacy RDF compatibility'],artifacts}));
   console.log(JSON.stringify({publicationChecksPassed:true,checks:['explicit record, summary, bibliography and relation choices','no automatic approval','sealed preview privacy and inert labels','stale head requires new preview','revision-bound acknowledgement and approval','reload without duplicate approval','withdrawal acknowledgement','390px overflow','private rationale outside localStorage','anonymous publication denial'],publicationAttempts,artifacts}));
-  console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','Quran reference decision reload and retained draft','idempotent reference retry after lost response','reference conflict comparison and explicit resolution','reverse verse lookup to exact saved passage','reference dismissal and 390px controls','manual mapping distinct from citation claims','invalid verse bounds explained before saving','word to scoped concept and durable passage links','idempotent concept and definition creation after lost responses','explicit definition gaps and separate machine proposals','attributed definitions and exact source reopening','definition correction conflict, retry and history','existing lexical connection reuse and Arabic source preservation','normalized and combined research search','lexical pagination and dark/mobile/RTL layout','persistent source marks and overlapping underline reload','direct margin writing and frozen idempotent capture retry','mark-to-note and note-to-source focus with stable bookmarks','resizable collapsible margin and focused mobile reading','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','anonymous boundary'],artifacts }));
+  console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','Quran reference decision reload and retained draft','idempotent reference retry after lost response','reference conflict comparison and explicit resolution','reverse verse lookup to exact saved passage','reference dismissal and 390px controls','manual mapping distinct from citation claims','invalid verse bounds explained before saving','word to scoped concept and durable passage links','idempotent concept and definition creation after lost responses','explicit definition gaps and separate machine proposals','attributed definitions and exact source reopening','definition correction conflict, retry and history','existing lexical connection reuse and Arabic source preservation','normalized and combined research search','lexical pagination and dark/mobile/RTL layout','persistent source marks and overlapping underline reload','direct margin writing and frozen idempotent capture retry','mark-to-note and note-to-source focus with stable bookmarks','resizable collapsible margin and focused mobile reading','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','workspace source intake and real article preset','retained intake never overwritten by preset','Arabic pilot URL Back and Forward','anonymous boundary'],artifacts }));
 } finally {
   socket?.close(); chrome.kill(); await preview.close();
   for (const item of pending.values()) { clearTimeout(item.timeout); item.reject(new Error('Review finished')); }
