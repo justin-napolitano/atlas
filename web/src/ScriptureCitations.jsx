@@ -13,11 +13,13 @@ export default function ScriptureCitations({ annotation,sourceId,api,drafts,chan
   const [related,setRelated]=useState(null);
   const alive=useRef(true), generation=useRef(0), relatedGeneration=useRef(0);
   const params={project_id:annotation.project_id,annotation_id:annotation.id};
+  const retained=[...drafts.current.values()].some(value=>value.scriptureAnnotationId===annotation.id && value.projectId===annotation.project_id);
   const matches=(row,key)=>row?.project_id===annotation.project_id && row?.annotation_id===annotation.id && row?.candidate_key===key;
   const keyFor=key=>`scripture:${JSON.stringify([annotation.project_id,annotation.id,key])}`;
   useEffect(()=>{alive.current=true;return()=>{alive.current=false;generation.current++;relatedGeneration.current++;};},[]);
   function remember(key,form) {
-    drafts.current.set(keyFor(key),{...form,sourceRecordId:sourceId,documentId:annotation.document_id});changed();
+    drafts.current.set(keyFor(key),{...form,sourceRecordId:sourceId,documentId:annotation.document_id,
+      scriptureAnnotationId:annotation.id,projectId:annotation.project_id});changed();
   }
   function forget(key) { drafts.current.delete(keyFor(key));changed(); }
   async function load() {
@@ -68,7 +70,7 @@ export default function ScriptureCitations({ annotation,sourceId,api,drafts,chan
   }
   candidates.push({key:'manual',detector_kind:'owner_mapping'});
   return <section className="scripture-citations" aria-label="Qur’an references for this passage">
-    <button className="scripture-toggle" aria-expanded={open} disabled={loading} onClick={()=>{if(open)setOpen(false);else load();}}>{loading ? 'Checking references…' : open ? 'Hide Qur’an references' : 'Link Qur’an references'}</button>
+    <button className="scripture-toggle" aria-expanded={open} disabled={loading} onClick={()=>{if(open)setOpen(false);else load();}}>{loading ? 'Checking references…' : open ? 'Hide Qur’an references' : 'Link Qur’an references'}{retained && ' · unsaved decision'}</button>
     {open && data && <>
       <p>Confirm an explicit citation or add your own connection. Connections remain private and unreviewed.</p>
       {!data.candidates.length && <p>No explicit references detected in this selected passage. You can map one below.</p>}
@@ -78,13 +80,13 @@ export default function ScriptureCitations({ annotation,sourceId,api,drafts,chan
         return <div key={candidate.key} className="scripture-reference" data-candidate-key={candidate.key}>
           <h5>{candidate.key==='manual' ? 'My connection to a verse' : candidate.reference?.label || 'Reference to resolve'}</h5>
           {candidate.matched_text && <p className="scripture-marker">Found: <q>{candidate.matched_text}</q> · {candidate.detector_kind?.replaceAll('_',' ')}</p>}
-          {candidate.key==='manual' ? <p>Owner mapping. This does not assert that the source explicitly cites this verse.</p> : <p>{candidate.reason}</p>}
+          {candidate.key==='manual' ? <p>Owner mapping. This does not assert that the source explicitly cites this verse.</p> : !row && <p>{candidate.reason}</p>}
           {row && <div className="scripture-saved"><strong>{row.decision==='confirmed' ? `Linked to ${label(row)}` : 'Dismissed'} · revision {row.revision}</strong>
             <p>{row.rationale}</p>{row.decision==='confirmed' && <div>
               <a href={`https://quran.com/${row.chapter}/${row.ayah_start}`} target="_blank" rel="noreferrer">Open {row.ayah_start===row.ayah_end ? 'verse' : 'first verse'} ↗</a>
               <button onClick={()=>showRelated(row)}>Find linked passages</button>
             </div>}</div>}
-          <details open={!!draft || !row} className="scripture-form"><summary>{row ? 'Edit reference decision' : 'Resolve reference'}</summary>
+          <details open={!!draft || (!row && candidate.key!=='manual')} className="scripture-form"><summary>{row ? 'Edit reference decision' : candidate.key==='manual' ? 'Add a verse connection' : 'Resolve reference'}</summary>
             <fieldset disabled={!!form.saving}><legend>{candidate.key==='manual' ? 'Connect this selected passage' : 'Resolve the cited reference'}</legend>
               <div className="scripture-positions">{[['chapter','Surah',114],['ayah_start','First ayah',286],['ayah_end','Last ayah',286]].map(([name,title,max])=>
                 <label key={name}>{title}<input type="number" min="1" max={max} value={form[name]} onChange={event=>edit({[name]:event.target.value})} /></label>)}</div>

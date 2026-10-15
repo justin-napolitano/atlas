@@ -31,6 +31,8 @@ The [isolated site builder](public-site-build.md) now packages one verified appr
 
 The follow-on [container delivery configuration](public-container-delivery.md) supplies an approved-only image context, pinned base/scanner, synthetic Linux image build/scan/SBOM and actual-container Chrome checks. The combined gate now also requires this container workflow. Optional Cloud Run configuration defaults to no runtime and supports a private candidate before explicit anonymous visibility; it is a mock-validated design, not a credentialed plan or deployment. No image is pushed. Deployment freshness, scoped publisher identity, withdrawal/cache handling, scheduling, live recovery and full domain acceptance remain open.
 
+The [located Qur’an reference slice](quran-reference-capture.md) adds offline numeric/list/range and bounded English narrative detection, an attributed structure profile, immutable source/marker provenance, private revisioned owner confirmation/correction/dismissal, manual mapping, reverse verse-to-passage lookup, and private JSON-LD reference export. Restricted PostgreSQL roles and real HTTP/storage round trips are tested; browser controls separately use synthetic authenticated API responses. Private Ossie metadata describes the project-scoped source/passage/reference lineage. No detection or confirmation promotes scholarly review, creates a canonical graph edge, or publishes selected text. This does not complete scripture/translation/commentary reading, concept definitions, or the actual hosted Q 4:59 acceptance flow.
+
 ## First-release acceptance remains intact
 
 | Requirement from #42 | Current evidence | Still required |

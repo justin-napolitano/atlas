@@ -127,7 +127,9 @@ async function fixture(event) {
     const same=existing && ['chapter','ayah_start','ayah_end','decision','rationale'].every(field=>existing[field]===value[field]);
     if(existing && value.expected_revision!==existing.revision && !(existing.revision===value.expected_revision+1 && same)) {status=409;data={current:existing};}
     else {
-      data=existing && same && existing.revision===value.expected_revision+1 ? existing : {...value,id:'synthetic:citation:'+key,revision:(existing?.revision || 0)+1};
+      data=existing && same && existing.revision===value.expected_revision+1 ? existing : {...value,
+        detector_kind:value.candidate_key==='manual' ? 'owner_mapping' : 'explicit_numeric',
+        id:'synthetic:citation:'+key,revision:(existing?.revision || 0)+1};
       scriptureResolutions.set(key,data);
       if(scriptureLostResponse) {scriptureLostResponse=false;status=503;data={detail:'Synthetic lost acknowledgement'};}
     }
@@ -308,6 +310,18 @@ try {
   await evaluate(`document.querySelector(${JSON.stringify(citationSelector+' details')}).open=true;document.querySelector(${JSON.stringify(citationSelector+' .scripture-dismiss')}).click()`);
   await until(()=>evaluate(`document.querySelector(${JSON.stringify(citationSelector+' .scripture-saved')})?.textContent.includes('Dismissed')`),'dismissal persisted');
   assert.equal([...scriptureResolutions.values()][0].revision,4);
+  await evaluate('[...document.querySelectorAll(".saved-passage-note")].find(node=>node.querySelector(".reader-reopen").textContent==="tafsīr").querySelector(".scripture-toggle").click()');
+  const termManual='[...document.querySelectorAll(".saved-passage-note")].find(node=>node.querySelector(".reader-reopen").textContent==="tafsīr").querySelector("[data-candidate-key=manual]")';
+  await until(()=>evaluate(`!!${termManual}`),'manual reference mapping for a selected term');
+  await evaluate(`${termManual}.querySelector('details').open=true`);
+  for(const [index,value] of [[0,'4'],[1,'59']]) {
+    await evaluate(`{const field=${termManual}.querySelectorAll('input')[${index}];Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(field,${JSON.stringify(value)});field.dispatchEvent(new Event('input',{bubbles:true}));}`);
+  }
+  await evaluate(`${termManual}.querySelector('textarea').focus()`);
+  await call('Input.insertText',{text:'Synthetic manual connection, not a citation claim'});
+  await evaluate(`${termManual}.querySelector('.scripture-confirm').click()`);
+  await until(()=>evaluate(`${termManual}.querySelector('.scripture-saved')?.textContent.includes('Linked to Q 4:59')`),'manual verse connection persisted');
+  assert.equal([...scriptureResolutions.values()].filter(row=>row.detector_kind==='owner_mapping').length,1);
   assert.equal(await evaluate('Object.values(localStorage).some(value=>value.includes("Synthetic owner reference resolution") || value.includes("Cloud reference correction"))'),false);
   await evaluate('document.querySelector("#my-note").focus()');
   await call('Input.insertText',{ text:'Synthetic browser note <img src=x onerror=alert(1)>' });
