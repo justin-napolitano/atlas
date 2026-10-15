@@ -2,6 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import ResizablePanes from './ResizablePanes.jsx';
 import SourceReader from './SourceReader.jsx';
+import AddSource from './AddSource.jsx';
+import PilotReading from './PilotReading.jsx';
+import {sirryPilotPreset} from './researchPilot.js';
 import ConceptPanel from './ConceptPanel.jsx';
 import {mergeResearchMatches} from './lexiconClient.js';
 import { PassageNoteEditor } from './passageNoteEditor.js';
@@ -41,6 +44,7 @@ function Workspace() {
   const [notice, setNotice] = useState('');
   const [trail, setTrail] = useState(null);
   const [readingFocus,setReadingFocus]=useState(false);
+  const [libraryView,setLibraryView]=useState(fromURL().view || '');
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem('research-theme') || 'light'; } catch { return 'light'; } });
   const generation = useRef(0);
   const reader = useRef(null);
@@ -59,7 +63,7 @@ function Workspace() {
   }, []);
   useEffect(() => {
     const unload = event => { if (store.current.hasDrafts() || passageNotes.current.hasDrafts() || readingDrafts.current.size) { event.preventDefault(); event.returnValue = ''; } };
-    const pop = () => { const state = fromURL(); setProject(state.project || ''); setSelected(state.record || ''); setSelectedAnnotation(state.annotation || '');setSelectedDocument(state.document || ''); };
+    const pop = () => { const state = fromURL(); setProject(state.project || ''); setSelected(state.record || ''); setSelectedAnnotation(state.annotation || '');setSelectedDocument(state.document || '');setLibraryView(['add-source','article-pilot','pilot'].includes(state.view) ? state.view : ''); };
     addEventListener('beforeunload', unload); addEventListener('popstate', pop);
     return () => { removeEventListener('beforeunload', unload); removeEventListener('popstate', pop); };
   }, []);
@@ -104,8 +108,13 @@ function Workspace() {
   }, [selected, project]);
   function open(id, nextProject = project, annotationId = '',documentId='') {
     const url = new URL(location.href); url.search = new URLSearchParams({ project: nextProject, ...(id ? { record: id } : {}), ...(annotationId ? { annotation: annotationId } : {}),...(documentId ? {document:documentId} : {}) });
-    history.pushState(null, '', url); setSelected(id); setProject(nextProject); setSelectedAnnotation(annotationId);setSelectedDocument(documentId);
+    history.pushState(null, '', url); setLibraryView('');setSelected(id); setProject(nextProject); setSelectedAnnotation(annotationId);setSelectedDocument(documentId);
   }
+  function showLibrary(view) {
+    const url=new URL(location.href);url.searchParams.set('project',project);url.searchParams.set('view',view);
+    history.pushState(null,'',url);setLibraryView(view);setReadingFocus(false);
+  }
+  function closeLibrary() {const url=new URL(location.href);url.searchParams.delete('view');history.pushState(null,'',url);setLibraryView('');}
   const entry = record && store.current.entries.get(record.id);
   function edit(patch, save = false) { store.current.edit(record.id, patch); if (save) store.current.save(record.id); }
   async function exportNote() {
@@ -124,7 +133,8 @@ function Workspace() {
       <label>Type<select value={kind} disabled={scope==='lexicon'} onChange={e => setKind(e.target.value)}><option value="">All types</option>{['source','question','claim','evidence','concept','person'].map(k => <option key={k}>{k}</option>)}</select></label>
       <button type="submit" disabled={!project || searching}>{searching ? 'Loading…' : 'Search'}</button><button type="button" disabled={!project || searching} onClick={() => { setQuery(''); setScope('records'); setKind(''); loadRows(); }}>Browse all</button>
     </form>
-    <ResizablePanes storageKey="research:hosted-pane-width" className={`owner-panes${readingFocus && ['source','work','edition'].includes(record?.kind) ? ' reading-focus' : ''}`}>
+    <nav className="workspace-library-actions" aria-label="Reading library actions"><button disabled={!project} onClick={()=>showLibrary('add-source')}>Add a source</button><button disabled={!project} onClick={()=>showLibrary('article-pilot')}>Read the Sirry article</button><button disabled={!project} onClick={()=>showLibrary('pilot')}>Start Qur’an pilot</button></nav>
+    {['add-source','article-pilot'].includes(libraryView) ? <AddSource key={project+libraryView} initialPreset={libraryView==='article-pilot' ? sirryPilotPreset : undefined} api={api} projectId={project} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onCancel={closeLibrary} onCreated={result=>{loadRows();open(result.record_id,result.project_id,'',result.document_id || '');}} /> : libraryView==='pilot' ? <PilotReading key={project} api={api} projectId={project} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onOpen={open} onCancel={closeLibrary} /> : <ResizablePanes storageKey="research:hosted-pane-width" className={`owner-panes${readingFocus && ['source','work','edition'].includes(record?.kind) ? ' reading-focus' : ''}`}>
       <section id="workspace-results" className="workspace-results" aria-label="Research records">
         <p className="workspace-result-count" role="status">{searching ? 'Loading records…' : `${rows.length} records shown`}{notice && ` · ${notice}`}</p>
         {rows.map(row => <article key={row.id} className="workspace-hit"><button className="workspace-row" aria-pressed={selected === row.id} onClick={() => open(row.id)}><small>{row.kind} · {row.review_state}{store.current.entries.has(row.id) && ` · ${store.current.entries.get(row.id).draft.reading}`}</small><strong>{row.title}</strong>{row.matches?.filter(match=>match.channel!=='private_annotation').map((match,i) => <span key={match.channel+':'+i}><b>{match.channel === 'private_note' ? 'My note' : match.channel==='lexicon' ? 'Matched wording' : 'Record'}</b> · {match.excerpt}{match.assertion_kind && ` · ${match.assertion_kind.replaceAll('_',' ')}`}</span>)}</button>
@@ -154,7 +164,7 @@ function Workspace() {
           </section>}
         </>}
       </section>
-    </ResizablePanes>
+    </ResizablePanes>}
   </main>;
 }
 
