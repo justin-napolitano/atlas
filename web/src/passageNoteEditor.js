@@ -5,7 +5,7 @@ export class PassageNoteEditor {
   adopt(row, sourceId) {
     let entry=this.entries.get(row.id);
     if (!entry) {
-      entry={ server:row,body:row.body,status:'saved',current:null,pending:null,open:false,sourceId };
+      entry={ server:row,body:row.body,status:'saved',current:null,pending:null,open:false,sourceId,uncertain:false };
       this.entries.set(row.id,entry);
     } else if (!sameTarget(entry.server,row) || entry.sourceId!==sourceId) throw new Error('Passage note identity changed.');
     else if (row.revision>entry.server.revision && entry.status==='saved' && !entry.pending) {
@@ -17,7 +17,7 @@ export class PassageNoteEditor {
   edit(id, body) {
     const entry=this.entries.get(id);
     entry.body=body;
-    if (!entry.pending && entry.status!=='conflict') entry.status=body===entry.server.body ? 'saved' : 'unsaved';
+    if (!entry.pending && entry.status!=='conflict') entry.status=entry.uncertain ? 'error' : body===entry.server.body ? 'saved' : 'unsaved';
     this.changed();
   }
   async save(id) {
@@ -29,14 +29,15 @@ export class PassageNoteEditor {
       annotation_id:id,project_id:entry.server.project_id,body:sent,expected_revision:expected,
     })).then(row=>{
       if (!sameTarget(entry.server,row) || row.revision<=expected) throw new Error('Unexpected annotation response.');
-      entry.server=row; entry.status=entry.body===row.body ? 'saved' : 'unsaved'; entry.current=null;
+      entry.server=row; entry.status=entry.body===row.body ? 'saved' : 'unsaved'; entry.current=null; entry.uncertain=false;
     }).catch(error=>{
       const current=error.status===409 && error.current;
       if (sameTarget(entry.server,current) && current.revision>expected) {
+        entry.uncertain=false;
         if (current.body===sent) { // Successful commit followed by a lost response.
           entry.server=current; entry.status=entry.body===sent ? 'saved' : 'unsaved'; entry.current=null;
         } else { entry.current=current; entry.status='conflict'; }
-      } else entry.status='error';
+      } else { entry.status='error'; entry.uncertain=true; }
     }).finally(()=>{ entry.pending=null; this.changed(); });
     this.changed();
     return entry.pending;
@@ -53,7 +54,7 @@ export class PassageNoteEditor {
     const entry=this.entries.get(id);
     if (entry.pending) return;
     if (entry.current) entry.server=entry.current;
-    entry.body=entry.server.body; entry.current=null; entry.status='saved'; entry.open=false; this.changed();
+    entry.body=entry.server.body; entry.current=null; entry.status='saved'; entry.uncertain=false; entry.open=false; this.changed();
   }
   hasDrafts() { return [...this.entries.values()].some(entry=>entry.status!=='saved'); }
   documentForSource(projectId,sourceId) {

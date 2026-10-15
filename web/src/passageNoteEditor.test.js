@@ -60,6 +60,16 @@ test('mismatched conflict and success responses cannot adopt another annotation'
   }
 });
 
+test('reverting text after a lost response still requires confirming the cloud state',async()=>{
+  let writes=0;
+  const editor=new PassageNoteEditor({request:async()=>{if(++writes===1) throw new WorkspaceError(503);throw new WorkspaceError(409,{...row(),body:'Possibly committed edit',revision:2});}});
+  const entry=editor.adopt(row(),'source:1');editor.edit('annotation:1','Possibly committed edit');
+  await editor.save('annotation:1');editor.edit('annotation:1',row().body);
+  assert.equal(entry.status,'error');assert.equal(editor.hasDrafts(),true);
+  await editor.save('annotation:1');assert.equal(entry.status,'conflict');assert.equal(entry.body,row().body);
+  assert.equal(entry.current.body,'Possibly committed edit');
+});
+
 test('refresh adopts a newer saved note, but preserves an unsaved local edit',()=>{
   const editor=new PassageNoteEditor({});const entry=editor.adopt(row(),'source:1');
   editor.adopt({...row(),body:'New cloud note',revision:2},'source:1');assert.equal(entry.body,'New cloud note');
