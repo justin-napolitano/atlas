@@ -144,6 +144,8 @@ def verify_site(directory, checkout):
         if (not isinstance(info, dict) or set(info) != {"bytes", "sha256"} or type(info["bytes"]) is not int
                 or not 0 <= info["bytes"] <= 2_000_000 or not re.fullmatch(r"[a-f0-9]{64}", info["sha256"])):
             raise ValueError("Invalid public source provenance")
+    if inputs != source_inputs(checkout):
+        raise ValueError("Public build source provenance does not match this verifier checkout")
     files = manifest["files"]
     if not isinstance(files, dict) or len(files) > 250:
         raise ValueError("Invalid public site file index")

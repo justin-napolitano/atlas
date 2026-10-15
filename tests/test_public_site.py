@@ -57,6 +57,15 @@ class PublicSiteTests(unittest.TestCase):
                 directory, _ = synthetic_site(Path(temp))
                 (directory / name).write_text(data); seal(directory)
                 with self.assertRaises(ValueError): site.verify_site(directory, ROOT)
+        with tempfile.TemporaryDirectory() as temp:
+            directory, _ = synthetic_site(Path(temp))
+            data = b"SYNTHETIC_REPLACEMENT_SERVER"
+            (directory / site.RUNTIME).write_bytes(data)
+            manifest = json.loads((directory / "build-manifest.json").read_text())
+            manifest["source_inputs"][site.RUNTIME] = {"bytes": len(data), "sha256": release.digest(data)}
+            (directory / "build-manifest.json").write_bytes(release.encoded(manifest))
+            seal(directory)
+            with self.assertRaises(ValueError): site.verify_site(directory, ROOT)
 
     def test_rehashed_inline_scripts_external_assets_event_handlers_and_refresh_are_rejected(self):
         for html in ['<script>alert(1)</script>', '<script src="https://example.invalid/code.js"></script>',

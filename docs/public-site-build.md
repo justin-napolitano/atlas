@@ -23,8 +23,10 @@ output/current root, or an exact build directory for `verify`. Build inputs must
 be tracked and unchanged relative to `HEAD`; the builder records their hashes and
 source commit and checks them again after compilation. Commit intended source
 changes on a review branch first. Successful build output is not source approval.
-The source allowlist and Python verifier run from the checkout's current version;
-retain the matching tool/source version when archiving an artifact.
+The verifier compares the recorded source-input hashes to its own checkout;
+retain the matching tool/source version when archiving an artifact. Rewriting
+artifact hashes and its claimed source hashes cannot substitute another runtime
+for the reviewed verifier checkout's runtime code.
 
 The compiler uses the locked installed Vite/React dependencies but loads neither
 `vite.config.js` nor `.env` files, exposes no `VITE_*` prefix and copies no
