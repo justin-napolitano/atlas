@@ -25,9 +25,10 @@ chrome.stderr.on('data',chunk=>{chromeStartupDiagnostics=(chromeStartupDiagnosti
 chrome.on('error',error => { processFailure = error; });
 chrome.on('exit',(code,signal)=>{processFailure=new Error(`Owned test Chrome exited (${code ?? signal}): ${chromeStartupDiagnostics}`);});
 const sleep = ms => new Promise(resolve => setTimeout(resolve,ms));
-async function until(fn, label) {
-  for (let i=0;i<100;i++) { if (processFailure) throw processFailure; try { const value=await fn(); if (value) return value; } catch {} await sleep(100); }
-  throw new Error(`Timed out: ${label}`);
+async function until(fn, label, attempts=100) {
+  for (let i=0;i<attempts;i++) { if (processFailure) throw processFailure; try { const value=await fn(); if (value) return value; } catch {} await sleep(100); }
+  const diagnostics=label==='owned Chrome debug port' ? ` · owned browser startup: ${chromeStartupDiagnostics || '(no stderr received)'}` : '';
+  throw new Error(`Timed out: ${label}${diagnostics}`);
 }
 let serial=0, navigation=0; const pending=new Map(); const problems=[]; const saved=new Map(); let conflict=false, authenticated=true;
 const records = [
@@ -142,7 +143,9 @@ async function fixture(event) {
 }
 try {
   await until(async () => (await fetch(testOrigin+'/workspace.html')).ok,'preview server');
-  const debugPort=await until(async () => Number((await readFile(join(profile,'DevToolsActivePort'),'utf8')).split('\n')[0]),'owned Chrome debug port');
+  // Cold runner startup gets up to 30 seconds. Observe the same owned process;
+  // no browser restart, test retry, or reduced sandbox/functional checks.
+  const debugPort=await until(async () => Number((await readFile(join(profile,'DevToolsActivePort'),'utf8')).split('\n')[0]),'owned Chrome debug port',300);
   const pages=await until(async () => { const p=await (await fetch(`http://127.0.0.1:${debugPort}/json/list`)).json(); return p.find(x => x.type==='page'); },'Chrome CDP');
   socket=new WebSocket(pages.webSocketDebuggerUrl);
   await new Promise((resolve,reject) => { socket.addEventListener('open',resolve,{ once:true }); socket.addEventListener('error',reject,{ once:true }); });
