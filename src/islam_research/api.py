@@ -100,6 +100,34 @@ class RankInput(Input):
     candidates: list[RankCandidate] = Field(max_length=100)
 
 
+class ReadingDocumentInput(Input):
+    project_id: Identifier
+    source_record_id: Identifier
+    edition: Annotated[str, Field(min_length=1,max_length=1000)]
+    locator: Annotated[str, Field(min_length=1,max_length=2000)]
+    representation_url: Annotated[str, Field(max_length=2000)] = ""
+    text: Annotated[str, Field(min_length=1,max_length=12000)]
+
+
+class ReadingCaptureInput(Input):
+    annotation_uuid: Annotated[str, Field(pattern=r"^[a-fA-F0-9-]{36}$")]
+    project_id: Identifier
+    document_id: Identifier
+    text_sha256: Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
+    start: Annotated[int, Field(ge=0,le=12000)]
+    end: Annotated[int, Field(ge=1,le=12000)]
+    exact: Annotated[str, Field(min_length=1,max_length=500)]
+    capture_kind: Literal["comment","term_candidate","citation_candidate"] = "comment"
+    body: Annotated[str, Field(max_length=10000)] = ""
+
+
+class ReadingAnnotationUpdate(Input):
+    annotation_id: Identifier
+    project_id: Identifier
+    body: Annotated[str, Field(max_length=10000)]
+    expected_revision: Annotated[int, Field(ge=1)]
+
+
 def problem(status: int, detail: str, request_id: str = "", **extra) -> JSONResponse:
     return JSONResponse(status_code=status, media_type="application/problem+json",
                         content=jsonable_encoder({"type": "about:blank", "status": status,
@@ -328,6 +356,44 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     @router.get("/schema")
     def schema():
         return app.openapi()
+
+    @router.get("/reading/documents")
+    def reading_documents(project_id: Identifier, source_record_id: Identifier,
+                          cursor: Annotated[str, Query(max_length=500)] = "",limit: Annotated[int, Query(ge=1,le=50)] = 25):
+        rows = store.reading_documents(project_id,source_record_id,cursor,limit+1)
+        return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
+
+    @router.post("/reading/documents",status_code=201)
+    def create_reading_document(value: ReadingDocumentInput, actor: str = Depends(owner)):
+        return store.create_reading_document(actor=actor,**value.model_dump())
+
+    @router.get("/reading/document")
+    def reading_document(project_id: Identifier, document_id: Identifier):
+        value = store.reading_document(project_id,document_id)
+        if value is None:
+            raise HTTPException(404,"Reading snapshot not found")
+        return value
+
+    @router.get("/reading/annotations")
+    def reading_annotations(project_id: Identifier, document_id: Identifier,
+                            cursor: Annotated[str, Query(max_length=500)] = "",limit: Annotated[int, Query(ge=1,le=100)] = 50):
+        rows = store.reading_annotations(project_id,document_id,cursor,limit+1)
+        return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
+
+    @router.post("/reading/annotations",status_code=201)
+    def create_reading_annotation(value: ReadingCaptureInput, actor: str = Depends(owner)):
+        return store.create_reading_annotation(actor=actor,**value.model_dump())
+
+    @router.get("/reading/annotation")
+    def reading_annotation(project_id: Identifier, annotation_id: Identifier):
+        value = store.reading_annotation(project_id,annotation_id)
+        if value is None:
+            raise HTTPException(404,"Reading annotation not found")
+        return value
+
+    @router.put("/reading/annotation")
+    def update_reading_annotation(value: ReadingAnnotationUpdate, actor: str = Depends(owner)):
+        return store.update_reading_annotation(actor=actor,**value.model_dump())
 
     app.include_router(router)
     return app

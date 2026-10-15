@@ -38,6 +38,7 @@ The research should understand traditions in context before evaluating them. “
 - `docs/research-search.md` — bounded, signed-owner lexical retrieval across research records and explicitly selected private notes, with channel/revision provenance.
 - `docs/reading-workspace.md` — resizable owner reading UI, revision-aware notes and reading decisions, evidence trails, Markdown export, browser verification, and hosting prerequisites.
 - `docs/obsidian-notes.md` — shared versioned private Markdown notes and explicit revision-aware Obsidian/file pull/push; no daemon or live cloud authentication is presumed.
+- `docs/passage-capture.md` — private immutable source excerpts and W3C passage anchors with Unicode positions, edition/locator checks, revision history, and changed-source diagnostics.
 - `docs/postgres.md` — migration-managed PostgreSQL records, retained RDF imports, revision-safe personal state, and real-database test commands; hosted authentication/deployment remain separate slices.
 - `methods/corpus-scope.md` — Islam-first source selection and bounded expansion into philosophy/religion.
 - `methods/editorial-review.md` — source/passage/claim review, uncertainty, publication, and corrections.
