@@ -75,3 +75,5 @@ Automated backups and seven-day PITR are configured; proposed initial objectives
 SQL deletion protection is enabled in Terraform and the API. Teardown needs a reviewed change disabling both after a verified retained backup. KMS destruction protection also requires a recovery-aware change. Google service identities/key-ring metadata can persist; API enablements are not automatically disabled on destroy. Mock validation does not prove deletion or recovery.
 
 Security review remains required before live IAM/network/runtime rollout. See `docs/platform-threat-model.md` for the current trust-boundary assessment and explicit unverified controls.
+
+Optional owner service resources are disabled by default; see [owner service delivery](../../docs/owner-service-delivery.md) for native IAP, private IAM SQL proxy, identity/cost review and migration prerequisites. No owner release input deploys itself.

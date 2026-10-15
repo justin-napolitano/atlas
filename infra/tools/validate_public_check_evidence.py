@@ -12,11 +12,13 @@ def verify(report):
         raise ValueError("Expected Terraform security evidence")
     results = report.get("results", {})
     passed = {row["resource"].split("[")[0] for row in results.get("passed_checks", []) if row.get("check_id") == CHECK}
-    if passed != REQUIRED:
+    # The same shared IAM rule also executes on private owner resources. Their
+    # presence must not hide or replace either mandatory public resource check.
+    if not REQUIRED <= passed:
         raise ValueError("Public v2 security policy was missing or did not execute on both required resources")
     if results.get("failed_checks") or results.get("skipped_checks"):
         raise ValueError("Infrastructure security evidence contains failed or skipped checks")
-    return {"public_v2_policy_executed": True, "resources": sorted(passed), "checks_passed": report["summary"]["passed"]}
+    return {"public_v2_policy_executed": True, "resources": sorted(REQUIRED), "checks_passed": report["summary"]["passed"]}
 
 
 if __name__ == "__main__":

@@ -84,3 +84,25 @@ variable "public_release" {
     error_message = "Public releases require the dedicated regional public image path pinned by digest and complete verified build/release IDs; mutable tags or other repositories are refused."
   }
 }
+
+variable "owner_release" {
+  description = "Null creates no owner runtime. Requires reviewed image and one exact IAP owner. Personal projects require one-time Console OAuth setup."
+  type = object({
+    image         = string
+    source_commit = string
+    owner_subject = string
+    owner_email   = string
+    origin        = string
+  })
+  default = null
+  validation {
+    condition = var.owner_release == null ? true : (
+      can(regex("^${var.region}-docker\\.pkg\\.dev/${var.project_id}/${var.prefix}/owner@sha256:[a-f0-9]{64}$", var.owner_release.image)) &&
+      can(regex("^[a-f0-9]{40}$", var.owner_release.source_commit)) &&
+      can(regex("^[^[:space:][:cntrl:]]{1,500}$", var.owner_release.owner_subject)) &&
+      can(regex("^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$", var.owner_release.owner_email)) &&
+      can(regex("^https://[A-Za-z0-9][A-Za-z0-9.-]+(:443)?$", var.owner_release.origin))
+    )
+    error_message = "Use an immutable dedicated owner image, full commit, stable verified subject, one user email, and exact HTTPS origin without a path."
+  }
+}

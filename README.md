@@ -101,3 +101,5 @@ For the unified flow, install the optional RDF tooling with `python3 -m pip inst
 For the public React research studio, see `web/README.md`. Its GitHub Actions workflow harvests the seed plan daily, builds a sanitized static snapshot, and commits changed public data to `main`; a Git-connected Vercel project deploys that commit. Local preview uses `cd web && npm install && npm run dev`. Unreviewed search candidates remain separate from the curated RDF graph.
 
 The owner reading workspace now connects [source intake, the bounded article preset, and the attributed Qur’an pilot](docs/reader-library-integration.md) to exact reading documents and margin annotations. These private workflows require the corresponding owner API migrations and authentication; the anonymous public artifact remains selected read-only research.
+
+The authenticated owner runtime, isolated build, native-IAP/private-SQL delivery configuration and remaining live rollout gates are documented in [owner service delivery](docs/owner-service-delivery.md).
