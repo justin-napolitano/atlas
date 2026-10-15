@@ -303,6 +303,7 @@ try {
   await until(()=>evaluate('document.querySelector("[role=alert]")?.textContent.includes("Owner sign-in")'),'anonymous publication boundary');
   assert.equal(await evaluate('!!document.querySelector(".publication-picker")'),false);
   assert.deepEqual(problems,[]);
+  console.log(JSON.stringify({publicationChecksPassed:true,checks:['explicit record, summary, bibliography and relation choices','no automatic approval','sealed preview privacy and inert labels','stale head requires new preview','revision-bound acknowledgement and approval','reload without duplicate approval','withdrawal acknowledgement','390px overflow','private rationale outside localStorage','anonymous publication denial'],publicationAttempts,artifacts}));
   console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','anonymous boundary'],artifacts }));
 } finally {
   socket?.close(); chrome.kill(); await preview.close();
