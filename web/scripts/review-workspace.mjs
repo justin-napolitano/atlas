@@ -42,6 +42,15 @@ const readingDocument={ id:'synthetic:document',project_id:'synthetic',source_re
   text_body:'😀 Before tafsīr and التفسير; Q 4:59. After.',review_scope:'Synthetic private unverified excerpt' };
 readingDocument.text_sha256=createHash('sha256').update(readingDocument.text_body).digest('hex');
 const captures=[];
+const lexicalConcepts=new Map(),lexicalEntities=new Map(),lexicalRequests=new Map(),lexicalHistory=new Map();
+let lexicalLostResponse=false,definitionLostResponse=false,definitionUpdateLostResponse=false;
+const lexicalSource=row=>({...row,source_record_id:readingDocument.source_record_id,source_title:records[1].title,
+  edition:readingDocument.edition,locator:readingDocument.locator,representation_url:readingDocument.representation_url,
+  text_sha256:readingDocument.text_sha256,source_quotation:captures.find(item=>item.id===row.annotation_id)?.exact});
+function lexicalPage(items,url) {
+  const after=url.searchParams.get('cursor') || '',rows=items.filter(row=>row.id>after).sort((a,b)=>a.id.localeCompare(b.id));
+  return {items:rows.slice(0,1),next_cursor:rows.length>1 ? rows[0].id : null};
+}
 const scriptureResolutions=new Map();let scriptureLostResponse=false;
 const scriptureStructure=JSON.parse(await readFile(join(root,'../src/islam_research/resources/quran-structure-v1.json'),'utf8'));
 const publicationPreviews=new Map();let publicationHead={project_id:'synthetic',revision:0,status:'private',snapshot_id:null};
@@ -139,7 +148,75 @@ async function fixture(event) {
     data={items:[...scriptureResolutions.values()].filter(row=>row.decision==='confirmed' && row.chapter===Number(url.searchParams.get('chapter')) && row.ayah_start<=Number(url.searchParams.get('ayah_end')) && row.ayah_end>=Number(url.searchParams.get('ayah_start')))
       .map(row=>({...row,source_record_id:records[1].id,source_title:'Synthetic source',edition:readingDocument.edition,locator:readingDocument.locator,selected_quote:captures.find(item=>item.id===row.annotation_id).exact})),next_cursor:null};
   }
-  else if (path==='/v1/record') data=[...records,claim,evidence,{...records[1],id:'synthetic:other',title:'Another synthetic source'}].find(r => r.id===url.searchParams.get('record_id'));
+  else if(path==='/v1/lexicon/captures' && event.request.method==='POST') {
+    const value=JSON.parse(event.request.postData),previous=lexicalRequests.get(value.request_uuid);
+    assert.equal(value.owner_confirmed,true);assert.equal(value.project_id,'synthetic');
+    assert.equal(event.request.headers['X-Research-Write'] || event.request.headers['x-research-write'],'1');
+    if(previous) {assert.deepEqual(value,previous.input);data=previous.result;}
+    else {
+      const annotation=captures.find(row=>row.id===value.annotation_id),word=Array.from(annotation.exact).slice(value.start,value.end).join('');
+      const ids=Object.fromEntries(['concept','entry','form','representation','sense','occurrence'].map(kind=>[kind+'_id','synthetic:lexical:'+kind+':'+value.request_uuid]));
+      if(value.concept?.mode==='existing')ids.concept_id=value.concept.concept_id;
+      if(value.sense_id) {
+        const sense=lexicalEntities.get(value.sense_id),representation=lexicalEntities.get(value.representation_id);
+        assert.equal(sense.entry_id,representation.entry_id);assert.equal(representation.written_rep,word);
+        Object.assign(ids,{concept_id:sense.concept_id,entry_id:sense.entry_id,form_id:representation.form_id,sense_id:sense.id,representation_id:representation.id});
+      } else {
+        if(value.concept.mode==='new')lexicalConcepts.set(ids.concept_id,{id:ids.concept_id,project_id:'synthetic',kind:'concept',title:value.concept.title,summary:value.concept.scope,attributes:{},revision:1,review_state:'pending'});
+        lexicalEntities.set(ids.sense_id,{id:ids.sense_id,project_id:'synthetic',concept_id:ids.concept_id,entry_id:ids.entry_id,scope:value.sense_scope,rationale:value.rationale,state:'active',review_state:'pending',revision:1,entity_kind:'sense',written_rep:word,language_tag:value.entry.language_tag});
+        lexicalEntities.set(ids.representation_id,{id:ids.representation_id,project_id:'synthetic',entry_id:ids.entry_id,form_id:ids.form_id,written_rep:word,language_tag:value.entry.language_tag,script_tag:value.entry.script_tag,transliteration_scheme:value.entry.transliteration_scheme,entity_kind:'representation'});
+      }
+      const representation=lexicalEntities.get(ids.representation_id);
+      lexicalEntities.set(ids.occurrence_id,{id:ids.occurrence_id,project_id:'synthetic',concept_id:ids.concept_id,sense_id:ids.sense_id,representation_id:ids.representation_id,annotation_id:annotation.id,
+        document_id:annotation.document_id,text_sha256:annotation.text_sha256,term_start:value.start,term_end:value.end,exact:word,rationale:value.rationale,review_state:'pending',state:'active',entity_kind:'occurrence',language_tag:representation.language_tag,script_tag:representation.script_tag});
+      lexicalRequests.set(value.request_uuid,{input:value,result:ids});data=ids;
+    }
+    status=201;if(lexicalLostResponse){lexicalLostResponse=false;status=503;data={detail:'Synthetic lost lexical acknowledgement'};}
+  }
+  else if(path==='/v1/lexicon/annotation-links') {
+    const annotationId=url.searchParams.get('annotation_id');
+    data=lexicalPage([...lexicalEntities.values()].filter(row=>row.annotation_id===annotationId && ['occurrence','definition'].includes(row.entity_kind)).map(row=>({id:row.id,concept_id:row.concept_id,
+      concept_title:lexicalConcepts.get(row.concept_id).title,link_kind:row.entity_kind==='occurrence' ? 'term_occurrence' : 'definition_assertion',definition_kind:row.definition_kind,review_state:'pending'})),url);
+  }
+  else if(path==='/v1/lexicon/search') {
+    const normalize=value=>value.normalize('NFD').replace(/\p{M}/gu,'').toLowerCase(),q=normalize(url.searchParams.get('q'));
+    const matching=[...lexicalConcepts.values()].filter(row=>normalize(row.title).includes(q) || [...lexicalEntities.values()].some(item=>(item.concept_id===row.id && item.entity_kind==='sense' && normalize(item.written_rep).includes(q)) || (item.concept_id===row.id && item.entity_kind==='definition' && normalize(item.body).includes(q))));
+    data={items:matching.map(row=>{const term=[...lexicalEntities.values()].find(item=>item.concept_id===row.id && item.entity_kind==='sense' && normalize(item.written_rep).includes(q));
+      return {...row,match_id:term?.id || row.id,original:term?.written_rep || row.title};}),truncated:false};
+  }
+  else if(path==='/v1/lexicon/concept') {
+    const id=url.searchParams.get('concept_id');data={concept:lexicalConcepts.get(id),definition_gap:![...lexicalEntities.values()].some(row=>row.entity_kind==='definition' && row.concept_id===id && row.definition_kind!=='machine_proposed'),coverage:'Synthetic private indexed reading coverage'};
+  }
+  else if(path==='/v1/lexicon/entity') data=lexicalEntities.get(url.searchParams.get('entity_id'));
+  else if(path==='/v1/lexicon/definitions' && event.request.method==='POST') {
+    const value=JSON.parse(event.request.postData),id='synthetic:definition:'+value.definition_uuid;
+    assert.equal(value.owner_confirmed,true);assert.equal(value.project_id,'synthetic');
+    assert.equal(event.request.headers['X-Research-Write'] || event.request.headers['x-research-write'],'1');
+    if(value.wording_mode==='quotation')assert.equal(value.body,captures.find(row=>row.id===value.annotation_id).exact);
+    data=lexicalEntities.get(id);
+    if(data)assert.equal(data.body,value.body);
+    else {data={...value,id,revision:1,state:'active',review_state:'pending',entity_kind:'definition'};lexicalEntities.set(id,data);lexicalHistory.set(id,[structuredClone(data)]);}
+    status=201;if(definitionLostResponse){definitionLostResponse=false;status=503;data={detail:'Synthetic lost definition acknowledgement'};}
+  }
+  else if(path==='/v1/lexicon/definition' && event.request.method==='PUT') {
+    const value=JSON.parse(event.request.postData),row=lexicalEntities.get(value.definition_id);
+    assert.equal(value.owner_confirmed,true);assert.equal(value.project_id,row.project_id);
+    const same=['body','attribution','scope','dating_note','rationale','wording_mode'].every(key=>value[key]===row[key]);
+    if(row.revision===value.expected_revision+1 && same)data=row;
+    else if(row.revision!==value.expected_revision){status=409;data={current:row};}
+    else {data={...row,...value,revision:row.revision+1};lexicalEntities.set(row.id,data);lexicalHistory.get(row.id).unshift(structuredClone(data));}
+    if(status===200 && definitionUpdateLostResponse){definitionUpdateLostResponse=false;status=503;data={detail:'Synthetic lost correction acknowledgement'};}
+  }
+  else if(path==='/v1/lexicon/history') {
+    const rows=(lexicalHistory.get(url.searchParams.get('entity_id')) || []).filter(row=>row.revision<Number(url.searchParams.get('before_revision') || 2147483647));
+    data={items:rows.slice(0,1).map(row=>({entity_id:row.id,revision:row.revision,snapshot:row})),next_before_revision:rows.length>1 ? rows[0].revision : null};
+  }
+  else if(['/v1/lexicon/definitions','/v1/lexicon/occurrences','/v1/lexicon/senses','/v1/lexicon/representations'].includes(path)) {
+    const kind=path.split('/').at(-1).replace(/ies$/,'y').replace(/s$/,''),id=url.searchParams.get('concept_id'),entryId=url.searchParams.get('entry_id');
+    data=lexicalPage([...lexicalEntities.values()].filter(row=>row.entity_kind===kind && (entryId ? row.entry_id===entryId : row.concept_id===id))
+      .map(row=>['definition','occurrence'].includes(kind) ? lexicalSource(row) : row),url);
+  }
+  else if (path==='/v1/record') data=[...records,...lexicalConcepts.values(),claim,evidence,{...records[1],id:'synthetic:other',title:'Another synthetic source'}].find(r => r.id===url.searchParams.get('record_id'));
   else if (path==='/v1/publication/head') data=publicationHead;
   else if (path==='/v1/publication/preview') data=publicationPreviews.get(url.searchParams.get('preview_id'));
   else if (path==='/v1/publication/relations') {
@@ -329,6 +406,197 @@ try {
   await until(()=>evaluate(`${termManual}.querySelector('.scripture-saved')?.textContent.includes('Linked to Q 4:59')`),'manual verse connection persisted');
   assert.equal([...scriptureResolutions.values()].filter(row=>row.detector_kind==='owner_mapping').length,1);
   assert.equal(await evaluate('Object.values(localStorage).some(value=>value.includes("Synthetic owner reference resolution") || value.includes("Cloud reference correction"))'),false);
+  const termLexicon='[...document.querySelectorAll(".saved-passage-note")].find(node=>node.querySelector(".reader-reopen").textContent==="tafsīr").querySelector(".lexicon-capture")';
+  async function fillLexicon(selector,text) {
+    await evaluate(`${termLexicon}.querySelector(${JSON.stringify(selector)}).focus();${termLexicon}.querySelector(${JSON.stringify(selector)}).select()`);
+    await call('Input.insertText',{text});
+  }
+  async function chooseLexicon(selector,value) {
+    await evaluate(`{const node=${termLexicon}.querySelector(${JSON.stringify(selector)});node.value=${JSON.stringify(value)};node.dispatchEvent(new Event('change',{bubbles:true}));}`);
+  }
+  await evaluate(`${termLexicon}.querySelector('.lexicon-toggle').click()`);
+  await until(()=>evaluate(`!!${termLexicon}.querySelector('.lexicon-concept-title')`),'term-to-concept authoring form');
+  await fillLexicon('.lexicon-concept-title','Synthetic scoped concept <script>not HTML</script>');
+  await fillLexicon('.lexicon-concept-scope','An owner scope note, not a sourced definition.');
+  await fillLexicon('.lexicon-scope','Synthetic source-specific reading context.');
+  await fillLexicon('.lexicon-rationale','Synthetic explicit reason to connect this exact word.');
+  await fillLexicon('.lexicon-language input','ar-Latn');
+  await evaluate('document.querySelectorAll(".workspace-row")[0].click()');
+  await until(()=>evaluate('document.querySelector(".workspace-record-heading")?.textContent.includes("Synthetic question")'),'leave lexical creation draft');
+  await evaluate('document.querySelectorAll(".workspace-row")[1].click()');
+  await until(()=>evaluate(`!!${termLexicon}`),'return to captured lexical term');
+  assert.match(await evaluate(`${termLexicon}.querySelector('.lexicon-toggle').textContent`),/unsaved draft/);
+  await evaluate(`${termLexicon}.querySelector('.lexicon-toggle').click()`);
+  await until(()=>evaluate(`${termLexicon}.querySelector('.lexicon-scope')?.value==='Synthetic source-specific reading context.'`),'lexical draft survives record navigation');
+  lexicalLostResponse=true;
+  await evaluate(`${termLexicon}.querySelector('.lexicon-save').click()`);
+  await until(()=>evaluate(`${termLexicon}.querySelector('.lexicon-save')?.textContent==='Retry exact save'`),'lost lexical acknowledgement retains exact creation request');
+  assert.equal(lexicalConcepts.size,1);
+  assert.equal(await evaluate(`${termLexicon}.querySelector('.lexicon-author fieldset').disabled`),true);
+  await evaluate(`${termLexicon}.querySelector('.lexicon-save').click()`);
+  await until(()=>evaluate(`${termLexicon}.querySelector('.lexicon-message')?.textContent.includes('Saved privately')`),'lexical retry verified against the source occurrence');
+  assert.equal(lexicalRequests.size,1);
+  await reload();
+  await until(()=>evaluate(`!!${termLexicon}`),'reading source reload after lexical capture');
+  await evaluate(`${termLexicon}.querySelector('.lexicon-toggle').click()`);
+  await until(()=>evaluate(`${termLexicon}.querySelector('.lexicon-links button')?.textContent.includes('Synthetic scoped concept')`),'durable passage-to-concept link recovered');
+  await evaluate(`${termLexicon}.querySelector('.lexicon-links button').click()`);
+  await until(()=>evaluate('!!document.querySelector(".concept-definition-gap")'),'concept page shows a definition gap');
+  await until(()=>evaluate('document.querySelector(".concept-occurrences mark")?.textContent==="tafsīr"'),'concept occurrence preserves exact accented term');
+  assert.equal(await evaluate('document.querySelectorAll(".concept-panel script").length'),0);
+  await reload();
+  await until(()=>evaluate('!!document.querySelector(".concept-definition-gap")'),'concept URL survives reload');
+  const lexicalConcept=[...lexicalConcepts.values()][0];
+  const machine={id:'synthetic:machine-proposal',project_id:'synthetic',concept_id:lexicalConcept.id,annotation_id:captures[0].id,entity_kind:'definition',definition_kind:'machine_proposed',
+    wording_mode:'paraphrase',body:'Synthetic machine proposal, not an accepted definition.',attribution:'Synthetic tool output',scope:'Only a fixture proposal',dating_note:'Unknown',
+    rationale:'Synthetic proposal evidence is unreviewed',proposal_tool:'synthetic-tool',proposal_version:'1',proposal_activity:'synthetic:activity',review_state:'pending',state:'active',revision:1};
+  lexicalEntities.set(machine.id,machine);lexicalHistory.set(machine.id,[structuredClone(machine)]);
+  await evaluate('document.querySelector(".concept-panel-heading button").click()');
+  await until(()=>evaluate('!!document.querySelector(".concept-machine-proposals")'),'machine proposal remains separated');
+  assert.equal(await evaluate('!!document.querySelector(".concept-definition-gap")'),true);
+  await evaluate('document.querySelector(".concept-occurrence-source").click()');
+  await until(()=>evaluate('document.querySelector(".reader-text mark")?.textContent==="tafsīr"'),'concept occurrence returns to the exact source passage');
+  await evaluate(`${termLexicon}.querySelector('.lexicon-toggle').click()`);
+  await until(()=>evaluate(`!!${termLexicon}.querySelector('.lexicon-mode')`),'definition action selector');
+  await chooseLexicon('.lexicon-mode','definition');
+  await fillLexicon('.lexicon-find input','Synthetic scoped');
+  await evaluate(`${termLexicon}.querySelector('.lexicon-find button').click()`);
+  await until(()=>evaluate(`!!${termLexicon}.querySelector('.lexicon-search-results button')`),'find existing scoped concept');
+  await evaluate(`${termLexicon}.querySelector('.lexicon-search-results button').click()`);
+  await until(()=>evaluate(`${termLexicon}.querySelector('.lexicon-choice')?.textContent.includes('Synthetic scoped concept')`),'explicit concept selection for definition');
+  await chooseLexicon('.lexicon-definition-kind','reference_gloss');
+  await fillLexicon('.lexicon-definition-body','A synthetic reference gloss with explicitly limited scope.');
+  await fillLexicon('.lexicon-attribution','Synthetic reference author');
+  await fillLexicon('.lexicon-scope','Only the synthetic passage and selected reference.');
+  await fillLexicon('.lexicon-rationale','Synthetic located support, pending scholarly review.');
+  await chooseLexicon('.lexicon-wording-mode','quotation');
+  await evaluate(`${termLexicon}.querySelector('.lexicon-save').click()`);
+  await until(()=>evaluate(`${termLexicon}.querySelector('.lexicon-message')?.textContent.includes('quotation must match')`),'edited wording cannot masquerade as a quotation');
+  assert.equal([...lexicalEntities.values()].filter(row=>row.entity_kind==='definition').length,1);
+  await chooseLexicon('.lexicon-wording-mode','paraphrase');definitionLostResponse=true;
+  await evaluate(`${termLexicon}.querySelector('.lexicon-save').click()`);
+  await until(()=>evaluate(`${termLexicon}.querySelector('.lexicon-save')?.textContent==='Retry exact save'`),'lost definition acknowledgement retains original request');
+  await evaluate(`${termLexicon}.querySelector('.lexicon-save').click()`);
+  await until(()=>evaluate(`${termLexicon}.querySelector('.lexicon-message')?.textContent.includes('Saved privately')`),'definition creation retry is idempotent');
+  assert.equal([...lexicalEntities.values()].filter(row=>row.entity_kind==='definition' && row.definition_kind==='reference_gloss').length,1);
+  await evaluate(`${termLexicon}.querySelector('.lexicon-toggle').click()`);
+  await until(()=>evaluate(`!!${termLexicon}.querySelector('.lexicon-links button')`),'definition passage link reload');
+  await evaluate(`${termLexicon}.querySelector('.lexicon-links button').click()`);
+  await until(()=>evaluate('document.querySelector(".concept-definition-text")?.textContent.includes("synthetic reference gloss")'),'located attributed definition visible');
+  assert.equal(await evaluate('!!document.querySelector(".concept-definition-gap")'),false);
+  assert.match(await evaluate('document.querySelector(".concept-definition").textContent'),/Synthetic reference author/);
+  await evaluate('document.querySelector(".concept-panel > button").click()');
+  await until(()=>evaluate('!!document.querySelector(".concept-machine-proposals")'),'definition pagination retains the separate machine proposal');
+  await evaluate('document.querySelector(".concept-edit-open").click()');
+  await evaluate('document.querySelector(".concept-edit-body").focus();document.querySelector(".concept-edit-body").select()');
+  await call('Input.insertText',{text:'My corrected synthetic reading of the source.'});
+  await evaluate('document.querySelector(".concept-edit-rationale").focus();document.querySelector(".concept-edit-rationale").select()');
+  await call('Input.insertText',{text:'Synthetic correction after checking source context.'});
+  await evaluate('document.querySelector(".concept-source").click()');
+  await until(()=>evaluate(`!!${termLexicon}`),'leave definition correction draft');
+  await evaluate(`${termLexicon}.querySelector('.lexicon-toggle').click()`);
+  await until(()=>evaluate(`!!${termLexicon}.querySelector('.lexicon-links button')`),'reopen concept through durable passage link');
+  await evaluate(`${termLexicon}.querySelector('.lexicon-links button').click()`);
+  await until(()=>evaluate('document.querySelector(".concept-edit-body")?.value.includes("My corrected synthetic reading")'),'definition draft retained through source navigation');
+  const recordedDefinition=[...lexicalEntities.values()].find(row=>row.entity_kind==='definition' && row.definition_kind==='reference_gloss');
+  const cloudDefinition={...recordedDefinition,body:'Cloud definition edit from another device.',rationale:'Synthetic cloud rationale',revision:2};
+  lexicalEntities.set(recordedDefinition.id,cloudDefinition);lexicalHistory.get(recordedDefinition.id).unshift(structuredClone(cloudDefinition));
+  await evaluate('document.querySelector(".concept-edit-save").click()');
+  await until(()=>evaluate('document.querySelector(".concept-definition-conflict")?.textContent.includes("Cloud definition edit")'),'definition conflict compares current cloud content');
+  assert.match(await evaluate('document.querySelector(".concept-edit-body").value'),/My corrected synthetic reading/);
+  await evaluate('document.querySelectorAll(".concept-definition-conflict button")[1].click()');
+  definitionUpdateLostResponse=true;
+  await evaluate('document.querySelector(".concept-edit-save").click()');
+  await until(()=>evaluate('document.querySelector(".concept-definition-edit [role=alert]")?.textContent.includes("draft is retained")'),'lost correction response preserves typed definition');
+  await evaluate('document.querySelector(".concept-edit-save").click()');
+  await until(()=>evaluate('!document.querySelector(".concept-edit-body") && document.querySelector(".concept-definition-text")?.textContent.includes("My corrected synthetic reading")'),'explicit correction saved against the confirmed revision');
+  assert.equal(lexicalEntities.get(recordedDefinition.id).revision,3);
+  assert.equal(lexicalHistory.get(recordedDefinition.id).length,3);
+  await evaluate('document.querySelector(".concept-history-open").click()');
+  await until(()=>evaluate('document.querySelector(".concept-history")?.textContent.includes("Revision 3")'),'definition revision history');
+  await evaluate('document.querySelector(".concept-history button").click()');
+  await until(()=>evaluate('document.querySelector(".concept-history")?.textContent.includes("Cloud definition edit")'),'earlier cloud revision retained in history');
+  await reload();
+  await until(()=>evaluate('document.querySelector(".concept-definition-text")?.textContent.includes("My corrected synthetic reading")'),'corrected definition persists on reload');
+  const lexicalDesktop=await call('Page.captureScreenshot',{format:'png'});await writeFile(join(artifacts,'lexicon-desktop.png'),Buffer.from(lexicalDesktop.data,'base64'));
+  await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  await evaluate('document.querySelector(".header-tools button").click();document.querySelector(".concept-panel").scrollIntoView({block:"start"})');
+  assert.equal(await evaluate('document.documentElement.dataset.theme'),'dark');
+  assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'lexicon concept fits dark mobile layout');
+  const lexicalMobile=await call('Page.captureScreenshot',{format:'png'});await writeFile(join(artifacts,'lexicon-mobile-dark.png'),Buffer.from(lexicalMobile.data,'base64'));
+  await evaluate('document.querySelector(".header-tools button").click()');
+  await call('Emulation.clearDeviceMetricsOverride');
+  await evaluate('document.querySelector(".concept-source").click()');
+  await until(()=>evaluate('document.querySelector(".reader-text mark")?.textContent==="tafsīr"'),'corrected definition source remains unchanged');
+  async function captureWord(word) {
+    await evaluate(`{const walker=document.createTreeWalker(document.querySelector('.reader-text'),NodeFilter.SHOW_TEXT);let node;while((node=walker.nextNode()) && !node.textContent.includes(${JSON.stringify(word)})){}
+      const offset=node.textContent.indexOf(${JSON.stringify(word)}),range=document.createRange();range.setStart(node,offset);range.setEnd(node,offset+${word.length});
+      const selection=getSelection();selection.removeAllRanges();selection.addRange(range);document.querySelector('.reader-select').click();}`);
+    await until(()=>evaluate('!!document.querySelector(".reader-capture button")'),'new located word capture');
+    const before=captures.length;await evaluate('document.querySelector(".reader-capture button").click()');
+    await until(()=>captures.length===before+1 && evaluate(`!!document.querySelector('[data-annotation-id="${captures.at(-1)?.id}"]')`),'new captured term saved');
+    return `[data-annotation-id=${JSON.stringify(captures.at(-1).id)}] .lexicon-capture`;
+  }
+  const repeatedTerm=await captureWord('tafsīr');
+  await evaluate(`document.querySelector(${JSON.stringify(repeatedTerm+' .lexicon-toggle')}).click()`);
+  async function fillAt(rootSelector,selector,text) {
+    await evaluate(`document.querySelector(${JSON.stringify(rootSelector+' '+selector)}).focus();document.querySelector(${JSON.stringify(rootSelector+' '+selector)}).select()`);
+    await call('Input.insertText',{text});
+  }
+  await fillAt(repeatedTerm,'.lexicon-find input','Synthetic scoped');
+  await evaluate(`document.querySelector(${JSON.stringify(repeatedTerm+' .lexicon-find button')}).click()`);
+  await until(()=>evaluate(`!!document.querySelector(${JSON.stringify(repeatedTerm+' .lexicon-search-results button')})`),'reuse concept search');
+  await evaluate(`document.querySelector(${JSON.stringify(repeatedTerm+' .lexicon-search-results button')}).click()`);
+  await until(()=>evaluate(`!!document.querySelector(${JSON.stringify(repeatedTerm+' .lexicon-author details button')})`),'recorded entry choice');
+  await evaluate(`document.querySelector(${JSON.stringify(repeatedTerm+' .lexicon-author details')}).open=true;document.querySelector(${JSON.stringify(repeatedTerm+' .lexicon-author details button')}).click()`);
+  await until(()=>evaluate(`document.querySelector(${JSON.stringify(repeatedTerm+' .lexicon-author details select')})?.options.length===2`),'exact recorded spelling available');
+  await evaluate(`{const select=document.querySelector(${JSON.stringify(repeatedTerm+' .lexicon-author details select')});select.value=select.options[1].value;select.dispatchEvent(new Event('change',{bubbles:true}));}`);
+  await fillAt(repeatedTerm,'.lexicon-rationale','Explicitly reuse the recorded entry and scoped meaning.');
+  await evaluate(`document.querySelector(${JSON.stringify(repeatedTerm+' .lexicon-save')}).click()`);
+  await until(()=>evaluate(`document.querySelector(${JSON.stringify(repeatedTerm+' .lexicon-message')})?.textContent.includes('Saved privately')`),'existing lexical sense reused without a duplicate concept');
+  assert.equal(lexicalConcepts.size,1);assert.equal([...lexicalEntities.values()].filter(row=>row.entity_kind==='sense').length,1);
+  const arabicTerm=await captureWord('التفسير');
+  await evaluate(`document.querySelector(${JSON.stringify(arabicTerm+' .lexicon-toggle')}).click()`);
+  await fillAt(arabicTerm,'.lexicon-find input','Synthetic scoped');
+  await evaluate(`document.querySelector(${JSON.stringify(arabicTerm+' .lexicon-find button')}).click()`);
+  await until(()=>evaluate(`!!document.querySelector(${JSON.stringify(arabicTerm+' .lexicon-search-results button')})`),'explicit concept mapping for Arabic form');
+  await evaluate(`document.querySelector(${JSON.stringify(arabicTerm+' .lexicon-search-results button')}).click()`);
+  await fillAt(arabicTerm,'.lexicon-language input','ar');
+  await fillAt(arabicTerm,'.lexicon-language label:nth-child(2) input','Arab');
+  await fillAt(arabicTerm,'.lexicon-scope','An explicitly scoped Arabic reading, not automatic equivalence.');
+  await fillAt(arabicTerm,'.lexicon-rationale','Synthetic owner explicitly links this original Arabic wording.');
+  assert.equal(await evaluate(`document.querySelector(${JSON.stringify(arabicTerm+' .lexicon-source-quote')}).getAttribute('dir')`),'auto');
+  await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  await evaluate(`document.querySelector('.header-tools button').click();document.querySelector(${JSON.stringify(arabicTerm+' .lexicon-source-quote')}).scrollIntoView({block:'start'})`);
+  assert.equal(await evaluate(`getComputedStyle(document.querySelector(${JSON.stringify(arabicTerm+' .lexicon-source-quote')})).direction`),'rtl');
+  assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'Arabic concept capture fits mobile');
+  const arabicMobile=await call('Page.captureScreenshot',{format:'png'});await writeFile(join(artifacts,'lexicon-arabic-mobile-dark.png'),Buffer.from(arabicMobile.data,'base64'));
+  await evaluate('document.querySelector(".header-tools button").click()');await call('Emulation.clearDeviceMetricsOverride');
+  await evaluate(`document.querySelector(${JSON.stringify(arabicTerm+' .lexicon-save')}).click()`);
+  await until(()=>evaluate(`document.querySelector(${JSON.stringify(arabicTerm+' .lexicon-message')})?.textContent.includes('Saved privately')`),'Arabic original wording and scoped connection saved');
+  assert.equal([...lexicalEntities.values()].filter(row=>row.entity_kind==='sense').length,2);
+  assert.ok([...lexicalEntities.values()].some(row=>row.entity_kind==='representation' && row.written_rep==='التفسير' && row.language_tag==='ar'));
+  await evaluate(`{const scope=document.querySelector('.workspace-search label:nth-child(3) select');scope.value='lexicon';scope.dispatchEvent(new Event('change',{bubbles:true}));document.querySelector('.workspace-query input').focus();document.querySelector('.workspace-query input').select();}`);
+  await call('Input.insertText',{text:'tafsir'});
+  await evaluate('document.querySelector(".workspace-search").requestSubmit()');
+  await until(()=>evaluate('document.querySelector(".workspace-row")?.textContent.includes("Matched wording")'),'normalized concept search from workspace');
+  assert.match(await evaluate('document.querySelector(".workspace-row").textContent'),/tafsīr/);
+  await evaluate('document.querySelector(".workspace-row").click()');
+  await until(()=>evaluate('!!document.querySelector(".concept-panel") && !!document.querySelector(".concept-occurrences button")'),'open concept from lexical match');
+  await evaluate('document.querySelector(".concept-occurrences > button").click()');
+  await until(()=>evaluate('document.querySelectorAll(".concept-occurrences article").length===2'),'reading occurrence pagination');
+  await evaluate('document.querySelector(".concept-occurrences > button").click()');
+  await until(()=>evaluate('document.querySelectorAll(".concept-occurrences article").length===3'),'last reading occurrence page');
+  assert.ok(await evaluate('[...document.querySelectorAll(".concept-occurrences mark")].some(node=>node.textContent==="التفسير")'),'Arabic occurrence remains original in the concept reading view');
+  await evaluate(`{const scope=document.querySelector('.workspace-search label:nth-child(3) select');scope.value='all';scope.dispatchEvent(new Event('change',{bubbles:true}));}`);
+  await evaluate('document.querySelector(".workspace-search").requestSubmit()');
+  await until(()=>evaluate('document.querySelectorAll(".workspace-row").length===3'),'all-research search includes ordinary and lexical matches');
+  assert.equal(await evaluate('[...document.querySelectorAll(".workspace-row")].filter(node=>node.textContent.includes("Synthetic scoped concept")).length'),1);
+  assert.equal(await evaluate('Object.values(localStorage).some(value=>value.includes("Synthetic scoped") || value.includes("My corrected synthetic") || value.includes("explicitly scoped Arabic"))'),false);
+  await evaluate('document.querySelector(".concept-source").click()');
+  await until(()=>evaluate('document.querySelector(".reader-text mark")?.textContent==="tafsīr"'),'definition follows its exact attributed source');
+  await reload();
+  await until(()=>evaluate('!!document.querySelector("#my-note")'),'resume existing reading workflow after lexical navigation');
   await evaluate('document.querySelector("#my-note").focus()');
   await call('Input.insertText',{ text:'Synthetic browser note <img src=x onerror=alert(1)>' });
   await evaluate('document.querySelector(".workspace-note-actions button").click()');
@@ -482,7 +750,7 @@ try {
   assert.deepEqual(problems,[]);
   console.log(JSON.stringify({publicChecksPassed:true,checks:['actual approved-export fixture','anonymous read-only data requests','multi-project switching','Back/Forward and record reload','citations, locators and review limits','same record ID across projects','dark mobile layout','mismatched project refusal','all-withdrawn empty state','unsafe path refusal','unknown project recovery','no legacy fallback in approved mode','legacy RDF compatibility'],artifacts}));
   console.log(JSON.stringify({publicationChecksPassed:true,checks:['explicit record, summary, bibliography and relation choices','no automatic approval','sealed preview privacy and inert labels','stale head requires new preview','revision-bound acknowledgement and approval','reload without duplicate approval','withdrawal acknowledgement','390px overflow','private rationale outside localStorage','anonymous publication denial'],publicationAttempts,artifacts}));
-  console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','Quran reference decision reload and retained draft','idempotent reference retry after lost response','reference conflict comparison and explicit resolution','reverse verse lookup to exact saved passage','reference dismissal and 390px controls','manual mapping distinct from citation claims','invalid verse bounds explained before saving','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','anonymous boundary'],artifacts }));
+  console.log(JSON.stringify({ passed:true,checks:['question findings to located evidence to source','Unicode passage selection and exact reopening','passage draft retained during record navigation','private annotation search and reloadable exact-passage link','Quran reference decision reload and retained draft','idempotent reference retry after lost response','reference conflict comparison and explicit resolution','reverse verse lookup to exact saved passage','reference dismissal and 390px controls','manual mapping distinct from citation claims','invalid verse bounds explained before saving','word to scoped concept and durable passage links','idempotent concept and definition creation after lost responses','explicit definition gaps and separate machine proposals','attributed definitions and exact source reopening','definition correction conflict, retry and history','existing lexical connection reuse and Arabic source preservation','normalized and combined research search','lexical pagination and dark/mobile/RTL layout','read/skip/note save and reload','inert untrusted text','keyboard pane resize','revision conflict comparison','dark mode','390px overflow','no private localStorage','anonymous boundary'],artifacts }));
 } finally {
   socket?.close(); chrome.kill(); await preview.close();
   for (const item of pending.values()) { clearTimeout(item.timeout); item.reject(new Error('Review finished')); }
