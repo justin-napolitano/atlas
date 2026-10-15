@@ -3,6 +3,8 @@
 - Status: accepted
 - Date: 2026-10-14
 
+Application storage and access decisions 7 and 9 are superseded by [ADR 0002](0002-hosted-research-and-ossie.md), which adopts a hosted research workspace and Apache Ossie semantic contracts. The research/provenance standards below remain applicable.
+
 ## Context
 
 The project needs repeatable discovery, document intake, passage-level evidence, claim tracking, and question-centered reporting. It must stay inspectable, portable, usable on an older Mac, and careful about the difference between machine output and human-reviewed scholarship. There is no single standard that covers bibliography, annotations, arguments, provenance, and research comparisons together.
