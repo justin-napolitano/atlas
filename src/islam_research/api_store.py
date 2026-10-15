@@ -7,6 +7,7 @@ from . import passage_store
 from . import publication
 from . import citation_store
 from . import lexicon_store
+from . import verse_store
 
 
 class PostgreSQLStore:
@@ -253,6 +254,24 @@ class PostgreSQLStore:
     def scripture_citations(self, project_id, chapter, ayah_start, ayah_end, cursor, limit):
         with db.connect(self.dsn) as connection:
             return citation_store.for_verse(connection,project_id,chapter,ayah_start,ayah_end,cursor,limit)
+
+    def verse_create(self, **values):
+        with db.connect(self.dsn) as connection: return verse_store.create(connection,**values)
+
+    def verse_update(self, **values):
+        with db.connect(self.dsn) as connection: return verse_store.update(connection,**values)
+
+    def verse_material(self, project_id, material_id):
+        with db.connect(self.dsn) as connection: return verse_store.get_material(connection,project_id,material_id)
+
+    def verse_materials(self, project_id, chapter, ayah_start, ayah_end, material_kind, link_kind, cursor, limit):
+        with db.connect(self.dsn) as connection: return verse_store.for_verse(connection,project_id,chapter,ayah_start,ayah_end,material_kind,link_kind,cursor,limit)
+
+    def verse_annotation_links(self, project_id, annotation_id, cursor, limit):
+        with db.connect(self.dsn) as connection: return verse_store.annotation_links(connection,project_id,annotation_id,cursor,limit)
+
+    def verse_history(self, project_id, material_id, before_revision, limit):
+        with db.connect(self.dsn) as connection: return verse_store.history(connection,project_id,material_id,before_revision,limit)
 
     def lexicon_capture(self, **values):
         with db.connect(self.dsn) as connection: return lexicon_store.capture(connection,**values)
