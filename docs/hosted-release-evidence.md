@@ -35,21 +35,31 @@ The [located Qur’an reference slice](quran-reference-capture.md) adds offline 
 
 ## First-release acceptance remains intact
 
+The [lexicon reader](lexicon-reader.md) now consumes those owner APIs for exact
+word-to-concept capture, attributed definitions, source reopening, pending/gap
+states, correction conflicts/history, and paginated private reading occurrences.
+Its compiled browser checks cover retained/uncertain drafts, saved-link reload,
+Arabic/RTL, dark/mobile layout, and explicit remote-state handling using synthetic
+authenticated responses. The API/storage has separate real PostgreSQL evidence.
+These complementary checks are not a live hosted session, newly reviewed pilot
+definition, public lexical publication, or proof of the complete Q 4:59 reader.
+
 The [private scoped lexicon API](scoped-concept-lexicon.md) adds separate entries,
 forms, source-grounded written representations, scoped senses, definition
 assertions, and exact occurrences, reusing existing concept IDs. Runtime-role
 tests cover capture retries/concurrency/rollback, variants, canonical concept
 preservation, definition gaps, CAS corrections and history, scoped retrieval, and
 public-projection exclusion. The private Ossie contract includes their source
-lineage. Backend tests do not establish a usable browser concept-authoring flow,
-public lexical publication, reviewed definitions, or actual hosted operation;
-those remain explicit first-reading-release work under #42/#44.
+lineage. The reader has complementary compiled browser evidence above. Neither
+backend nor synthetic-browser checks establish public lexical publication,
+reviewed definitions, or actual hosted operation; those remain explicit
+first-reading-release work under #42/#44.
 
 | Requirement from #42 | Current evidence | Still required |
 | --- | --- | --- |
 | Owner signs in from two independent machines/profiles | Signed-token boundary tests and revision-safe PostgreSQL storage | Actual GCP/IAP setup, two live authenticated sessions, server restart/reconnect and cross-device verification |
 | Read Q 4:59 with identified Arabic/translation resource and located commentaries | Existing bounded RDF pilot and source links; private excerpt reader | Verse/edition/commentary reader and an actual complete hosted reading path (#43/#45) |
-| Select tafsīr or an ulū al-amr occurrence and create/reuse a scoped concept | Unicode-anchored term candidates and retained edition/locator | Lexical forms/senses, attributed definition or explicit gap, concept linkage and usable UI (#44/#46) |
+| Select tafsīr or an ulū al-amr occurrence and create/reuse a scoped concept | Located lexical entries/forms/senses, private concept/definition reader, retained source provenance, explicit gaps and pending review | Live two-session pilot with reviewed definition or recorded gap, concept relations/redirects, public lexical projection, and the remaining #44/#46 acceptance |
 | Durable notes, progress, screening, evidence navigation and return | Restricted-role CAS storage and compiled browser flows; explicit single-note Obsidian round trip | Hosted discovery screening/authoring integration and actual restart/cross-device demonstration (#35/#40) |
 | Concurrent edits and interrupted saves preserve both versions | Database races, stale revision checks, retained drafts and explicit comparison in browser tests | Live independent-session interruption/conflict drill |
 | Explicitly publish bounded article/verse/concept material | Sealed selected projections, digest/source/head approval checks, review screen and withdrawal | Article/verse/concept workflows and an approved-head exporter, immutable delivery, public derived-view privacy checks (#41/#43–47) |
