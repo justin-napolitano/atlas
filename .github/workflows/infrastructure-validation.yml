@@ -44,6 +44,8 @@ jobs:
       - run: uv run --project infra/tools --no-sync checkov --directory infra/gcp --framework terraform --external-checks-dir infra/checks --output json > research-library/security/checkov.json
       - run: python infra/tools/validate_public_check_evidence.py research-library/security/checkov.json
         if: ${{ always() }}
+      - run: python infra/tools/validate_owner_check_evidence.py research-library/security/checkov.json
+        if: ${{ always() }}
       - name: Retain source-only Terraform policy evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

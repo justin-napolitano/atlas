@@ -18,3 +18,8 @@ output "public_runtime" {
     anonymous  = var.public_release.anonymous
   }
 }
+
+output "owner_service_uri" {
+  description = "IAP-protected owner URL; null until an explicitly configured deployment."
+  value       = var.owner_release == null ? null : google_cloud_run_v2_service.owner[0].uri
+}
