@@ -77,6 +77,49 @@ class LexiconStoreTests(unittest.TestCase):
         with self.db.connect(self.owner_dsn) as connection:
             self.assertEqual(len(self.store.occurrences(connection,self.project,results[0]["concept_id"],"",26)),1)
 
+    def test_failure_after_entry_creation_rolls_back_the_entire_bundle(self):
+        with self.db.connect(self.owner_dsn) as connection:
+            with self.assertRaises(ValueError):
+                self.store.capture(connection,**self.capture_values(concept=dict(mode="existing",concept_id=self.source)))
+            for table in ["lexicon_entries","lexicon_forms","lexicon_representations","lexicon_senses","lexicon_occurrences","lexicon_captures"]:
+                row=connection.execute(self.sql.SQL("SELECT count(*) AS n FROM research.{} WHERE project_id=%s").format(self.sql.Identifier(table)),(self.project,)).fetchone()
+                self.assertEqual(row["n"],0,table)
+
+    def test_spelling_variants_require_explicit_grouping_and_retain_each_source_origin(self):
+        with self.db.connect(self.owner_dsn) as connection:
+            first=self.store.capture(connection,**self.capture_values())
+            text="A synthetic alternate spelling: tafsir."
+            document=self.passages.create_document(connection,project_id=self.project,source_record_id=self.source,
+                edition="Another synthetic representation",locator="Synthetic section 3",representation_url="",text=text,actor="test-owner")
+            annotation=self.passages.create_annotation(connection,annotation_uuid=str(uuid.uuid4()),project_id=self.project,
+                document_id=document["id"],text_sha256=document["text_sha256"],start=0,end=len(text),exact=text,capture_kind="term_candidate",body="",actor="test-owner")
+            start=text.index("tafsir")
+            values=dict(request_uuid=str(uuid.uuid4()),project_id=self.project,form_id=first["form_id"],annotation_id=annotation["id"],
+                start=start,end=start+6,language_tag="ar-Latn",script_tag="Latn",transliteration_scheme="Undeclared convention",
+                rationale="Explicit owner grouping of orthographic variants; interpretation unreviewed",actor="test-owner")
+            representation=self.store.create_representation(connection,**values)
+            self.assertEqual(representation,self.store.create_representation(connection,**values))
+            second=self.store.capture(connection,**self.capture_values(annotation_id=annotation["id"],start=start,end=start+6,
+                entry=None,concept=None,sense_scope="",sense_id=first["sense_id"],representation_id=representation["id"]))
+            self.assertEqual(second["concept_id"],first["concept_id"])
+            reps=self.store.representations(connection,self.project,first["entry_id"],"",26)
+            self.assertEqual({row["written_rep"] for row in reps},{"tafsīr","tafsir"})
+            self.assertEqual(len(self.store.occurrences(connection,self.project,first["concept_id"],"",26)),2)
+
+    def test_linking_an_imported_concept_preserves_its_id_scope_and_read_only_authority(self):
+        concept_id="test:"+uuid.uuid4().hex
+        with self.db.connect(self.dsn) as connection:
+            connection.execute("""INSERT INTO research.records(id,project_id,kind,title,summary,origin,changed_by)
+                VALUES(%s,%s,'concept','Synthetic canonical concept','Unchanged synthetic scope','canonical_rdf','synthetic-import')""",(concept_id,self.project))
+        with self.db.connect(self.owner_dsn) as connection:
+            captured=self.store.capture(connection,**self.capture_values(concept=dict(mode="existing",concept_id=concept_id)))
+            self.assertEqual(captured["concept_id"],concept_id)
+            record=self.store.get_concept(connection,self.project,concept_id)["concept"]
+            self.assertEqual(record["summary"],"Unchanged synthetic scope")
+            self.assertEqual(record["revision"],1)
+            with self.assertRaises(self.db.RevisionConflict):
+                self.db.save_record(connection,record_id=concept_id,project_id=self.project,kind="concept",title="Forbidden rewrite",actor="test-owner",expected_revision=1)
+
     def test_reusing_concept_and_sense_is_explicit_and_cross_project_links_fail(self):
         with self.db.connect(self.owner_dsn) as connection:
             captured=self.store.capture(connection,**self.capture_values())
@@ -135,6 +178,20 @@ class LexiconStoreTests(unittest.TestCase):
                 proposal_tool="synthetic-tool",proposal_version="1",proposal_activity="synthetic:activity"))
             self.assertEqual(proposed["review_state"],"pending")
             self.assertTrue(self.store.get_concept(connection,self.project,captured["concept_id"])["definition_gap"])
+
+    def test_withdrawal_keeps_history_and_project_scoped_entity_retrieval(self):
+        with self.db.connect(self.owner_dsn) as connection:
+            captured=self.store.capture(connection,**self.capture_values())
+            values=dict(project_id=self.project,entity_kind="sense",entity_id=captured["sense_id"],expected_revision=1,
+                rationale="Withdraw this synthetic interpretation",state="withdrawn",scope="Only the original fixture",actor="test-owner")
+            row=self.store.update_connection(connection,**values)
+            self.assertEqual(row["revision"],2)
+            self.assertEqual(self.store.occurrences(connection,self.project,captured["concept_id"],"",26),[])
+            self.store.update_connection(connection,**{**values,"entity_kind":"occurrence","entity_id":captured["occurrence_id"],"scope":""})
+            self.assertEqual(self.store.get_entity(connection,self.project,"sense",captured["sense_id"])["state"],"withdrawn")
+            history=self.store.history(connection,self.project,"sense",captured["sense_id"],2147483647,26)
+            self.assertEqual([row["revision"] for row in history],[2,1])
+            self.assertIsNone(self.store.history(connection,"other","sense",captured["sense_id"],2147483647,26))
 
     def test_restricted_roles_cannot_rewrite_targets_promote_review_or_read_private_lexicon(self):
         from psycopg.errors import InsufficientPrivilege,CheckViolation

@@ -160,6 +160,7 @@ class APIBoundaryTests(unittest.TestCase):
                      "/v1/reading/scripture-candidates", "/v1/reading/scripture-citation", "/v1/reading/scripture-citations",
                      "/v1/lexicon/captures", "/v1/lexicon/representations", "/v1/lexicon/concept", "/v1/lexicon/senses",
                      "/v1/lexicon/definitions", "/v1/lexicon/definition", "/v1/lexicon/connection", "/v1/lexicon/occurrences", "/v1/lexicon/search",
+                     "/v1/lexicon/entity", "/v1/lexicon/history",
                      "/v1/publication/head", "/v1/publication/preview", "/v1/publication/previews", "/v1/publication/approve", "/v1/publication/withdraw", "/v1/publication/relations"]:
             self.assertEqual(public.get(path).status_code, 404)
             self.assertEqual(public.put(path, json={}).status_code, 404)
@@ -220,6 +221,51 @@ class APIBoundaryTests(unittest.TestCase):
 class APIDatabaseTests(unittest.TestCase):
     setUp = APIBoundaryTests.setUp
     headers = APIBoundaryTests.headers
+    def test_lexicon_http_capture_definition_conflict_history_and_source_roundtrip(self):
+        dsn=os.environ["RESEARCH_TEST_DATABASE_URL"]
+        with db.connect(dsn) as connection: db.migrate(connection)
+        settings=Settings(dsn,owner_subject=OWNER,iap_audience=AUDIENCE,owner_origin=ORIGIN)
+        client=TestClient(create_app(settings,verifier=self.verifier))
+        project,source="test:"+uuid.uuid4().hex,"test:"+uuid.uuid4().hex
+        self.assertEqual(client.post("/v1/projects",json=dict(project_id=project,title="Synthetic lexicon HTTP project"),headers=self.headers()).status_code,201)
+        self.assertEqual(client.put("/v1/records",json=dict(record_id=source,project_id=project,kind="source",title="Synthetic lexicon HTTP source"),headers=self.headers()).status_code,200)
+        text="😀 tafsīr in a synthetic source."
+        response=client.post("/v1/reading/documents",json=dict(project_id=project,source_record_id=source,edition="Synthetic edition",locator="Synthetic section 1",text=text),headers=self.headers())
+        self.assertEqual(response.status_code,201);document=response.json()
+        response=client.post("/v1/reading/annotations",json=dict(annotation_uuid=str(uuid.uuid4()),project_id=project,document_id=document["id"],text_sha256=document["text_sha256"],
+            start=2,end=len(text),exact=text[2:],capture_kind="term_candidate"),headers=self.headers())
+        self.assertEqual(response.status_code,201);annotation=response.json()
+        payload=dict(request_uuid=str(uuid.uuid4()),project_id=project,annotation_id=annotation["id"],start=0,end=6,
+            entry=dict(scope="Synthetic entry scope",language_tag="ar-Latn",script_tag="Latn"),concept=dict(mode="new",title="Synthetic concept",scope="A scope note, not a definition."),
+            sense_scope="Only the synthetic fixture",rationale="Synthetic located connection",owner_confirmed=True)
+        response=client.post("/v1/lexicon/captures",json=payload,headers=self.headers())
+        self.assertEqual(response.status_code,201);capture=response.json()
+        self.assertEqual(client.post("/v1/lexicon/captures",json=payload,headers=self.headers()).json(),capture)
+        other=TestClient(create_app(settings,verifier=self.verifier))
+        params=dict(project_id=project,concept_id=capture["concept_id"])
+        self.assertTrue(other.get("/v1/lexicon/concept",params=params,headers=self.headers()).json()["definition_gap"])
+        occurrence=other.get("/v1/lexicon/occurrences",params=params,headers=self.headers()).json()["items"][0]
+        self.assertEqual(occurrence["exact"],"tafsīr");self.assertEqual(occurrence["annotation_id"],annotation["id"])
+        self.assertEqual(occurrence["source_record_id"],source)
+        self.assertEqual(other.get("/v1/lexicon/search",params=dict(project_id=project,q="tafsir"),headers=self.headers()).json()["items"][0]["id"],capture["concept_id"])
+        definition=dict(definition_uuid=str(uuid.uuid4()),**params,sense_id=capture["sense_id"],annotation_id=annotation["id"],definition_kind="owner_paraphrase",
+            wording_mode="paraphrase",body="Synthetic scoped definition paraphrase.",attribution="Synthetic owner",scope="Only the fixture",rationale="Synthetic unreviewed support",owner_confirmed=True)
+        response=client.post("/v1/lexicon/definitions",json=definition,headers=self.headers())
+        self.assertEqual(response.status_code,201);saved=response.json()
+        self.assertEqual(saved["changed_by"],OWNER);self.assertEqual(saved["review_state"],"pending")
+        self.assertFalse(other.get("/v1/lexicon/concept",params=params,headers=self.headers()).json()["definition_gap"])
+        patch=dict(project_id=project,definition_id=saved["id"],expected_revision=1,wording_mode="paraphrase",body="Corrected synthetic scoped definition.",
+            attribution="Synthetic owner",scope="A narrower fixture scope",dating_note="Unknown",rationale="Explicit synthetic correction",state="active",owner_confirmed=True)
+        self.assertEqual(client.put("/v1/lexicon/definition",json=patch,headers=self.headers()).json()["revision"],2)
+        conflict=other.put("/v1/lexicon/definition",json={**patch,"body":"Stale conflicting synthetic definition"},headers=self.headers())
+        self.assertEqual(conflict.status_code,409);self.assertEqual(conflict.json()["current"]["body"],patch["body"])
+        identity=dict(project_id=project,entity_kind="definition",entity_id=saved["id"])
+        history=other.get("/v1/lexicon/history",params={**identity,"limit":1},headers=self.headers()).json()
+        self.assertEqual(history["items"][0]["revision"],2);self.assertEqual(history["next_before_revision"],2)
+        self.assertEqual(other.get("/v1/lexicon/history",params={**identity,"project_id":"other"},headers=self.headers()).status_code,404)
+        self.assertEqual(other.get("/v1/lexicon/entity",params=identity,headers=self.headers()).json()["revision"],2)
+        self.assertEqual(other.get("/v1/lexicon/occurrences",params={**params,"project_id":"other"},headers=self.headers()).json()["items"],[])
+
     def test_scripture_reference_roundtrip_detect_confirm_reload_reverse_and_export(self):
         dsn=os.environ["RESEARCH_TEST_DATABASE_URL"]
         with db.connect(dsn) as connection:

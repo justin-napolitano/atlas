@@ -497,6 +497,12 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
                     "owner_resolution":"/v1/reading/scripture-citation","max_reverse_lookup_page":25,
                     "scope":"owner_only","confirmation":"explicit_owner_decision_with_revision_and_rationale",
                     "review_effect":"none","graph_effect":"none","publication_effect":"none"},
+                "lexicon": {"version":1,"scope":"owner_only","search":"/v1/lexicon/search","concept":"/v1/lexicon/concept",
+                    "senses":"/v1/lexicon/senses","representations":"/v1/lexicon/representations",
+                    "definitions":"/v1/lexicon/definitions","occurrences":"/v1/lexicon/occurrences",
+                    "capture":"/v1/lexicon/captures","max_page":25,"max_search_results":30,
+                    "review_effect":"none","graph_effect":"none","publication_effect":"none",
+                    "retrieval":"versioned lexical normalization; no semantic equivalence inference"},
                 "execution": "typed_traversal_and_owner_observation_scoring_v1"}
 
     @router.get("/search")
@@ -632,6 +638,22 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
                        limit: Annotated[int,Query(ge=1,le=30)] = 30):
         rows=store.lexicon_search(project_id,q,limit+1)
         return {"items":rows[:limit],"truncated":len(rows)>limit,"retrieval":"lexical text matching, not semantic equivalence or quality ranking"}
+
+    @router.get("/lexicon/entity")
+    def lexicon_entity(project_id: Identifier,entity_id: Identifier,
+                       entity_kind: Literal["entry","form","representation","sense","definition","occurrence"]):
+        value=store.lexicon_entity(project_id,entity_kind,entity_id)
+        if value is None: raise HTTPException(404,"Lexical entity not found")
+        return value
+
+    @router.get("/lexicon/history")
+    def lexicon_history(project_id: Identifier,entity_id: Identifier,
+                        entity_kind: Literal["entry","form","representation","sense","definition","occurrence"],
+                        before_revision: Annotated[int,Query(ge=1,le=2147483647)] = 2147483647,
+                        limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows=store.lexicon_history(project_id,entity_kind,entity_id,before_revision,limit+1)
+        if rows is None: raise HTTPException(404,"Lexical entity not found")
+        return {"items":rows[:limit],"next_before_revision":rows[limit-1]["revision"] if len(rows)>limit else None}
 
     @router.get("/publication/head")
     def publication_head(project_id: Identifier):

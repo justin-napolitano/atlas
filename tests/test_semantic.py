@@ -35,6 +35,18 @@ class SemanticContractTests(unittest.TestCase):
             self.assertEqual(relationship["from_columns"][0],"project_id")
             self.assertEqual(relationship["to_columns"][0],"project_id")
 
+    def test_lexicon_keeps_source_lineage_and_assertion_types_separate(self):
+        content=self.model["semantic_model"][0]
+        tables={row["name"]:row for row in content["datasets"]}
+        for table in ["lexicon_entries","lexicon_forms","lexicon_representations","lexicon_senses","lexicon_definitions","lexicon_occurrences"]:
+            self.assertIn(table,tables)
+        for relationship in content["relationships"]:
+            if relationship["name"].startswith("lexicon_"):
+                self.assertEqual(relationship["from_columns"][0],"project_id")
+                self.assertEqual(relationship["to_columns"][0],"project_id")
+        fields={row["name"] for row in tables["lexicon_definitions"]["fields"]}
+        self.assertTrue({"definition_kind","wording_mode","annotation_id","attribution","scope","dating_note","review_state"}<=fields)
+
     def test_ambiguous_names_and_wrong_composite_grain_are_rejected(self):
         duplicate = copy.deepcopy(self.model)
         model = duplicate["semantic_model"][0]

@@ -23,6 +23,12 @@ TABLES = {
     "reading_documents": {"id", "project_id", "source_record_id", "edition", "locator", "representation_url", "text_sha256", "review_scope"},
     "reading_annotations": {"id", "project_id", "document_id", "text_sha256", "start_pos", "end_pos", "exact", "capture_kind", "body", "revision"},
     "scripture_citations": {"id", "project_id", "annotation_id", "document_id", "text_sha256", "candidate_key", "detector_kind", "profile_id", "decision", "chapter", "ayah_start", "ayah_end", "rationale", "revision"},
+    "lexicon_entries": {"id","project_id","entry_type","scope","revision"},
+    "lexicon_forms": {"id","project_id","entry_id","form_kind","rationale","revision"},
+    "lexicon_representations": {"id","project_id","form_id","origin_annotation_id","origin_start","origin_end","written_rep","language_tag","script_tag","transliteration_scheme","rationale","revision"},
+    "lexicon_senses": {"id","project_id","entry_id","concept_id","scope","rationale","state","review_state","revision"},
+    "lexicon_definitions": {"id","project_id","concept_id","sense_id","annotation_id","definition_kind","wording_mode","body","attribution","attribution_person_id","scope","dating_note","rationale","proposal_tool","proposal_version","proposal_activity","state","review_state","revision"},
+    "lexicon_occurrences": {"id","project_id","representation_id","sense_id","annotation_id","document_id","text_sha256","term_start","term_end","exact","rationale","state","review_state","revision"},
 }
 FEATURES = {"query_match", "scope_match", "owner_priority", "question_relevance", "terminology_load",
             "historical_context_load", "argument_load", "language_load", "unfamiliar_concepts",

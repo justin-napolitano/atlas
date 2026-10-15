@@ -286,3 +286,9 @@ class PostgreSQLStore:
 
     def lexicon_search(self, project_id, query, limit):
         with db.connect(self.dsn) as connection: return lexicon_store.search(connection,project_id,query,limit)
+
+    def lexicon_entity(self, project_id, entity_kind, entity_id):
+        with db.connect(self.dsn) as connection: return lexicon_store.get_entity(connection,project_id,entity_kind,entity_id)
+
+    def lexicon_history(self, project_id, entity_kind, entity_id, before_revision, limit):
+        with db.connect(self.dsn) as connection: return lexicon_store.history(connection,project_id,entity_kind,entity_id,before_revision,limit)

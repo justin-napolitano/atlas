@@ -9,6 +9,8 @@ TABLES={"lexicon_entries","lexicon_forms","lexicon_representations","lexicon_sen
 UPDATES={"lexicon_senses":{"scope","rationale","state"},
          "lexicon_definitions":{"wording_mode","body","attribution","scope","dating_note","rationale","search_key","state"},
          "lexicon_occurrences":{"rationale","state"}}
+ENTITY_TABLES={"entry":"lexicon_entries","form":"lexicon_forms","representation":"lexicon_representations",
+               "sense":"lexicon_senses","definition":"lexicon_definitions","occurrence":"lexicon_occurrences"}
 
 
 def _insert(connection,table,values):
@@ -156,7 +158,8 @@ def update_definition(connection,*,project_id,definition_id,expected_revision,wo
     with connection.transaction():
         current=connection.execute("SELECT * FROM research.lexicon_definitions WHERE project_id=%s AND id=%s",(project_id,definition_id)).fetchone()
         if current is None: raise ValueError("Definition not found")
-        captured=_annotation(connection,project_id,current["annotation_id"])
+        captured=(connection.execute("SELECT * FROM research.reading_annotations WHERE project_id=%s AND id=%s",(project_id,current["annotation_id"])).fetchone()
+                  if state=="withdrawn" else _annotation(connection,project_id,current["annotation_id"]))
         model.validate_definition(kind=current["definition_kind"],wording_mode=wording_mode,body=body,attribution=attribution,
             scope=scope,dating_note=dating_note,rationale=rationale,quotation=captured["exact"],
             **{key:current[key] for key in ("proposal_tool","proposal_version","proposal_activity")})
@@ -187,6 +190,18 @@ def get_concept(connection,project_id,concept_id):
         AND r.deleted_at IS NULL) AS present""",(project_id,concept_id)).fetchone()["present"]
     return {"concept":record,"definition_gap":not defined,"definition_review":"Separate assertions remain pending review",
             "coverage":"Active private recorded assertions and accessible source snapshots only; not corpus-wide coverage"}
+
+
+def get_entity(connection,project_id,entity_kind,entity_id):
+    table=ENTITY_TABLES.get(entity_kind)
+    if table is None: raise ValueError("Unsupported lexical entity")
+    return connection.execute(sql.SQL("SELECT * FROM research.{} WHERE project_id=%s AND id=%s").format(sql.Identifier(table)),(project_id,entity_id)).fetchone()
+
+
+def history(connection,project_id,entity_kind,entity_id,before_revision,limit):
+    if get_entity(connection,project_id,entity_kind,entity_id) is None: return None
+    return connection.execute("SELECT * FROM research.lexicon_revisions WHERE entity_table=%s AND entity_id=%s AND revision<%s ORDER BY revision DESC LIMIT %s",
+        (ENTITY_TABLES[entity_kind],entity_id,before_revision,limit)).fetchall()
 
 
 def senses(connection,project_id,concept_id,cursor,limit):
@@ -236,16 +251,16 @@ def search(connection,project_id,query,limit):
     model.text(query,"lexicon query",500);normalized=model.search_key(query)
     if not normalized: raise ValueError("Use searchable letters or numbers")
     return connection.execute("""WITH hits AS (
-        SELECT r.id AS concept_id,'concept_label_scope' AS channel,r.id AS match_id,r.title AS original
+        SELECT r.id AS concept_id,'concept_label_scope' AS channel,r.id AS match_id,r.title AS original,NULL::text AS assertion_kind
         FROM research.records r WHERE r.project_id=%s AND r.kind='concept' AND r.deleted_at IS NULL
           AND to_tsvector('simple',r.title||' '||r.summary) @@ plainto_tsquery('simple',%s)
         UNION ALL
-        SELECT s.concept_id,'normalized_written_representation',p.id,p.written_rep
+        SELECT s.concept_id,'normalized_written_representation',p.id,p.written_rep,NULL::text
         FROM research.lexicon_representations p JOIN research.lexicon_forms f ON f.project_id=p.project_id AND f.id=p.form_id
         JOIN research.lexicon_senses s ON s.project_id=f.project_id AND s.entry_id=f.entry_id
         WHERE p.project_id=%s AND s.state='active' AND to_tsvector('simple',p.search_key) @@ plainto_tsquery('simple',%s)
         UNION ALL
-        SELECT l.concept_id,'normalized_definition_text',l.id,l.body
+        SELECT l.concept_id,'normalized_definition_text',l.id,l.body,l.definition_kind
         FROM research.lexicon_definitions l
         JOIN research.reading_annotations a ON a.project_id=l.project_id AND a.id=l.annotation_id
         JOIN research.reading_documents d ON d.project_id=a.project_id AND d.id=a.document_id
@@ -253,6 +268,6 @@ def search(connection,project_id,query,limit):
         WHERE l.project_id=%s AND l.state='active' AND r.deleted_at IS NULL
           AND to_tsvector('simple',l.search_key) @@ plainto_tsquery('simple',%s)
         ), chosen AS (SELECT DISTINCT ON(concept_id) * FROM hits ORDER BY concept_id,channel,match_id)
-        SELECT c.id,c.project_id,c.title,c.summary,c.review_state,h.channel,h.match_id,left(h.original,500) AS original
+        SELECT c.id,c.project_id,c.title,c.summary,c.review_state,h.channel,h.match_id,h.assertion_kind,left(h.original,500) AS original
         FROM chosen h JOIN research.records c ON c.id=h.concept_id AND c.project_id=%s AND c.kind='concept' AND c.deleted_at IS NULL
         ORDER BY c.id LIMIT %s""",(project_id,query,project_id,normalized,project_id,normalized,project_id,limit)).fetchall()
