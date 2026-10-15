@@ -10,6 +10,7 @@ from . import lexicon_store
 from . import verse_store
 from . import source_intake
 from . import reading_desk
+from . import notebook
 
 
 class PostgreSQLStore:
@@ -53,6 +54,21 @@ class PostgreSQLStore:
 
     def reading_desk_history(self,project_id,before_revision,limit):
         with db.connect(self.dsn) as connection: return reading_desk.history(connection,project_id,before_revision,limit)
+
+    def notebook_items(self,**values):
+        with db.connect(self.dsn) as connection:return notebook.items(connection,**values)
+
+    def notebook_entry(self,project_id,entry_id):
+        with db.connect(self.dsn) as connection:return notebook.get(connection,project_id,entry_id)
+
+    def notebook_create(self,**values):
+        with db.connect(self.dsn) as connection:return notebook.create(connection,**values)
+
+    def notebook_update(self,**values):
+        with db.connect(self.dsn) as connection:return notebook.update(connection,**values)
+
+    def notebook_history(self,**values):
+        with db.connect(self.dsn) as connection:return notebook.history(connection,**values)
 
     def records(self, project_id: str, kind: str | None, cursor: str, limit: int) -> list[dict]:
         with db.connect(self.dsn) as connection:
