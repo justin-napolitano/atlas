@@ -254,7 +254,7 @@ class APIDatabaseTests(unittest.TestCase):
         first.post("/v1/projects",json=dict(project_id=project,title="Synthetic verse project"),headers=self.headers()).raise_for_status()
         first.put("/v1/records",json=dict(record_id=source,project_id=project,kind="source",title="Synthetic commentary"),headers=self.headers()).raise_for_status()
         document=first.post("/v1/reading/documents",json=dict(project_id=project,source_record_id=source,edition="Synthetic edition",locator="Paragraph 2",text="Discusses Q 4:59."),headers=self.headers()).json()
-        annotation=first.post("/v1/reading/annotations",json=dict(annotation_uuid=str(uuid.uuid4()),project_id=project,document_id=document["id"],text_sha256=document["text_sha256"],start=0,end=16,exact="Discusses Q 4:59."),headers=self.headers()).json()
+        annotation=first.post("/v1/reading/annotations",json=dict(annotation_uuid=str(uuid.uuid4()),project_id=project,document_id=document["id"],text_sha256=document["text_sha256"],start=0,end=len("Discusses Q 4:59."),exact="Discusses Q 4:59."),headers=self.headers()).json()
         payload=dict(request_uuid=str(uuid.uuid4()),project_id=project,annotation_id=annotation["id"],chapter=4,ayah_start=59,ayah_end=59,material_kind="tafsir",link_kind="discussion",
             attribution="Synthetic commentator",source_scope="This selected commentary only",rationale="Owner located relation",owner_confirmed=True)
         response=first.post("/v1/verses/materials",json=payload,headers=self.headers())

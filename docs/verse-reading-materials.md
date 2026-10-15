@@ -90,3 +90,13 @@ Resume with:
 6. Update release evidence and issue #45 with actual results, then open focused
    reviewable PR(s). Issue #45 remains incomplete. The larger #30 roadmap also
    remains active; this checkpoint is not a completion claim for other issues.
+
+## Resumed implementation
+
+The resumed pilot branch now includes strict owner HTTP boundary and real-database
+roundtrip tests, public route exclusion, and a fourteenth private Ossie dataset
+with project-scoped source/annotation/citation lineage. The model exposes the
+original citation snapshot separately from the mutable current resolution;
+dataset joins establish lineage, not interpretive support. Local HTTP boundary
+and semantic validation pass; real PostgreSQL verification is delegated to CI.
+Pilot import, the verse reader, and the real content workflow remain in progress.
