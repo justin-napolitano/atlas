@@ -47,6 +47,7 @@ The research should understand traditions in context before evaluating them. “
 - `docs/lexicon-reader.md` — owner reading controls for concept connections, attributed definitions, source reopening, draft/conflict recovery, private history, and lexical search; public lexical projection remains pending.
 - `docs/source-intake-workflow.md` — reviewed manual bibliography/URL/identifier intake, explicit existing-source reuse, optional permitted located excerpts, and atomic retry receipts; provider resolution and file import remain pending.
 - `docs/passage-verse-links.md` — scoped owner discussion/interpretation links from exact saved passages to verse ranges, pending review with source-bound save verification and retained retries.
+- `docs/located-reading-collection.md` — real, located Q 4:59 / 4:83 Rodwell, al-Tabari, and translated Al-Mizan readings, with exact quotation/analyst-paraphrase separation and explicit evidence/reuse limits.
 - `docs/postgres.md` — migration-managed PostgreSQL records, retained RDF imports, revision-safe personal state, and real-database test commands; hosted authentication/deployment remain separate slices.
 - `docs/postgres-observability.md` — PostgreSQL 17/18 contract matrix and real native log checks for private bound values, error paths, and shared redaction settings.
 - `docs/runtime-sql-permissions.md` — previewable post-migration grants, restricted owner/publisher logins, and real PostgreSQL permission tests.
