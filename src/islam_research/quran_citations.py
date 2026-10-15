@@ -22,10 +22,11 @@ _DASH = r"[-–—]"
 _ITEM = rf"\d+(?:\s*:\s*\d+)?(?:\s*{_DASH}\s*\d+(?:\s*:\s*\d+)?)?"
 _JOIN = r"\s*(?:,\s*(?:and\s+)?|and\s+)"
 _LIST = rf"{_ITEM}(?:{_JOIN}{_ITEM})*"
+_FIRST_NUMERIC = rf"\d+\s*:\s*\d+(?:\s*{_DASH}\s*\d+(?:\s*:\s*\d+)?)?"
 _QURAN = r"(?:Qur[’'ʾʼ‘]?ān|Qur[’'ʾʼ‘]?an|Koran|القرآن|القران)"
 _CUE = re.compile(rf"(?<!\w)(?:{_QURAN}|s[uū]ra(?:h|t)?)(?!\w)", re.IGNORECASE)
 _NUMERIC = re.compile(
-    rf"(?<!\w)(?:Q\.?|{_QURAN})\s*(?P<items>\d+\s*:\s*{_LIST})(?!\w)",
+    rf"(?<!\w)(?:Q\.?|{_QURAN})\s*(?P<items>{_FIRST_NUMERIC}(?:{_JOIN}{_ITEM})*)(?![\w:–—-])",
     re.IGNORECASE,
 )
 _NARRATIVE = re.compile(

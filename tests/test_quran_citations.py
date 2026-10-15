@@ -74,6 +74,10 @@ class QuranCitationTests(unittest.TestCase):
                      "FAQ4:59", "Q4:59th", "sūrat al-Nisā’", "An implied discussion of authority."]:
             self.assertEqual(self.candidates(text), [], text)
 
+    def test_malformed_colons_and_unfinished_ranges_are_not_partial_references(self):
+        for text in ["Q4:5:9", "Q4:59-", "Q4:59–5:2:3"]:
+            self.assertEqual(self.candidates(text), [], text)
+
     def test_repeated_occurrences_are_distinct_and_reproducible(self):
         text = "Q4:59; Q4:59."
         rows = self.candidates(text)

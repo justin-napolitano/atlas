@@ -46,7 +46,7 @@ class CitationStoreTests(unittest.TestCase):
         with self.db.connect(self.owner_dsn) as connection:
             self.db.create_project(connection,self.project,"Synthetic citation project")
             self.db.save_record(connection,record_id=self.source,project_id=self.project,kind="source",title="Synthetic source",actor="test-owner")
-            text = "😀 PRIVATE OUTSIDE SELECTION. Read Q 4:59 and 83. More outside text."
+            text = "😀 PRIVATE OUTSIDE SELECTION. " + "x"*100 + " Read Q 4:59 and 83. " + "z"*100
             self.document = self.passages.create_document(connection,project_id=self.project,source_record_id=self.source,
                 edition="Synthetic edition",locator="Abstract, sentence 2",representation_url="https://example.invalid/source",text=text,actor="test-owner")
             selected = "Q 4:59 and 83"
@@ -130,6 +130,26 @@ class CitationStoreTests(unittest.TestCase):
             row = self.resolve(connection)
         exported = PostgreSQLStore(self.owner_dsn).reading_annotation(self.project,self.annotation["id"])["web_annotation"]
         self.assertEqual(exported["ir:scriptureReferences"][0]["id"],row["id"])
-        self.assertEqual(exported["ir:scriptureReferences"][0]["revision"],1)
+        resolution=exported["ir:scriptureReferences"][0]
+        self.assertEqual(resolution["ir:revision"],1)
+        self.assertEqual(resolution["ir:resolvedReference"]["id"],"urn:research:quran:tanzil-structure-1.0:4:59-59")
+        self.assertEqual(resolution["ir:capturedAnnotation"]["id"],self.annotation["id"])
         self.assertEqual(exported["ir:edition"],"Synthetic edition")
+        selector=exported["target"]["selector"][0]
+        self.assertLessEqual(len(selector["prefix"]),40)
+        self.assertLessEqual(len(selector["suffix"]),40)
         self.assertNotIn("PRIVATE OUTSIDE SELECTION",json.dumps(exported,default=str))
+        self.assertNotIn(self.document["text_body"],json.dumps(exported,default=str))
+
+    def test_explicit_record_publication_preview_excludes_private_reference_decisions(self):
+        import json
+        from islam_research import publication
+        with self.db.connect(self.owner_dsn) as connection:
+            row=self.resolve(connection)
+            preview=publication.preview(connection,project_id=self.project,
+                selections=[{"record_id":self.source,"include_summary":True,"include_bibliography":True}],relation_ids=[],actor="test-owner")
+            public=json.dumps(preview["payload"],default=str)
+            self.assertNotIn(row["id"],public)
+            self.assertNotIn(row["rationale"],public)
+            self.assertNotIn(self.annotation["exact"],public)
+            self.assertNotIn(self.document["text_sha256"],public)

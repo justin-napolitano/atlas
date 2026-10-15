@@ -23,6 +23,7 @@ from .api_auth import IAPVerifier, IdentityUnavailable, InvalidIdentity
 from .api_store import PostgreSQLStore
 from .database import RevisionConflict
 from .graph_engine import rank, registered_policy
+from .quran_citations import PARSER_VERSION as QURAN_PARSER_VERSION, PROFILE_ID as QURAN_PROFILE_ID
 
 logger = logging.getLogger("research.api")
 Identifier = Annotated[str, Field(min_length=1, max_length=500, pattern=r"^[^\x00-\x1f\x7f]+$")]
@@ -392,6 +393,11 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         policy, digest = registered_policy()
         return {"policy_sha256": digest, "traversal_profiles": policy["traversal_profiles"],
                 "ranking_profiles": policy["ranking_profiles"],
+                "scripture_references": {"profile_id":QURAN_PROFILE_ID,"parser_version":QURAN_PARSER_VERSION,
+                    "candidates":"/v1/reading/scripture-candidates","reverse_lookup":"/v1/reading/scripture-citations",
+                    "owner_resolution":"/v1/reading/scripture-citation","max_reverse_lookup_page":25,
+                    "scope":"owner_only","confirmation":"explicit_owner_decision_with_revision_and_rationale",
+                    "review_effect":"none","graph_effect":"none","publication_effect":"none"},
                 "execution": "typed_traversal_and_owner_observation_scoring_v1"}
 
     @router.get("/search")

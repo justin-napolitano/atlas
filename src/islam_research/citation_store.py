@@ -8,6 +8,27 @@ from . import database as db, passage_store
 from .quran_citations import PARSER_VERSION, PROFILE_ID, detect, reference
 
 
+def export_resolution(row):
+    """Namespaced JSON-LD extension; original annotation retains source selectors."""
+    result = {"id": row["id"], "type": "ir:ScriptureReferenceResolution",
+              "ir:capturedAnnotation": {"id": row["annotation_id"]},
+              "ir:document": {"id": row["document_id"]},
+              "ir:reviewStatus": "owner_reference_decision_interpretation_unreviewed"}
+    names = {"project_id": "projectId", "text_sha256": "textSha256", "candidate_key": "candidateKey",
+             "parser_version": "parserVersion", "detector_kind": "detectorKind", "match_start": "markerStart",
+             "match_end": "markerEnd", "matched_text": "matchedText", "profile_id": "structureProfile",
+             "decision": "decision", "rationale": "rationale", "revision": "revision"}
+    result.update({"ir:" + target: row[source] for source, target in names.items()})
+    if row["proposal"]:
+        result["ir:proposedReference"] = {"ir:" + key: value for key, value in row["proposal"].items()}
+    if row["decision"] == "confirmed":
+        resolved = reference(row["chapter"], row["ayah_start"], row["ayah_end"])
+        result["ir:resolvedReference"] = {"id": resolved["id"], "type": "ir:QuranReference",
+            "ir:structureProfile": resolved["profile_id"], "ir:chapter": row["chapter"],
+            "ir:ayahStart": row["ayah_start"], "ir:ayahEnd": row["ayah_end"]}
+    return result
+
+
 def candidates(connection, project_id, annotation_id):
     captured = passage_store.annotation(connection, project_id, annotation_id)
     if captured is None:

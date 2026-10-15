@@ -230,7 +230,7 @@ class PostgreSQLStore:
             value = passage_store.annotation(connection,project_id,annotation_id)
             if value is not None:
                 rows = citation_store.candidates(connection,project_id,annotation_id)["resolutions"]
-                value["web_annotation"]["ir:scriptureReferences"] = rows
+                value["web_annotation"]["ir:scriptureReferences"] = [citation_store.export_resolution(row) for row in rows]
             return value
 
     def create_reading_annotation(self, **values):

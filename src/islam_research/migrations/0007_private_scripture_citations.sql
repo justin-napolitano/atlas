@@ -1,8 +1,9 @@
 -- Private owner reference resolution. No canonical graph or publication writes.
+ALTER TABLE research.reading_annotations ADD CONSTRAINT reading_annotations_project_identity UNIQUE(project_id,id);
 CREATE TABLE research.scripture_citations (
     id text PRIMARY KEY CHECK (length(id) BETWEEN 1 AND 500),
     project_id text NOT NULL,
-    annotation_id text NOT NULL REFERENCES research.reading_annotations(id),
+    annotation_id text NOT NULL,
     document_id text NOT NULL,
     text_sha256 text NOT NULL CHECK (text_sha256 ~ '^[0-9a-f]{64}$'),
     candidate_key text NOT NULL CHECK (candidate_key='manual' OR candidate_key ~ '^[0-9a-f]{64}$'),
@@ -23,6 +24,7 @@ CREATE TABLE research.scripture_citations (
     created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
     updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
     FOREIGN KEY(project_id,document_id) REFERENCES research.reading_documents(project_id,id),
+    FOREIGN KEY(project_id,annotation_id) REFERENCES research.reading_annotations(project_id,id),
     UNIQUE(project_id,annotation_id,candidate_key),
     CHECK ((decision='confirmed' AND chapter IS NOT NULL AND ayah_start IS NOT NULL AND ayah_end IS NOT NULL)
         OR (decision='dismissed' AND chapter IS NULL AND ayah_start IS NULL AND ayah_end IS NULL))

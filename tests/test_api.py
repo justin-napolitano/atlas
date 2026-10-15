@@ -200,6 +200,43 @@ class APIBoundaryTests(unittest.TestCase):
 class APIDatabaseTests(unittest.TestCase):
     setUp = APIBoundaryTests.setUp
     headers = APIBoundaryTests.headers
+    def test_scripture_reference_roundtrip_detect_confirm_reload_reverse_and_export(self):
+        dsn=os.environ["RESEARCH_TEST_DATABASE_URL"]
+        with db.connect(dsn) as connection:
+            db.migrate(connection)
+        settings=Settings(dsn,owner_subject=OWNER,iap_audience=AUDIENCE,owner_origin=ORIGIN)
+        client=TestClient(create_app(settings,verifier=self.verifier))
+        project,source="test:"+uuid.uuid4().hex,"test:"+uuid.uuid4().hex
+        self.assertEqual(client.post("/v1/projects",json={"project_id":project,"title":"Synthetic reference project"},headers=self.headers()).status_code,201)
+        self.assertEqual(client.put("/v1/records",json=dict(record_id=source,project_id=project,kind="source",title="Synthetic citation source"),headers=self.headers()).status_code,200)
+        text="In the Qur’an: verses 59 and 83 of chapter 4 (sūrat al-Nisā’)."
+        response=client.post("/v1/reading/documents",json=dict(project_id=project,source_record_id=source,edition="Synthetic edition",locator="Abstract",text=text),headers=self.headers())
+        self.assertEqual(response.status_code,201);document=response.json()
+        response=client.post("/v1/reading/annotations",json=dict(annotation_uuid=str(uuid.uuid4()),project_id=project,
+            document_id=document["id"],text_sha256=document["text_sha256"],start=0,end=len(text),exact=text,capture_kind="citation_candidate"),headers=self.headers())
+        self.assertEqual(response.status_code,201);annotation=response.json()
+        params=dict(project_id=project,annotation_id=annotation["id"])
+        response=client.get("/v1/reading/scripture-candidates",params=params,headers=self.headers())
+        self.assertEqual(response.status_code,200);detected=response.json()
+        self.assertEqual({row["reference"]["ayah_start"] for row in detected["candidates"]},{59,83})
+        self.assertEqual(detected["resolutions"],[])
+        candidate=next(row for row in detected["candidates"] if row["reference"]["ayah_start"]==83)
+        payload={**params,"candidate_key":candidate["key"],"decision":"confirmed","chapter":4,"ayah_start":83,"ayah_end":83,
+                 "rationale":"Synthetic owner resolution; source interpretation unreviewed","expected_revision":0,"owner_confirmed":True}
+        response=client.put("/v1/reading/scripture-citation",json=payload,headers=self.headers())
+        self.assertEqual(response.status_code,200);self.assertEqual(response.json()["changed_by"],OWNER)
+        other=TestClient(create_app(settings,verifier=self.verifier))
+        reloaded=other.get("/v1/reading/scripture-candidates",params=params,headers=self.headers()).json()
+        self.assertEqual(reloaded["resolutions"][0]["revision"],1)
+        reverse=dict(project_id=project,chapter=4,ayah_start=83,ayah_end=83)
+        found=other.get("/v1/reading/scripture-citations",params=reverse,headers=self.headers()).json()
+        self.assertEqual(found["items"][0]["annotation_id"],annotation["id"])
+        self.assertEqual(found["items"][0]["source_record_id"],source)
+        self.assertEqual(other.get("/v1/reading/scripture-citations",params={**reverse,"project_id":"other"},headers=self.headers()).json()["items"],[])
+        self.assertEqual(other.get("/v1/reading/scripture-candidates",params={**params,"project_id":"other"},headers=self.headers()).status_code,404)
+        exported=other.get("/v1/reading/annotation",params=params,headers=self.headers()).json()["web_annotation"]
+        self.assertEqual(exported["ir:scriptureReferences"][0]["ir:resolvedReference"]["id"],"urn:research:quran:tanzil-structure-1.0:4:83-83")
+
     def test_real_sessions_persist_notes_and_reject_stale_updates(self):
         dsn = os.environ["RESEARCH_TEST_DATABASE_URL"]
         with db.connect(dsn) as connection:

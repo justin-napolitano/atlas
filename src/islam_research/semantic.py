@@ -20,6 +20,9 @@ TABLES = {
     "records": {"id", "project_id", "kind", "title", "summary", "review_state", "origin", "revision", "updated_at"},
     "relations": {"id", "project_id", "from_id", "predicate", "to_id", "provenance", "review_state"},
     "personal_states": {"record_id", "project_id", "reading", "read_at", "decision", "note", "revision"},
+    "reading_documents": {"id", "project_id", "source_record_id", "edition", "locator", "representation_url", "text_sha256", "review_scope"},
+    "reading_annotations": {"id", "project_id", "document_id", "text_sha256", "start_pos", "end_pos", "exact", "capture_kind", "body", "revision"},
+    "scripture_citations": {"id", "project_id", "annotation_id", "document_id", "text_sha256", "candidate_key", "detector_kind", "profile_id", "decision", "chapter", "ayah_start", "ayah_end", "rationale", "revision"},
 }
 FEATURES = {"query_match", "scope_match", "owner_priority", "question_relevance", "terminology_load",
             "historical_context_load", "argument_load", "language_load", "unfamiliar_concepts",
