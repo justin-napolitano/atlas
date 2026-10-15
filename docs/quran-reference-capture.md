@@ -45,13 +45,79 @@ Validated references include a link to the first verse at Quran.com. For a range
 this link opens only its first verse. This is a navigation link, not a verified
 edition, translation, commentary, API result, or claim of commentary coverage.
 
-## Verification and remaining integration
+## Durable private resolution and retrieval
+
+The authenticated owner API exposes:
+
+- `GET /v1/reading/scripture-candidates?project_id=…&annotation_id=…`: pure
+  detection plus saved owner decisions for an active, anchored source snapshot.
+- `PUT /v1/reading/scripture-citation`: explicit confirmation or dismissal,
+  candidate key (or `manual`), proposed resolved chapter/range, rationale, literal
+  owner confirmation, and expected revision. The backend derives the marker and
+  source binding itself. Clients cannot supply them or impersonate the actor.
+- `GET /v1/reading/scripture-citations?project_id=…&chapter=4&ayah_start=59&ayah_end=59`:
+  confirmed, overlapping reference links in that project with source identity,
+  edition, locator, selected quotation, snapshot hash, and annotation identity.
+  Pages are bounded to 25 with stable cursors. Deleted sources are excluded.
+
+The private `research.scripture_citations` table separates immutable original
+marker/proposal provenance from editable owner resolution and rationale. Bounds
+and source/selector integrity are enforced in PostgreSQL as well as Python.
+Column grants prevent the runtime owner from rewriting the original provenance;
+history is trigger-written and immutable to the runtime. Updates compare revisions.
+An exact retry after a lost response returns the committed revision without adding
+duplicate history. Other stale writes return a scoped conflict for explicit choice.
+
+There is one editable manual mapping per captured annotation, clearly labeled as
+an owner connection rather than a source's explicit citation. Distinct detected
+occurrences have independent decisions. Additional manual connections can be
+captured as separate annotations; multi-mapping slots are not implemented here.
+Parser version and original marker remain stored. A future parser change needs
+a compatibility/migration policy before previous-version candidates can be edited.
+
+The reader offers these controls under **Link Qur’an references** on each saved
+passage. Drafts survive record navigation in page memory, failed saves retain the
+typed decision, and cloud conflicts require an explicit comparison/choice. Closing
+the page before saving loses a draft after the existing unload warning. Confirmed
+decisions and dismissals persist in PostgreSQL and reload from the owner API.
+Neither notes nor decision drafts enter browser localStorage.
+
+**Find linked passages** provides reverse verse navigation back to the original
+source and exact captured passage. It displays the first 25 matches; the API cursor
+supports further pages, while the current UI asks for a narrower range. The original
+edition, locator, and full excerpt version remain separate from the verse identity.
+
+Private annotation JSON-LD includes namespaced reference-resolution objects,
+original marker offsets within the selected quotation, source hash, detector/mapping
+kind, owner decision, revision, rationale, structure profile, and resolved stable
+reference ID. The parent W3C annotation retains its source selectors and bounded
+prefix/suffix context. This is export, not bidirectional import or publication.
+
+The private Ossie model now describes reading snapshots, captured annotations,
+and reference decisions with project-scoped composite relationships through to
+source records. Full excerpt text is excluded from its metadata fields. These are
+discoverable contracts, not executable SQL. `/v1/research-operations` advertises
+the registered reference endpoints, limits, and their lack of review/graph/publication
+effects. There is no free-form query execution or automatic agent approval.
+
+## Verification and remaining work
 
 `uv run --no-sync python -m unittest discover -s tests -p test_quran_citations.py -v`
 checks all 114 chapter boundaries, Unicode offsets/digits, source-abstract narrative
 syntax, repeated occurrences, false-positive boundaries, and unresolved invalid
 and cross-chapter ranges. The detector performs no network requests.
 
-Durable owner confirmation, manual mapping/correction, revision history, reverse
-verse lookup, reader controls, and private JSON-LD export are the next integration
-steps. This module alone does not deliver those flows or a commentary reader.
+Real PostgreSQL 17/18 CI tests exercise restricted owner/publisher logins,
+confirmation/retry/CAS/history, manual mapping/dismissal, reverse lookup, invalid
+selectors/bounds, wrong projects, and private JSON-LD export. HTTP tests separately
+verify signed-owner/CSRF requirements, strict confirmation, forbidden client fields,
+and absence of every new route in public mode. The browser harness exercises exact
+capture, navigation-retained drafts, reload, lost acknowledgements, conflicts,
+reverse links, dismissal, mobile overflow, and private-storage boundaries with
+synthetic API responses. A browser fixture is not proof of a live hosted login.
+
+This slice does not supply scripture/translation texts, a comparative commentary
+reader, named-surah resolution, alternative numbering alignment, publication of
+resolved links, an agent proposal service, or Obsidian reference import. Those
+remain in #43/#45 and the wider roadmap. Actual release evidence is recorded in
+`docs/hosted-release-evidence.md`; no cloud resources are provisioned by this work.

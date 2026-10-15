@@ -3,7 +3,7 @@ import { selectedPassage } from './passageSelection.js';
 import SavedPassageNote from './SavedPassageNote.jsx';
 import './sourceReader.css';
 
-export default function SourceReader({ record, api, drafts, changed, noteEditor, initialAnnotationId = '' }) {
+export default function SourceReader({ record, api, drafts, changed, noteEditor, navigate, initialAnnotationId = '' }) {
   const [snapshots,setSnapshots]=useState([]), [cursor,setCursor]=useState(null), [documentId,setDocumentId]=useState('');
   const [document,setDocument]=useState(null), [annotations,setAnnotations]=useState([]), [annotationCursor,setAnnotationCursor]=useState(null);
   const [message,setMessage]=useState(''), [highlight,setHighlight]=useState(null);
@@ -132,7 +132,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
       {capture && <div className="reader-capture"><blockquote>{capture.exact}</blockquote><label>Capture as<select value={capture.capture_kind} disabled={capture.saving} onChange={e=>remember(captureKey,{...capture,capture_kind:e.target.value})}><option value="comment">Reading note</option><option value="term_candidate">Term to investigate</option><option value="citation_candidate">Scripture reference to check</option></select></label>
         <label>My passage note<textarea value={capture.body} disabled={capture.saving} rows={4} maxLength={10000} onChange={e=>remember(captureKey,{...capture,body:e.target.value})} /></label>
         <div><button onClick={saveCapture} disabled={capture.saving}>{capture.saving ? 'Saving…' : 'Save passage note'}</button><button disabled={capture.saving} onClick={()=>{forget(captureKey);setHighlight(null);}}>Discard selection draft</button></div><small>Captured text and a candidate label do not establish a definition, citation resolution, or reviewed claim.</small></div>}
-      <div className="reader-annotations"><h4>Saved passage notes</h4>{!annotations.length && <p>No passage notes yet. Select a word or passage above.</p>}{annotations.map(row=><SavedPassageNote key={row.id} row={row} sourceId={record.id} editor={noteEditor} reopen={reopen} />)}{annotationCursor && <button onClick={moreAnnotations}>More passage notes</button>}</div>
+      <div className="reader-annotations"><h4>Saved passage notes</h4>{!annotations.length && <p>No passage notes yet. Select a word or passage above.</p>}{annotations.map(row=><SavedPassageNote key={row.id} row={row} sourceId={record.id} editor={noteEditor} reopen={reopen} api={api} drafts={drafts} changed={changed} navigate={navigate} />)}{annotationCursor && <button onClick={moreAnnotations}>More passage notes</button>}</div>
     </>}
     {message && <p className="reader-message" role="status">{message}</p>}
   </section>;
