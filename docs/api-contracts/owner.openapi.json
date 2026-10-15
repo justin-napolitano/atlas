@@ -1122,6 +1122,12 @@
             "title": "Representation Url",
             "type": "string"
           },
+          "source_notice": {
+            "default": "",
+            "maxLength": 8000,
+            "title": "Source Notice",
+            "type": "string"
+          },
           "source_record_id": {
             "maxLength": 500,
             "minLength": 1,
@@ -1338,6 +1344,375 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "VerseMaterialInput": {
+        "additionalProperties": false,
+        "properties": {
+          "annotation_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Annotation Id",
+            "type": "string"
+          },
+          "assertion_mode": {
+            "default": "none",
+            "enum": [
+              "none",
+              "quotation",
+              "paraphrase"
+            ],
+            "title": "Assertion Mode",
+            "type": "string"
+          },
+          "assertion_text": {
+            "default": "",
+            "maxLength": 5000,
+            "title": "Assertion Text",
+            "type": "string"
+          },
+          "attribution": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Attribution",
+            "type": "string"
+          },
+          "ayah_end": {
+            "maximum": 286.0,
+            "minimum": 1.0,
+            "title": "Ayah End",
+            "type": "integer"
+          },
+          "ayah_start": {
+            "maximum": 286.0,
+            "minimum": 1.0,
+            "title": "Ayah Start",
+            "type": "integer"
+          },
+          "chapter": {
+            "maximum": 114.0,
+            "minimum": 1.0,
+            "title": "Chapter",
+            "type": "integer"
+          },
+          "citation_basis": {
+            "default": "none",
+            "enum": [
+              "none",
+              "resolved_reference",
+              "owner_identified"
+            ],
+            "title": "Citation Basis",
+            "type": "string"
+          },
+          "citation_id": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Citation Id"
+          },
+          "context_basis": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Context Basis",
+            "type": "string"
+          },
+          "language_tag": {
+            "default": "und",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Language Tag",
+            "type": "string"
+          },
+          "link_kind": {
+            "enum": [
+              "representation",
+              "explicit_citation",
+              "discussion",
+              "interpretive_claim"
+            ],
+            "title": "Link Kind",
+            "type": "string"
+          },
+          "marker_end": {
+            "anyOf": [
+              {
+                "maximum": 500.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marker End"
+          },
+          "marker_start": {
+            "anyOf": [
+              {
+                "maximum": 499.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marker Start"
+          },
+          "material_kind": {
+            "enum": [
+              "arabic_text",
+              "translation",
+              "tafsir",
+              "linguistic_annotation",
+              "scholarship"
+            ],
+            "title": "Material Kind",
+            "type": "string"
+          },
+          "owner_confirmed": {
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "period_note": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Period Note",
+            "type": "string"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "reading_note": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Reading Note",
+            "type": "string"
+          },
+          "request_uuid": {
+            "pattern": "^[a-fA-F0-9-]{36}$",
+            "title": "Request Uuid",
+            "type": "string"
+          },
+          "source_scope": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Source Scope",
+            "type": "string"
+          },
+          "state": {
+            "default": "active",
+            "enum": [
+              "active",
+              "withdrawn"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "tradition_note": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Tradition Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "attribution",
+          "source_scope",
+          "rationale",
+          "request_uuid",
+          "project_id",
+          "annotation_id",
+          "chapter",
+          "ayah_start",
+          "ayah_end",
+          "material_kind",
+          "link_kind"
+        ],
+        "title": "VerseMaterialInput",
+        "type": "object"
+      },
+      "VerseMaterialUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "assertion_mode": {
+            "default": "none",
+            "enum": [
+              "none",
+              "quotation",
+              "paraphrase"
+            ],
+            "title": "Assertion Mode",
+            "type": "string"
+          },
+          "assertion_text": {
+            "default": "",
+            "maxLength": 5000,
+            "title": "Assertion Text",
+            "type": "string"
+          },
+          "attribution": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Attribution",
+            "type": "string"
+          },
+          "context_basis": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Context Basis",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "language_tag": {
+            "default": "und",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Language Tag",
+            "type": "string"
+          },
+          "material_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Material Id",
+            "type": "string"
+          },
+          "owner_confirmed": {
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "period_note": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Period Note",
+            "type": "string"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "reading_note": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Reading Note",
+            "type": "string"
+          },
+          "source_scope": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Source Scope",
+            "type": "string"
+          },
+          "state": {
+            "default": "active",
+            "enum": [
+              "active",
+              "withdrawn"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "tradition_note": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Tradition Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "attribution",
+          "source_scope",
+          "rationale",
+          "project_id",
+          "material_id",
+          "expected_revision"
+        ],
+        "title": "VerseMaterialUpdate",
+        "type": "object"
+      },
+      "VersePilotImport": {
+        "additionalProperties": false,
+        "properties": {
+          "ayah": {
+            "maximum": 286.0,
+            "minimum": 1.0,
+            "title": "Ayah",
+            "type": "integer"
+          },
+          "chapter": {
+            "maximum": 114.0,
+            "minimum": 1.0,
+            "title": "Chapter",
+            "type": "integer"
+          },
+          "owner_confirmed": {
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "request_uuid": {
+            "pattern": "^[a-fA-F0-9-]{36}$",
+            "title": "Request Uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "request_uuid",
+          "project_id",
+          "chapter",
+          "ayah",
+          "rationale"
+        ],
+        "title": "VersePilotImport",
         "type": "object"
       }
     }
@@ -3583,6 +3958,475 @@
           }
         },
         "summary": "Search"
+      }
+    },
+    "/v1/verses/annotation-links": {
+      "get": {
+        "operationId": "verse_annotation_links_v1_verses_annotation_links_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "annotation_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Annotation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 500,
+              "title": "Cursor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 25,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verse Annotation Links"
+      }
+    },
+    "/v1/verses/history": {
+      "get": {
+        "operationId": "verse_history_v1_verses_history_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "material_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Material Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before_revision",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before Revision"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 25,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verse History"
+      }
+    },
+    "/v1/verses/import-pilot": {
+      "post": {
+        "operationId": "verse_import_pilot_v1_verses_import_pilot_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersePilotImport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verse Import Pilot"
+      }
+    },
+    "/v1/verses/material": {
+      "get": {
+        "operationId": "verse_material_v1_verses_material_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "material_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Material Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verse Material"
+      },
+      "put": {
+        "operationId": "update_verse_material_v1_verses_material_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerseMaterialUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Verse Material"
+      }
+    },
+    "/v1/verses/materials": {
+      "get": {
+        "operationId": "verse_materials_v1_verses_materials_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "chapter",
+            "required": true,
+            "schema": {
+              "maximum": 114,
+              "minimum": 1,
+              "title": "Chapter",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ayah_start",
+            "required": true,
+            "schema": {
+              "maximum": 286,
+              "minimum": 1,
+              "title": "Ayah Start",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ayah_end",
+            "required": true,
+            "schema": {
+              "maximum": 286,
+              "minimum": 1,
+              "title": "Ayah End",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "material_kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "arabic_text",
+                    "translation",
+                    "tafsir",
+                    "linguistic_annotation",
+                    "scholarship"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Material Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "link_kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "representation",
+                    "explicit_citation",
+                    "discussion",
+                    "interpretive_claim"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Link Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 500,
+              "title": "Cursor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 25,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verse Materials"
+      },
+      "post": {
+        "operationId": "create_verse_material_v1_verses_materials_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerseMaterialInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Verse Material"
+      }
+    },
+    "/v1/verses/pilot": {
+      "get": {
+        "operationId": "verse_pilot_v1_verses_pilot_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Verse Pilot"
       }
     }
   }

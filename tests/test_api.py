@@ -56,6 +56,13 @@ class MemoryBoundaryStore:
     def update_reading_annotation(self, **value):
         return {**value,"revision":value["expected_revision"]+1}
 
+    def verse_create(self, **value):
+        return {"actor":value["actor"],"id":"synthetic:material","project_id":value["project_id"],"revision":1}
+    def verse_update(self, **value):
+        return {**value,"revision":value["expected_revision"]+1}
+    def verse_import_pilot(self, **value):
+        return {**value,"record_id":"synthetic:resource","document_id":"synthetic:document","annotation_id":"synthetic:annotation"}
+
 
 @unittest.skipUnless(jwt, "Install api and test extras for HTTP contract tests")
 class APIBoundaryTests(unittest.TestCase):
@@ -166,10 +173,35 @@ class APIBoundaryTests(unittest.TestCase):
                      "/v1/lexicon/definitions", "/v1/lexicon/definition", "/v1/lexicon/connection", "/v1/lexicon/occurrences", "/v1/lexicon/search",
                      "/v1/lexicon/entity", "/v1/lexicon/history",
                      "/v1/lexicon/annotation-links",
+                     "/v1/verses/pilot", "/v1/verses/import-pilot", "/v1/verses/materials", "/v1/verses/material", "/v1/verses/annotation-links", "/v1/verses/history",
                      "/v1/publication/head", "/v1/publication/preview", "/v1/publication/previews", "/v1/publication/approve", "/v1/publication/withdraw", "/v1/publication/relations"]:
             self.assertEqual(public.get(path).status_code, 404)
             self.assertEqual(public.put(path, json={}).status_code, 404)
             self.assertEqual(public.post(path, json={}).status_code, 404)
+
+    def test_verse_material_owner_boundary_and_licensed_pilot_resource(self):
+        path="/v1/verses/materials"
+        payload=dict(request_uuid=str(uuid.uuid4()),project_id="synthetic",annotation_id="synthetic:annotation",chapter=4,ayah_start=59,ayah_end=59,
+            material_kind="tafsir",link_kind="discussion",attribution="Synthetic commentator",source_scope="This passage only",rationale="Owner link",owner_confirmed=True)
+        self.assertEqual(self.client.post(path,json=payload).status_code,401)
+        self.assertEqual(self.client.post(path,json=payload,headers=self.headers(sub="other")).status_code,403)
+        headers=self.headers();headers.pop("x-research-write")
+        self.assertEqual(self.client.post(path,json=payload,headers=headers).status_code,403)
+        result=self.client.post(path,json=payload,headers=self.headers())
+        self.assertEqual(result.status_code,201);self.assertEqual(result.json()["actor"],OWNER)
+        for patch in [{"owner_confirmed":v} for v in [False,0,1,"true",None]]+[{"actor":"forged"},{"review_state":"reviewed"},{"chapter":True},{"citation_snapshot":{}}]:
+            self.assertEqual(self.client.post(path,json={**payload,**patch},headers=self.headers()).status_code,422)
+        self.assertEqual(self.client.get("/v1/verses/pilot").status_code,401)
+        resource=self.client.get("/v1/verses/pilot",headers=self.headers()).json()
+        self.assertEqual(len(resource["verses"]),2)
+        self.assertIn("copyright notice",resource["source_notice"].lower())
+        self.assertEqual(resource["attribution_url"],"https://tanzil.net/")
+        import_payload=dict(request_uuid=str(uuid.uuid4()),project_id="synthetic",chapter=4,ayah=59,rationale="Identified pilot import",owner_confirmed=True)
+        self.assertEqual(self.client.post("/v1/verses/import-pilot",json=import_payload).status_code,401)
+        imported=self.client.post("/v1/verses/import-pilot",json=import_payload,headers=self.headers())
+        self.assertEqual(imported.status_code,201);self.assertEqual(imported.json()["actor"],OWNER)
+        for patch in [{"owner_confirmed":False},{"actor":"forged"},{"text":"untrusted replacement"}]:
+            self.assertEqual(self.client.post("/v1/verses/import-pilot",json={**import_payload,**patch},headers=self.headers()).status_code,422)
 
     def test_graph_operations_are_owner_only_and_rank_inputs_are_explained(self):
         query = {"project_id": "synthetic", "record_id": "question", "profile_id": "question_evidence_trail"}
@@ -270,6 +302,53 @@ class APIDatabaseTests(unittest.TestCase):
         exported=first.get("/v1/reading/annotation",params=identity,headers=self.headers()).json()
         self.assertEqual(exported["web_annotation"]["ir:markStyle"],"none")
         self.assertEqual(second.get("/v1/reading/annotation",params={**identity,"project_id":"other"},headers=self.headers()).status_code,404)
+
+    def test_real_pilot_import_http_notice_retry_and_reading_source_return(self):
+        dsn=os.environ["RESEARCH_TEST_DATABASE_URL"]
+        with db.connect(dsn) as connection: db.migrate(connection)
+        settings=Settings(dsn,owner_subject=OWNER,iap_audience=AUDIENCE,owner_origin=ORIGIN)
+        first=TestClient(create_app(settings,verifier=self.verifier));second=TestClient(create_app(settings,verifier=self.verifier))
+        project="test:"+uuid.uuid4().hex
+        first.post("/v1/projects",json=dict(project_id=project,title="Actual attributed text pilot"),headers=self.headers()).raise_for_status()
+        payload=dict(request_uuid=str(uuid.uuid4()),project_id=project,chapter=4,ayah=59,rationale="Explicit import of identified pilot text",owner_confirmed=True)
+        response=first.post("/v1/verses/import-pilot",json=payload,headers=self.headers())
+        self.assertEqual(response.status_code,201);identity=response.json()
+        self.assertEqual(first.post("/v1/verses/import-pilot",json=payload,headers=self.headers()).json(),identity)
+        document=second.get("/v1/reading/document",params=dict(project_id=project,document_id=identity["document_id"]),headers=self.headers()).json()
+        resource=first.get("/v1/verses/pilot",headers=self.headers()).json()
+        self.assertEqual(document["text_body"],resource["verses"][0]["text"])
+        self.assertIn(resource["source_notice"],document["source_notice"])
+        bundle=second.get("/v1/reading/annotation",params=dict(project_id=project,annotation_id=identity["annotation_id"]),headers=self.headers()).json()
+        self.assertEqual(bundle["web_annotation"]["ir:sourceNotice"],document["source_notice"])
+        self.assertTrue(bundle["anchor"]["anchored"])
+
+    def test_verse_material_http_roundtrip_source_return_conflicts_and_history(self):
+        dsn=os.environ["RESEARCH_TEST_DATABASE_URL"]
+        with db.connect(dsn) as connection: db.migrate(connection)
+        settings=Settings(dsn,owner_subject=OWNER,iap_audience=AUDIENCE,owner_origin=ORIGIN)
+        first=TestClient(create_app(settings,verifier=self.verifier));second=TestClient(create_app(settings,verifier=self.verifier))
+        project,source="test:"+uuid.uuid4().hex,"test:"+uuid.uuid4().hex
+        first.post("/v1/projects",json=dict(project_id=project,title="Synthetic verse project"),headers=self.headers()).raise_for_status()
+        first.put("/v1/records",json=dict(record_id=source,project_id=project,kind="source",title="Synthetic commentary"),headers=self.headers()).raise_for_status()
+        document=first.post("/v1/reading/documents",json=dict(project_id=project,source_record_id=source,edition="Synthetic edition",locator="Paragraph 2",text="Discusses Q 4:59."),headers=self.headers()).json()
+        annotation=first.post("/v1/reading/annotations",json=dict(annotation_uuid=str(uuid.uuid4()),project_id=project,document_id=document["id"],text_sha256=document["text_sha256"],start=0,end=len("Discusses Q 4:59."),exact="Discusses Q 4:59."),headers=self.headers()).json()
+        payload=dict(request_uuid=str(uuid.uuid4()),project_id=project,annotation_id=annotation["id"],chapter=4,ayah_start=59,ayah_end=59,material_kind="tafsir",link_kind="discussion",
+            attribution="Synthetic commentator",source_scope="This selected commentary only",rationale="Owner located relation",owner_confirmed=True)
+        response=first.post("/v1/verses/materials",json=payload,headers=self.headers())
+        self.assertEqual(response.status_code,201);created=response.json()
+        self.assertEqual(first.post("/v1/verses/materials",json=payload,headers=self.headers()).json(),created)
+        identity=dict(project_id=project,material_id=created["id"])
+        row=second.get("/v1/verses/material",params=identity,headers=self.headers()).json()
+        self.assertEqual(row["selected_quote"],"Discusses Q 4:59.")
+        self.assertEqual(row["source_record_id"],source)
+        fields={key:row[key] for key in ["attribution","language_tag","source_scope","assertion_mode","assertion_text","reading_note","period_note","tradition_note","context_basis","rationale","state"]}
+        patch=dict(**identity,**{**fields,"reading_note":"Corrected context"},expected_revision=1,owner_confirmed=True)
+        revised=first.put("/v1/verses/material",json=patch,headers=self.headers())
+        self.assertEqual(revised.status_code,200)
+        self.assertEqual(first.put("/v1/verses/material",json=patch,headers=self.headers()).json()["revision"],2)
+        self.assertEqual(second.put("/v1/verses/material",json={**patch,"reading_note":"Stale other edit"},headers=self.headers()).status_code,409)
+        self.assertEqual(second.get("/v1/verses/history",params={**identity,"limit":1},headers=self.headers()).json()["next_before_revision"],2)
+        self.assertEqual(second.get("/v1/verses/material",params={**identity,"project_id":"other"},headers=self.headers()).status_code,404)
 
     def test_lexicon_http_capture_definition_conflict_history_and_source_roundtrip(self):
         dsn=os.environ["RESEARCH_TEST_DATABASE_URL"]

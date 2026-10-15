@@ -24,6 +24,7 @@ from .api_store import PostgreSQLStore
 from .database import RevisionConflict
 from .graph_engine import rank, registered_policy
 from .quran_citations import PARSER_VERSION as QURAN_PARSER_VERSION, PROFILE_ID as QURAN_PROFILE_ID
+from .quran_resources import pilot_resource
 
 logger = logging.getLogger("research.api")
 Identifier = Annotated[str, Field(min_length=1, max_length=500, pattern=r"^[^\x00-\x1f\x7f]+$")]
@@ -108,6 +109,7 @@ class ReadingDocumentInput(Input):
     locator: Annotated[str, Field(min_length=1,max_length=2000)]
     representation_url: Annotated[str, Field(max_length=2000)] = ""
     text: Annotated[str, Field(min_length=1,max_length=12000)]
+    source_notice: Annotated[str, Field(max_length=8000)] = ""
 
 
 class ReadingCaptureInput(Input):
@@ -149,6 +151,59 @@ class ScriptureResolutionInput(Input):
         if value is not True:
             raise ValueError("Explicit owner reference decision required")
         return value
+
+
+class VerseOwnerInput(Input):
+    owner_confirmed: bool
+
+    @field_validator("owner_confirmed")
+    @classmethod
+    def explicit_material_choice(cls,value):
+        if value is not True: raise ValueError("Explicit owner material choice required")
+        return value
+
+
+class VerseMetadata(VerseOwnerInput):
+    attribution: Annotated[str,Field(min_length=1,max_length=2000)]
+    language_tag: Annotated[str,Field(min_length=1,max_length=100)] = "und"
+    source_scope: Annotated[str,Field(min_length=1,max_length=10000)]
+    assertion_mode: Literal["none","quotation","paraphrase"] = "none"
+    assertion_text: Annotated[str,Field(max_length=5000)] = ""
+    reading_note: Annotated[str,Field(max_length=2000)] = ""
+    period_note: Annotated[str,Field(max_length=2000)] = ""
+    tradition_note: Annotated[str,Field(max_length=2000)] = ""
+    context_basis: Annotated[str,Field(max_length=2000)] = ""
+    rationale: Annotated[str,Field(min_length=1,max_length=2000)]
+    state: Literal["active","withdrawn"] = "active"
+
+
+class VersePilotImport(VerseOwnerInput):
+    request_uuid: Annotated[str,Field(pattern=r"^[a-fA-F0-9-]{36}$")]
+    project_id: Identifier
+    chapter: Annotated[int,Field(ge=1,le=114)]
+    ayah: Annotated[int,Field(ge=1,le=286)]
+    rationale: Annotated[str,Field(min_length=1,max_length=2000)]
+
+
+class VerseMaterialInput(VerseMetadata):
+    request_uuid: Annotated[str,Field(pattern=r"^[a-fA-F0-9-]{36}$")]
+    project_id: Identifier
+    annotation_id: Identifier
+    chapter: Annotated[int,Field(ge=1,le=114)]
+    ayah_start: Annotated[int,Field(ge=1,le=286)]
+    ayah_end: Annotated[int,Field(ge=1,le=286)]
+    material_kind: Literal["arabic_text","translation","tafsir","linguistic_annotation","scholarship"]
+    link_kind: Literal["representation","explicit_citation","discussion","interpretive_claim"]
+    citation_basis: Literal["none","resolved_reference","owner_identified"] = "none"
+    citation_id: Identifier | None = None
+    marker_start: Annotated[int,Field(ge=0,le=499)] | None = None
+    marker_end: Annotated[int,Field(ge=1,le=500)] | None = None
+
+
+class VerseMaterialUpdate(VerseMetadata):
+    project_id: Identifier
+    material_id: Identifier
+    expected_revision: Annotated[int,Field(ge=1)]
 
 
 class PublicationSelection(Input):
@@ -506,6 +561,11 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
                     "capture":"/v1/lexicon/captures","max_page":25,"max_search_results":30,
                     "review_effect":"none","graph_effect":"none","publication_effect":"none",
                     "retrieval":"versioned lexical normalization; no semantic equivalence inference"},
+                "verse_materials": {"version":1,"scope":"owner_only","pilot_resource":"/v1/verses/pilot",
+                    "materials":"/v1/verses/materials","material":"/v1/verses/material",
+                    "annotation_links":"/v1/verses/annotation-links","history":"/v1/verses/history","max_page":25,
+                    "review_effect":"none","graph_effect":"none","publication_effect":"none",
+                    "citation_changes":"retain original reference and flag for review"},
                 "execution": "typed_traversal_and_owner_observation_scoring_v1"}
 
     @router.get("/search")
@@ -586,6 +646,51 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
                             limit: Annotated[int,Query(ge=1,le=25)] = 25):
         rows = store.scripture_citations(project_id,chapter,ayah_start,ayah_end,cursor,limit+1)
         return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
+
+    @router.get("/verses/pilot")
+    def verse_pilot():
+        return pilot_resource()
+
+    @router.post("/verses/import-pilot",status_code=201)
+    def verse_import_pilot(value: VersePilotImport,actor: str = Depends(owner)):
+        return store.verse_import_pilot(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
+
+    @router.post("/verses/materials",status_code=201)
+    def create_verse_material(value: VerseMaterialInput,actor: str = Depends(owner)):
+        return store.verse_create(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
+
+    @router.put("/verses/material")
+    def update_verse_material(value: VerseMaterialUpdate,actor: str = Depends(owner)):
+        return store.verse_update(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
+
+    @router.get("/verses/material")
+    def verse_material(project_id: Identifier,material_id: Identifier):
+        value=store.verse_material(project_id,material_id)
+        if value is None: raise HTTPException(404,"Material not found in this project")
+        return value
+
+    @router.get("/verses/materials")
+    def verse_materials(project_id: Identifier,chapter: Annotated[int,Query(ge=1,le=114)],
+        ayah_start: Annotated[int,Query(ge=1,le=286)],ayah_end: Annotated[int,Query(ge=1,le=286)],
+        material_kind: Literal["arabic_text","translation","tafsir","linguistic_annotation","scholarship"] | None = None,
+        link_kind: Literal["representation","explicit_citation","discussion","interpretive_claim"] | None = None,
+        cursor: Annotated[str,Query(max_length=500)] = "",limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows=store.verse_materials(project_id,chapter,ayah_start,ayah_end,material_kind,link_kind,cursor,limit+1)
+        return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
+
+    @router.get("/verses/annotation-links")
+    def verse_annotation_links(project_id: Identifier,annotation_id: Identifier,
+        cursor: Annotated[str,Query(max_length=500)] = "",limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows=store.verse_annotation_links(project_id,annotation_id,cursor,limit+1)
+        if rows is None: raise HTTPException(404,"Source passage not found in this project")
+        return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
+
+    @router.get("/verses/history")
+    def verse_history(project_id: Identifier,material_id: Identifier,
+        before_revision: Annotated[int,Query(ge=1)] | None = None,limit: Annotated[int,Query(ge=1,le=25)] = 25):
+        rows=store.verse_history(project_id,material_id,before_revision,limit+1)
+        if rows is None: raise HTTPException(404,"Material history not found in this project")
+        return {"items":rows[:limit],"next_before_revision":rows[limit-1]["revision"] if len(rows)>limit else None}
 
     @router.post("/lexicon/captures",status_code=201)
     def lexicon_capture(value: LexiconCaptureInput,actor: str = Depends(owner)):

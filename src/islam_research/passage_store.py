@@ -16,11 +16,12 @@ def get_document(connection, project_id, document_id):
         WHERE d.project_id=%s AND d.id=%s AND r.deleted_at IS NULL""",(project_id,document_id)).fetchone()
 
 
-def create_document(connection, *, project_id, source_record_id, edition, locator, representation_url, text, actor):
+def create_document(connection, *, project_id, source_record_id, edition, locator, representation_url, text, actor, source_notice=""):
     snapshot = normalize_excerpt(text)
     for value,name,limit in [(edition,"edition",1000),(locator,"locator",2000),(actor,"actor",500)]:
         db._text(value,name,limit)
     db._text(representation_url,"representation URL",2000,empty=True)
+    db._text(source_notice,"source notice",8000,empty=True)
     if representation_url:
         url = urlsplit(representation_url)
         if url.scheme not in {"https","http"} or not url.hostname or url.username or url.password:
@@ -30,17 +31,21 @@ def create_document(connection, *, project_id, source_record_id, edition, locato
                                     (project_id,source_record_id)).fetchone()
         if not source or source["kind"] not in {"source","work","edition"}:
             raise ValueError("A reading excerpt must target an active source, work, or edition in this project")
-        key = hashlib.sha256(json.dumps([source_record_id,edition,locator,representation_url,snapshot["text_sha256"]],ensure_ascii=False).encode()).hexdigest()
+        identity=[source_record_id,edition,locator,representation_url,snapshot["text_sha256"]]
+        # Keep legacy empty-notice snapshot IDs/retries unchanged. A genuinely
+        # different notice identifies a separate immutable representation.
+        if source_notice: identity.append({"source_notice":source_notice})
+        key = hashlib.sha256(json.dumps(identity,ensure_ascii=False).encode()).hexdigest()
         row = connection.execute("""INSERT INTO research.reading_documents
-            (id,project_id,source_record_id,edition,locator,representation_url,text_body,input_sha256,text_sha256,normalization,content_key,changed_by)
-            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            (id,project_id,source_record_id,edition,locator,representation_url,text_body,input_sha256,text_sha256,normalization,content_key,changed_by,source_notice)
+            VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             ON CONFLICT(project_id,content_key) DO NOTHING RETURNING *""",
             ("urn:research:document:"+str(uuid.uuid4()),project_id,source_record_id,edition,locator,representation_url,
-             snapshot["text"],snapshot["input_sha256"],snapshot["text_sha256"],snapshot["normalization"],key,actor)).fetchone()
+             snapshot["text"],snapshot["input_sha256"],snapshot["text_sha256"],snapshot["normalization"],key,actor,source_notice)).fetchone()
         if row is None:
             row = connection.execute("SELECT * FROM research.reading_documents WHERE project_id=%s AND content_key=%s",(project_id,key)).fetchone()
             if any(row[k] != v for k,v in {"source_record_id":source_record_id,"edition":edition,"locator":locator,
-                                         "representation_url":representation_url,"text_body":snapshot["text"]}.items()):
+                                         "representation_url":representation_url,"text_body":snapshot["text"],"source_notice":source_notice}.items()):
                 raise ValueError("Snapshot fingerprint conflict requires reconciliation")
         return row
 
