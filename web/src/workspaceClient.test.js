@@ -11,11 +11,14 @@ test('signed-owner client uses same-origin cookies and explicit JSON write heade
   const api = workspaceAPI(async (url, options) => { calls.push({ url, options }); return new Response(JSON.stringify({ revision: 1 }), { headers: { 'content-type': 'application/json' } }); });
   await api.request('record', { record_id: 'urn:source?x=1&y=2' });
   await api.save({ ...initial(), expected_revision: 0 });
+  await api.post('reading/documents',{ text:'Synthetic private excerpt' });
   assert.equal(new URL(calls[0].url, 'https://synthetic.invalid').searchParams.get('record_id'), 'urn:source?x=1&y=2');
   assert.equal(calls[0].options.credentials, 'same-origin');
   assert.equal(calls[1].options.headers['X-Research-Write'], '1');
   assert.equal(calls[1].options.method, 'PUT');
   assert.equal(JSON.parse(calls[1].options.body).expected_revision, 0);
+  assert.equal(calls[2].options.method,'POST');
+  assert.equal(calls[2].options.headers['X-Research-Write'],'1');
 });
 
 test('HTML sign-in pages and API conflicts are distinguished without leaking response text', async () => {
