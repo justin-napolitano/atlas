@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import base64
 import os
 from pathlib import Path
 import re
@@ -12,6 +13,27 @@ from .public_release import _read, _safe_root, digest, encoded, strict_json
 from .public_site import MAX_SITE_BYTES, verify_site
 
 DOCKERIGNORE = b"**\n!Dockerfile\n!.dockerignore\n!artifact\n!artifact/**\n"
+
+
+def frontend_bom(checkout):
+    """Inventory the module-guard's bundled packages, not unused build tools."""
+    from .public_site import policy
+    lock = strict_json(_read(checkout / "web/package-lock.json", 2_000_000))
+    components = []
+    for name in policy(checkout)["dependency_packages"]:
+        package = lock["packages"]["node_modules/" + name]
+        version = package["version"]
+        if not re.fullmatch(r"\d+\.\d+\.\d+", version) or package.get("license") != "MIT":
+            raise ValueError("Review a changed bundled frontend dependency")
+        integrity = package["integrity"]
+        if not integrity.startswith("sha512-"): raise ValueError("Expected locked package integrity")
+        checksum = base64.b64decode(integrity[7:], validate=True)
+        if len(checksum) != 64: raise ValueError("Invalid locked package integrity")
+        purl = "pkg:npm/" + name + "@" + version
+        components.append({"type": "library", "name": name, "version": version, "purl": purl, "bom-ref": purl,
+                           "hashes": [{"alg": "SHA-512", "content": checksum.hex()}],
+                           "licenses": [{"license": {"id": "MIT"}}]})
+    return {"bomFormat": "CycloneDX", "specVersion": "1.6", "version": 1, "components": components}
 
 
 def container_policy(checkout):

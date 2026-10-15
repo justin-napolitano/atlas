@@ -40,5 +40,7 @@ jobs:
             research-library/container-validation/summary.json
             research-library/container-validation/scan.json
             research-library/container-validation/sbom.cdx.json
+            research-library/container-validation/frontend.sbom.cdx.json
+            research-library/container-validation/frontend-scan.json
           if-no-files-found: warn
           retention-days: 14

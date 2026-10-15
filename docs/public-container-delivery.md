@@ -75,6 +75,13 @@ finding suppression. Database/download/scan errors fail the job. A clean scan is
 time/coverage-dependent evidence, not a guarantee of no vulnerabilities.
 
 The same JSON scan is converted to a CycloneDX SBOM using [Trivy's report conversion](https://trivy.dev/docs/latest/configuration/reporting/).
+The native image scan does not discover bundled/minified React code. A second
+scan covers the module guard's three bundled npm packages using their exact locked
+versions, npm purls, archive integrity and licenses; those components are included
+in the combined SBOM. The installed native Node binary is inventoried by observed
+version but is not treated as an OS-managed package or falsely claimed covered by
+the npm scan. Its upstream security/advisory review remains a release requirement;
+the High/Critical gate describes OS and declared npm coverage only.
 The workflow retains synthetic scan/SBOM/summary evidence for 14 days; it uploads
 neither the image archive nor private database logs. Containers/networks and the
 test image are removed afterward. Bounded tool diagnostics are allowed only in

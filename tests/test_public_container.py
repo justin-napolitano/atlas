@@ -19,6 +19,15 @@ def reseal(path):
 
 
 class PublicContainerTests(unittest.TestCase):
+    def test_bundled_frontend_inventory_has_locked_purls_integrity_and_licenses(self):
+        bom = container.frontend_bom(ROOT)
+        self.assertEqual(bom["bomFormat"], "CycloneDX")
+        self.assertEqual({row["name"] for row in bom["components"]}, {"react", "react-dom", "scheduler"})
+        for row in bom["components"]:
+            self.assertEqual(row["purl"], "pkg:npm/" + row["name"] + "@" + row["version"])
+            self.assertEqual(len(row["hashes"][0]["content"]), 128)
+            self.assertEqual(row["licenses"][0]["license"]["id"], "MIT")
+
     def test_context_contains_only_verified_artifact_and_fixed_container_instructions(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp); artifact, build = synthetic_site(root)

@@ -17,7 +17,7 @@ import uuid
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from islam_research.public_site import build_site, _environment
-from islam_research.public_container import prepare_context, verify_context, container_policy
+from islam_research.public_container import prepare_context, verify_context, container_policy, frontend_bom
 from install_container_scanner import install
 from test_public_site import fixture
 
@@ -126,18 +126,39 @@ def run():
             assert report["Metadata"]["ImageID"] == info["Id"] and report["Metadata"]["OS"]["Family"] == "alpine"
             assert isinstance(report["Results"], list) and report["Results"]
             findings = [v for result in report.get("Results", []) for v in result.get("Vulnerabilities", [])]
+            phase("bundled_frontend_scan")
+            frontend = frontend_bom(ROOT)
+            (report_root / "frontend.sbom.cdx.json").write_text(json.dumps(frontend))
+            frontend_scan = command([str(scanner), "sbom", *common, "--scanners", "vuln", "--severity", "HIGH,CRITICAL",
+                "--ignorefile", "/dev/null", "--exit-code", "1", "--format", "json", "--output", str(report_root / "frontend-scan.json"),
+                str(report_root / "frontend.sbom.cdx.json")], cwd=root, timeout=120, check=False)
+            frontend_report = json.loads((report_root / "frontend-scan.json").read_text())
+            assert frontend_report["SchemaVersion"] == 2 and frontend_report.get("Results")
+            frontend_findings = [v for result in frontend_report["Results"] for v in result.get("Vulnerabilities", [])]
             phase("sbom_conversion")
             command([str(scanner), "convert", "--config", "/dev/null", "--format", "cyclonedx", "--output",
                      str(report_root / "sbom.cdx.json"), str(report_root / "scan.json")], cwd=root, timeout=60)
             sbom = json.loads((report_root / "sbom.cdx.json").read_text())
             assert sbom["bomFormat"] == "CycloneDX" and sbom.get("components")
-            summary = {"container_checks_passed": scan.returncode == 0, "deployed": False, "pushed": False,
+            native_node = {"type": "application", "name": "Node.js", "version": version[1:],
+                "purl": "pkg:generic/nodejs@" + version[1:], "bom-ref": "pkg:generic/nodejs@" + version[1:]}
+            additions = [*frontend["components"], native_node]
+            sbom["components"].extend(additions)
+            root_ref = sbom["metadata"]["component"]["bom-ref"]
+            dependency = next((row for row in sbom.get("dependencies", []) if row["ref"] == root_ref), None)
+            if dependency is None:
+                dependency = {"ref": root_ref, "dependsOn": []}; sbom.setdefault("dependencies", []).append(dependency)
+            dependency.setdefault("dependsOn", []).extend(row["bom-ref"] for row in additions)
+            (report_root / "sbom.cdx.json").write_text(json.dumps(sbom))
+            summary = {"container_checks_passed": scan.returncode == 0 and frontend_scan.returncode == 0, "deployed": False, "pushed": False,
                 "build_id": build["build_id"], "context_id": metadata["context_id"], "image_id": info["Id"],
                 "base_image": policy["base_image"], "node_version": version, "scanner_version": policy["scanner"]["version"],
-                "high_critical_findings": len(findings), "sbom_components": len(sbom["components"])}
+                "high_critical_findings": len(findings) + len(frontend_findings), "bundled_frontend_components": len(frontend["components"]),
+                "native_node_advisory_coverage": "inventory_only_requires_upstream_review",
+                "sbom_components": len(sbom["components"])}
             (report_root / "summary.json").write_text(json.dumps(summary, sort_keys=True) + "\n")
             print(json.dumps(summary, sort_keys=True))
-            assert scan.returncode == 0 and not findings
+            assert scan.returncode == 0 and frontend_scan.returncode == 0 and not findings and not frontend_findings
         finally:
             if container_created: command(["docker", "rm", "--force", name], check=False)
             if network_created: command(["docker", "network", "rm", network], check=False)
