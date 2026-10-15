@@ -8,9 +8,14 @@ import {pathToFileURL} from 'node:url';
 
 const directory=process.env.RESEARCH_TEST_PUBLIC_SITE;
 if(!directory) throw new Error('Synthetic public site directory is required');
-const {startPublicServer}=await import(pathToFileURL(join(directory,'runtime/public-server.mjs')));
-const {server}=await startPublicServer(directory,{host:'127.0.0.1',port:0});
-const origin=`http://127.0.0.1:${server.address().port}`;
+let server,origin=process.env.RESEARCH_PUBLIC_TEST_ORIGIN;
+if(origin){
+  if(!/^http:\/\/127\.0\.0\.1:[1-9][0-9]{1,4}$/.test(origin))throw new Error('Public container test origin must be owned loopback');
+}else{
+  const {startPublicServer}=await import(pathToFileURL(join(directory,'runtime/public-server.mjs')));
+  ({server}=await startPublicServer(directory,{host:'127.0.0.1',port:0}));
+  origin=`http://127.0.0.1:${server.address().port}`;
+}
 const profile=await mkdtemp(join(tmpdir(),'public-runtime-browser-'));
 const artifacts=await mkdtemp(join(tmpdir(),'public-runtime-artifacts-'));
 const chrome=spawn(process.env.CHROME_PATH || (process.platform==='darwin'?'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome':'/usr/bin/google-chrome'),
@@ -74,7 +79,8 @@ try {
   assert.ok(requests.every(request=>!request.url.endsWith('/data/public-graph.json')));
   console.log(JSON.stringify({isolated_public_browser_passed:true,checks:['actual portable artifact and runtime','CSP without inline scripts','external theme bootstrap','source citations and review limits','project/record navigation','anonymous public GETs only','no owner API or legacy graph','dark mobile layout'],artifacts}));
 } finally {
-  socket?.close();chrome.kill();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));
+  socket?.close();chrome.kill();
+  if(server){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
   for(const item of pending.values()){clearTimeout(item.timeout);item.reject(new Error('Public browser review finished'));}
   await sleep(200);await rm(profile,{recursive:true,force:true});
 }
