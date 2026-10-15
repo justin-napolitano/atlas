@@ -99,8 +99,9 @@ this local lock does not guard a later remote deploy. Withdrawal must also repla
 the served image and invalidate caches. Restoring an older release can republish
 withdrawn content and requires fresh approval/head verification.
 
-Remaining delivery work: isolated public image construction, source-head freshness
-at deploy, registry/runtime IAM and signed build identity, measured failure and
+The [container delivery slice](public-container-delivery.md) supplies isolated
+image construction and synthetic scan/runtime evidence. Remaining delivery work:
+source-head freshness at deploy, live registry/runtime IAM and signed build identity, measured failure and
 rollback drills, cache withdrawal, scheduling, live Cloud SQL role compatibility,
 and GCP deployment after review of a concrete credentialed plan. No billable cloud
 resources, publication decisions or deployment credentials are created here.

@@ -40,6 +40,9 @@ class PublicRuntimeCheckTests(unittest.TestCase):
             self.assertFalse(public_contract("google_cloud_run_v2_service", conf))
         conf = service(); conf["invoker_iam_disabled"] = [True]
         self.assertFalse(public_contract("google_cloud_run_v2_service", conf))
+        conf = service(); conf["labels"] = [{}]; conf["name"] = ["research-public"]
+        conf["template"][0]["containers"][0]["env"] = [{"name": "SYNTHETIC_PRIVATE_INPUT"}]
+        self.assertFalse(public_contract("google_cloud_run_v2_service", conf))
 
     def test_anonymous_permission_targets_only_explicit_public_service(self):
         conf = {"member": ["allUsers"], "role": ["roles/run.invoker"], "name": ['${google_cloud_run_v2_service.public[0].name}']}

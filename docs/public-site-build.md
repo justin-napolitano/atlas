@@ -127,9 +127,10 @@ navigation and mobile layout. Python contracts separately exercise rehashed
 malicious additions, private release files, forged profiles, symlinks and last-good
 preservation. Existing owner/browser and PostgreSQL/graph checks remain required.
 
-Next delivery work remains explicit: package this exact verified directory in a
-reviewed non-root immutable container with a pinned/scanned base; inspect a complete
-GCP plan; configure scoped build/deploy identity and runtime resources; revalidate
+The follow-on [container delivery slice](public-container-delivery.md) packages
+this directory using a pinned/scanned non-root image and supplies default-disabled
+Cloud Run configuration. Remaining delivery work includes inspecting a complete
+GCP plan; configuring scoped build/deploy identity; revalidating
 current approved heads before deploy; implement scheduled jobs, withdrawal/cache
 handling, rollback and measured restore. The anonymous runtime must receive no
 database IAM or credentials. An older retained artifact cannot be republished

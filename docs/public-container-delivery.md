@@ -82,6 +82,9 @@ in the combined SBOM. The installed native Node binary is inventoried by observe
 version but is not treated as an OS-managed package or falsely claimed covered by
 the npm scan. Its upstream security/advisory review remains a release requirement;
 the High/Critical gate describes OS and declared npm coverage only.
+The initial image's observed Node 24.22.0 version corresponds to the official
+[2026-10-14 LTS release](https://nodejs.org/en/blog/release/v24.22.0); this version
+identification is not an independent native-library vulnerability assessment.
 The workflow retains synthetic scan/SBOM/summary evidence for 14 days; it uploads
 neither the image archive nor private database logs. Containers/networks and the
 test image are removed afterward. Bounded tool diagnostics are allowed only in

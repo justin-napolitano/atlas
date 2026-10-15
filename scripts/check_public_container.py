@@ -154,6 +154,7 @@ def run():
                 "build_id": build["build_id"], "context_id": metadata["context_id"], "image_id": info["Id"],
                 "base_image": policy["base_image"], "node_version": version, "scanner_version": policy["scanner"]["version"],
                 "high_critical_findings": len(findings) + len(frontend_findings), "bundled_frontend_components": len(frontend["components"]),
+                "frontend_lock_sha256": build["source_inputs"]["web/package-lock.json"]["sha256"],
                 "native_node_advisory_coverage": "inventory_only_requires_upstream_review",
                 "sbom_components": len(sbom["components"])}
             (report_root / "summary.json").write_text(json.dumps(summary, sort_keys=True) + "\n")

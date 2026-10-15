@@ -25,7 +25,9 @@ def public_contract(kind, conf):
         return public_name and value(conf, "role") == "roles/run.invoker"
     if value(conf, "invoker_iam_disabled") is not False: return False
     labels = value(conf, "labels", {})
-    if labels.get("visibility") != "approved-public": return True
+    name = value(conf, "name", "")
+    named_public = name in ('${local.public_service_name}', '${var.prefix}-public') or bool(re.fullmatch(r"[a-z][a-z0-9-]{2,15}-public", name))
+    if labels.get("visibility") != "approved-public" and not named_public: return True
     template = value(conf, "template", {})
     containers = template.get("containers", [])
     if len(containers) != 1: return False
