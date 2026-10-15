@@ -29,6 +29,8 @@ The follow-on [approved release exporter](public-release-export.md) supplies res
 
 The [isolated site builder](public-site-build.md) now packages one verified approved release, a guarded public-only frontend and a database-free read-only Node runtime. Its tests use the actual compiled artifact over HTTP and in Chrome under the runtime CSP. The portable directory is not yet a scanned container image or a deployed service; deployment freshness, scheduler, cache withdrawal, live recovery and domain-reading gates remain open.
 
+The follow-on [container delivery configuration](public-container-delivery.md) supplies an approved-only image context, pinned base/scanner, synthetic Linux image build/scan/SBOM and actual-container Chrome checks. The combined gate now also requires this container workflow. Optional Cloud Run configuration defaults to no runtime and supports a private candidate before explicit anonymous visibility; it is a mock-validated design, not a credentialed plan or deployment. No image is pushed. Deployment freshness, scoped publisher identity, withdrawal/cache handling, scheduling, live recovery and full domain acceptance remain open.
+
 ## First-release acceptance remains intact
 
 | Requirement from #42 | Current evidence | Still required |

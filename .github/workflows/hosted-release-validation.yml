@@ -19,10 +19,12 @@ jobs:
     uses: ./.github/workflows/infrastructure-validation.yml
   graph:
     uses: ./.github/workflows/graph-validation.yml
+  container:
+    uses: ./.github/workflows/public-container-validation.yml
   integration-result:
     name: Combined source verification
     if: ${{ always() }}
-    needs: [database, frontend, infrastructure, graph]
+    needs: [database, frontend, infrastructure, graph, container]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     env:
@@ -35,7 +37,7 @@ jobs:
           import os
           from pathlib import Path
           results = json.loads(os.environ['RELEASE_JOB_RESULTS'])
-          required = ['database', 'frontend', 'infrastructure', 'graph']
+          required = ['database', 'frontend', 'infrastructure', 'graph', 'container']
           passed = set(results) == set(required) and all(results[name]['result'] == 'success' for name in required)
           lines = ['# Combined research source verification', '', '| Component | Result |', '| --- | --- |']
           lines.extend(f"| {name} | {results.get(name, {}).get('result', 'missing')} |" for name in required)

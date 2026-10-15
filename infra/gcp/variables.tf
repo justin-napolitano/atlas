@@ -11,6 +11,10 @@ variable "region" {
   type        = string
   default     = "us-central1"
   description = "Review data location and all regional prices before provisioning."
+  validation {
+    condition     = can(regex("^[a-z]+-[a-z]+[0-9]+$", var.region))
+    error_message = "Use a Google Cloud region name such as us-central1."
+  }
 }
 
 variable "prefix" {
@@ -60,4 +64,23 @@ variable "database_deletion_protection" {
 variable "subnet_cidr" {
   type    = string
   default = "10.81.0.0/24"
+}
+
+variable "public_release" {
+  description = "Null creates no runtime. Supply a verified/scanned immutable public image only after plan/security/cost review. Anonymous visibility is a separate explicit choice."
+  type = object({
+    image      = string
+    build_id   = string
+    release_id = string
+    anonymous  = optional(bool, false)
+  })
+  default = null
+  validation {
+    condition = var.public_release == null ? true : (
+      can(regex("^${var.region}-docker\\.pkg\\.dev/${var.project_id}/${var.prefix}/public@sha256:[a-f0-9]{64}$", var.public_release.image)) &&
+      can(regex("^build-[a-f0-9]{64}$", var.public_release.build_id)) &&
+      can(regex("^release-[a-f0-9]{64}$", var.public_release.release_id))
+    )
+    error_message = "Public releases require the dedicated regional public image path pinned by digest and complete verified build/release IDs; mutable tags or other repositories are refused."
+  }
 }

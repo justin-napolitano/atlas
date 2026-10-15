@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "platform": "linux/amd64",
+  "base_image": "node:24-alpine@sha256:429bdfbc204b4eabc6438e6d34e4e9d8dd2ca1df8289bcd78cdd3c5db387b7a5",
+  "base_source": "https://hub.docker.com/v2/namespaces/library/repositories/node/tags/24-alpine",
+  "verified_at": "2026-10-15",
+  "uid": 1000,
+  "gid": 1000,
+  "scanner": {
+    "version": "0.76.0",
+    "url": "https://github.com/aquasecurity/trivy/releases/download/v0.76.0/trivy_0.76.0_Linux-64bit.tar.gz",
+    "sha256": "e24b1c51293c1b15e4ba8d45bbc7891ba053f90278ec2698f3562c993e145fe7"
+  }
+}

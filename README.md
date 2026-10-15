@@ -46,6 +46,7 @@ The research should understand traditions in context before evaluating them. “
 - `docs/public-release-export.md` — restricted-publisher approved export, public-only Ossie metadata, immutable bundles and independent offline verification; public image integration remains pending.
 - `docs/public-viewer.md` — approved-bundle public navigation, reloadable project/record links, citations/review limits and withdrawal states; isolated public image/deployment remains pending.
 - `docs/public-site-build.md` — isolated public-only frontend/artifact build, independent verification and standalone read-only runtime; container/GCP deployment remains pending.
+- `docs/public-container-delivery.md` — approved-only image context, pinned base/scanner, hardened Linux container checks/SBOM and optional default-disabled Cloud Run service; live rollout remains pending.
 - `docs/hosted-release-evidence.md` — combined application/infrastructure verification and the unchanged Q 4:59 launch requirements; no deployed release is claimed.
 - `infra/gcp/` — reviewable private GCP/PostgreSQL foundation, pinned tooling, credential-free plan tests, and cost/recovery worksheet; no resources provisioned.
 - `docs/adr/0003-immutable-public-delivery.md` — approved snapshots in immutable public builds, isolated publisher reads, and a public runtime with no data credentials; deployment gates remain explicit.

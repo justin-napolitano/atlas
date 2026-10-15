@@ -22,7 +22,7 @@ class ReleaseResultTests(unittest.TestCase):
             return result,json.loads(result.stdout),summary.read_text(encoding="utf-8")
 
     def successful(self):
-        return {name:{"result":"success","outputs":{}} for name in ("database","frontend","infrastructure","graph")}
+        return {name:{"result":"success","outputs":{}} for name in ("database","frontend","infrastructure","graph","container")}
 
     def test_success_is_source_evidence_without_deployment_or_launch_claim(self):
         result,report,summary=self.gate(self.successful())
