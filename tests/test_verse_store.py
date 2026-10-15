@@ -212,3 +212,26 @@ class VerseStoreTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,"READ COMMITTED"):
                 self.create(connection)
             self.assertEqual(connection.execute("SELECT count(*) AS n FROM research.verse_materials WHERE project_id=%s",(self.project,)).fetchone()["n"],0)
+
+    def test_actual_pilot_import_preserves_notice_exact_text_retry_and_pending_review(self):
+        from islam_research.quran_resources import pilot_resource
+        resource=pilot_resource()
+        params=dict(request_uuid=str(uuid.uuid4()),project_id=self.project,chapter=4,ayah=59,rationale="Explicit identified pilot import",actor="owner")
+        with self.db.connect(self.owner_dsn) as connection:
+            first=self.store.import_pilot(connection,**params)
+            self.assertEqual(self.store.import_pilot(connection,**params),first)
+            document=self.passages.get_document(connection,self.project,first["document_id"])
+            self.assertEqual(document["text_body"],resource["verses"][0]["text"])
+            self.assertIn(resource["source_notice"],document["source_notice"])
+            annotation=self.passages.annotation(connection,self.project,first["annotation_id"])
+            self.assertEqual(annotation["web_annotation"]["ir:sourceNotice"],document["source_notice"])
+            self.passages.update_annotation(connection,annotation_id=first["annotation_id"],project_id=self.project,body="My later private reading note",expected_revision=1,actor="owner")
+            self.assertEqual(self.store.import_pilot(connection,**params),first)
+            self.assertEqual(self.passages.annotation(connection,self.project,first["annotation_id"])["annotation"]["body"],"My later private reading note")
+            another=self.store.import_pilot(connection,**{**params,"request_uuid":str(uuid.uuid4()),"ayah":83})
+            self.assertEqual(another["record_id"],first["record_id"])
+            self.assertNotEqual(another["document_id"],first["document_id"])
+            self.assertEqual(connection.execute("SELECT review_state FROM research.records WHERE id=%s",(first["record_id"],)).fetchone()["review_state"],"pending")
+            for patch in [{"ayah":83},{"rationale":"Changed request"},{"project_id":"other"}]:
+                with self.assertRaises(ValueError): self.store.import_pilot(connection,**{**params,**patch})
+            with self.assertRaises(ValueError): self.store.import_pilot(connection,**{**params,"request_uuid":str(uuid.uuid4()),"ayah":60})

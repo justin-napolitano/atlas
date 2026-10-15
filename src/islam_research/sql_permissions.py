@@ -30,7 +30,7 @@ INSERT_COLUMNS = {
     "projects": "id title scope",
     "records": "id project_id kind title summary attributes changed_by",
     "personal_states": "record_id project_id reading read_at decision note changed_by",
-    "reading_documents": "id project_id source_record_id edition locator representation_url text_body input_sha256 text_sha256 normalization content_key changed_by",
+    "reading_documents": "id project_id source_record_id edition locator representation_url text_body input_sha256 text_sha256 normalization content_key changed_by source_notice",
     "reading_annotations": "id project_id document_id text_sha256 start_pos end_pos exact prefix suffix capture_kind body changed_by",
     "scripture_citations": "id project_id annotation_id document_id text_sha256 candidate_key parser_version detector_kind match_start match_end matched_text proposal profile_id decision chapter ayah_start ayah_end rationale changed_by",
     "lexicon_entries": "id project_id entry_type scope changed_by",

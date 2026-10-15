@@ -10,6 +10,7 @@ from psycopg import sql
 
 from . import database as db, lexicon as model, passage_store
 from .quran_citations import PROFILE_ID, reference
+from .quran_resources import pilot_resource
 
 KINDS = {"arabic_text", "translation", "tafsir", "linguistic_annotation", "scholarship"}
 LINKS = {"representation", "explicit_citation", "discussion", "interpretive_claim"}
@@ -188,3 +189,49 @@ def history(connection, project_id, material_id, before_revision, limit):
     return connection.execute("""SELECT revision,snapshot FROM research.verse_material_revisions
         WHERE material_id=%s AND (%s::integer IS NULL OR revision<%s) ORDER BY revision DESC LIMIT %s""",
         (material_id, before_revision, before_revision, limit)).fetchall()
+
+
+def import_pilot(connection, *, request_uuid, project_id, chapter, ayah, rationale, actor):
+    """Explicitly import one attributed provider verse into private reading state.
+
+    No network, translation, commentary, human-review or publication promotion.
+    Retry identity is retained even after a later passage note correction.
+    """
+    resource=pilot_resource()
+    target=reference(chapter,ayah)
+    verse=next((v for v in resource["verses"] if v["chapter"]==chapter and v["ayah_start"]==ayah),None)
+    if verse is None: raise ValueError("Only Q 4:59 and Q 4:83 are in this identified pilot resource")
+    db._text(rationale,"pilot import rationale",2000);db._text(actor,"actor",500)
+    request=model.request_identity(request_uuid)
+    annotation_id="urn:research:annotation:"+str(request)
+    material_id="urn:research:verse-material:"+str(uuid.uuid5(request,"verse-material"))
+    source_id="urn:research:source:"+str(uuid.uuid5(uuid.NAMESPACE_URL,project_id+"\n"+resource["resource_id"]))
+    metadata=dict(attribution="Tanzil Project",language_tag="ar",source_scope=resource["label"]+"; "+target["label"]+" only. "+resource["review_limit"],
+        assertion_mode="none",assertion_text="",reading_note=resource["reading_note"]+" Resource: "+resource["resource_id"],
+        period_note="",tradition_note="",context_basis="",rationale=rationale,state="active")
+    creation=dict(request_uuid=str(request),project_id=project_id,annotation_id=annotation_id,chapter=chapter,ayah_start=ayah,ayah_end=ayah,
+        material_kind="arabic_text",link_kind="representation",citation_basis="none",citation_id=None,marker_start=None,marker_end=None,actor=actor,**metadata)
+    with connection.transaction():
+        if connection.execute("SHOW transaction_isolation").fetchone()["transaction_isolation"]!="read committed":
+            raise ValueError("Pilot import retries require READ COMMITTED isolation")
+        connection.execute("SELECT pg_advisory_xact_lock(184514,hashtext(%s))",(str(request),))
+        previous=connection.execute("SELECT * FROM research.verse_materials WHERE id=%s",(material_id,)).fetchone()
+        if previous:
+            acknowledged=create(connection,**creation)
+            document=passage_store.get_document(connection,project_id,previous["document_id"])
+            if document is None: raise ValueError("The imported source is no longer active; reconcile it explicitly")
+        else:
+            attributes={key:resource[key] for key in ["resource_id","source_url","source_sha256","declared_version","text_type","accessed_on","license_label","license_url","review_limit"]}
+            connection.execute("""INSERT INTO research.records(id,project_id,kind,title,attributes,changed_by)
+                VALUES(%s,%s,'source',%s,%s,%s) ON CONFLICT(id) DO NOTHING""",(source_id,project_id,resource["label"],db.Jsonb(attributes),actor))
+            source=connection.execute("SELECT * FROM research.records WHERE project_id=%s AND id=%s AND deleted_at IS NULL",(project_id,source_id)).fetchone()
+            if (not source or source["kind"]!="source" or any(source["attributes"].get(k)!=attributes[k] for k in ["resource_id","source_sha256"])):
+                raise ValueError("Pilot resource identity needs explicit reconciliation")
+            notice="Source: Tanzil Project — https://tanzil.net/\n"+resource["source_notice"]
+            document=passage_store.create_document(connection,project_id=project_id,source_record_id=source_id,edition=resource["label"],
+                locator=target["label"],representation_url=resource["source_url"],text=verse["text"],actor=actor,source_notice=notice)
+            passage_store.create_annotation(connection,annotation_uuid=str(request),project_id=project_id,document_id=document["id"],
+                text_sha256=document["text_sha256"],start=0,end=len(verse["text"]),exact=verse["text"],capture_kind="comment",body="",actor=actor)
+            acknowledged=create(connection,**creation)
+        return {"project_id":project_id,"record_id":document["source_record_id"],"document_id":document["id"],
+            "annotation_id":annotation_id,"material_id":acknowledged["id"],"revision":acknowledged["revision"],"resource_id":resource["resource_id"]}

@@ -109,6 +109,7 @@ class ReadingDocumentInput(Input):
     locator: Annotated[str, Field(min_length=1,max_length=2000)]
     representation_url: Annotated[str, Field(max_length=2000)] = ""
     text: Annotated[str, Field(min_length=1,max_length=12000)]
+    source_notice: Annotated[str, Field(max_length=8000)] = ""
 
 
 class ReadingCaptureInput(Input):
@@ -172,6 +173,14 @@ class VerseMetadata(VerseOwnerInput):
     context_basis: Annotated[str,Field(max_length=2000)] = ""
     rationale: Annotated[str,Field(min_length=1,max_length=2000)]
     state: Literal["active","withdrawn"] = "active"
+
+
+class VersePilotImport(VerseOwnerInput):
+    request_uuid: Annotated[str,Field(pattern=r"^[a-fA-F0-9-]{36}$")]
+    project_id: Identifier
+    chapter: Annotated[int,Field(ge=1,le=114)]
+    ayah: Annotated[int,Field(ge=1,le=286)]
+    rationale: Annotated[str,Field(min_length=1,max_length=2000)]
 
 
 class VerseMaterialInput(VerseMetadata):
@@ -639,6 +648,10 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     @router.get("/verses/pilot")
     def verse_pilot():
         return pilot_resource()
+
+    @router.post("/verses/import-pilot",status_code=201)
+    def verse_import_pilot(value: VersePilotImport,actor: str = Depends(owner)):
+        return store.verse_import_pilot(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
 
     @router.post("/verses/materials",status_code=201)
     def create_verse_material(value: VerseMaterialInput,actor: str = Depends(owner)):

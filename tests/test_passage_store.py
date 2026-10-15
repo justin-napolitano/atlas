@@ -75,3 +75,20 @@ class PassageStoreTests(unittest.TestCase):
             for table in ["reading_documents","reading_annotations","reading_annotation_revisions"]:
                 grants=connection.execute("SELECT * FROM information_schema.table_privileges WHERE table_schema='research' AND table_name=%s AND grantee='PUBLIC'",(table,)).fetchall()
                 self.assertEqual(grants,[])
+
+    def test_notice_remains_with_immutable_representation_and_selected_quote_export(self):
+        notice="Synthetic provider notice; attribution https://example.invalid/notice"
+        values=dict(project_id=self.project,source_record_id=self.source,edition="Synthetic noticed edition",locator="Paragraph 1",
+            representation_url="https://example.invalid/source",text="tafsīr and evidence",actor="test-owner",source_notice=notice)
+        with self.db.connect(self.dsn) as connection:
+            document=self.store.create_document(connection,**values)
+            self.assertEqual(self.store.create_document(connection,**values)["id"],document["id"])
+            other=self.store.create_document(connection,**{**values,"source_notice":"Different synthetic notice"})
+            self.assertNotEqual(other["id"],document["id"])
+            self.assertEqual(self.store.get_document(connection,self.project,document["id"])["source_notice"],notice)
+            annotation=self.store.create_annotation(connection,annotation_uuid=str(uuid.uuid4()),project_id=self.project,document_id=document["id"],
+                text_sha256=document["text_sha256"],start=0,end=6,exact="tafsīr",capture_kind="comment",body="Private note",actor="test-owner")
+            self.assertEqual(self.store.annotation(connection,self.project,annotation["id"])["web_annotation"]["ir:sourceNotice"],notice)
+            from psycopg.errors import CheckViolation
+            with self.assertRaises(CheckViolation):
+                with connection.transaction(): connection.execute("UPDATE research.reading_documents SET source_notice='' WHERE id=%s",(document["id"],))

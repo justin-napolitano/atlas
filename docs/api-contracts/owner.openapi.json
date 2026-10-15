@@ -1096,6 +1096,12 @@
             "title": "Representation Url",
             "type": "string"
           },
+          "source_notice": {
+            "default": "",
+            "maxLength": 8000,
+            "title": "Source Notice",
+            "type": "string"
+          },
           "source_record_id": {
             "maxLength": 500,
             "minLength": 1,
@@ -1632,6 +1638,55 @@
           "expected_revision"
         ],
         "title": "VerseMaterialUpdate",
+        "type": "object"
+      },
+      "VersePilotImport": {
+        "additionalProperties": false,
+        "properties": {
+          "ayah": {
+            "maximum": 286.0,
+            "minimum": 1.0,
+            "title": "Ayah",
+            "type": "integer"
+          },
+          "chapter": {
+            "maximum": 114.0,
+            "minimum": 1.0,
+            "title": "Chapter",
+            "type": "integer"
+          },
+          "owner_confirmed": {
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "request_uuid": {
+            "pattern": "^[a-fA-F0-9-]{36}$",
+            "title": "Request Uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "request_uuid",
+          "project_id",
+          "chapter",
+          "ayah",
+          "rationale"
+        ],
+        "title": "VersePilotImport",
         "type": "object"
       }
     }
@@ -4033,6 +4088,42 @@
           }
         },
         "summary": "Verse History"
+      }
+    },
+    "/v1/verses/import-pilot": {
+      "post": {
+        "operationId": "verse_import_pilot_v1_verses_import_pilot_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersePilotImport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verse Import Pilot"
       }
     },
     "/v1/verses/material": {

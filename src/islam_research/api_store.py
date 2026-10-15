@@ -258,6 +258,9 @@ class PostgreSQLStore:
     def verse_create(self, **values):
         with db.connect(self.dsn) as connection: return verse_store.create(connection,**values)
 
+    def verse_import_pilot(self, **values):
+        with db.connect(self.dsn) as connection: return verse_store.import_pilot(connection,**values)
+
     def verse_update(self, **values):
         with db.connect(self.dsn) as connection: return verse_store.update(connection,**values)
 

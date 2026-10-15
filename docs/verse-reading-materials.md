@@ -100,3 +100,17 @@ original citation snapshot separately from the mutable current resolution;
 dataset joins establish lineage, not interpretive support. Local HTTP boundary
 and semantic validation pass; real PostgreSQL verification is delegated to CI.
 Pilot import, the verse reader, and the real content workflow remain in progress.
+
+`POST /v1/verses/import-pilot` now supports an explicit, idempotent import of one
+of the two packaged verses into an existing project. It creates/reuses the
+identified private source and immutable representation, captures the exact verse,
+and links it as an Arabic representation. The source remains pending; neither
+interpretation nor scholarly review is implied. Request identity is preserved
+after later note corrections, and a changed request cannot reuse the same ID.
+
+Migration 0012 retains the complete provider notice on the immutable reading
+representation. The owner reader receives `source_notice`, and selected-passage
+JSON-LD exports retain `ir:sourceNotice`. Empty-notice imports keep their original
+fingerprint/retry identity. The provider notice is attribution/terms, not an
+independent verification claim. The API does not download additional text or
+bundle a translation/commentary.
