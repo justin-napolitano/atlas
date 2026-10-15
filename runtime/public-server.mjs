@@ -138,6 +138,7 @@ export async function startPublicServer(directory, {host='0.0.0.0',port=8080,req
     response.writeHead(status);response.end(method==='HEAD'?undefined:body);request.resume();
   });
   server.maxConnections=32;
+  server.setTimeout(5000,socket=>socket.destroy());
   server.on('clientError',(_error,socket)=>{
     if(socket.writable){
       const headers=Object.entries(HEADERS).map(([key,value])=>key+': '+value).join('\r\n');

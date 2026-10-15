@@ -1,5 +1,4 @@
 """Public artifact acceptance, hostile additions, and failure preservation."""
-import copy
 import json
 from pathlib import Path
 import shutil

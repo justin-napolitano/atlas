@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFile, mkdtemp, cp, writeFile, rm, symlink} from 'node:fs/promises';
+import {mkdtemp, cp, writeFile, rm, symlink} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {pathToFileURL} from 'node:url';
 import {request} from 'node:http';
+import {createConnection} from 'node:net';
 
 const directory=process.env.RESEARCH_TEST_PUBLIC_SITE;
 if (!directory) throw new Error('Set RESEARCH_TEST_PUBLIC_SITE to a synthetic verified artifact');
@@ -99,6 +100,22 @@ test('GET bodies are rejected before reading public files',async()=>{
       });req.on('error',reject);req.end('test');
     });
     assert.equal(status,413);
+  });
+});
+
+test('malformed HTTP has safe headers and does not log or echo parser input',async()=>{
+  await running(async(base,logs)=>{
+    const url=new URL(base);
+    const response=await new Promise((resolve,reject)=>{
+      let text='';
+      const socket=createConnection(Number(url.port),'127.0.0.1',()=>socket.write('GET /SYNTHETIC_PRIVATE_PATH HTTP/1.1\r\nHost: localhost\r\nInvalid Header: SYNTHETIC_PRIVATE_VALUE\r\n\r\n'));
+      socket.on('data',chunk=>{text+=chunk.toString();});socket.on('error',reject);socket.on('end',()=>resolve(text));
+    });
+    assert.match(response,/HTTP\/1.1 400 Bad Request/);
+    assert.match(response,/Content-Security-Policy:/);
+    assert.doesNotMatch(response,/SYNTHETIC_/);
+    assert.ok(logs.some(row=>row.route==='bad_request'));
+    assert.doesNotMatch(JSON.stringify(logs),/SYNTHETIC_/);
   });
 });
 
