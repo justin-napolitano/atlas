@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import GraphMap from './GraphMap.jsx';
+import {parseProjects, parseGraph, parseRelease, publicJson, readPublicRoute, publicRouteUrl, publicTabs, safePublicLink} from './publicData.js';
 import './style.css';
 
-const tabs = ['Overview', 'Map', 'Sources', 'Arguments', 'Discovery'];
-const types = ['concept', 'source', 'evidence', 'claim', 'question', 'hypothesis', 'person', 'project', 'record'];
+const tabs = publicTabs;
 const pretty = value => String(value || '').replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
 const shortId = id => id?.split('/').at(-1)?.replaceAll('-', ' ') || 'Record';
 
@@ -16,10 +16,34 @@ function App() {
     try { localStorage.setItem('research-theme', theme); } catch { /* Theme works for this session if storage is unavailable. */ }
   }, [theme]);
   const [graph, setGraph] = useState(null);
-  const [projects, setProjects] = useState([]);
+  const [catalog, setCatalog] = useState(null);
+  const projects = catalog?.projects || [];
+  const [release, setRelease] = useState(null);
+  const [route, setRoute] = useState(readPublicRoute);
+  const projectId = route.project || projects[0]?.id || '';
+  const project = projects.find(p => p.id === projectId);
+  const approved = catalog?.approved || false;
+  const tab = approved && route.tab === 'Discovery' ? 'Overview' : route.tab;
   const [loadError, setLoadError] = useState('');
-  const [tab, setTab] = useState(() => tabs.find(t => t.toLowerCase() === location.hash.slice(1)) || 'Overview');
-  useEffect(() => { history.replaceState(null, '', `${location.pathname}${location.search}#${tab.toLowerCase()}`); }, [tab]);
+  useEffect(() => {
+    const restore = () => {
+      const next = readPublicRoute(); setRoute(next);
+      setMobilePanel(Boolean(next.record)); setSelectedCandidate(null);
+    };
+    addEventListener('popstate', restore); addEventListener('hashchange', restore);
+    return () => { removeEventListener('popstate', restore); removeEventListener('hashchange', restore); };
+  }, []);
+  function navigate(patch) {
+    const next = {...route, project: projectId, ...patch};
+    history.pushState(null, '', publicRouteUrl(next)); setRoute(next);
+  }
+  const setTab = value => navigate({tab: value});
+  const setSelected = value => navigate({record: value});
+  const selected = route.record;
+  function openProject(next) {
+    if (!next) return;
+    navigate({project: next.id, record: '', tab: tabs.includes(next.default_view) ? next.default_view : 'Map'});
+  }
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState('all');
   const [providerFilter, setProviderFilter] = useState('all');
@@ -30,27 +54,40 @@ function App() {
     try { return JSON.parse(localStorage.getItem('islam-research:candidate-reviews:v1') || '{}'); }
     catch { return {}; }
   });
-  const [selected, setSelected] = useState(null);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [mobilePanel, setMobilePanel] = useState(false);
   useEffect(() => {
-    let active = true;
-    const loadJson = async path => {
-      const response = await fetch(path);
-      if (!response.ok) throw new Error(`Could not load ${path} (${response.status})`);
-      return response.json();
-    };
-    loadJson('/data/projects.json').then(manifest => {
-      const configuredProjects = manifest.projects || [];
-      if (!configuredProjects.length) throw new Error('The public project manifest has no projects.');
-      return loadJson(`/data/${configuredProjects[0].graph_data || 'public-graph.json'}`).then(data => [data, configuredProjects]);
-    }).then(([data, configuredProjects]) => { if (active) { setGraph(data); setProjects(configuredProjects); } })
-      .catch(error => { if (active) setLoadError(error.message); });
-    return () => { active = false; };
+    const controller = new AbortController();
+    publicJson('/data/projects.json', controller.signal).then(parseProjects).then(async value => {
+      const health = value.approved ? parseRelease(await publicJson('/data/release.json', controller.signal), value) : null;
+      if (!controller.signal.aborted) { setCatalog(value); setRelease(health); }
+    }).catch(() => { if (!controller.signal.aborted) setLoadError('The current public release could not be loaded.'); });
+    return () => controller.abort();
   }, []);
-  const nodes = graph?.nodes || [];
-  const edges = graph?.edges || [];
-  const candidates = graph?.candidates || [];
+  useEffect(() => {
+    setQuery(''); setKind('all'); setProviderFilter('all'); setYearFilter('all'); setReviewFilter('all');
+    setSelectedCandidate(null); setMapEntry(null); setMobilePanel(Boolean(route.record));
+    if (!catalog) return;
+    setGraph(null); setLoadError('');
+    if (!project) {
+      if (catalog.projects.length) setLoadError('This project is not in the current public release. Choose another project.');
+      return;
+    }
+    const controller = new AbortController();
+    publicJson(`/data/${project.graph_data}`, controller.signal).then(data => parseGraph(data, project, approved))
+      .then(data => { if (!controller.signal.aborted) setGraph({projectId: project.id, data}); })
+      .catch(() => { if (!controller.signal.aborted) setLoadError('This project’s current public snapshot could not be loaded.'); });
+    return () => controller.abort();
+  }, [catalog, projectId]);
+  // Never render the previous project's graph, even before effect cleanup runs.
+  const data = graph?.projectId === projectId ? graph.data : null;
+  const nodes = data?.nodes || [];
+  const edges = data?.edges || [];
+  const candidates = data?.candidates || [];
+  const types = [...new Set(nodes.map(node => node.type))].sort();
+  useEffect(() => {
+    if (data && tab === 'Map' && route.record) setMapEntry({id: route.record, at: Date.now()});
+  }, [data, tab, route.record]);
   const filtered = useMemo(() => nodes.filter(n => {
     const matchesType = kind === 'all' || n.type === kind;
     const haystack = `${n.label} ${n.type} ${n.status} ${n.summary} ${n.people?.join(' ')}`.toLowerCase();
@@ -98,19 +135,27 @@ function App() {
     return counts;
   }, {});
 
-  if (!graph && !loadError) return <main className="shell loading-state"><div className="brand-mark">IR</div><p>Loading the latest public research snapshot…</p></main>;
-  if (!graph) return <main className="shell loading-state"><div className="brand-mark">IR</div><h1>Snapshot unavailable</h1><p>{loadError}</p><button onClick={() => location.reload()}>Try again</button></main>;
+  const header = <header className="topbar">
+      <a className="brand" href="#" onClick={event => { event.preventDefault(); setTab('Overview'); }}>Research notes</a>
+      <nav aria-label="Main navigation">{tabs.filter(item => !approved || item !== 'Discovery').map(item => <button key={item} aria-current={tab === item ? 'page' : undefined} className={tab === item ? 'active' : ''} onClick={() => { setTab(item); setMobilePanel(false); }}>{item === 'Overview' ? 'Contents' : item}</button>)}</nav>
+      <div className="header-tools"><button className="theme-toggle" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>{theme === 'light' ? 'Dark mode' : 'Light mode'}</button><a className="repo-link" href="https://github.com/justin-napolitano/islam-research" target="_blank" rel="noreferrer">Repository ↗</a></div>
+    </header>;
+  const projectPicker = projects.length > 0 && <div className="public-project-picker"><label>Project <select aria-label="Choose research project" value={project?.id || ''} onChange={event => openProject(projects.find(p => p.id === event.target.value))}>
+    {!project && <option value="" disabled>Choose a published project</option>}{projects.map(p => <option value={p.id} key={p.id}>{p.title}</option>)}</select></label>
+    {approved && <span>Public · read only</span>}</div>;
+
+  if (!data) return <main className="shell">{header}{projectPicker}<section className="loading-state" aria-live="polite">
+    <h1>{loadError ? 'Snapshot unavailable' : catalog && !projects.length ? 'Nothing is published right now' : 'Loading public research…'}</h1>
+    <p>{loadError || (catalog && !projects.length ? 'There are no active projects in this release.' : 'Opening the selected project’s current snapshot.')}</p>
+    {loadError && <button onClick={() => location.reload()}>Try again</button>}
+  </section></main>;
 
   return <main className="shell">
     <a className="skip-link" href="#research-content">Skip to content</a>
-    <header className="topbar">
-      <a className="brand" href="#" onClick={event => { event.preventDefault(); setTab('Overview'); }}>Research notes</a>
-      <nav aria-label="Main navigation">{tabs.map(item => <button key={item} aria-current={tab === item ? 'page' : undefined} className={tab === item ? 'active' : ''} onClick={() => { setTab(item); setMobilePanel(false); }}>{item === 'Overview' ? 'Contents' : item}</button>)}</nav>
-      <div className="header-tools"><button className="theme-toggle" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>{theme === 'light' ? 'Dark mode' : 'Light mode'}</button><a className="repo-link" href="https://github.com/justin-napolitano/islam-research" target="_blank" rel="noreferrer">Repository ↗</a></div>
-    </header>
+    {header}{projectPicker}
     <section className="intro">
-      <h1>{tab === 'Overview' ? 'Research index' : projects[0]?.title || 'Islam Research Atlas'}</h1>
-      <p className="index-meta">{nodes.length} curated records · {edges.length} relationships · {candidates.length} unreviewed discovery leads</p>
+      <h1>{tab === 'Overview' ? 'Research index' : project?.title || 'Research atlas'}</h1>
+      <p className="index-meta">{nodes.length} {approved ? 'published' : 'curated'} records · {edges.length} relationships{!approved && ` · ${candidates.length} unreviewed discovery leads`}</p>
     </section>
     <section className="workbench">
       <div className="toolbar">
@@ -120,20 +165,21 @@ function App() {
       </div>
       <div className={`workspace ${tab === 'Overview' ? 'overview-workspace' : tab === 'Map' ? 'map-workspace' : ''}`}>
         <div className="mainview" id="research-content" tabIndex={-1}>
-          {tab === 'Overview' && <Overview projects={projects} nodes={nodes} candidates={candidates} buildSummary={graph.build_summary} generatedAt={graph.generated_at} onOpen={setTab} onOpenQuestion={node => { setMapEntry({ id: node.id, at: Date.now() }); setTab('Map'); }}/>}
-          <div hidden={tab !== 'Map'}><GraphMap nodes={nodes} edges={edges} active={tab === 'Map'} entryRequest={mapEntry}
+          {tab === 'Overview' && <Overview projects={projects} nodes={nodes} candidates={candidates} buildSummary={data.build_summary} generatedAt={data.generated_at} release={release} onOpenProject={openProject} onOpen={setTab} onOpenQuestion={node => { setMapEntry({ id: node.id, at: Date.now() }); setTab('Map'); }}/>}
+          <div hidden={tab !== 'Map'}><GraphMap key={projectId} nodes={nodes} edges={edges} active={tab === 'Map'} entryRequest={mapEntry}
             renderNotes={(node, inspect) => <Detail node={node} related={edges.filter(e => e.from === node.id || e.to === node.id)} nodeMap={nodeMap} onSelect={id => inspect(nodeMap.get(id))}/>}/></div>
-          {tab === 'Sources' && <div className="list-view"><div className="view-heading"><div><span className="eyebrow">BIBLIOGRAPHY</span><h2>Sources in the graph</h2></div><span>{filtered.filter(n => n.type === 'source').length} visible</span></div><div className="source-list">{filtered.filter(n => n.type === 'source').map(n => <RecordRow key={n.id} node={n} onClick={() => openNode(n)}/>)}</div></div>}
+          {tab === 'Records' && <div className="list-view"><div className="view-heading"><h2>All records</h2><span>{filtered.length} visible</span></div><div className="source-list">{filtered.map(n => <RecordRow key={n.id} node={n} onClick={() => openNode(n)}/>)}{!filtered.length && <p>No records match these filters.</p>}</div></div>}
+          {tab === 'Sources' && <div className="list-view"><div className="view-heading"><div><span className="eyebrow">BIBLIOGRAPHY</span><h2>Sources in the graph</h2></div><span>{filtered.filter(n => ['source','work','edition'].includes(n.type)).length} visible</span></div><div className="source-list">{filtered.filter(n => ['source','work','edition'].includes(n.type)).map(n => <RecordRow key={n.id} node={n} onClick={() => openNode(n)}/>)}</div></div>}
           {tab === 'Arguments' && <div className="list-view"><div className="view-heading"><div><span className="eyebrow">ATTRIBUTED RECORDS</span><h2>Interpretations & questions</h2></div><span>Claims stay attached to their sources</span></div><div className="source-list">{filtered.filter(n => ['claim', 'evidence', 'question', 'hypothesis'].includes(n.type)).map(n => <RecordRow key={n.id} node={n} onClick={() => openNode(n)}/>)}</div></div>}
           {tab === 'Discovery' && <div className="list-view"><div className="view-heading"><div><span className="eyebrow">LITERATURE DISCOVERY</span><h2>Review discovery leads</h2><small className="private-review-note">Screening decisions are saved only in this browser. They are not uploaded or published.</small></div><div className="discovery-heading-actions"><span>{filteredCandidates.length} of {candidates.length} leads</span>{Object.keys(reviews).length > 0 && <button onClick={clearCandidateReviews}>Clear local reviews</button>}</div></div><div className="discovery-note"><b>Discovery is not evaluation.</b> These {candidates.length.toLocaleString()} records are bibliographic leads returned by literature discovery services. Search matching and rank are provenance only; they do not establish relevance, scholarly quality, support for a claim, or consensus.</div><div className="source-list">{filteredCandidates.map(c => <CandidateRow key={c.id} candidate={c} reviewStatus={reviews[c.id] || 'unreviewed'} onClick={() => openCandidate(c)}/>)}</div></div>}
         </div>
         <aside id="record-notes" hidden={tab === 'Map'} className={`details ${mobilePanel ? 'mobile-open' : ''}`}>
           <button className="close-panel" onClick={() => setMobilePanel(false)} aria-label="Close details">×</button>
-          {selectedNode ? <Detail node={selectedNode} related={related} nodeMap={nodeMap} onSelect={id => setSelected(id)}/> : selectedCandidate ? <CandidateDetail candidate={candidates.find(c => c.id === selectedCandidate)} reviewStatus={reviews[selectedCandidate] || 'unreviewed'} onReview={decision => saveCandidateReview(selectedCandidate, decision)}/> : <><h2>Record notes</h2><p className="body-copy">Select a record to read its description, source references, and connections.</p></>}
+          {selectedNode ? <Detail node={selectedNode} related={related} nodeMap={nodeMap} onSelect={id => setSelected(id)}/> : selectedCandidate ? <CandidateDetail candidate={candidates.find(c => c.id === selectedCandidate)} reviewStatus={reviews[selectedCandidate] || 'unreviewed'} onReview={decision => saveCandidateReview(selectedCandidate, decision)}/> : <><h2>{selected ? 'Record unavailable' : 'Record details'}</h2><p className="body-copy">{selected ? 'This record is not in the selected public snapshot.' : 'Select a record to read its description, source references, and connections.'}</p></>}
         </aside>
       </div>
     </section>
-    <footer><span>Built from the project’s curated RDF graph · Snapshot generated from <code>graph/research.ttl</code></span><span>Islam is approached here as historically and intellectually diverse.</span></footer>
+    <footer><span>{approved ? 'Explicitly approved public snapshot · Visibility approval is not a new scholarly review.' : <>Built from the project’s curated RDF graph · Snapshot generated from <code>graph/research.ttl</code></>}</span><span>Islam is approached here as historically and intellectually diverse.</span></footer>
   </main>;
 }
 
@@ -141,19 +187,20 @@ function RecordRow({ node, onClick }) {
   return <button className="record-row" onClick={onClick}><span className="type-mark">{pretty(node.type)}</span><span className="row-main"><strong>{node.label}</strong><small>{node.summary || node.people?.join(', ') || 'Open record details'}</small></span><span className="badge">{pretty(node.status || 'not stated')}</span><span className="arrow">↗</span></button>;
 }
 
-function Overview({ projects, nodes, candidates, buildSummary, generatedAt, onOpen, onOpenQuestion }) {
+function Overview({ projects, nodes, candidates, buildSummary, generatedAt, release, onOpenProject, onOpen, onOpenQuestion }) {
   const questions = nodes.filter(node => node.type === 'question');
   const latest = buildSummary?.generated_at || generatedAt;
   const latestLabel = latest ? new Date(latest).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Date unavailable';
   const chapters = [
+    ['Records', 'All records', 'Browse concepts, sources, people, and other recorded material.'],
     ['Arguments', 'Questions & interpretations', 'Attributed claims, evidence, and open questions.'],
     ['Sources', 'Bibliography', 'Sources recorded in the curated graph.'],
     ['Map', 'Relationship map', 'Recorded links between concepts, sources, and claims.'],
     ['Discovery', 'Literature discovery', `${candidates.length} unreviewed bibliographic leads.`],
-  ];
+  ].filter(([view]) => !release || view !== 'Discovery');
   return <div className="overview-page">
     <section aria-labelledby="projects-heading"><h2 id="projects-heading">Projects</h2>
-      <ol className="project-index">{projects.map(project => <li key={project.id}><button onClick={() => onOpen(project.default_view || 'Map')}><strong>{project.title}</strong><span>{project.description}</span><small>{pretty(project.status)}</small></button></li>)}</ol>
+      <ol className="project-index">{projects.map(project => <li key={project.id}><button onClick={() => onOpenProject(project)}><strong>{project.title}</strong><span>{project.description}</span><small>{pretty(project.status)}</small></button></li>)}</ol>
     </section>
     <section aria-labelledby="contents-heading"><h2 id="contents-heading">Contents</h2>
       <ol className="contents-list">{chapters.map(([view, title, description]) => <li key={view}><button onClick={() => onOpen(view)}><span>{title}</span><small>{description}</small></button></li>)}</ol>
@@ -161,10 +208,10 @@ function Overview({ projects, nodes, candidates, buildSummary, generatedAt, onOp
     <section aria-labelledby="questions-heading"><h2 id="questions-heading">Open questions</h2>
       <ol className="question-list">{questions.map(node => <li key={node.id}><button onClick={() => onOpenQuestion(node)}>{node.label}</button></li>)}</ol>
     </section>
-    <details className="pipeline-details"><summary>Snapshot & harvest log <span>{latestLabel}</span></summary>
+    {release ? <details className="pipeline-details"><summary>Public export details</summary><dl><dt>Exported</dt><dd>{new Date(release.exported_at).toLocaleString()}</dd><dt>Projects</dt><dd>{release.active_projects} published</dd><dt>Source review</dt><dd>Each record retains its own review status and limitations.</dd></dl></details> : <details className="pipeline-details"><summary>Snapshot & harvest log <span>{latestLabel}</span></summary>
       <dl><dt>Latest run</dt><dd>{pretty(buildSummary?.latest_run_status || 'unknown')}</dd><dt>Queries</dt><dd>{buildSummary?.query_complete ?? '—'} of {buildSummary?.query_total ?? '—'} valid · {buildSummary?.query_attempted ?? '—'} attempted</dd><dt>New leads</dt><dd>{buildSummary?.new_leads ?? '—'}</dd><dt>Previously seen</dt><dd>{buildSummary?.repeated_leads ?? '—'}</dd><dt>Last full run</dt><dd>{buildSummary?.last_successful_at ? new Date(buildSummary.last_successful_at).toLocaleString() : 'Not recorded'}</dd></dl>
       {Object.entries(buildSummary?.provider_counts || {}).length > 0 && <div className="provider-table"><table><caption>Provider results</caption><thead><tr><th scope="col">Provider</th><th scope="col">Complete</th><th scope="col">Empty</th><th scope="col">Errors</th></tr></thead><tbody>{Object.entries(buildSummary.provider_counts).map(([provider, counts]) => <tr key={provider}><th scope="row">{pretty(provider)}</th><td>{counts.successful}/{counts.total}</td><td>{counts.no_results}</td><td>{counts.errors}</td></tr>)}</tbody></table></div>}
-    </details>
+    </details>}
   </div>;
 }
 
@@ -193,7 +240,10 @@ function Detail({ node, related, nodeMap, onSelect }) {
     {node.people?.length > 0 && <section className="detail-section"><h3>Author / attribution</h3><p>{node.people.join('; ')}</p></section>}
     {node.role && <section className="detail-section"><h3>Source role</h3><p>{node.role}</p></section>}
     {node.locator && <section className="detail-section"><h3>Location</h3><p>{node.locator}</p></section>}
-    {node.links?.length > 0 && <section className="detail-section"><h3>Source links</h3>{node.links.map(link => <a key={link.url} className="source-link" href={link.url} target="_blank" rel="noreferrer">{link.label || new URL(link.url).hostname} ↗</a>)}</section>}
+    {node.citation && <section className="detail-section"><h3>Citation</h3><p>{node.citation}</p></section>}
+    {node.review_limits?.length > 0 && <section className="detail-section review-limits"><h3>Review limits</h3>{node.review_limits.map((limit,index) => <p key={index}>{limit}</p>)}</section>}
+    {node.origin && <section className="detail-section"><h3>Record provenance</h3><p>{pretty(node.origin)} · Source revision {node.source_revision}</p></section>}
+    {node.links?.some(link => safePublicLink(link.url)) && <section className="detail-section"><h3>Source links</h3>{node.links.filter(link => safePublicLink(link.url)).map(link => <a key={link.url} className="source-link" href={safePublicLink(link.url)} target="_blank" rel="noreferrer">{link.label || new URL(link.url).hostname} ↗</a>)}</section>}
     {related.length > 0 && <section className="detail-section"><h3>Recorded connections <small>{related.length}</small></h3><div className="connection-list">{related.map((edge, i) => {const otherId = edge.from === node.id ? edge.to : edge.from; const other = nodeMap.get(otherId); return other ? <button key={i} onClick={() => onSelect(otherId)}><span>{pretty(edge.label)}</span><b>{other.label}</b></button> : null})}</div></section>}
   </>;
 }
