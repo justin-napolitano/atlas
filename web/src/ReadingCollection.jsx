@@ -2,8 +2,8 @@ import React,{useEffect,useRef,useState} from 'react';
 import './readingContext.css';
 
 /** Located source readings and attributed preparation cards, saved only by owner choice. */
-export default function ReadingCollection({api,onChoose,onOpenVerse,onClose}){
-  const [collection,setCollection]=useState(null),[error,setError]=useState(''),[ayah,setAyah]=useState('59');const generation=useRef(0);
+export default function ReadingCollection({api,onChoose,onOpenVerse,onClose,initialAyah='59',onVerseChange}){
+  const [collection,setCollection]=useState(null),[error,setError]=useState(''),[ayah,setAyah]=useState(String(initialAyah)==='83' ? '83' : '59');const generation=useRef(0);
   async function load(){const token=++generation.current;setError('');
     try{const value=await api.request('reading/collection');if(!Array.isArray(value.readings) || !Array.isArray(value.sources) || !Array.isArray(value.context_cards))throw new Error('The identified reading collection is unavailable.');if(token===generation.current)setCollection(value);}
     catch(err){if(token===generation.current)setError(err.message);}
@@ -16,7 +16,7 @@ export default function ReadingCollection({api,onChoose,onOpenVerse,onClose}){
     {error && <p role="alert">{error} <button onClick={load}>Retry collection</button></p>}
     {!collection ? <p role="status">Loading identified reading material…</p> : <>
       <p>{collection.label}</p><p>{collection.review_limit}</p>
-      <label>Verse<select value={ayah} onChange={event=>setAyah(event.target.value)}><option value="59">Q 4:59 · authority</option><option value="83">Q 4:83 · reporting and inference</option></select></label>
+      <label>Verse<select value={ayah} onChange={event=>{setAyah(event.target.value);onVerseChange?.(event.target.value);}}><option value="59">Q 4:59 · authority</option><option value="83">Q 4:83 · reporting and inference</option></select></label>
       <button onClick={()=>onOpenVerse({chapter:4,ayah_start:Number(ayah),ayah_end:Number(ayah)})}>Read Arabic & linked material</button>
       <section aria-label="Before you read" className="collection-context"><h3>A little context before you read</h3>
         {collection.context_cards.filter(card=>card.reading_ids.some(id=>ids.has(id))).map(card=><details key={card.id}><summary>{card.label}</summary><p>{card.text}</p><small>Preparation paraphrase · pending review · {card.kind}</small><p>{card.scope}</p><p>{card.locator}</p><a href={card.evidence_url} target="_blank" rel="noreferrer">Inspect the located source ↗</a></details>)}
