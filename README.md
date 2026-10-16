@@ -6,7 +6,7 @@ The research should understand traditions in context before evaluating them. “
 
 ## Start here
 
-- `docs/second-brain-roadmap.md` — immediate trust, recovery, memory, and verification priorities, followed by project organization, home, and graph improvements.
+- `docs/second-brain-roadmap.md` — Now / Next / Later: reliable reading and writing first, simple organization next, advanced research features later.
 - `docs/merge-issue-reconciliation.md` — merged workspace scope, integration checks, backlog closures, and unfinished research/release gates.
 - `docs/reader-first-workspace.md` — the Reader A interface connected to saved readings, margin notes, comparison, notebook, search, and sourced agent briefs.
 - `docs/notebook-writing-workspace.md` — independent project notebooks, a dedicated writing view, searchable explained connections, revision-aware saves, and Markdown export.
