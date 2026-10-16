@@ -4,7 +4,9 @@ The product combines independent writing and project organization with a source-
 
 Tracking plan: [#134](https://github.com/justin-napolitano/islam-research/issues/134). This is a focused execution plan under the existing [product roadmap #84](https://github.com/justin-napolitano/islam-research/issues/84), notebook epic #87, and ownership/recovery epic #91. These are planned improvements, not claims that the current app already supplies them.
 
-## Before merging the current production stack
+## Immediate hardening after the merged workspace
+
+The owner authorized merging the existing stack on 2026-10-16 UTC. The priorities originally identified before merge remain unfinished and come next; integration did not implement them. See the [merge and issue audit](merge-issue-reconciliation.md) for shipped scope, evidence, closures, and remaining gates.
 
 | Order | Issue | Outcome |
 | --- | --- | --- |
@@ -21,12 +23,12 @@ Keep this batch focused on trust, resource use, and navigation reliability. Do n
 - [#140: project home](https://github.com/justin-napolitano/islam-research/issues/140): continue reading, recent notes, open questions, queued sources, and useful empty-project actions using real bounded queries.
 - [#141: explained graph exploration](https://github.com/justin-napolitano/islam-research/issues/141): start from the current item, expand bounded neighborhoods, and explain each connection's direction, evidence, author, and review status. Reuse #97/#37/#101 and provide a readable list alternative.
 
-These follow the pre-merge work; they should not expand the current merge batch. Each issue includes scope, acceptance criteria, validation, and links to the existing epics rather than replacing them.
+These follow the trust/resource work above. Each issue includes scope, acceptance criteria, validation, and links to the existing epics rather than replacing them. [#143: project lifecycle](https://github.com/justin-napolitano/islam-research/issues/143) adds rename, archive, and restore while preserving identities and references; project creation and folders do not cover this lifecycle.
 
 ## Merge and release coordination
 
-The production dependency order at planning time is **#122 → #123 → #124 → #129 → #131 → #133**. Implement the pre-merge fixes in small reviewable changes on top, then validate the integrated head. Retarget dependents as bases merge and verify the resulting main-branch state. Do not delete a base branch before its dependents are safely retargeted.
+The production stack merged in dependency order: **#122 → #123 → #124 → #129 → #131 → #133**, followed by planning documentation #142. Dependents were retargeted to main before merging. Main-branch reader and container checks passed on the integrated application commit; PostgreSQL integration also passed for the backend integration. Continue the hardening in small reviewable changes with relevant exact-head checks.
 
-The design-sample PR **#121** is superseded: review and close it separately rather than merging it automatically. Recording this checklist does not itself merge or close any PR.
+GitHub marked design-sample PR **#121** merged because its commits were already included in #122. It does not require a separate merge or closure.
 
 Hosted PostgreSQL, owner sign-in, deployment, and cross-device verification remain separate from the loopback review adapter. A local preview is not evidence of a deployed synchronized service.
