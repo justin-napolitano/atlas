@@ -6,6 +6,7 @@ The research should understand traditions in context before evaluating them. “
 
 ## Start here
 
+- `docs/second-brain-roadmap.md` — pre-merge trust, recovery, memory, and verification priorities, followed by project organization, home, and graph improvements.
 - `docs/reader-first-workspace.md` — the Reader A interface connected to saved readings, margin notes, comparison, notebook, search, and sourced agent briefs.
 - `docs/notebook-writing-workspace.md` — independent project notebooks, a dedicated writing view, searchable explained connections, revision-aware saves, and Markdown export.
 - `docs/fluid-notebook-reading.md` — sources beside the notebook, exact quote insertion, contained citation navigation, and separate writing/reading-note views.
