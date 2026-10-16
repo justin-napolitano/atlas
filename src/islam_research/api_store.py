@@ -14,10 +14,19 @@ from . import record_context
 from . import notebook
 from . import reading_drafts
 from . import collection_link
+from . import research_search
 
 
 class PostgreSQLStore:
     """Keep private queries and public projection reads separate."""
+
+    def research_search(self, project_id, query, limit):
+        with db.connect(self.dsn) as connection:
+            return research_search.search(connection,project_id,query,limit)
+
+    def reading_library(self, project_id, cursor, limit):
+        with db.connect(self.dsn) as connection:
+            return research_search.library(connection,project_id,cursor,limit)
 
     def link_collection_reading(self,**values):
         with db.connect(self.dsn) as connection:return collection_link.link(connection,**values)
