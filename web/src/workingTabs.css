@@ -3,8 +3,10 @@
 .working-tab[data-active]{border-bottom-color:var(--accent);background:var(--accent-wash)}
 .working-tab>button:first-child{display:grid;gap:3px;min-width:0;text-align:left;padding:10px 12px;border-radius:0;font:500 12px/1.4 system-ui;flex:1}
 .working-tab small{font:9px/1.4 system-ui;letter-spacing:.04em;color:var(--muted)}
+.working-tab-status{font:10px/1.4 system-ui;color:var(--accent);font-style:normal}
 .working-tab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .working-tab-close{align-self:center;padding:10px 8px!important;font:16px/1 system-ui;color:var(--muted)}
+.working-cache-status:empty{display:none}.working-cache-status{display:block;font:12px/1.5 system-ui;color:var(--muted);margin-bottom:12px}
 .working-surface[hidden]{display:none!important}.working-surface{min-width:0}
 .atlas-project-list .atlas-project-branch{min-width:0}.atlas-project-branch .atlas-primary-nav{margin:0;padding:2px 0 8px 16px;border:0;gap:1px}
 .atlas-project-branch .atlas-primary-nav button{font:400 12px/1.5 system-ui;min-height:34px;border:0!important;padding:7px 12px}

@@ -35,7 +35,7 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
   const recoveryPayload=notebookRecoveryPayload(projectId,selected,draft);
   const recovery=useWritingRecovery({api,store:drafts.current,sessionKey:JSON.stringify([key,draft?.base?.revision || 0,draft?.value.request_uuid || '',draft?.recovery?.id || '']),path:'notebook/draft',payload:recoveryPayload,enabled:!!draft,
     identity:draft?.recovery?.id?.slice('urn:research:writing-draft:'.length),revision:draft?.recovery?.revision || 0,verify:verifyNotebookRecovery});
-  function remember(value,at=key){drafts.current.set(at,value);changed();render(v=>v+1);}
+  function remember(value,at=key){drafts.current.set(at,{...value,workspaceMode:mode});changed();render(v=>v+1);}
   function clear(at=key){drafts.current.delete(at);changed();render(v=>v+1);}
   async function load(after='',queryValue=query,{thoughtType=kind,noteState=state,itemScope=collection}={}){
     const token=++generation.current;setLoading(true);setMessage('');

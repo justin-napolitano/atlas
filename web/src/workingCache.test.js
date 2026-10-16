@@ -1,0 +1,25 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {warmKeys,workStatus} from './workingCache.js';
+test('thirty clean pages retain only the active and three most recent surfaces',()=>{
+  const keys=Array.from({length:30},(_,n)=>String(n));
+  assert.deepEqual([...warmKeys(keys,'0',new Set())],['0','29','28','27']);
+  assert.equal(warmKeys(keys,'29',new Set()).size,4);
+});
+test('dirty, conflicted and pending pages exceed the limit safely until saved',()=>{
+  const protectedKeys=new Set(['a','b','c','d','e']);
+  assert.deepEqual([...warmKeys(['a','b','c','d','e','f'],'f',protectedKeys)],['a','b','c','d','e','f']);
+  assert.equal(warmKeys(['a','b','c','d','e','f'],'f',new Set()).size,4);
+});
+test('tab status tracks the actual project and confirmed note state',()=>{
+  const item={project:'one',snapshot:{selected:'source',selectedDocument:'document',libraryView:''}},records=new Map(),passages=new Map(),drafts=new Map();
+  records.set('source',{server:{project_id:'one'},status:'saving',pending:Promise.resolve()});
+  assert.equal(workStatus(item,{records,passages,drafts}),'Saving');
+  records.get('source').status='saved';records.get('source').pending=null;
+  drafts.set('capture:document',{body:'Unfinished'});assert.equal(workStatus(item,{records,passages,drafts}),'Unsaved');
+  drafts.clear();assert.equal(workStatus(item,{records,passages,drafts}),'');
+  drafts.set('notebook:'+JSON.stringify(['other','new']),{value:{body:'Foreign'}});
+  assert.equal(workStatus({...item,snapshot:{libraryView:'notebook'}},{records,passages,drafts}),'');
+  drafts.set('notebook:'+JSON.stringify(['one','new']),{saving:false,current:{revision:2}});
+  assert.equal(workStatus({...item,snapshot:{libraryView:'notebook'}},{records,passages,drafts}),'Conflict');
+});

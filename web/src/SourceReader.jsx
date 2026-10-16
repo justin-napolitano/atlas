@@ -72,7 +72,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
     }).catch(error=>{ if(active) setMessage(error.message); });
     return ()=>{ active=false; };
   },[documentId]);
-  function remember(key,value) { drafts.current.set(key,value); changed(); }
+  function remember(key,value) { drafts.current.set(key,{...value,sourceRecordId:record.id,projectId:record.project_id,documentId}); changed(); }
   function revealMark(){const element=mark.current,pane=element?.closest('[data-contained-reader]');if(pane){pane.scrollTop+=element.getBoundingClientRect().top-pane.getBoundingClientRect().top-90;}else element?.scrollIntoView({block:'nearest'});}
   function bookmark(annotationId,snapshotId=documentId) {
     if(onBookmark){onBookmark({project_id:record.project_id,record_id:record.id,document_id:snapshotId,annotation_id:annotationId || ''});return;}
