@@ -7,3 +7,7 @@
 .recoverable-draft pre { font:14px/1.8 Georgia,serif; white-space:pre-wrap; overflow-wrap:anywhere; max-height:240px; overflow:auto; }
 .recoverable-draft blockquote { margin:10px 0; border-inline-start:2px solid var(--accent); padding-inline-start:10px; white-space:pre-wrap; overflow-wrap:anywhere; }
 .recoverable-draft .draft-conflict,.recoverable-draft .draft-preview { border:1px solid var(--accent); padding:12px; margin-block:12px; }
+.writing-recovery-status {display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin:.5rem 0;color:var(--muted,#666);}
+.unfinished-writing {border-bottom:1px solid var(--line,#ddd);padding:.75rem 0;}
+.unfinished-writing article {display:flex;flex-direction:column;gap:.3rem;padding:.5rem 0;}
+.unfinished-writing pre,.writing-recovery-status pre {white-space:pre-wrap;overflow-wrap:anywhere;max-height:18rem;overflow:auto;}

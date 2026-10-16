@@ -8,6 +8,7 @@ import ResearchQuestions from '../../src/ResearchQuestions.jsx';
 const project='synthetic:project',anchor={record_id:'synthetic:source',document_id:'synthetic:document',annotation_id:'synthetic:annotation'};
 const entries=new Map(),history=new Map(),requests=[],receipts=new Map();let lose=true,loseEdit=true,wrong=false;
 const fixture=window.__notebookTest={entries,requests,history,anchor};
+const recoveryRows=new Map();fixture.recoveryRows=recoveryRows;
 const records=[{id:'synthetic:source',project_id:project,kind:'source',title:'Synthetic Arabic source',summary:'A source with saved text',review_state:'pending'},{id:'synthetic:reference',project_id:project,kind:'source',title:'Metadata-only reference',summary:'An independent bibliographic record',review_state:'pending'},{id:'synthetic:work',project_id:project,kind:'work',title:'A source work',summary:'A bibliographic work',review_state:'pending'},{id:'synthetic:curated-question',project_id:project,kind:'question',title:'A recorded research question',summary:'A question from the research graph',revision:1,review_state:'pending'}];
 const passage={item_kind:'passage_note',thought_type:'passage_note',id:anchor.annotation_id,project_id:project,title:'Original passage note',body:'Single authoritative passage body',...anchor,
   source_title:'Synthetic Arabic source',edition:'Synthetic edition',locator:'p. 2',selected_quote:'😀 التفسير tafsīr',revision:1,state:'active',cursor:'passage_note:'+anchor.annotation_id};
@@ -21,6 +22,17 @@ const api={async post(path,value){if(path==='reading/annotations'){quoteRequests
   if(!receipt){const row=record({...value,id:'urn:research:notebook:'+value.request_uuid,revision:1,state:'active',source_title:value.record_id?passage.source_title:null,selected_quote:value.annotation_id?passage.selected_quote:null,edition:value.document_id?passage.edition:null,locator:value.document_id?passage.locator:null});receipt={id:row.id,project_id:project,revision:1};receipts.set(value.request_uuid,receipt);}
   if(lose){lose=false;throw {status:503,message:'Notebook save could not be confirmed.'};}return receipt;
 },async request(path,params={},value){
+  if(path==='notebook/draft' && value){
+    const id='urn:research:writing-draft:'+value.draft_uuid,current=recoveryRows.get(id);
+    if(current && current.revision!==value.expected_revision){
+      if(current.revision===value.expected_revision+1 && JSON.stringify(current.value)===JSON.stringify(value.value) && current.state===value.state)return structuredClone(current);
+      throw {status:409,current:structuredClone(current)};
+    }
+    const row={...value,id,revision:value.expected_revision+1,base_snapshot:value.entry_id?structuredClone(history.get(value.entry_id)?.find(r=>r.revision===value.base_revision)):null};
+    recoveryRows.set(id,row);return structuredClone(row);
+  }
+  if(path==='notebook/drafts')return {items:[...recoveryRows.values()].filter(row=>row.state==='active'&&row.project_id===params.project_id),next_cursor:null};
+  if(path==='notebook/draft')return structuredClone(recoveryRows.get(params.draft_id));
   if(path==='record')return records.find(row=>row.id===params.record_id);
   if(path==='records')return {items:records.filter(row=>!params.kind||row.kind===params.kind).map(row=>({...row,...(fixture.foreignRecords?{project_id:'other'}:{})})),next_cursor:null};
   if(path==='evidence-path')return {project_id:project,nodes:[],edges:[],paths:[]};
@@ -43,7 +55,7 @@ const api={async post(path,value){if(path==='reading/annotations'){quoteRequests
 }};
 fixture.seed=()=>{const target=[...entries.values()].find(row=>row.state==='active');return record({id:'synthetic:linked-note',project_id:project,title:'A related idea',body:`A note linking back: [[${target.id}|original idea]]`,thought_type:'note',links:[],state:'active',revision:1,record_id:null,document_id:null,annotation_id:null});};
 fixture.remote=()=>{const row=[...entries.values()][0];record({...row,body:'Cloud thought from another device',revision:row.revision+1});};fixture.wrong=v=>{wrong=v;};
-function Harness(){const drafts=useRef(new Map()),[round,setRound]=useState(0),[initialQuery,setInitialQuery]=useState(''),[inlineSources,setInlineSources]=useState(false),[destination,setDestination]=useState('notes'),[compose,setCompose]=useState(''),[questionAnchor,setQuestionAnchor]=useState(null);fixture.inline=setInlineSources;fixture.drafts=drafts;fixture.remount=()=>setRound(v=>v+1);fixture.search=setInitialQuery;
+function Harness(){const drafts=useRef(new Map()),[round,setRound]=useState(0),[initialQuery,setInitialQuery]=useState(''),[inlineSources,setInlineSources]=useState(false),[destination,setDestination]=useState('notes'),[compose,setCompose]=useState(''),[questionAnchor,setQuestionAnchor]=useState(null);fixture.inline=setInlineSources;fixture.drafts=drafts;fixture.remount=()=>setRound(v=>v+1);fixture.search=setInitialQuery;fixture.losePageMemory=()=>{drafts.current=new Map();setRound(v=>v+1);};
   const common={api,projectId:project,drafts,inlineSources,initialQuery,onOpenSource:(...args)=>{fixture.opened=args;}};
   return <main style={{maxWidth:1100,margin:'auto'}}><p>Synthetic notebook API fixture · no live owner sign-in</p><nav><button onClick={()=>setDestination('sources')}>Sample sources</button><button onClick={()=>setDestination('questions')}>Sample questions</button><button onClick={()=>setDestination('notes')}>Sample notes</button></nav>
     {destination==='sources'?<ResearchSources api={api} projectId={project} readings={[{record_id:anchor.record_id,document_id:anchor.document_id,edition:'Synthetic edition',locator:'p. 2',reading:'read'}]} onOpen={(...args)=>{fixture.opened=args;}} onAdd={()=>{fixture.added=true;}} onQuestion={row=>{setQuestionAnchor({project_id:project,record_id:row.id});setCompose(crypto.randomUUID());setDestination('questions');}}/>:destination==='questions'?<ResearchQuestions key={round} {...common} anchor={questionAnchor} composeRequest={compose} onComposeConsumed={()=>setCompose('')}/>:<ResearchNotebook {...common} key={round} anchor={anchor}/>}
