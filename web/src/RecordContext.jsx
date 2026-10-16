@@ -6,7 +6,7 @@ const ir='https://islam-research.local/vocab/';
 const label=iri=>iri.split(/[\/#]/).pop().replace(/([a-z])([A-Z])/g,'$1 $2');
 
 /** Explicit graph neighbors with direction, provenance, and edition-bound source entry. */
-export default function RecordContext({api,record,onOpen,onCompare}){
+export default function RecordContext({api,record,onOpen,onCompare,expanded=false}){
   const [rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
   const generation=useRef(0);
   async function load(append=false){const token=++generation.current;setBusy(true);setMessage('');
@@ -15,7 +15,8 @@ export default function RecordContext({api,record,onOpen,onCompare}){
     catch(error){if(token===generation.current)setMessage(error.message);}finally{if(token===generation.current)setBusy(false);}
   }
   useEffect(()=>{setRows([]);setCursor(null);load();return()=>{generation.current++;};},[record.id,record.project_id]);
-  return <details className="record-context"><summary>Connections & source context</summary>
+  const Container=expanded?'section':'details';
+  return <Container className="record-context">{expanded?<h3>Connections & source context</h3>:<summary>Connections & source context</summary>}
     <p>Recorded links retain their direction and evidence. A connection is not a quality score or proof of agreement.</p>
     {message && <p role="alert">{message}</p>}{busy && <p role="status">Loading recorded connections…</p>}
     {!busy && !message && !rows.length && <p>No direct links are recorded here yet. This does not establish absence from the literature.</p>}
@@ -28,7 +29,7 @@ export default function RecordContext({api,record,onOpen,onCompare}){
       {['source','work','edition'].includes(node.kind) && <ContextSource api={api} projectId={record.project_id} record={node} onOpen={onOpen} onCompare={onCompare}/>}
     </li>)}</ul>
     {cursor && <button disabled={busy} onClick={()=>load(true)}>More recorded connections</button>}<button disabled={busy} onClick={()=>load()}>Refresh connections</button>
-  </details>;
+  </Container>;
 }
 
 /** Choose an actual saved excerpt; never infer an exact anchor from a citation alone. */
