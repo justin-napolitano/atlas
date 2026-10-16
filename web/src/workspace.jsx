@@ -11,6 +11,7 @@ import CollectionReadingLink from './CollectionReadingLink.jsx';
 import ResearchNotebook from './ResearchNotebook.jsx';
 import ResearchSources from './ResearchSources.jsx';
 import ResearchQuestions from './ResearchQuestions.jsx';
+import ProjectDirectories from './ProjectDirectories.jsx';
 import RecoverableDraft from './RecoverableDraft.jsx';
 import {recoverRecordWriting} from './recoverIntoEditor.js';
 import {collectionPreset} from './readerCollectionClient.js';
@@ -96,7 +97,6 @@ function Workspace() {
     api.request('me').then(() => api.request('projects')).then(data => {
       if (!active) return;
       setProjects(data.items); setProject(value => value || data.items[0]?.id || '');
-      if (!data.items.length) setNotice('No research projects yet. Create a project through the owner API.');
     }).catch(err => { if (active) setError(err.message); });
     return () => { active = false; };
   }, []);
@@ -217,7 +217,7 @@ function Workspace() {
     {error && <div role="alert" className="workspace-alert"><p>{error}</p><button onClick={() => location.reload()}>Reconnect workspace</button><small>Export unsaved notes before reloading.</small></div>}
     <ResizablePanes storageKey="research:reader-library-v1" className={`owner-panes atlas-body${readingFocus?' reading-focus':''}`} minWidth={14} maxWidth={32} defaultWidth={19} label="Resize library and reading workspace">
       <aside id="atlas-library" className="atlas-library workspace-results" aria-label="Research library">
-        <div className="atlas-library-heading"><span className="atlas-kicker">Your library</span><label className="atlas-project"><span className="sr-only">Research project</span><select aria-label="Research project" value={project} onChange={event=>open('',event.target.value)}>{projects.map(row=><option key={row.id} value={row.id}>{row.title}</option>)}</select></label><p>Read. Make notes. Follow the sources.</p></div>
+        <ProjectDirectories api={api} projects={projects} current={project} onOpen={id=>open('',id)} onCreated={row=>{setProjects(items=>[...items.filter(item=>item.id!==row.id),row]);open('',row.id);}}/>
         <nav className="atlas-primary-nav" aria-label="Research workspace"><button aria-current={libraryView==='sources'||!libraryView?'page':undefined} onClick={()=>showLibrary('sources')}>Sources</button><button aria-current={libraryView==='questions'?'page':undefined} onClick={()=>showLibrary('questions')}>Questions</button><button aria-current={libraryView==='notebook'?'page':undefined} onClick={()=>openNotebookEntry()}>Notes</button></nav>
         <nav className="atlas-create-actions" aria-label="Create research"><button onClick={()=>showLibrary('add-source')}>Add source</button><button onClick={()=>createWorkspaceItem('question')}>New question</button><button onClick={()=>createWorkspaceItem('note')}>New note</button></nav>
         <section className="workspace-tools"><h3>Explore</h3><nav className="workspace-library-actions" aria-label="Reading library actions"><button disabled={!project} onClick={closeLibrary}>Resume reading</button><button disabled={!project} onClick={()=>compare()}>Compare readings</button><button disabled={!project} onClick={()=>showLibrary('collection')}>Reading collection & context</button><button disabled={!project} onClick={()=>showLibrary('pilot')}>Start Qur’an pilot</button><button disabled={!project} onClick={()=>showLibrary('article-pilot')}>Read the Sirry article</button><button onClick={()=>{setLibraryMode('records');showLibrary('records');}}>All research</button></nav></section>
