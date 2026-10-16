@@ -125,7 +125,7 @@ function Workspace() {
   navigationRef.current={search:()=>showLibrary('search'),close:()=>setLibraryOpen(false)};
   useEffect(()=>{if(libraryView==='search')requestAnimationFrame(()=>window.document.getElementById('research-search-query')?.focus());},[libraryView]);
   useEffect(()=>{const handle=event=>{if((event.metaKey || event.ctrlKey) && event.key.toLowerCase()==='k'){event.preventDefault();navigationRef.current.search();}if(event.key==='Escape')navigationRef.current.close();};addEventListener('keydown',handle);return()=>removeEventListener('keydown',handle);},[]);
-  function prepareResearch(){const valid=record?.project_id===project && record.id===selected,anchor=currentReadingAnchor(project,record?.id,fromURL(),currentReadingPlace);setBriefAnchor(valid?{record,documentId:anchor.documentId,annotationId:anchor.annotationId}:null);showLibrary('assistant');}
+  function prepareResearch(){const valid=!['questions','notebook','sources'].includes(libraryView) && record?.project_id===project && record.id===selected,anchor=currentReadingAnchor(project,record?.id,fromURL(),currentReadingPlace);setBriefAnchor(valid?{record,documentId:anchor.documentId,annotationId:anchor.annotationId}:{record:null,documentId:'',annotationId:''});showLibrary('assistant');}
 
   async function loadRows({ append = false, search = false } = {}) {
     if (!project) return;
