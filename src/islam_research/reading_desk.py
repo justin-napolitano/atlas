@@ -6,7 +6,7 @@ def get(connection,project_id):
     return connection.execute("""SELECT p.*,r.title AS source_title,d.edition,d.locator,d.text_sha256
         FROM research.reading_desks p JOIN research.records r ON r.project_id=p.project_id AND r.id=p.record_id
         LEFT JOIN research.reading_documents d ON d.project_id=p.project_id AND d.id=p.document_id
-        WHERE p.project_id=%s AND r.deleted_at IS NULL""",(project_id,)).fetchone()
+        WHERE p.project_id=%s AND r.deleted_at IS NULL AND r.review_state<>'withdrawn'""",(project_id,)).fetchone()
 
 
 def save(connection,*,project_id,record_id,document_id,annotation_id,start,end,expected_revision,actor):
@@ -16,7 +16,7 @@ def save(connection,*,project_id,record_id,document_id,annotation_id,start,end,e
     if any(v is not None and type(v) is not int for v in (start,end)):
         raise ValueError("Reading positions use integer Unicode code-point offsets")
     with connection.transaction():
-        source=connection.execute("SELECT kind FROM research.records WHERE project_id=%s AND id=%s AND deleted_at IS NULL",(project_id,record_id)).fetchone()
+        source=connection.execute("SELECT kind FROM research.records WHERE project_id=%s AND id=%s AND deleted_at IS NULL AND review_state<>'withdrawn'",(project_id,record_id)).fetchone()
         if not source or source["kind"] not in {"source","work","edition"}:
             raise ValueError("Active source not found in this project")
         if document_id is None:

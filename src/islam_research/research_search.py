@@ -103,10 +103,29 @@ def validate_query(project_id, query, limit):
     return query.strip()
 
 
+def _literal_start(text, query):
+    """Map lowercased match coordinates back to the original Unicode string.
+
+    Lowercasing can expand one character (for example U+0130) into multiple
+    code points. Its match offset cannot be used directly to slice source text.
+    """
+    lowered_position = text.lower().find(query.lower())
+    if lowered_position < 0:
+        # PostgreSQL's locale-aware lower() can differ from Python's Unicode
+        # mapping. The original beginning is a safe excerpt in that rare case.
+        return 0
+    consumed = 0
+    for position, character in enumerate(text):
+        consumed += len(character.lower())
+        if consumed > lowered_position:
+            return position
+    return 0
+
+
 def _result(row, query):
     item = dict(row)
     text, tier = item.pop("search_text"), item.pop("tier")
-    position = text.lower().find(query.lower())
+    position = _literal_start(text, query)
     # Keep even a maximum-length literal query visible inside the bounded excerpt.
     context = min(100, (360 - len(query)) // 2)
     start = max(0, position - context)

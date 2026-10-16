@@ -68,6 +68,7 @@ try{
   assert.equal(await evaluate('window.__researchTools.exported.context.annotation_id'),'synthetic:annotation');
   assert.equal(await evaluate('window.__researchTools.exported.context.source_notice'),'Synthetic provider notice retained verbatim.');
   assert.equal(await evaluate('window.__researchTools.exported.read_only_search.method'),'GET');
+  assert.equal(await evaluate('window.__researchTools.exported.read_only_operations.path'),'/v1/research-operations');
   assert.ok(await evaluate('window.__researchTools.exported.read_only_search.path.startsWith("/v1/research/search?")'));
   assert.equal(await evaluate('window.__researchTools.requests.length'),0,'export does not save or run an agent');
   await click('Save research brief');await until(()=>evaluate('document.body.textContent.includes("save response was lost")'),'lost creation acknowledgement');

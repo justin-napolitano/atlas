@@ -25,6 +25,18 @@ class ResearchSearchValidationTests(unittest.TestCase):
         long_result=_result(dict(id='synthetic:doc',search_text='a'*500+long_query+'c'*500,tier=2,channel='document_text'),long_query)
         self.assertIn(long_query,long_result['excerpt'])
 
+    def test_lowercase_expansion_does_not_shift_original_excerpt_coordinates(self):
+        for prefix in ['İ'*500,'😀 İΣ العربية '*80]:
+            with self.subTest(prefix=prefix[:15]):
+                text=prefix+'needle'+' tail'*100
+                result=_result(dict(id='synthetic:unicode',search_text=text,tier=2,channel='document_text'),'needle')
+                self.assertIn('needle',result['excerpt'])
+                start=result['excerpt_start']
+                self.assertGreaterEqual(start,0)
+                self.assertLess(start,len(text))
+                self.assertEqual(text[start:start+len(result['excerpt'])],result['excerpt'])
+                self.assertLessEqual(len(result['excerpt']),360)
+
 
 @unittest.skipUnless(os.environ.get('RESEARCH_TEST_DATABASE_URL'),'Requires real isolated PostgreSQL')
 class ResearchSearchStoreTests(unittest.TestCase):
