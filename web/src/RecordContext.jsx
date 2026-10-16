@@ -1,6 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {contextProperties,verifyContext} from './readingContext.js';
 import './readingContext.css';
+import {useSurfaceResume} from './surfaceActivity.js';
 
 const ir='https://islam-research.local/vocab/';
 const label=iri=>iri.split(/[\/#]/).pop().replace(/([a-z])([A-Z])/g,'$1 $2');
@@ -9,6 +10,7 @@ const label=iri=>iri.split(/[\/#]/).pop().replace(/([a-z])([A-Z])/g,'$1 $2');
 export default function RecordContext({api,record,onOpen,onCompare,expanded=false}){
   const [rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
   const generation=useRef(0);
+  useSurfaceResume(()=>load());
   async function load(append=false){const token=++generation.current;setBusy(true);setMessage('');
     try{const value=verifyContext(await api.request('record-context',{project_id:record.project_id,record_id:record.id,limit:25,...(append && cursor ? {cursor} : {})}),record.project_id,record.id);
       if(token===generation.current){setRows(old=>append ? [...old,...value.items] : value.items);setCursor(value.next_cursor);}}

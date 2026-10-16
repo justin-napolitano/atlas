@@ -1,6 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {appendLexicalPage,definitionKinds,exportLexiconDraft,lexicalKey} from './lexiconClient.js';
 import './lexicon.css';
+import {useSurfaceResume} from './surfaceActivity.js';
 
 const fields=['body','attribution','scope','dating_note','rationale','wording_mode'];
 const values=row=>Object.fromEntries(fields.map(key=>[key,row[key]]));
@@ -10,6 +11,7 @@ export default function ConceptPanel({record,api,drafts,changed,navigate}) {
   const [history,setHistory]=useState(new Map());
   const alive=useRef(true),generation=useRef(0);
   const params={project_id:record.project_id,concept_id:record.id};
+  useSurfaceResume(load);
   useEffect(()=>{alive.current=true;load();return()=>{alive.current=false;generation.current++;};},[record.id,record.project_id]);
   async function load() {
     const token=++generation.current;setLoading(true);setError('');

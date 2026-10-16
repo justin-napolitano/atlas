@@ -9,10 +9,11 @@ import {quoteCapture,quoteMarkdown} from './notebookCitation.js';
 import {verifyReadingCapture} from './readingMarks.js';
 import {PassageNoteEditor} from './passageNoteEditor.js';
 import {notebookGraph} from './notebookMarkdown.js';
+import {useSurfaceResume} from './surfaceActivity.js';
 
 /** Running project notebook. Passage bodies are a live server projection, never copied here. */
 export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},onOpenSource,anchor=null,initialQuery='',initialEntryId='',projectTitle='',onEntryChange=()=>{},inlineSources=false,noteEditor=null,initialCollection='all',mode='notes',composeRequest='',onComposeConsumed=()=>{},researchQuestions=[],moreResearchQuestions=null,researchQuestionError=''}){
-  const questionMode=mode==='questions';
+  const questionMode=mode==='questions', notebookRoot=useRef(null);
   const [rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[query,setQuery]=useState(initialQuery),[kind,setKind]=useState(questionMode?'question':''),[state,setState]=useState('active');
   const [selected,setSelected]=useState(null),[cloud,setCloud]=useState(null),[message,setMessage]=useState(''),[loading,setLoading]=useState(false),[history,setHistory]=useState(null);
   const [collection,setCollection]=useState(initialCollection);
@@ -27,6 +28,7 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
   const [link,setLink]=useState({kind:'record',id:'',rationale:''});
   const [,render]=useState(0),generation=useRef(0),mounted=useRef(true),busy=useRef(false),selection=useRef(null),activeProject=useRef(projectId);
   activeProject.current=projectId;
+  useSurfaceResume(()=>{load();if(network)loadNetwork();});
   const key=notebookKey(projectId,selected || (questionMode?'new-question':'new')),draft=drafts.current.get(key),quoteKey='notebook-quote:'+key,quoteDraft=drafts.current.get(quoteKey);
   function remember(value,at=key){drafts.current.set(at,value);changed();render(v=>v+1);}
   function clear(at=key){drafts.current.delete(at);changed();render(v=>v+1);}
@@ -47,8 +49,8 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
     finally{if(token===networkGeneration.current){networkBusy.current=false;setNetworkLoading(false);}}}
   useEffect(()=>{setNetwork(null);setNetworkError('');setShowGraph(false);setEditorMode('write');networkBusy.current=false;return()=>{networkGeneration.current++;};},[projectId]);
   function ensureNetwork(){if(!network)loadNetwork();}
-  function insertWiki(id,title){const input=document.querySelector('.notebook-note-body textarea');const start=input?.selectionStart ?? value.body.length,end=input?.selectionEnd ?? start;const text=`[[${id}|${title.replaceAll(']','').replaceAll('|','')}]]`;edit({body:value.body.slice(0,start)+text+value.body.slice(end)});setEditorMode('write');requestAnimationFrame(()=>{input?.focus();input?.setSelectionRange(start+text.length,start+text.length);});}
-  function start(useAnchor){setCollection('writing');setShowGraph(false);setEditorMode('write');setState('active');setKind(questionMode?'question':'');setQuery('');load('','',{thoughtType:questionMode?'question':'',noteState:'active',itemScope:'writing'});setMobileEditor(true);onEntryChange('');selection.current=null;setSelected(null);setCloud(null);setHistory(null);const at=notebookKey(projectId,questionMode?'new-question':'new');
+  function insertWiki(id,title){const input=notebookRoot.current?.querySelector('.notebook-note-body textarea');const start=input?.selectionStart ?? value.body.length,end=input?.selectionEnd ?? start;const text=`[[${id}|${title.replaceAll(']','').replaceAll('|','')}]]`;edit({body:value.body.slice(0,start)+text+value.body.slice(end)});setEditorMode('write');requestAnimationFrame(()=>{input?.focus();input?.setSelectionRange(start+text.length,start+text.length);});}
+  function start(useAnchor){setCollection('writing');setShowGraph(false);setEditorMode('write');setState('active');setKind(questionMode?'question':'');setQuery('');load('','',{thoughtType:questionMode?'question':'',noteState:'active',itemScope:'writing'});setMobileEditor(true);onEntryChange('','');selection.current=null;setSelected(null);setCloud(null);setHistory(null);const at=notebookKey(projectId,questionMode?'new-question':'new');
     if(drafts.current.has(at)){setMessage('Your unfinished new thought is retained. Save it before starting another.');return;}
     const initial=newThought(useAnchor || {});if(questionMode){initial.thought_type='question';initial.body='## Scope\n\n## Working answer\n\n## What remains unclear\n\n## Evidence to investigate\n';}
     remember({value:initial,base:null,sent:null,saving:false,error:'',current:null},at);
@@ -57,16 +59,16 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
   useEffect(()=>{if(composeRequest&&consumedCompose.current!==composeRequest){consumedCompose.current=composeRequest;start(anchor);onComposeConsumed();}},[composeRequest]);
   async function open(row){
     if(row.item_kind==='passage_note' || row.item_kind==='record_note'){openSource(row.record_id,projectId,row.annotation_id || '',row.document_id || '');return;}
-    setShowGraph(false);setEditorMode('write');setMobileEditor(true);onEntryChange(row.id);selection.current=row.id;setSelected(row.id);setCloud(null);setHistory(null);setMessage('');
+    setShowGraph(false);setEditorMode('write');setMobileEditor(true);onEntryChange(row.id,row.title);selection.current=row.id;setSelected(row.id);setCloud(null);setHistory(null);setMessage('');
     const token=++generation.current;
     try{const result=verifyThought(await api.request('notebook/entry',{project_id:projectId,entry_id:row.id}),projectId,row.id);
-      if(mounted.current && token===generation.current && selection.current===row.id && activeProject.current===projectId)setCloud(result);}
+      if(mounted.current && token===generation.current && selection.current===row.id && activeProject.current===projectId){setCloud(result);onEntryChange(result.id,result.title);}}
     catch(error){if(mounted.current && token===generation.current)setMessage(error.message);}
   }
-  function edit(patch){const next=draft || {value:notebookMetadata(cloud),base:cloud,sent:null,saving:false,error:'',current:null};remember({...next,value:{...next.value,...patch}});}
+  function edit(patch){const next=draft || {value:notebookMetadata(cloud),base:cloud,sent:null,saving:false,error:'',current:null};remember({...next,value:{...next.value,...patch}});if(patch.title!==undefined)onEntryChange(selected || '',patch.title);}
   async function save(){if(!draft || busy.current || draft.current || quoteDraft)return;busy.current=true;const at=key,id=selected;
     const row=await saveThought({api,projectId,id,draft,update:value=>remember(value,at)});busy.current=false;
-    if(row){clear(at);if(mounted.current && activeProject.current===projectId && selection.current===id){selection.current=row.id;setSelected(row.id);setCloud(row);setHistory(null);setMessage('Note saved.');onEntryChange(row.id);load();if(network)loadNetwork();}}}
+    if(row){clear(at);if(mounted.current && activeProject.current===projectId && selection.current===id){selection.current=row.id;setSelected(row.id);setCloud(row);setHistory(null);setMessage('Note saved.');onEntryChange(row.id,row.title);load();if(network)loadNetwork();}}}
   function resolve(choice){const current=draft.current;verifyThought(current,projectId,current.id);clear();selection.current=current.id;setSelected(current.id);setCloud(current);
     if(choice==='draft')remember({...draft,base:current,value:{...draft.value},sent:null,current:null,error:'',saving:false},notebookKey(projectId,current.id));}
   async function revisions(before){try{const page=await api.request('notebook/history',{project_id:projectId,entry_id:selected,limit:10,...(before?{before_revision:before}:{})});
@@ -104,7 +106,7 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
   function exportNote(){if(!cloud)return;const content=`# ${cloud.title}\n\n${cloud.body}\n\n---\nNote: ${cloud.id}\nRevision: ${cloud.revision}\n${cloud.record_id?`Source: ${cloud.record_id}\n`:''}${cloud.document_id?`Edition ID: ${cloud.document_id}\n`:''}${cloud.annotation_id?`Passage: ${cloud.annotation_id}\n`:''}\n${(cloud.links || []).map(item=>`- ${item.kind}: ${item.id} — ${item.rationale}`).join('\n')}\n`;
     const url=URL.createObjectURL(new Blob([content],{type:'text/markdown;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='research-note.md';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
   const saveLabel=draft?.saving?'Saving…':draft?.sent?'Retry original notebook save':questionMode?'Save question':'Save note';
-  return <section className={`research-notebook${sourceTarget&&!showGraph?' has-source-pane':''}${mobileEditor?' is-editing':''}`} aria-label={questionMode?'Research questions':'Research notebook'} onKeyDown={event=>{if((event.metaKey || event.ctrlKey)&&event.key.toLowerCase()==='s'){event.preventDefault();if(draft && !locked && !draft.current && value?.title.trim() && value?.body.trim())save();}}}>
+  return <section ref={notebookRoot} className={`research-notebook${sourceTarget&&!showGraph?' has-source-pane':''}${mobileEditor?' is-editing':''}`} aria-label={questionMode?'Research questions':'Research notebook'} onKeyDown={event=>{if((event.metaKey || event.ctrlKey)&&event.key.toLowerCase()==='s'){event.preventDefault();if(draft && !locked && !draft.current && value?.title.trim() && value?.body.trim())save();}}}>
     <header className="notebook-heading"><div><span className="notebook-eyebrow">{projectTitle || 'Your space to think'}</span><h2>{questionMode?'Questions':'Notes'}</h2><p>{questionMode?'Define the question. Develop a working answer. Follow the evidence.':'Start with an idea. Connect it when you’re ready.'}</p></div><div className="notebook-heading-actions"><button aria-pressed={showGraph} onClick={()=>{setShowGraph(value=>!value);ensureNetwork();}}>Note graph</button><button className="notebook-new" onClick={()=>start(null)}>{questionMode?'New question':'New note'}</button></div></header>
     {networkError && <p role="alert">{networkError} <button onClick={loadNetwork}>Retry note connections</button></p>}
     {showGraph && <><button onClick={()=>setShowGraph(false)}>← Back to notes</button>{networkLoading && <p role="status">Loading saved note connections…</p>}{network && <NotebookNetwork network={network} graph={graph} selected={selected} onOpen={id=>open({id,item_kind:'entry'})} onOpenPassage={id=>follow({kind:'annotation',id})}/>}</>}
@@ -152,6 +154,6 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
           </div>
         </>}
       </section>
-    </div>{sourceTarget && <NotebookSourcePane hidden={showGraph} api={api} projectId={projectId} target={sourceTarget} drafts={drafts} changed={changed} noteEditor={noteEditor || localNoteEditor.current} onNavigate={openSource} onClose={()=>{setSourceTarget(null);requestAnimationFrame(()=>{const target=sourceTrigger.current?.isConnected?sourceTrigger.current:window.document.querySelector('.notebook-note-title input');target?.focus({preventScroll:true});});}} onExpand={onOpenSource} onQuote={value&&!locked?input=>insertQuote(input):undefined}/>}</div>
+    </div>{sourceTarget && <NotebookSourcePane hidden={showGraph} api={api} projectId={projectId} target={sourceTarget} drafts={drafts} changed={changed} noteEditor={noteEditor || localNoteEditor.current} onNavigate={openSource} onClose={()=>{setSourceTarget(null);requestAnimationFrame(()=>{const target=sourceTrigger.current?.isConnected?sourceTrigger.current:notebookRoot.current?.querySelector('.notebook-note-title input,.notebook-note-title textarea');target?.focus({preventScroll:true});});}} onExpand={onOpenSource} onQuote={value&&!locked?input=>insertQuote(input):undefined}/>}</div>
   </section>;
 }

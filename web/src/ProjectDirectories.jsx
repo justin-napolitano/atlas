@@ -1,7 +1,7 @@
 import React, {useRef, useState} from 'react';
 
 // Projects are existing durable owner workspaces, not folders on the host machine.
-export default function ProjectDirectories({api, projects, current, onOpen, onCreated}) {
+export default function ProjectDirectories({api, projects, current, onOpen, onCreated,children}) {
   const [creating,setCreating]=useState(false), [title,setTitle]=useState(''), [error,setError]=useState(''), [saving,setSaving]=useState(false);
   const pending=useRef(null);
   async function save(event) {
@@ -21,7 +21,7 @@ export default function ProjectDirectories({api, projects, current, onOpen, onCr
   }
   return <section className="atlas-projects" aria-label="Projects">
     <div className="atlas-projects-heading"><h2>Projects</h2><button aria-expanded={creating} onClick={()=>{setCreating(!creating);setError('');pending.current=null;setTitle('');}} disabled={saving}>{creating?'Cancel':'+ New project'}</button></div>
-    <nav className="atlas-project-list" aria-label="Project directories">{projects.map(row=><button key={row.id} aria-current={row.id===current?'page':undefined} onClick={()=>onOpen(row.id)}>{row.title}</button>)}</nav>
+    <div className="atlas-project-list" role="group" aria-label="Project directories">{projects.map(row=><div className="atlas-project-branch" key={row.id}><button aria-current={row.id===current?'page':undefined} onClick={()=>onOpen(row.id)}>{row.title}</button>{row.id===current && children}</div>)}</div>
     {!projects.length && !creating && <p>Create a project for your sources, questions, and notes.</p>}
     {creating && <form onSubmit={save}><label>Project name<input autoFocus required maxLength={200} value={title} disabled={saving || !!pending.current} onChange={event=>setTitle(event.target.value)}/></label><button type="submit" disabled={saving || !title.trim()}>{saving?'Creating…':error?'Retry creation':'Create project'}</button>{error && <p role="alert">{error}</p>}</form>}
   </section>;

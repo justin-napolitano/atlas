@@ -1,3 +1,4 @@
+import {useSurfaceResume} from './surfaceActivity.js';
 import React, { useEffect, useId, useRef, useState } from 'react';
 import {readingVersionLabel} from './readingVersionLabel.js';
 import { selectedPassage } from './passageSelection.js';
@@ -15,7 +16,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
   const [document,setDocument]=useState(null), [annotations,setAnnotations]=useState([]), [annotationCursor,setAnnotationCursor]=useState(null);
   const [message,setMessage]=useState(''), [highlight,setHighlight]=useState(null);
   const [activeAnnotation,setActiveAnnotation]=useState('');
-  const [marginOpen,setMarginOpen]=useState(()=>initialMarginOpen ?? window.matchMedia('(min-width: 901px)').matches),marginId=useId();
+  const [marginOpen,setMarginOpen]=useState(()=>initialMarginOpen ?? window.matchMedia('(min-width: 901px)').matches),marginId=useId(),headingId=useId();
   const [selectionPreview,setSelectionPreview]=useState(null),[annotationTools,setAnnotationTools]=useState(false),[loadingSnapshots,setLoadingSnapshots]=useState(true),[recoveryOpen,setRecoveryOpen]=useState(false);
   useEffect(()=>{
     function inspectSelection(){try{setSelectionPreview(textRoot.current ? selectedPassage(textRoot.current,window.getSelection()) : null);}catch{setSelectionPreview(null);}}
@@ -26,7 +27,8 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
   const margin=useRef(null), composer=useRef(null);
   const requestedAnchor=useRef(null);
   const importKey=`import:${record.id}`, captureKey=`capture:${documentId}`;
-  useEffect(()=>{onReadingPlace?.(document ? {project_id:record.project_id,record_id:record.id,document_id:document.id,annotation_id:activeAnnotation || null} : null);return()=>onReadingPlace?.(null);},[document?.id,record.id,activeAnnotation,onReadingPlace]);
+  useEffect(()=>{onReadingPlace?.(document ? {project_id:record.project_id,record_id:record.id,document_id:document.id,annotation_id:activeAnnotation || null} : null,{projectId:record.project_id,recordId:record.id});return()=>onReadingPlace?.(null,{projectId:record.project_id,recordId:record.id});},[document?.id,record.id,activeAnnotation,onReadingPlace]);
+  useSurfaceResume(()=>onReadingPlace?.(document ? {project_id:record.project_id,record_id:record.id,document_id:document.id,annotation_id:activeAnnotation || null}:null,{projectId:record.project_id,recordId:record.id}));
   const importDraft=drafts.current.get(importKey) || { edition:'',locator:'',representation_url:'',text:'',saving:false };
   const capture=drafts.current.get(captureKey);
   useEffect(()=>{
@@ -191,8 +193,8 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
       <small>Up to 12,000 characters. Imported text stays private and is not marked as verified scholarship.</small>
       <div><button disabled={importDraft.saving}>{importDraft.saving ? 'Saving…' : 'Save private excerpt'}</button><button type="button" disabled={importDraft.saving} onClick={()=>forget(importKey)}>Discard import draft</button></div>
     </form></details>;
-  return <section className="source-reader" aria-labelledby="source-reader-heading">
-    <div className="reader-heading-row"><h3 id="source-reader-heading">Source text</h3><div className="reader-view-actions">
+  return <section className="source-reader" aria-labelledby={headingId} aria-busy={loadingSnapshots || (!!documentId && !document)}>
+    <div className="reader-heading-row"><h3 id={headingId}>Source text</h3><div className="reader-view-actions">
       {onFocusChange && <button className="reader-focus" aria-pressed={focused} onClick={()=>onFocusChange(!focused)}>{focused ? 'Show library' : 'Focus on reading'}</button>}
       <button className="reader-margin-toggle" aria-expanded={marginOpen} aria-controls={marginId} onClick={()=>setMarginOpen(!marginOpen)}>{marginOpen ? 'Hide margin' : 'Show margin'}</button>
     </div></div>

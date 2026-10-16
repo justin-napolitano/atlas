@@ -1,0 +1,11 @@
+# Working tabs and project navigation
+
+The sidebar is a project tree. The active project exposes Sources, Questions, and Notes. Each destination has its own creation action. Occasional reading tools live below the Sources catalog; comparison, questions, notes, bookmarks, and passage research actions remain with the reading. The catalog also provides access to the project's saved bookmark. There is no separate Explore menu in the sidebar.
+
+Opening a research record adds a working tab. Each record has one tab; changing its edition or selected passage updates that reading. Questions and Notes each have one working tab per project, preserving their selected entry, filters, editor mode, and contained source pane. Choosing their sidebar link resumes the open workspace. Explicit new-entry and search-result actions still select the requested entry.
+
+Open work remains mounted during this browser session. Tab switching captures and restores scroll positions and source text selections. Closing a tab releases its mounted page; existing draft maps retain unfinished writing until this browser session ends. Closing a tab does not delete a saved source, question, or note. Save important work through the existing save actions before reloading or leaving the app. Existing reading bookmarks and explicitly saved draft recovery continue to use the owner APIs.
+
+Tab metadata, scroll, selection, and unsaved content are not written to localStorage or sessionStorage. Reload starts a fresh set of tabs while the URL reopens the selected saved reading or entry. This change does not provide cross-device tab or scroll sync. Saved project content retains its existing PostgreSQL behavior; the loopback preview still saves only on this Mac.
+
+Background notebook responses can update their own tab title and entry link, but only the active workspace may replace the current URL. Saved concept data, record connections, and notebook/question indexes refresh on returning to a tab without resetting writing drafts. Reading text remains tied to its saved immutable version. Notebook DOM queries are scoped to their own editor, and reading heading and record-note IDs are unique across mounted pages. New projects and private writing remain separate from explicitly published research.
