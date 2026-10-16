@@ -890,7 +890,7 @@ try {
   await until(()=>evaluate('document.querySelector(".reading-collection select")?.value==="83"'),'collection verse retained when returning from intake');
 
   await click('Back to my reading');
-  await click('My notebook');
+  await click('Notes');
   await click('Reading notes');
   await until(()=>evaluate('document.querySelectorAll(".research-notebook .notebook-title").length>0'),'workspace notebook shows live passage notes');
   await evaluate('document.querySelector(".research-notebook .notebook-title").click()');
@@ -902,7 +902,7 @@ try {
   await until(()=>evaluate('document.querySelector("[name=title]")?.value.includes("Who Are Those in Authority")'),'real article preset reachable from workspace');
   assert.ok(await evaluate('document.querySelector(".intake-preset-note").textContent.includes("manual transcription")'));
   assert.equal(await evaluate('new URL(location.href).searchParams.get("view")'),'article-pilot');
-  await click('Back to reading');await click('Add a source');
+  await click('Back to reading');await click('Add source');
   await until(()=>evaluate('!!document.querySelector("[name=title]")'),'workspace source intake');
   await evaluate('document.querySelector("[name=title]").focus()');await call('Input.insertText',{text:'Private retained source draft'});
   await click('Back to reading');await click('Read the Sirry article');

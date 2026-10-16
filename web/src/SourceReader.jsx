@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
+import {readingVersionLabel} from './readingVersionLabel.js';
 import { selectedPassage } from './passageSelection.js';
 import SavedPassageNote from './SavedPassageNote.jsx';
 import {readingMarks,verifyReadingCapture} from './readingMarks.js';
@@ -196,7 +197,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
       <button className="reader-margin-toggle" aria-expanded={marginOpen} aria-controls={marginId} onClick={()=>setMarginOpen(!marginOpen)}>{marginOpen ? 'Hide margin' : 'Show margin'}</button>
     </div></div>
     {loadingSnapshots && !document && <p className="reader-help" role="status">Opening your reading…</p>}
-    {snapshots.length>0 && <div className="reader-edition-bar"><label className="reader-version">Reading version<select value={documentId} onChange={e=>{requestedAnchor.current=null;setDocumentId(e.target.value);bookmark('',e.target.value);}}>{snapshots.map(d=><option key={d.id} value={d.id}>{d.edition} · {d.locator} · {d.text_sha256.slice(0,8)}{drafts.current.has(`capture:${d.id}`) ? ' · draft' : ''}</option>)}</select></label>{cursor && <button onClick={moreSnapshots}>More saved excerpts</button>}</div>}
+    {snapshots.length>0 && <div className="reader-edition-bar"><details className="reader-edition-picker"><summary>{readingVersionLabel(document || snapshots.find(row=>row.id===documentId))}</summary><label className="reader-version">Reading version<select value={documentId} onChange={e=>{requestedAnchor.current=null;setDocumentId(e.target.value);bookmark('',e.target.value);}}>{snapshots.map(d=><option key={d.id} value={d.id}>{d.edition} · {d.locator} · {d.text_sha256.slice(0,8)}{drafts.current.has(`capture:${d.id}`) ? ' · draft' : ''}</option>)}</select></label></details>{cursor && <button onClick={moreSnapshots}>More saved excerpts</button>}</div>}
     {document && <>
       {message && <p className="reader-message" role="status">{message}</p>}
       {marked.unanchored.length>0 && <p className="reader-message" role="status">{marked.unanchored.length} saved note(s) need anchor review. Their marks were not moved to other text.</p>}
