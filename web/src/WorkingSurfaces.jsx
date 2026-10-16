@@ -30,7 +30,7 @@ export default WorkingSurfaces;
 
 export function WorkingTabs({items,activeKey,onChoose,onClose}){
   const bar=useRef(null);
-  useLayoutEffect(()=>{const reveal=()=>{const selected=bar.current?.querySelector('[aria-current=page]')?.parentElement;if(selected && bar.current){const left=selected.offsetLeft-(bar.current.clientWidth-selected.offsetWidth)/2;bar.current.scrollLeft=Math.max(0,left);}};reveal();if(!bar.current)return;const observer=new ResizeObserver(reveal);observer.observe(bar.current);return()=>observer.disconnect();},[activeKey,items.length]);
+  useLayoutEffect(()=>{const reveal=()=>{const selected=bar.current?.querySelector('[aria-current=page]')?.parentElement;if(selected && bar.current){const bounds=selected.getBoundingClientRect(),container=bar.current.getBoundingClientRect();const left=bar.current.scrollLeft+bounds.left-container.left-(bar.current.clientWidth-bounds.width)/2;bar.current.scrollLeft=Math.max(0,left);}};reveal();if(!bar.current)return;const observer=new ResizeObserver(reveal);observer.observe(bar.current);return()=>observer.disconnect();},[activeKey,items.length]);
   if(!items.length)return null;
   return <nav ref={bar} className="working-tabs" aria-label="Open work">{items.map(item=><div className="working-tab" key={item.key} data-active={item.key===activeKey || undefined}><button aria-current={item.key===activeKey?'page':undefined} title={item.title} onClick={()=>onChoose(item)}><small>{item.kind}</small><span>{item.title}</span></button><button className="working-tab-close" aria-label={'Close '+item.title} title="Close tab; unfinished writing stays in this session" onClick={()=>onClose(item)}>×</button></div>)}</nav>;
 }

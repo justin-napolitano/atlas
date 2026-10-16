@@ -570,6 +570,7 @@ try {
     await evaluate(`{const node=${termLexicon}.querySelector(${JSON.stringify(selector)});node.value=${JSON.stringify(value)};node.dispatchEvent(new Event('change',{bubbles:true}));}`);
   }
   await revealPassageTools();
+  await until(()=>evaluate(`!!${termLexicon} && ${termLexicon}.closest('.source-reader').getAttribute('aria-busy')==='false'`),'source reference tools ready');
   await evaluate(`${termLexicon}.querySelector('.lexicon-toggle:not([aria-expanded=true])')?.click()`);
   await until(()=>evaluate(`!!${termLexicon}.querySelector('.lexicon-concept-title')`),'term-to-concept authoring form');
   await fillLexicon('.lexicon-concept-title','Synthetic scoped concept <script>not HTML</script>');
@@ -584,6 +585,7 @@ try {
   await revealPassageTools();
   assert.match(await evaluate(`${termLexicon}.querySelector('.lexicon-toggle').textContent`),/unsaved draft/);
   await revealPassageTools();
+  await until(()=>evaluate(`!!${termLexicon} && ${termLexicon}.closest('.source-reader').getAttribute('aria-busy')==='false'`),'source reference tools ready');
   await evaluate(`${termLexicon}.querySelector('.lexicon-toggle:not([aria-expanded=true])')?.click()`);
   await until(()=>evaluate(`${termLexicon}.querySelector('.lexicon-scope')?.value==='Synthetic source-specific reading context.'`),'lexical draft survives record navigation');
   lexicalLostResponse=true;
@@ -597,6 +599,7 @@ try {
   await reload();
   await until(()=>evaluate(`!!${termLexicon}`),'reading source reload after lexical capture');
   await revealPassageTools();
+  await until(()=>evaluate(`!!${termLexicon} && ${termLexicon}.closest('.source-reader').getAttribute('aria-busy')==='false'`),'source reference tools ready');
   await evaluate(`${termLexicon}.querySelector('.lexicon-toggle:not([aria-expanded=true])')?.click()`);
   await until(()=>evaluate(`${termLexicon}.querySelector('.lexicon-links button')?.textContent.includes('Synthetic scoped concept')`),'durable passage-to-concept link recovered');
   await evaluate(`${termLexicon}.querySelector('.lexicon-links button').click()`);
@@ -616,6 +619,7 @@ try {
   await evaluate('document.querySelector(".concept-occurrence-source").click()');
   await until(()=>evaluate('document.querySelector(".reader-text mark.is-selected")?.textContent==="tafsīr"'),'concept occurrence returns to the exact source passage');
   await revealPassageTools();
+  await until(()=>evaluate(`!!${termLexicon} && ${termLexicon}.closest('.source-reader').getAttribute('aria-busy')==='false'`),'source reference tools ready');
   await evaluate(`${termLexicon}.querySelector('.lexicon-toggle:not([aria-expanded=true])')?.click()`);
   await until(()=>evaluate(`!!${termLexicon}.querySelector('.lexicon-mode')`),'definition action selector');
   await chooseLexicon('.lexicon-mode','definition');
@@ -640,6 +644,7 @@ try {
   await until(()=>evaluate(`${termLexicon}.querySelector('.lexicon-message')?.textContent.includes('Saved privately')`),'definition creation retry is idempotent');
   assert.equal([...lexicalEntities.values()].filter(row=>row.entity_kind==='definition' && row.definition_kind==='reference_gloss').length,1);
   await revealPassageTools();
+  await until(()=>evaluate(`!!${termLexicon} && ${termLexicon}.closest('.source-reader').getAttribute('aria-busy')==='false'`),'source reference tools ready');
   await evaluate(`${termLexicon}.querySelector('.lexicon-toggle:not([aria-expanded=true])')?.click()`);
   await until(()=>evaluate(`!!${termLexicon}.querySelector('.lexicon-links button')`),'definition passage link reload');
   await evaluate(`${termLexicon}.querySelector('.lexicon-links button').click()`);
@@ -654,8 +659,9 @@ try {
   await evaluate('document.querySelector(".concept-edit-rationale").focus();document.querySelector(".concept-edit-rationale").select()');
   await call('Input.insertText',{text:'Synthetic correction after checking source context.'});
   await evaluate('document.querySelector(".concept-source").click()');
-  await until(()=>evaluate(`!!${termLexicon}`),'leave definition correction draft');
+  await until(()=>evaluate(`!!${termLexicon} && ${termLexicon}.closest('.source-reader').getAttribute('aria-busy')==='false'`),'leave definition correction draft');
   await revealPassageTools();
+  await until(()=>evaluate(`!!${termLexicon} && ${termLexicon}.closest('.source-reader').getAttribute('aria-busy')==='false'`),'source reference tools ready');
   await evaluate(`${termLexicon}.querySelector('.lexicon-toggle:not([aria-expanded=true])')?.click()`);
   await until(()=>evaluate(`!!${termLexicon}.querySelector('.lexicon-links button')`),'reopen concept through durable passage link');
   await evaluate(`${termLexicon}.querySelector('.lexicon-links button').click()`);

@@ -193,7 +193,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
       <small>Up to 12,000 characters. Imported text stays private and is not marked as verified scholarship.</small>
       <div><button disabled={importDraft.saving}>{importDraft.saving ? 'Saving…' : 'Save private excerpt'}</button><button type="button" disabled={importDraft.saving} onClick={()=>forget(importKey)}>Discard import draft</button></div>
     </form></details>;
-  return <section className="source-reader" aria-labelledby={headingId}>
+  return <section className="source-reader" aria-labelledby={headingId} aria-busy={loadingSnapshots || (!!documentId && !document)}>
     <div className="reader-heading-row"><h3 id={headingId}>Source text</h3><div className="reader-view-actions">
       {onFocusChange && <button className="reader-focus" aria-pressed={focused} onClick={()=>onFocusChange(!focused)}>{focused ? 'Show library' : 'Focus on reading'}</button>}
       <button className="reader-margin-toggle" aria-expanded={marginOpen} aria-controls={marginId} onClick={()=>setMarginOpen(!marginOpen)}>{marginOpen ? 'Hide margin' : 'Show margin'}</button>

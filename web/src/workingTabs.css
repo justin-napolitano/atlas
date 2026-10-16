@@ -13,4 +13,4 @@
 .atlas-reading-tools h3{font:600 10px/1.6 system-ui;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .atlas-reading-tools nav{display:flex;flex-wrap:wrap;gap:8px 20px}.atlas-reading-tools button{font:12px/1.6 system-ui;padding:7px 0;color:var(--muted)}
 .atlas-reading-tools .reading-place{margin-top:20px;border:0}
-@media(max-width:560px){.working-tabs{margin-top:0;top:-22px}.working-tab{max-width:210px}}
+@media(max-width:560px){.working-tabs{margin-top:0;top:-22px;flex-wrap:wrap;overflow-x:visible}.working-tab{flex:1 1 100px;min-width:0;max-width:none}.working-tab>button:first-child{padding:8px 6px;font-size:11px}.working-tab-close{padding:8px 4px!important}}
