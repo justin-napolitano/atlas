@@ -31,6 +31,7 @@ async function until(fn, label, attempts=100) {
   throw new Error(`Timed out: ${label}${diagnostics}`);
 }
 let serial=0, navigation=0, unloadPrompts=0; const pending=new Map(); const problems=[]; const saved=new Map(); let conflict=false, authenticated=true;
+const ownerProjects=[{id:'synthetic',title:'Synthetic research project'}];let projectPosts=0;
 const records = [
   { id:'synthetic:question',project_id:'synthetic',kind:'question',title:'Synthetic question about authority',summary:'A bounded synthetic question.',revision:1,review_state:'pending',attributes:{} },
   { id:'synthetic:source',project_id:'synthetic',kind:'source',title:'Synthetic source <script>not HTML</script>',summary:'Synthetic source summary.',revision:1,review_state:'pending',attributes:{} },
@@ -109,7 +110,10 @@ async function fixture(event) {
   else if(path==='/v1/reading/collection') data=readingCollection;
   else if(path==='/v1/notebook/items') data={items:captures.map(row=>({id:row.id,item_kind:'passage_note',thought_type:'passage_note',project_id:row.project_id,record_id:readingDocument.source_record_id,document_id:row.document_id,annotation_id:row.id,title:'Passage note: '+row.exact,body:row.body,selected_quote:row.exact,revision:row.revision})),next_cursor:null};
   else if (path==='/v1/verses/pilot') data=pilotResource;
-  else if (path==='/v1/projects') data={ items:[{ id:'synthetic',title:'Synthetic research project' }] };
+  else if (path==='/v1/projects') {
+    if(event.request.method==='POST'){const value=JSON.parse(event.request.postData);projectPosts++;const row={id:value.project_id,title:value.title,scope:value.scope};ownerProjects.push(row);status=503;data={detail:'Synthetic response lost after commit'};}
+    else data={items:ownerProjects};
+  }
   else if(path==='/v1/record-context'){const id=url.searchParams.get('record_id'),record=[...records,claim,evidence,collectionRecord,...lexicalConcepts.values()].find(row=>row.id===id);data={project_id:'synthetic',record,items:graphEdges.filter(edge=>edge.from_id===id || edge.to_id===id).map(edge=>({edge,node:[...records,claim,evidence].find(row=>row.id===(edge.from_id===id ? edge.to_id : edge.from_id)),direction:edge.from_id===id ? 'out' : 'in',meaning:'Synthetic recorded relation'})),next_cursor:null};}
   else if (path==='/v1/records') data={ items:records,next_cursor:null };
   else if (path==='/v1/search') {
@@ -949,6 +953,23 @@ try {
   assert.equal(await evaluate('new URL(location.href).searchParams.get("record")'),records[0].id);
   assert.equal(await evaluate('!!document.querySelector(".reader-text")'),false,'explicit question does not receive another source text');
   readingDesk=retainedDesk;readingLibraryRows=[];
+  await call('Emulation.clearDeviceMetricsOverride');
+  assert.equal(await evaluate(`!!document.querySelector('select[aria-label="Research project"]')`),false,'project navigation has no select menu');
+  await click('+ New project');
+  await evaluate('document.querySelector(".atlas-projects input").focus()');await call('Input.insertText',{text:'Synthetic philosophy project'});
+  await until(()=>evaluate('!!document.querySelector(".atlas-projects input")?.value && !document.querySelector(".atlas-projects button[type=submit]")?.disabled'),'project name ready to save');
+  await click('Create project');
+  try{await until(()=>evaluate('document.querySelector(".atlas-projects [role=alert]")?.textContent.includes("Retry")'),'uncertain project creation retained');}catch(error){throw new Error(error.message+' · '+JSON.stringify({projectPosts,ui:await evaluate('document.querySelector(".atlas-projects")?.textContent')}));}
+  assert.equal(projectPosts,1);
+  await click('Retry creation');
+  await until(()=>evaluate('document.querySelector(".atlas-project-list [aria-current=page]")?.textContent==="Synthetic philosophy project"'),'same project reconciled after lost response');
+  assert.equal(projectPosts,1,'reconciliation does not POST a duplicate project');
+  const createdProject=ownerProjects[1].id;
+  assert.equal(await evaluate('new URL(location.href).searchParams.get("project")'),createdProject);
+  await reload();
+  await until(()=>evaluate('document.querySelector(".atlas-project-list [aria-current=page]")?.textContent==="Synthetic philosophy project"'),'created project survives reload');
+  await evaluate('document.querySelector(".atlas-project-list button").click()');
+  await until(()=>evaluate('new URL(location.href).searchParams.get("project")==="synthetic"'),'direct project switch');
   authenticated=false; await reload();
   assert.ok(unloadPrompts>=1,'unsaved intake warns before leaving the page');
   await until(() => evaluate('document.querySelector("[role=alert]")?.textContent.includes("Owner sign-in")'),'anonymous sign-in boundary');

@@ -24,8 +24,18 @@
 .atlas-body>.atlas-library{padding:0;overflow:auto;background:var(--atlas-sidebar);border-right:1px solid var(--rule);scrollbar-gutter:auto;display:flex;flex-direction:column}
 .atlas-library-heading{padding:28px 22px 16px}
 .atlas-kicker{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1.8px;color:var(--muted)}
-.atlas-project{display:block;margin:14px 0 10px}
-.atlas-project select{font:500 20px/1.45 Georgia,serif;letter-spacing:-.3px;background:transparent;border:0;color:var(--ink);width:100%;max-width:100%;min-width:0;padding:0 18px 0 0;text-overflow:ellipsis}
+.atlas-projects{padding:20px 16px 16px;border-bottom:1px solid var(--rule);margin-bottom:12px;min-width:0}
+.atlas-projects-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.atlas-projects-heading h2{font:600 11px/1.5 system-ui;letter-spacing:.08em;text-transform:uppercase;margin:0;color:var(--muted)}
+.atlas-projects-heading button{font-size:11px;padding:6px 0;color:var(--accent)}
+.atlas-project-list{display:grid;gap:4px;max-height:220px;overflow:auto}
+.atlas-project-list button{font:500 13px/1.5 system-ui;text-align:left;padding:8px 10px;overflow-wrap:anywhere;min-width:0;border-left:2px solid transparent!important;border-radius:0!important}
+.atlas-project-list button[aria-current=page]{border-left-color:var(--accent)!important;color:var(--ink);background:var(--accent-wash)}
+.atlas-projects form{display:grid;gap:10px;margin-top:12px}
+.atlas-projects label{font-size:11px;display:grid;gap:6px}
+.atlas-projects input{width:100%;min-width:0;font:inherit;padding:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
+.atlas-projects form>button{border:1px solid var(--rule);padding:8px;font-size:12px}
+.atlas-projects p{font-size:11px;line-height:1.6;overflow-wrap:anywhere}
 .atlas-library-heading p{font-size:11px;line-height:1.7;color:var(--muted);margin:0}
 .atlas-primary-nav{display:flex;gap:4px;padding:0 15px 15px;border-bottom:1px solid var(--rule)}
 .atlas-primary-nav button{font-size:11px;padding:9px 8px;color:var(--muted)}
