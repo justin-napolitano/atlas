@@ -1,4 +1,5 @@
 import React,{forwardRef,useImperativeHandle,useLayoutEffect,useRef} from 'react';
+import {SurfaceActivity} from './surfaceActivity.js';
 
 // Keep open work mounted. Saved content remains owned by the existing APIs;
 // this cache holds only the current browser session's interface state.
@@ -8,7 +9,8 @@ const WorkingSurfaces=forwardRef(function WorkingSurfaces({activeKey,ready=true,
   for(const key of pages.current.keys())if(!openKeys.includes(key) && key!==activeKey){pages.current.delete(key);places.current.delete(key);}
   function capture(){
     const key=active.current,node=nodes.current.get(key);if(!node)return;
-    const scroll=[node.closest('.workspace-reader'),...node.querySelectorAll('*')].filter(el=>el && (el.scrollTop || el.scrollLeft)).map(el=>({el,top:el.scrollTop,left:el.scrollLeft}));
+    const outer=node.closest('.workspace-reader');
+    const scroll=[outer,...node.querySelectorAll('*')].filter(el=>el && (el===outer || el.scrollHeight>el.clientHeight || el.scrollWidth>el.clientWidth)).map(el=>({el,top:el.scrollTop,left:el.scrollLeft}));
     const selection=window.getSelection();let range=places.current.get(key)?.range || null;
     if(selection?.rangeCount && node.contains(selection.anchorNode) && node.contains(selection.focusNode))range=selection.getRangeAt(0).cloneRange();
     places.current.set(key,{scroll,range});
@@ -20,8 +22,8 @@ const WorkingSurfaces=forwardRef(function WorkingSurfaces({activeKey,ready=true,
     const frame=requestAnimationFrame(()=>{for(const {el,top,left} of place.scroll)if(el.isConnected){el.scrollTop=top;el.scrollLeft=left;}
       if(place.range?.startContainer.isConnected && !place.range.collapsed){const selection=window.getSelection();selection.removeAllRanges();selection.addRange(place.range);}
     });return()=>cancelAnimationFrame(frame);
-  },[activeKey]);
-  return <>{[...pages.current].map(([key,page])=><div className="working-surface" data-work-key={key} key={key} hidden={key!==activeKey} ref={node=>{if(node)nodes.current.set(key,node);else nodes.current.delete(key);}}>{page}</div>)}{(!activeKey || !pages.current.has(activeKey)) && (activeKey && !ready?<p role="status">Opening your work…</p>:children)}</>;
+  },[activeKey,ready]);
+  return <>{[...pages.current].map(([key,page])=><div className="working-surface" data-work-key={key} key={key} hidden={key!==activeKey || !ready} ref={node=>{if(node)nodes.current.set(key,node);else nodes.current.delete(key);}}><SurfaceActivity.Provider value={key===activeKey && ready}>{page}</SurfaceActivity.Provider></div>)}{activeKey && !ready?<p role="status">Opening your work…</p>:(!activeKey || !pages.current.has(activeKey)) && children}</>;
 });
 export default WorkingSurfaces;
 

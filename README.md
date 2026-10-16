@@ -11,6 +11,7 @@ The research should understand traditions in context before evaluating them. “
 - `docs/fluid-notebook-reading.md` — sources beside the notebook, exact quote insertion, contained citation navigation, and separate writing/reading-note views.
 - `docs/research-destinations.md` — direct Sources/Questions/Notes navigation, complete reference records, typed working questions, and fewer nested menus.
 - `docs/project-directories.md` — simple project navigation and durable inline creation.
+- `docs/working-tabs.md` — project tree, contextual reading tools, and session tabs that retain open writing and reading position.
 - `docs/unified-owner-search.md` — owner-only literal retrieval across the current research authorities and actual saved-reading library.
 - `docs/research-tools.md` — source-linked research briefs, notebook saves, and explicit agent exports.
 

@@ -1,4 +1,4 @@
-.working-tabs{display:flex;gap:0;overflow-x:auto;max-width:100%;border-bottom:1px solid var(--rule);margin:-8px 0 28px;scrollbar-width:thin;flex-shrink:0}
+.working-tabs{display:flex;gap:0;overflow-x:auto;max-width:100%;border-bottom:1px solid var(--rule);margin:-8px 0 28px;scrollbar-width:thin;flex-shrink:0;position:sticky;top:-28px;z-index:12;background:var(--paper)}
 .working-tab{display:flex;flex:0 0 auto;min-width:120px;max-width:260px;border-bottom:2px solid transparent}
 .working-tab[data-active]{border-bottom-color:var(--accent);background:var(--accent-wash)}
 .working-tab>button:first-child{display:grid;gap:3px;min-width:0;text-align:left;padding:10px 12px;border-radius:0;font:500 12px/1.4 system-ui;flex:1}
@@ -13,4 +13,4 @@
 .atlas-reading-tools h3{font:600 10px/1.6 system-ui;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .atlas-reading-tools nav{display:flex;flex-wrap:wrap;gap:8px 20px}.atlas-reading-tools button{font:12px/1.6 system-ui;padding:7px 0;color:var(--muted)}
 .atlas-reading-tools .reading-place{margin-top:20px;border:0}
-@media(max-width:560px){.working-tabs{margin-top:0}.working-tab{max-width:210px}}
+@media(max-width:560px){.working-tabs{margin-top:0;top:-22px}.working-tab{max-width:210px}}

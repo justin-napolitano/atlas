@@ -9,6 +9,7 @@ import {quoteCapture,quoteMarkdown} from './notebookCitation.js';
 import {verifyReadingCapture} from './readingMarks.js';
 import {PassageNoteEditor} from './passageNoteEditor.js';
 import {notebookGraph} from './notebookMarkdown.js';
+import {useSurfaceResume} from './surfaceActivity.js';
 
 /** Running project notebook. Passage bodies are a live server projection, never copied here. */
 export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},onOpenSource,anchor=null,initialQuery='',initialEntryId='',projectTitle='',onEntryChange=()=>{},inlineSources=false,noteEditor=null,initialCollection='all',mode='notes',composeRequest='',onComposeConsumed=()=>{},researchQuestions=[],moreResearchQuestions=null,researchQuestionError=''}){
@@ -27,6 +28,7 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
   const [link,setLink]=useState({kind:'record',id:'',rationale:''});
   const [,render]=useState(0),generation=useRef(0),mounted=useRef(true),busy=useRef(false),selection=useRef(null),activeProject=useRef(projectId);
   activeProject.current=projectId;
+  useSurfaceResume(()=>{load();if(network)loadNetwork();});
   const key=notebookKey(projectId,selected || (questionMode?'new-question':'new')),draft=drafts.current.get(key),quoteKey='notebook-quote:'+key,quoteDraft=drafts.current.get(quoteKey);
   function remember(value,at=key){drafts.current.set(at,value);changed();render(v=>v+1);}
   function clear(at=key){drafts.current.delete(at);changed();render(v=>v+1);}
