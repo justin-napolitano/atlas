@@ -4,7 +4,12 @@ import {RecoveryQueue,recoveryFingerprint} from './recoveryQueue.js';
 const sessions=new WeakMap();
 export function recoverySession(store,key,create){
   if(!sessions.has(store))sessions.set(store,new Map());
-  const map=sessions.get(store);if(!map.has(key))map.set(key,create());return map.get(key);
+  const map=sessions.get(store);
+  if(!map.has(key)){
+    const queue=create();map.set(key,queue);
+    const unsubscribe=queue.subscribe(status=>{if(status.phase==='saved'&&status.row?.state==='discarded'){if(map.get(key)===queue)map.delete(key);unsubscribe();}});
+  }
+  return map.get(key);
 }
 export function useWritingRecovery({api,store,sessionKey,path,payload,enabled=true,identity,revision=0,verify}){
   const queue=useMemo(()=>recoverySession(store,sessionKey,()=>new RecoveryQueue({identity:identity || crypto.randomUUID(),revision,
