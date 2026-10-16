@@ -1,5 +1,6 @@
 import React,{useState} from 'react';
 import {TrashAction} from './PrivateTrash.jsx';
+import {finishReadingRecovery} from './useWritingRecovery.js';
 import ScriptureCitations from './ScriptureCitations.jsx';
 import LexiconCapture from './LexiconCapture.jsx';
 import VerseLinks from './VerseLinks.jsx';
@@ -31,7 +32,7 @@ export default function SavedPassageNote({ row,sourceId,document,editor,reopen,a
         <button onClick={()=>editor.resolve(value.id,'draft')}>Save my version</button>
       </div>}
       <button className="passage-note-save" disabled={!!entry.pending || entry.status==='conflict' || entry.status==='saved'} onClick={()=>editor.save(value.id)}>Save changes</button>
-      <button disabled={!!entry.pending} onClick={()=>editor.close(value.id)}>{entry.status==='saved' ? 'Close editor' : 'Discard my changes'}</button>
+      <button disabled={!!entry.pending} onClick={()=>{finishReadingRecovery(drafts.current,{projectId:value.project_id,recordId:sourceId,documentId:value.document_id,annotationId:value.id});editor.close(value.id);}}>{entry.status==='saved' ? 'Close editor' : 'Discard my changes'}</button>
       {document && <RecoverableDraft dirty={entry.body!==value.body || entry.markStyle!==(value.mark_style || 'highlight')} key={value.id+':drafts'} api={api} projectId={value.project_id} recordId={sourceId} contextKind="annotation" document={document} annotation={value} body={entry.body} markStyle={entry.markStyle} baseRevision={entry.server.revision} drafts={drafts} changed={changed} onRecover={recovered=>recoverPassageWriting(editor,{id:sourceId,project_id:value.project_id},recovered)}/>}
       <small>Your saved note stays private. Editing it keeps the selected text, source version, and revision history attached.</small>
     </div> : <>{value.body && <p>{value.body}</p>}<button className="passage-note-open" onClick={()=>editor.open(value.id)}>Edit note</button></>}

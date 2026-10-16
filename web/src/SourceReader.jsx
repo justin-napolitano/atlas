@@ -7,6 +7,7 @@ import {readingMarks,verifyReadingCapture} from './readingMarks.js';
 import ResizablePanes from './ResizablePanes.jsx';
 import RecoverableDraft from './RecoverableDraft.jsx';
 import {recoverPassageWriting} from './recoverIntoEditor.js';
+import {finishReadingRecovery} from './useWritingRecovery.js';
 import './sourceReader.css';
 import './readerPresentation.css';
 
@@ -129,6 +130,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
     remember(key,{...sent,saving:true,submitted:payload}); setMessage('Saving selected passage…');
     try {
       const value=verifyReadingCapture(await api.post('reading/annotations',payload),payload);
+      finishReadingRecovery(drafts.current,{projectId:record.project_id,recordId:record.id,documentId:snapshot.id,captureUUID:payload.annotation_uuid});
       forget(key);
       if(alive.current && currentDocument.current===snapshot.id) { setAnnotations(rows=>[value,...rows.filter(r=>r.id!==value.id)]);setActiveAnnotation(value.id);setHighlight({start:value.start_pos,end:value.end_pos});bookmark(value.id,snapshot.id);setMessage('Passage and margin note saved to your private workspace.'); }
     } catch(error) {
@@ -234,7 +236,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
             <label>My passage note<textarea ref={composer} value={capture.body} disabled={capture.saving || !!capture.submitted} rows={5} maxLength={10000} onChange={e=>remember(captureKey,{...capture,body:e.target.value})}
               placeholder="Your thought, question, or disagreement…" onKeyDown={event=>{if((event.metaKey || event.ctrlKey) && event.key==='Enter') {event.preventDefault();saveCapture();}}} /></label>
             <label>Capture as<select value={capture.capture_kind} disabled={capture.saving || !!capture.submitted} onChange={e=>remember(captureKey,{...capture,capture_kind:e.target.value})}><option value="comment">Reading note</option><option value="term_candidate">Term to investigate</option><option value="citation_candidate">Scripture reference to check</option></select></label>
-            <div><button onClick={saveCapture} disabled={capture.saving}>{capture.saving ? 'Saving…' : capture.submitted ? 'Retry original save' : 'Save passage note'}</button><button disabled={capture.saving} onClick={()=>{forget(captureKey);setHighlight(null);}}>Discard selection draft</button></div>
+            <div><button onClick={saveCapture} disabled={capture.saving}>{capture.saving ? 'Saving…' : capture.submitted ? 'Retry original save' : 'Save passage note'}</button><button disabled={capture.saving} onClick={()=>{finishReadingRecovery(drafts.current,{projectId:record.project_id,recordId:record.id,documentId:document.id,captureUUID:capture.annotation_uuid});forget(captureKey);setHighlight(null);}}>Discard selection draft</button></div>
             <RecoverableDraft dirty key={document.id+':'+capture.start+':'+capture.end} api={api} projectId={record.project_id} recordId={record.id} contextKind="capture" document={document} selection={capture} body={capture.body} markStyle={capture.mark_style || 'highlight'} drafts={drafts} changed={changed} onRecover={recoverCapture}/>
             {capture.submitted && !capture.saving && <small>The response was not confirmed. Retry sends the original note and ID, so it cannot create a second note. Discarding removes this local draft; a committed note may still exist in the cloud. Refresh saved notes to check.</small>}
             <small>Your note stays attached to this exact source version. Capturing it does not create a reviewed claim.</small></div>}

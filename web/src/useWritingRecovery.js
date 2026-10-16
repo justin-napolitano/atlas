@@ -27,6 +27,14 @@ export function notebookRecoveryPayload(projectId,id,draft){
     record_id:source.record_id || null,document_id:source.document_id || null,annotation_id:source.annotation_id || null,
     base_revision:draft.base?.revision || 0,value:Object.fromEntries(['thought_type','title','body','links','state'].map(k=>[k,draft.value[k]])),state:'active'};
 }
+export function finishReadingRecovery(store,{projectId,recordId,documentId,annotationId,captureUUID}){
+  for(const [key,queue] of sessions.get(store) || []){
+    if(!key.startsWith('automatic-reading:'))continue;
+    const [context,capture]=JSON.parse(key.slice('automatic-reading:'.length));
+    if(context.project_id===projectId&&context.record_id===recordId&&context.document_id===documentId&&
+      (captureUUID?context.context_kind==='capture'&&capture===captureUUID:context.context_kind==='annotation'&&context.annotation_id===annotationId))queue.finish();
+  }
+}
 export function verifyNotebookRecovery(row,sent){
   if(row.id!=='urn:research:writing-draft:'+sent.draft_uuid || row.project_id!==sent.project_id ||
     ['entry_id','request_uuid','record_id','document_id','annotation_id','base_revision','state'].some(k=>row[k]!==sent[k]) ||
