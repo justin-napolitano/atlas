@@ -113,6 +113,9 @@ try{
   await writeFile(join(artifacts,'04-markdown-preview.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
   assert.equal(await evaluate('document.querySelector(".notebook-markdown a[href^=javascript]")'),null);
   await until(()=>evaluate('!!document.querySelector(".notebook-wikilink")'),'resolved wiki link');
+  await click('Note graph');await until(()=>evaluate('document.querySelectorAll("[data-network-node]").length===2'),'graph from Markdown preview');
+  assert.equal(await evaluate('document.querySelectorAll(".notebook-writing .notebook-markdown").length'),0,'hidden preview does not duplicate footnote anchors');
+  await click('← Back to notes');await until(()=>evaluate('!!document.querySelector(".notebook-wikilink")'),'return to Markdown preview');
   await evaluate('document.querySelector(".notebook-wikilink").click()');
   await until(()=>evaluate('document.querySelector(".notebook-note-title input").value==="A related idea"'),'wiki to actual note');
   await evaluate('document.querySelector(".notebook-backlinks").open=true');
