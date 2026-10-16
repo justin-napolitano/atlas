@@ -127,8 +127,9 @@ def history(connection,project_id,entry_id,before_revision,limit):
         AND (%s::integer IS NULL OR revision<%s) ORDER BY revision DESC LIMIT %s''',(project_id,entry_id,before_revision,before_revision,limit)).fetchall()
 
 
-def items(connection,project_id,q,thought_type,state,cursor,limit):
+def items(connection,project_id,q,thought_type,state,cursor,limit,item_scope="all"):
     if thought_type not in TYPES|{'','passage_note','record_note'} or state not in {'active','withdrawn'}:raise ValueError('Unknown notebook filter')
+    if item_scope not in {'all','writing','reading'}:raise ValueError('Unknown notebook collection')
     db._text(q,'query',300,empty=True);db._text(cursor,'cursor',1100,empty=True)
     # Existing passage bodies are projected from their sole existing authority.
     return connection.execute('''WITH thoughts AS (
@@ -150,6 +151,6 @@ def items(connection,project_id,q,thought_type,state,cursor,limit):
         FROM research.personal_states p JOIN research.records r ON r.project_id=p.project_id AND r.id=p.record_id
         WHERE p.project_id=%s AND btrim(p.note)<>'' AND r.deleted_at IS NULL), ordered AS (
         SELECT thoughts.*,to_char(updated_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US')||':'||item_key AS cursor FROM thoughts)
-        SELECT * FROM ordered WHERE state=%s AND (%s='' OR thought_type=%s) AND (%s='' OR cursor<%s)
+        SELECT * FROM ordered WHERE (%s='all' OR (%s='writing' AND item_kind='entry') OR (%s='reading' AND item_kind<>'entry')) AND state=%s AND (%s='' OR thought_type=%s) AND (%s='' OR cursor<%s)
         AND (%s='' OR to_tsvector('simple',title||' '||body||' '||coalesce(selected_quote,'')) @@ plainto_tsquery('simple',%s))
-        ORDER BY cursor DESC LIMIT %s''',(project_id,project_id,project_id,state,thought_type,thought_type,cursor,cursor,q,q,limit)).fetchall()
+        ORDER BY cursor DESC LIMIT %s''',(project_id,project_id,project_id,item_scope,item_scope,item_scope,state,thought_type,thought_type,cursor,cursor,q,q,limit)).fetchall()

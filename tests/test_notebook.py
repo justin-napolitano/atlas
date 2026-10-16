@@ -87,6 +87,9 @@ class NotebookStoreTests(unittest.TestCase):
     def test_existing_passage_note_is_live_single_authority_and_filters_page_before_limit(self):
         with self.db.connect(self.owner_dsn) as connection:
             saved=self.store.create(connection,**self.values)
+            self.assertEqual([r['id'] for r in self.store.items(connection,self.project,'','','active','',1,item_scope='writing')],[saved['id']])
+            self.assertEqual([r['item_kind'] for r in self.store.items(connection,self.project,'','','active','',1,item_scope='reading')],['passage_note'])
+            with self.assertRaises(ValueError):self.store.items(connection,self.project,'','','active','',25,item_scope='unknown')
             rows=self.store.items(connection,self.project,'tafsīr','passage_note','active','',1)
             self.assertEqual(rows[0]['annotation_id'],self.annotation['id']);self.assertEqual(rows[0]['body'],'Original passage notebook marker')
             self.passages.update_annotation(connection,annotation_id=self.annotation['id'],project_id=self.project,expected_revision=1,body='Corrected passage body',actor='owner')

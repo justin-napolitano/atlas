@@ -42,4 +42,4 @@ export function notebookGraph(notes,{complete=true}={}){
   }
   const seen=new Set();return {nodes:notes.map(note=>({id:note.id,label:note.title,type:note.thought_type==='question'?'question':'note',summary:note.body.slice(0,250)})),edges:edges.filter(edge=>{const key=JSON.stringify([edge.from,edge.to,edge.label]);if(seen.has(key))return false;seen.add(key);return true;}),unresolved};
 }
-export function markdownURL(url){return /^(https?:|mailto:|notebook:|#)/i.test(url)?url:'';}
+export function markdownURL(url){return /^(https?:|mailto:|notebook:|research-passage:|#)/i.test(url)?url:'';}

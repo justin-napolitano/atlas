@@ -675,10 +675,11 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         return value
     @router.get("/notebook/items")
     def notebook_items(project_id: Identifier,q: Annotated[str,Query(max_length=300)] = "",
+        item_scope: Literal["all","writing","reading"] = "all",
         thought_type: Literal["","note","question","source_claim","interpretation","objection","passage_note","record_note"] = "",
         state: Literal["active","withdrawn"] = "active",cursor: Annotated[str,Query(max_length=1100)] = "",
         limit: Annotated[int,Query(ge=1,le=25)] = 25):
-        rows=store.notebook_items(project_id=project_id,q=q,thought_type=thought_type,state=state,cursor=cursor,limit=limit+1)
+        rows=store.notebook_items(project_id=project_id,q=q,thought_type=thought_type,state=state,cursor=cursor,limit=limit+1,item_scope=item_scope)
         return {"items":rows[:limit],"next_cursor":rows[limit-1]["cursor"] if len(rows)>limit else None}
 
     @router.get("/notebook/network")
