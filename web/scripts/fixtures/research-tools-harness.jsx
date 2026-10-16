@@ -20,6 +20,7 @@ const api={async request(path,params){
   if(path==='reading/document')return {...document,...(fixture.scenario==='wrong-project'?{project_id:'foreign:project'}:fixture.scenario==='wrong-document-hash'?{text_body:document.text_body+' changed'}:{})};
   if(path==='reading/annotation')return {annotation:{...annotation,...(fixture.scenario==='wrong-hash'?{text_sha256:'b'.repeat(64)}:{})},anchor:{anchored:true}};
   if(path==='notebook/entry')return structuredClone(fixture.entries.get(params.entry_id));
+  if(path==='notebook/network')return {project_id:project,items:[...fixture.entries.values()],truncated:false};
   if(path==='notebook/items')return {items:[...fixture.entries.values()].map(row=>({...row,item_kind:'entry',selected_quote:annotation.exact,source_title:record.title,edition:document.edition,locator:document.locator})),next_cursor:null};
   throw new Error(`Unexpected synthetic route: ${path}`);
 },async post(path,value){if(path!=='notebook/entries')throw new Error('Unexpected synthetic POST');fixture.requests.push(structuredClone(value));const id=`urn:research:notebook:${value.request_uuid}`;if(!fixture.entries.has(id))fixture.entries.set(id,{...value,id,revision:1,state:'active'});if(fixture.lose){fixture.lose=false;throw {status:503,message:'The save response was lost. Retry the original request.'};}return {id,project_id:project,revision:1};}};

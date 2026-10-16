@@ -99,8 +99,31 @@ try{
   await click('Another unfinished thought');await until(()=>evaluate('document.querySelector(".research-notebook").classList.contains("is-editing")'),'mobile reopen independent note');
   await call('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
   await writeFile(join(artifacts,'03-independent-note-desktop.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
+  await evaluate('window.__notebookTest.seed()');
+  await evaluate(`{const input=document.querySelector('.notebook-note-body textarea');input.focus();input.select();}`);
+  await call('Input.insertText',{text:'## A working idea\n\n**Important** and ~~revised~~. See [[synthetic:linked-note|a related idea]].\n\n- [x] Read\n- [ ] Compare\n\n| Concept | Question |\n| --- | --- |\n| Authority | Which kind? |\n\n> A distinction to investigate.\n\n```js\nconst safe = "[[not a link]]";\n```\n\n<script>window.__markdownExecuted=true</script>\n\n[unsafe](javascript:alert(1))\n\nA footnote[^1].\n\n[^1]: A located observation.\n\n![external image](https://example.invalid/tracking.png)'});
+  await click('Save note');await until(()=>evaluate('window.__notebookTest.drafts.current.size===0'),'Markdown save');
+  await click('Preview');await until(()=>evaluate('!!document.querySelector(".notebook-markdown table")'),'GFM table preview');
+  assert.equal(await evaluate('document.querySelectorAll(".notebook-markdown input[type=checkbox]").length'),2);
+  assert.equal(await evaluate('document.querySelectorAll(".notebook-markdown pre code").length'),1);
+  assert.equal(await evaluate('document.querySelector(".notebook-markdown h2").textContent'),'A working idea');
+  assert.equal(await evaluate('!!window.__markdownExecuted'),false);
+  assert.equal(await evaluate('document.querySelectorAll(".notebook-markdown img").length'),0);
+  assert.ok(await evaluate('[...document.querySelectorAll(".notebook-markdown a")].some(a=>a.getAttribute("href").startsWith("#"))'));
+  await writeFile(join(artifacts,'04-markdown-preview.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
+  assert.equal(await evaluate('document.querySelector(".notebook-markdown a[href^=javascript]")'),null);
+  await until(()=>evaluate('!!document.querySelector(".notebook-wikilink")'),'resolved wiki link');
+  await evaluate('document.querySelector(".notebook-wikilink").click()');
+  await until(()=>evaluate('document.querySelector(".notebook-note-title input").value==="A related idea"'),'wiki to actual note');
+  await evaluate('document.querySelector(".notebook-backlinks").open=true');
+  await until(()=>evaluate('document.querySelector(".notebook-backlinks").textContent.includes("Another unfinished thought")'),'saved backlink');
+  await click('Note graph');await until(()=>evaluate('document.querySelectorAll("[data-network-node]").length===2'),'actual saved note graph');
+  await writeFile(join(artifacts,'05-note-graph.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
+  await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'mobile graph no overflow');
+  await writeFile(join(artifacts,'06-note-graph-mobile.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
   assert.deepEqual(problems,[]);
-  console.log(JSON.stringify({notebookPassed:true,checks:['compiled owner notebook','live passage note backlink','anchored thought and explained connection','Unicode Markdown inert text','retained creation UUID and exact lost-response retry','source context readback','two-device correction comparison','CAS lost acknowledgement retry','paged revision history','withdrawal filter','wrong-project refusal','independent note without source','searchable explained connection saved','mobile list to editor','dark390px','no private localStorage'],artifacts}));
+  console.log(JSON.stringify({notebookPassed:true,checks:['compiled owner notebook','live passage note backlink','anchored thought and explained connection','Unicode Markdown inert text','retained creation UUID and exact lost-response retry','source context readback','two-device correction comparison','CAS lost acknowledgement retry','paged revision history','withdrawal filter','wrong-project refusal','independent note without source','searchable explained connection saved','mobile list to editor','CommonMark and GFM preview','inert script and unsafe links','wiki link to saved note','saved backlinks','actual saved note graph','dark390px','no private localStorage'],artifacts}));
 }finally{
   socket?.close();const closed=new Promise(resolve=>chrome.once('close',resolve));chrome.kill();await closed;await preview.close();
   for(const item of pending.values()){clearTimeout(item.timeout);item.reject(new Error('Notebook review finished'));}

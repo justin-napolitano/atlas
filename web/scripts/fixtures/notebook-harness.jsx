@@ -1,6 +1,7 @@
 // Explicit synthetic owner boundary; never included in an application artifact.
 import React,{useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
+import '../../src/style.css';
 import ResearchNotebook from '../../src/ResearchNotebook.jsx';
 const project='synthetic:project',anchor={record_id:'synthetic:source',document_id:'synthetic:document',annotation_id:'synthetic:annotation'};
 const entries=new Map(),history=new Map(),requests=[],receipts=new Map();let lose=true,loseEdit=true,wrong=false;
@@ -14,6 +15,7 @@ const api={async post(path,value){if(path!=='notebook/entries')throw new Error('
   if(lose){lose=false;throw {status:503,message:'Notebook save could not be confirmed.'};}return receipt;
 },async request(path,params={},value){
   if(path==='research/search')return {truncated:false,items:[{kind:'record',id:'synthetic:source',project_id:project,record_id:'synthetic:source',title:'Synthetic authority source',excerpt:'Background on authority',record_kind:'source'},{kind:'concept',id:'synthetic:concept',project_id:project,concept_id:'synthetic:concept',title:'Authority',excerpt:'Synthetic concept'}]};
+  if(path==='notebook/network')return {project_id:project,items:[...entries.values()].filter(row=>row.state==='active'),truncated:false};
   if(path==='notebook/items'){const rows=[...[...entries.values()].map(row=>({...row,item_kind:'entry',cursor:'entry:'+row.id})),passage,recordNote].filter(row=>row.state===params.state && (!params.thought_type || row.thought_type===params.thought_type) && (!params.q || (row.body+' '+row.title+' '+row.selected_quote).includes(params.q))).sort((a,b)=>a.cursor.localeCompare(b.cursor));return {items:rows.filter(row=>row.cursor>(params.cursor || '')).slice(0,25).map(row=>({...row,...(wrong?{project_id:'other'}:{})})),next_cursor:null};}
   if(path==='notebook/entry' && !value){const row=structuredClone(entries.get(params.entry_id));row.links=row.links.map(link=>({rationale:link.rationale,id:link.id,kind:link.kind}));return row;}
   if(path==='notebook/entry' && value){requests.push(structuredClone(value));if(fixture.hold){fixture.hold=false;await new Promise(resolve=>{fixture.release=resolve;});}const current=entries.get(value.entry_id),fields=['thought_type','title','body','links','state'];
@@ -23,6 +25,7 @@ const api={async post(path,value){if(path!=='notebook/entries')throw new Error('
   if(path==='notebook/history'){const rows=history.get(params.entry_id).filter(row=>!params.before_revision || row.revision<params.before_revision);return {items:rows.slice(0,1).map(row=>({revision:row.revision,snapshot:row})),next_before_revision:rows.length>1?rows[0].revision:null};}
   throw new Error('Unexpected synthetic notebook route');
 }};
+fixture.seed=()=>{const target=[...entries.values()].find(row=>row.state==='active');return record({id:'synthetic:linked-note',project_id:project,title:'A related idea',body:`A note linking back: [[${target.id}|original idea]]`,thought_type:'note',links:[],state:'active',revision:1,record_id:null,document_id:null,annotation_id:null});};
 fixture.remote=()=>{const row=[...entries.values()][0];record({...row,body:'Cloud thought from another device',revision:row.revision+1});};fixture.wrong=v=>{wrong=v;};
 function Harness(){const drafts=useRef(new Map()),[round,setRound]=useState(0),[initialQuery,setInitialQuery]=useState('');fixture.drafts=drafts;fixture.remount=()=>setRound(v=>v+1);fixture.search=setInitialQuery;
   return <main style={{maxWidth:1100,margin:'auto'}}><p>Synthetic notebook API fixture · no live owner sign-in</p><ResearchNotebook key={round} api={api} projectId={project} drafts={drafts} anchor={anchor} initialQuery={initialQuery} onOpenSource={(...args)=>{fixture.opened=args;}}/></main>;}
