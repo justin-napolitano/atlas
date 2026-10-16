@@ -33,6 +33,7 @@ async function until(fn, label, attempts=100) {
 let serial=0, navigation=0, unloadPrompts=0; const pending=new Map(); const problems=[]; const saved=new Map(); let conflict=false, authenticated=true;
 const ownerProjects=[{id:'synthetic',title:'Synthetic research project'}];let projectPosts=0;
 const independentNotes=new Map();let holdNoteSave=false,releaseNoteSave=null;
+let referenceDelay=false;const delayedReferenceRequests=[];
 const records = [
   { id:'synthetic:question',project_id:'synthetic',kind:'question',title:'Synthetic question about authority',summary:'A bounded synthetic question.',revision:1,review_state:'pending',attributes:{} },
   { id:'synthetic:source',project_id:'synthetic',kind:'source',title:'Synthetic source <script>not HTML</script>',summary:'Synthetic source summary.',revision:1,review_state:'pending',attributes:{} },
@@ -81,7 +82,7 @@ async function evaluate(expression) {
   const scoped=expression.replace(/(?<![\w.])document\.querySelector(All)?\(/g,(_,all)=>`activeDocument.querySelector${all || ''}(`);
   const wrapped=`(()=>{const activeDocument={querySelectorAll:s=>[...document.querySelectorAll(s)].filter(n=>!n.closest('.working-surface[hidden]')),querySelector:s=>[...document.querySelectorAll(s)].find(n=>!n.closest('.working-surface[hidden]'))};return eval(${JSON.stringify(scoped)});})()`;
   const result=await call('Runtime.evaluate',{ expression:wrapped,returnByValue:true,awaitPromise:true });
-  if (result.exceptionDetails) throw new Error('Browser evaluation failed');
+  if (result.exceptionDetails) throw new Error('Browser evaluation failed: '+JSON.stringify(result.exceptionDetails));
   return result.result.value;
 }
 async function reload() {
@@ -89,13 +90,19 @@ async function reload() {
   await call('Page.reload');
   await until(() => navigation>previous,'new document committed');
 }
-async function revealPassageTools(){await evaluate(`{for(const details of document.querySelectorAll('.reader-source-anchors,.passage-research-tools'))if(!details.open)details.querySelector(':scope > summary').click();}`);}
+async function revealPassageTools(){await evaluate(`{for(const details of document.querySelectorAll('.working-surface:not([hidden]) .reader-source-anchors,.working-surface:not([hidden]) .passage-research-tools'))if(!details.open)details.querySelector(':scope > summary').click();}`);}
 async function reveal(selector){await evaluate(`{const target=document.querySelector(${JSON.stringify(selector)});if(!target)throw new Error('Missing reveal target');const parents=[];for(let p=target.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS'&&!p.open)parents.unshift(p);parents.forEach(p=>p.querySelector(':scope > summary').click());}`);}
 async function click(text) {
   if(['Add source','All research','Reading collection & context','Read the Sirry article','Start Qur’an pilot','Resume reading'].includes(text) && !await evaluate(`[...document.querySelectorAll('button')].some(button=>button.textContent===${JSON.stringify(text)})`)){await click('Sources');await until(()=>evaluate('!!document.querySelector(".atlas-reading-tools")'),'contextual reading tools');}
   await evaluate(`{const aliases={'Back to my reading':'← Back to reading','Back to reading':'← Back to reading','Compare readings':'Compare'};const target=[...document.querySelectorAll('button')].find(button=>button.textContent===${JSON.stringify(text)}) || [...document.querySelectorAll('button')].find(button=>button.textContent===aliases[${JSON.stringify(text)}]);if(!target)throw new Error('Missing button '+${JSON.stringify(text)});const parents=[];for(let p=target.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS'&&!p.open)parents.unshift(p);parents.forEach(p=>p.querySelector(':scope > summary').click());target.click();}`); }
 async function fixture(event) {
   const url=new URL(event.request.url), path=url.pathname;
+  if(referenceDelay && ['/v1/record','/v1/reading/documents','/v1/reading/document','/v1/reading/annotations','/v1/lexicon/annotation-links'].includes(path)){
+    delayedReferenceRequests.push(path);
+    // Deterministically reorder different request classes; readiness must follow
+    // the visible reader's loaded state, not retained hidden DOM or a timer.
+    await sleep(path==='/v1/record'?160:40);
+  }
   let status=200,data;
   if(path.startsWith('/data/')) {
     publicRequests.push({path,method:event.request.method});
@@ -548,8 +555,8 @@ try {
   await until(()=>evaluate(`document.querySelector(${JSON.stringify(citationSelector+' .scripture-saved')})?.textContent.includes('Dismissed')`),'dismissal persisted');
   assert.equal([...scriptureResolutions.values()][0].revision,4);
   await revealPassageTools();
-  await evaluate('[...document.querySelectorAll(".saved-passage-note")].find(node=>node.querySelector(".reader-reopen").textContent==="tafsīr").querySelector(".scripture-toggle:not([aria-expanded=true])")?.click()');
-  const termManual='[...document.querySelectorAll(".saved-passage-note")].find(node=>node.querySelector(".reader-reopen").textContent==="tafsīr").querySelector("[data-candidate-key=manual]")';
+  await evaluate('[...document.querySelectorAll(".working-surface:not([hidden]) .saved-passage-note")].find(node=>node.querySelector(".reader-reopen").textContent==="tafsīr").querySelector(".scripture-toggle:not([aria-expanded=true])")?.click()');
+  const termManual='[...document.querySelectorAll(".working-surface:not([hidden]) .saved-passage-note")].find(node=>node.querySelector(".reader-reopen").textContent==="tafsīr").querySelector("[data-candidate-key=manual]")';
   await until(()=>evaluate(`!!${termManual}`),'manual reference mapping for a selected term');
   await evaluate(`${termManual}.querySelector('details').open=true`);
   for(const [index,value] of [[0,'4'],[1,'59']]) {
@@ -561,7 +568,7 @@ try {
   await until(()=>evaluate(`${termManual}.querySelector('.scripture-saved')?.textContent.includes('Linked to Q 4:59')`),'manual verse connection persisted');
   assert.equal([...scriptureResolutions.values()].filter(row=>row.detector_kind==='owner_mapping').length,1);
   assert.equal(await evaluate('Object.values(localStorage).some(value=>value.includes("Synthetic owner reference resolution") || value.includes("Cloud reference correction"))'),false);
-  const termLexicon='[...document.querySelectorAll(".saved-passage-note")].find(node=>node.querySelector(".reader-reopen").textContent==="tafsīr").querySelector(".lexicon-capture")';
+  const termLexicon='[...document.querySelectorAll(".working-surface:not([hidden]) .saved-passage-note")].find(node=>node.querySelector(".reader-reopen").textContent==="tafsīr").querySelector(".lexicon-capture")';
   async function fillLexicon(selector,text) {
     await evaluate(`${termLexicon}.querySelector(${JSON.stringify(selector)}).focus();${termLexicon}.querySelector(${JSON.stringify(selector)}).select()`);
     await call('Input.insertText',{text});
@@ -603,20 +610,20 @@ try {
   await evaluate(`${termLexicon}.querySelector('.lexicon-toggle:not([aria-expanded=true])')?.click()`);
   await until(()=>evaluate(`${termLexicon}.querySelector('.lexicon-links button')?.textContent.includes('Synthetic scoped concept')`),'durable passage-to-concept link recovered');
   await evaluate(`${termLexicon}.querySelector('.lexicon-links button').click()`);
-  await until(()=>evaluate('!!document.querySelector(".concept-definition-gap")'),'concept page shows a definition gap');
-  await until(()=>evaluate('document.querySelector(".concept-occurrences mark")?.textContent==="tafsīr"'),'concept occurrence preserves exact accented term');
-  assert.equal(await evaluate('document.querySelectorAll(".concept-panel script").length'),0);
+  await until(()=>evaluate('!!document.querySelector(".working-surface:not([hidden]) .concept-definition-gap")'),'concept page shows a definition gap');
+  await until(()=>evaluate('document.querySelector(".working-surface:not([hidden]) .concept-occurrences mark")?.textContent==="tafsīr"'),'concept occurrence preserves exact accented term');
+  assert.equal(await evaluate('document.querySelectorAll(".working-surface:not([hidden]) .concept-panel script").length'),0);
   await reload();
-  await until(()=>evaluate('!!document.querySelector(".concept-definition-gap")'),'concept URL survives reload');
+  await until(()=>evaluate('!!document.querySelector(".working-surface:not([hidden]) .concept-definition-gap")'),'concept URL survives reload');
   const lexicalConcept=[...lexicalConcepts.values()][0];
   const machine={id:'synthetic:machine-proposal',project_id:'synthetic',concept_id:lexicalConcept.id,annotation_id:captures[0].id,entity_kind:'definition',definition_kind:'machine_proposed',
     wording_mode:'paraphrase',body:'Synthetic machine proposal, not an accepted definition.',attribution:'Synthetic tool output',scope:'Only a fixture proposal',dating_note:'Unknown',
     rationale:'Synthetic proposal evidence is unreviewed',proposal_tool:'synthetic-tool',proposal_version:'1',proposal_activity:'synthetic:activity',review_state:'pending',state:'active',revision:1};
   lexicalEntities.set(machine.id,machine);lexicalHistory.set(machine.id,[structuredClone(machine)]);
-  await evaluate('document.querySelector(".concept-panel-heading button").click()');
-  await until(()=>evaluate('!!document.querySelector(".concept-machine-proposals")'),'machine proposal remains separated');
-  assert.equal(await evaluate('!!document.querySelector(".concept-definition-gap")'),true);
-  await evaluate('document.querySelector(".concept-occurrence-source").click()');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-panel-heading button").click()');
+  await until(()=>evaluate('!!document.querySelector(".working-surface:not([hidden]) .concept-machine-proposals")'),'machine proposal remains separated');
+  assert.equal(await evaluate('!!document.querySelector(".working-surface:not([hidden]) .concept-definition-gap")'),true);
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-occurrence-source").click()');
   await until(()=>evaluate('document.querySelector(".reader-text mark.is-selected")?.textContent==="tafsīr"'),'concept occurrence returns to the exact source passage');
   await revealPassageTools();
   await until(()=>evaluate(`!!${termLexicon} && ${termLexicon}.closest('.source-reader').getAttribute('aria-busy')==='false'`),'source reference tools ready');
@@ -648,71 +655,73 @@ try {
   await evaluate(`${termLexicon}.querySelector('.lexicon-toggle:not([aria-expanded=true])')?.click()`);
   await until(()=>evaluate(`!!${termLexicon}.querySelector('.lexicon-links button')`),'definition passage link reload');
   await evaluate(`${termLexicon}.querySelector('.lexicon-links button').click()`);
-  await until(()=>evaluate('document.querySelector(".concept-definition-text")?.textContent.includes("synthetic reference gloss")'),'located attributed definition visible');
-  assert.equal(await evaluate('!!document.querySelector(".concept-definition-gap")'),false);
-  assert.match(await evaluate('document.querySelector(".concept-definition").textContent'),/Synthetic reference author/);
-  await evaluate('document.querySelector(".concept-panel > button").click()');
-  await until(()=>evaluate('!!document.querySelector(".concept-machine-proposals")'),'definition pagination retains the separate machine proposal');
-  await evaluate('document.querySelector(".concept-edit-open").click()');
-  await evaluate('document.querySelector(".concept-edit-body").focus();document.querySelector(".concept-edit-body").select()');
+  await until(()=>evaluate('document.querySelector(".working-surface:not([hidden]) .concept-definition-text")?.textContent.includes("synthetic reference gloss")'),'located attributed definition visible');
+  assert.equal(await evaluate('!!document.querySelector(".working-surface:not([hidden]) .concept-definition-gap")'),false);
+  assert.match(await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-definition").textContent'),/Synthetic reference author/);
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-panel > button").click()');
+  await until(()=>evaluate('!!document.querySelector(".working-surface:not([hidden]) .concept-machine-proposals")'),'definition pagination retains the separate machine proposal');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-edit-open").click()');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-edit-body").focus();document.querySelector(".working-surface:not([hidden]) .concept-edit-body").select()');
   await call('Input.insertText',{text:'My corrected synthetic reading of the source.'});
-  await evaluate('document.querySelector(".concept-edit-rationale").focus();document.querySelector(".concept-edit-rationale").select()');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-edit-rationale").focus();document.querySelector(".working-surface:not([hidden]) .concept-edit-rationale").select()');
   await call('Input.insertText',{text:'Synthetic correction after checking source context.'});
-  await evaluate('document.querySelector(".concept-source").click()');
+  referenceDelay=true;
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-source").click()');
   await until(()=>evaluate(`!!${termLexicon} && ${termLexicon}.closest('.source-reader').getAttribute('aria-busy')==='false'`),'leave definition correction draft');
   await revealPassageTools();
   await until(()=>evaluate(`!!${termLexicon} && ${termLexicon}.closest('.source-reader').getAttribute('aria-busy')==='false'`),'source reference tools ready');
   await evaluate(`${termLexicon}.querySelector('.lexicon-toggle:not([aria-expanded=true])')?.click()`);
   await until(()=>evaluate(`!!${termLexicon}.querySelector('.lexicon-links button')`),'reopen concept through durable passage link');
   await evaluate(`${termLexicon}.querySelector('.lexicon-links button').click()`);
-  await until(()=>evaluate('document.querySelector(".concept-edit-body")?.value.includes("My corrected synthetic reading")'),'definition draft retained through source navigation');
+  await until(()=>evaluate('document.querySelector(".working-surface:not([hidden]) .concept-edit-body")?.value.includes("My corrected synthetic reading")'),'definition draft retained through source navigation');
+  referenceDelay=false;assert.ok(delayedReferenceRequests.includes('/v1/record'),'reference navigation exercised delayed record loading');
   const recordedDefinition=[...lexicalEntities.values()].find(row=>row.entity_kind==='definition' && row.definition_kind==='reference_gloss');
   const cloudDefinition={...recordedDefinition,body:'Cloud definition edit from another device.',rationale:'Synthetic cloud rationale',revision:2};
   lexicalEntities.set(recordedDefinition.id,cloudDefinition);lexicalHistory.get(recordedDefinition.id).unshift(structuredClone(cloudDefinition));
-  await evaluate('document.querySelector(".concept-edit-save").click()');
-  await until(()=>evaluate('document.querySelector(".concept-definition-conflict")?.textContent.includes("Cloud definition edit")'),'definition conflict compares current cloud content');
-  assert.match(await evaluate('document.querySelector(".concept-edit-body").value'),/My corrected synthetic reading/);
-  await evaluate('document.querySelectorAll(".concept-definition-conflict button")[1].click()');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-edit-save").click()');
+  await until(()=>evaluate('document.querySelector(".working-surface:not([hidden]) .concept-definition-conflict")?.textContent.includes("Cloud definition edit")'),'definition conflict compares current cloud content');
+  assert.match(await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-edit-body").value'),/My corrected synthetic reading/);
+  await evaluate('document.querySelectorAll(".working-surface:not([hidden]) .concept-definition-conflict button")[1].click()');
   definitionUpdateLostResponse=true;
-  await evaluate('document.querySelector(".concept-edit-save").click()');
-  await until(()=>evaluate('document.querySelector(".concept-definition-edit [role=alert]")?.textContent.includes("draft is retained")'),'lost correction response preserves typed definition');
-  await evaluate('document.querySelector(".concept-edit-save").click()');
-  await until(()=>evaluate('!document.querySelector(".concept-edit-body") && document.querySelector(".concept-definition-text")?.textContent.includes("My corrected synthetic reading")'),'explicit correction saved against the confirmed revision');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-edit-save").click()');
+  await until(()=>evaluate('document.querySelector(".working-surface:not([hidden]) .concept-definition-edit [role=alert]")?.textContent.includes("draft is retained")'),'lost correction response preserves typed definition');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-edit-save").click()');
+  await until(()=>evaluate('!document.querySelector(".working-surface:not([hidden]) .concept-edit-body") && document.querySelector(".working-surface:not([hidden]) .concept-definition-text")?.textContent.includes("My corrected synthetic reading")'),'explicit correction saved against the confirmed revision');
   assert.equal(lexicalEntities.get(recordedDefinition.id).revision,3);
   assert.equal(lexicalHistory.get(recordedDefinition.id).length,3);
-  await evaluate('document.querySelector(".concept-history-open").click()');
-  await until(()=>evaluate('document.querySelector(".concept-history")?.textContent.includes("Revision 3")'),'definition revision history');
-  await evaluate('document.querySelector(".concept-history button").click()');
-  await until(()=>evaluate('document.querySelector(".concept-history")?.textContent.includes("Cloud definition edit")'),'earlier cloud revision retained in history');
-  await evaluate('document.querySelector(".concept-edit-open").click()');
-  await until(()=>evaluate('!!document.querySelector(".concept-edit-body")'),'reopen definition correction for withdrawal comparison');
-  await evaluate('document.querySelector(".concept-edit-body").focus();document.querySelector(".concept-edit-body").select()');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-history-open").click()');
+  await until(()=>evaluate('document.querySelector(".working-surface:not([hidden]) .concept-history")?.textContent.includes("Revision 3")'),'definition revision history');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-history button").click()');
+  await until(()=>evaluate('document.querySelector(".working-surface:not([hidden]) .concept-history")?.textContent.includes("Cloud definition edit")'),'earlier cloud revision retained in history');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-edit-open").click()');
+  await until(()=>evaluate('!!document.querySelector(".working-surface:not([hidden]) .concept-edit-body")'),'reopen definition correction for withdrawal comparison');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-edit-body").focus();document.querySelector(".working-surface:not([hidden]) .concept-edit-body").select()');
   await call('Input.insertText',{text:'A local draft while another device withdraws the assertion.'});
   const withdrawnDefinition={...lexicalEntities.get(recordedDefinition.id),state:'withdrawn',rationale:'Withdrawn from another synthetic owner client for review.',revision:4};
   lexicalEntities.set(recordedDefinition.id,withdrawnDefinition);lexicalHistory.get(recordedDefinition.id).unshift(structuredClone(withdrawnDefinition));
-  await evaluate('document.querySelector(".concept-edit-save").click()');
-  await until(()=>evaluate('document.querySelector(".concept-definition-conflict")?.textContent.includes("withdrawn")'),'remote withdrawal is visible during conflict comparison');
-  await evaluate('document.querySelector(".concept-definition-conflict button").click()');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-edit-save").click()');
+  await until(()=>evaluate('document.querySelector(".working-surface:not([hidden]) .concept-definition-conflict")?.textContent.includes("withdrawn")'),'remote withdrawal is visible during conflict comparison');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-definition-conflict button").click()');
   assert.equal(lexicalEntities.get(recordedDefinition.id).state,'withdrawn');
-  await evaluate('document.querySelector(".concept-panel-heading button").click()');
-  await until(()=>evaluate('!!document.querySelector(".concept-definition-gap") && document.querySelectorAll(".concept-panel > .concept-definition").length===0'),'withdrawn assertion leaves the active definition gap visible');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-panel-heading button").click()');
+  await until(()=>evaluate('!!document.querySelector(".working-surface:not([hidden]) .concept-definition-gap") && document.querySelectorAll(".working-surface:not([hidden]) .concept-panel > .concept-definition").length===0'),'withdrawn assertion leaves the active definition gap visible');
   // Another authorized client can explicitly restore via the existing owner API;
   // the reader itself never silently reactivates a withdrawn assertion.
   const restoredDefinition={...withdrawnDefinition,state:'active',rationale:'Explicitly restored in a second synthetic owner client.',revision:5};
   lexicalEntities.set(recordedDefinition.id,restoredDefinition);lexicalHistory.get(recordedDefinition.id).unshift(structuredClone(restoredDefinition));
-  await evaluate('document.querySelector(".concept-panel-heading button").click()');
-  await until(()=>evaluate('document.querySelector(".concept-definition-text")?.textContent.includes("My corrected synthetic reading")'),'explicit remote reactivation can be refreshed');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-panel-heading button").click()');
+  await until(()=>evaluate('document.querySelector(".working-surface:not([hidden]) .concept-definition-text")?.textContent.includes("My corrected synthetic reading")'),'explicit remote reactivation can be refreshed');
   await reload();
-  await until(()=>evaluate('document.querySelector(".concept-definition-text")?.textContent.includes("My corrected synthetic reading")'),'corrected definition persists on reload');
+  await until(()=>evaluate('document.querySelector(".working-surface:not([hidden]) .concept-definition-text")?.textContent.includes("My corrected synthetic reading")'),'corrected definition persists on reload');
   const lexicalDesktop=await call('Page.captureScreenshot',{format:'png'});await writeFile(join(artifacts,'lexicon-desktop.png'),Buffer.from(lexicalDesktop.data,'base64'));
   await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
-  await evaluate('[...document.querySelectorAll(".header-tools button")].find(button=>/^(Dark|Light) mode$/.test(button.textContent)).click();document.querySelector(".concept-panel").scrollIntoView({block:"start"})');
+  await evaluate('[...document.querySelectorAll(".header-tools button")].find(button=>/^(Dark|Light) mode$/.test(button.textContent)).click();document.querySelector(".working-surface:not([hidden]) .concept-panel").scrollIntoView({block:"start"})');
   assert.equal(await evaluate('document.documentElement.dataset.theme'),'dark');
   assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'lexicon concept fits dark mobile layout');
   const lexicalMobile=await call('Page.captureScreenshot',{format:'png'});await writeFile(join(artifacts,'lexicon-mobile-dark.png'),Buffer.from(lexicalMobile.data,'base64'));
   await evaluate('[...document.querySelectorAll(".header-tools button")].find(button=>/^(Dark|Light) mode$/.test(button.textContent)).click()');
   await call('Emulation.clearDeviceMetricsOverride');
-  await evaluate('document.querySelector(".concept-source").click()');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-source").click()');
   await until(()=>evaluate('document.querySelector(".reader-text mark.is-selected")?.textContent==="tafsīr"'),'corrected definition source remains unchanged');
   async function captureWord(word) {
     await evaluate(`{const walker=document.createTreeWalker(document.querySelector('.reader-text'),NodeFilter.SHOW_TEXT);let node;while((node=walker.nextNode()) && !node.textContent.includes(${JSON.stringify(word)})){}
@@ -771,19 +780,19 @@ try {
   await until(()=>evaluate('document.querySelector(".workspace-row")?.textContent.includes("Matched wording")'),'normalized concept search from workspace');
   assert.match(await evaluate('document.querySelector(".workspace-row").textContent'),/tafsīr/);
   await evaluate('document.querySelector(".workspace-row").click()');
-  await until(()=>evaluate('!!document.querySelector(".concept-panel") && !!document.querySelector(".concept-occurrences button")'),'open concept from lexical match');
-  await evaluate('document.querySelector(".concept-occurrences > button").click()');
-  await until(()=>evaluate('document.querySelectorAll(".concept-occurrences article").length===2'),'reading occurrence pagination');
-  await evaluate('document.querySelector(".concept-occurrences > button").click()');
-  await until(()=>evaluate('document.querySelectorAll(".concept-occurrences article").length===3'),'last reading occurrence page');
-  assert.ok(await evaluate('[...document.querySelectorAll(".concept-occurrences mark")].some(node=>node.textContent==="التفسير")'),'Arabic occurrence remains original in the concept reading view');
+  await until(()=>evaluate('!!document.querySelector(".working-surface:not([hidden]) .concept-panel") && !!document.querySelector(".working-surface:not([hidden]) .concept-occurrences button")'),'open concept from lexical match');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-occurrences > button").click()');
+  await until(()=>evaluate('document.querySelectorAll(".working-surface:not([hidden]) .concept-occurrences article").length===2'),'reading occurrence pagination');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-occurrences > button").click()');
+  await until(()=>evaluate('document.querySelectorAll(".working-surface:not([hidden]) .concept-occurrences article").length===3'),'last reading occurrence page');
+  assert.ok(await evaluate('[...document.querySelectorAll(".working-surface:not([hidden]) .concept-occurrences mark")].some(node=>node.textContent==="التفسير")'),'Arabic occurrence remains original in the concept reading view');
   await click('All research');await reveal('.workspace-search');
   await evaluate(`{const scope=document.querySelector('.workspace-search select');scope.value='all';scope.dispatchEvent(new Event('change',{bubbles:true}));}`);
   await evaluate('document.querySelector(".workspace-search").requestSubmit()');
   await until(()=>evaluate('document.querySelectorAll(".workspace-row").length===3'),'all-research search includes ordinary and lexical matches');
   assert.equal(await evaluate('[...document.querySelectorAll(".workspace-row")].filter(node=>node.textContent.includes("Synthetic scoped concept")).length'),1);
   assert.equal(await evaluate('Object.values(localStorage).some(value=>value.includes("Synthetic scoped") || value.includes("My corrected synthetic") || value.includes("explicitly scoped Arabic"))'),false);
-  await evaluate('document.querySelector(".concept-source").click()');
+  await evaluate('document.querySelector(".working-surface:not([hidden]) .concept-source").click()');
   await until(()=>evaluate('document.querySelector(".reader-text mark.is-selected")?.textContent==="tafsīr"'),'definition follows its exact attributed source');
   await reload();
   await until(()=>evaluate('!!document.querySelector("[data-record-note]")'),'resume existing reading workflow after lexical navigation');
