@@ -7,6 +7,7 @@ The research should understand traditions in context before evaluating them. “
 ## Start here
 
 - `docs/reader-first-workspace.md` — the Reader A interface connected to saved readings, margin notes, comparison, notebook, search, and sourced agent briefs.
+- `docs/notebook-writing-workspace.md` — independent project notebooks, a dedicated writing view, searchable explained connections, revision-aware saves, and Markdown export.
 - `docs/unified-owner-search.md` — owner-only literal retrieval across the current research authorities and actual saved-reading library.
 - `docs/research-tools.md` — source-linked research briefs, notebook saves, and explicit agent exports.
 

@@ -78,7 +78,7 @@ try{
   assert.equal(await evaluate('JSON.stringify(window.__researchTools.requests[0])===JSON.stringify(window.__researchTools.requests[1])'),true,'retry exact original request');
   assert.equal(await evaluate('window.__researchTools.entries.size'),1,'no duplicate question');
   assert.equal(await evaluate('[...window.__researchTools.drafts.current.values()].every(d=>!!d.saved && !d.sent && !d.saving)'),true,'completed brief marked saved');
-  await click('Open saved question →');await until(()=>evaluate('document.body.textContent.includes("Collected thoughts") && document.body.textContent.includes("What does tafsīr mean")'),'saved question in real notebook');
+  await click('Open saved question →');await until(()=>evaluate('document.body.textContent.includes("Your notes") && document.body.textContent.includes("What does tafsīr mean")'),'saved question in real notebook');
   for(const scenario of ['wrong-project','wrong-hash','wrong-document-hash']){
     await evaluate(`window.__researchTools.brief(${JSON.stringify(scenario)})`);await until(()=>evaluate('!!document.querySelector(".research-brief [role=alert]")'),'invalid context rejected');
     assert.equal(await evaluate('document.querySelector(".research-brief-save").disabled'),true);
