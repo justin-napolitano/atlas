@@ -6,6 +6,7 @@ import ResizablePanes from './ResizablePanes.jsx';
 import RecoverableDraft from './RecoverableDraft.jsx';
 import {recoverPassageWriting} from './recoverIntoEditor.js';
 import './sourceReader.css';
+import './readerPresentation.css';
 
 /** Edition-bound reading surface with saved inline marks and adjacent private notes. */
 export default function SourceReader({ record, api, drafts, changed, noteEditor, navigate, initialAnnotationId = '',initialDocumentId='',focused=false,onFocusChange,onOpenVerse,onReadingPlace }) {
@@ -13,7 +14,13 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
   const [document,setDocument]=useState(null), [annotations,setAnnotations]=useState([]), [annotationCursor,setAnnotationCursor]=useState(null);
   const [message,setMessage]=useState(''), [highlight,setHighlight]=useState(null);
   const [activeAnnotation,setActiveAnnotation]=useState('');
-  const [marginOpen,setMarginOpen]=useState(true),marginId=useId();
+  const [marginOpen,setMarginOpen]=useState(()=>window.matchMedia('(min-width: 901px)').matches),marginId=useId();
+  const [selectionPreview,setSelectionPreview]=useState(null),[annotationTools,setAnnotationTools]=useState(false),[loadingSnapshots,setLoadingSnapshots]=useState(true),[recoveryOpen,setRecoveryOpen]=useState(false);
+  useEffect(()=>{
+    function inspectSelection(){try{setSelectionPreview(textRoot.current ? selectedPassage(textRoot.current,window.getSelection()) : null);}catch{setSelectionPreview(null);}}
+    window.document.addEventListener('selectionchange',inspectSelection);
+    return()=>window.document.removeEventListener('selectionchange',inspectSelection);
+  },[]);
   const textRoot=useRef(null), mark=useRef(null), alive=useRef(true), currentDocument=useRef('');
   const margin=useRef(null), composer=useRef(null);
   const requestedAnchor=useRef(null);
@@ -22,7 +29,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
   const importDraft=drafts.current.get(importKey) || { edition:'',locator:'',representation_url:'',text:'',saving:false };
   const capture=drafts.current.get(captureKey);
   useEffect(()=>{
-    alive.current=true;
+    alive.current=true;setLoadingSnapshots(true);
     api.request('reading/documents',{ project_id:record.project_id,source_record_id:record.id }).then(async data=>{
       let requested=null;
       if(initialAnnotationId) {
@@ -34,11 +41,11 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
       setSnapshots(data.items); setCursor(data.next_cursor);
       const retained=[...drafts.current.values()].find(d=>d.sourceRecordId===record.id && d.documentId);
       setDocumentId(requested?.annotation.document_id || initialDocumentId || retained?.documentId || noteEditor.documentForSource(record.project_id,record.id) || data.items[0]?.id || '');
-    }).catch(error=>{ if(alive.current) setMessage(error.message); });
+    }).catch(error=>{ if(alive.current) setMessage(error.message); }).finally(()=>{if(alive.current)setLoadingSnapshots(false);});
     return ()=>{ alive.current=false; };
   },[record.id]);
   useEffect(()=>{
-    let active=true; currentDocument.current=documentId; setDocument(null); setAnnotations([]); setHighlight(null);setActiveAnnotation('');
+    let active=true; currentDocument.current=documentId; setDocument(null); setAnnotations([]); setHighlight(null);setActiveAnnotation('');setSelectionPreview(null);setAnnotationTools(false);
     if (!documentId) return;
     Promise.all([api.request('reading/document',{ project_id:record.project_id,document_id:documentId }),
       api.request('reading/annotations',{ project_id:record.project_id,document_id:documentId })]).then(([value,notes])=>{
@@ -104,7 +111,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
       const value={...selected,annotation_uuid:capture?.annotation_uuid || crypto.randomUUID(),body:capture?.body || '',capture_kind:capture?.capture_kind || 'comment',
         mark_style:markStyle,documentId:document.id,sourceRecordId:record.id,saving:false};
       remember(captureKey,value); setHighlight(value);setActiveAnnotation('');setMarginOpen(true);setMessage('Write in the margin. Save with the button or ⌘/Ctrl + Enter.');
-      window.getSelection()?.removeAllRanges();
+      setAnnotationTools(false);setSelectionPreview(null);window.getSelection()?.removeAllRanges();
       requestAnimationFrame(()=>{composer.current?.focus();composer.current?.scrollIntoView({block:'nearest'});});
     } catch(error) { setMessage(error.message); }
   }
@@ -167,42 +174,55 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
   }
   const belongs=row=>row.project_id===record.project_id && row.document_id===documentId;
   const saved=annotations.filter(belongs).map(row=>noteEditor.adopt(row,record.id).server).sort((a,b)=>a.start_pos-b.start_pos || a.end_pos-b.end_pos || a.id.localeCompare(b.id));
+  const isWriting=row=>row.body.trim() || (row.mark_style || 'highlight')!=='none' || row.capture_kind!=='comment' || noteEditor.entries.get(row.id)?.open || noteEditor.entries.get(row.id)?.status!=='saved' || activeAnnotation===row.id;
+  const writingNotes=saved.filter(isWriting),sourceAnchors=saved.filter(row=>!isWriting(row));
   const marked=document ? readingMarks(document,saved,highlight) : {runs:[],unanchored:[]};
-  return <section className="source-reader" aria-labelledby="source-reader-heading"><h3 id="source-reader-heading">Read & annotate</h3>
-    <p className="reader-help">Read a private text excerpt here, or use the source link above. Selecting a passage keeps its edition, location, and source version attached.</p>
-    <details className="reader-import"><summary>Add text to read here</summary><form onSubmit={importText}>
+  const pendingRecovery=document && [...drafts.current.values()].some(value=>value?.sent?.document_id===document.id && (value.saving || value.error || value.current));
+  const pendingSavedNote=saved.some(row=>{const entry=noteEditor.adopt(row,record.id);return entry.pending || entry.current || entry.status==='error' || entry.status==='conflict';});
+  useEffect(()=>{if(capture || pendingRecovery || pendingSavedNote)setMarginOpen(true);},[document?.id,!!capture,pendingRecovery,pendingSavedNote]);
+  const importForm=<details className="reader-import" open={!loadingSnapshots && !snapshots.length || importDraft.saving || !!importDraft.text}><summary>{document ? 'Add another excerpt or edition' : 'Add text to read here'}</summary><form onSubmit={importText}>
       <label>Edition / version<input required value={importDraft.edition} disabled={importDraft.saving} maxLength={1000} onChange={e=>editImport({edition:e.target.value})} placeholder="Identify the edition or translation you are reading" /></label>
       <label>Location covered<input required value={importDraft.locator} disabled={importDraft.saving} maxLength={2000} onChange={e=>editImport({locator:e.target.value})} placeholder="Abstract, section, page, or verse" /></label>
       <label>Original source URL (optional)<input type="url" value={importDraft.representation_url} disabled={importDraft.saving} maxLength={2000} onChange={e=>editImport({representation_url:e.target.value})} /></label>
       <label>Plain-text excerpt<textarea required value={importDraft.text} disabled={importDraft.saving} maxLength={12000} rows={7} onChange={e=>editImport({text:e.target.value})} /></label>
       <small>Up to 12,000 characters. Imported text stays private and is not marked as verified scholarship.</small>
       <div><button disabled={importDraft.saving}>{importDraft.saving ? 'Saving…' : 'Save private excerpt'}</button><button type="button" disabled={importDraft.saving} onClick={()=>forget(importKey)}>Discard import draft</button></div>
-    </form></details>
-    {snapshots.length>0 && <label className="reader-version">Reading version<select value={documentId} onChange={e=>{requestedAnchor.current=null;setDocumentId(e.target.value);bookmark('',e.target.value);}}>{snapshots.map(d=><option key={d.id} value={d.id}>{d.edition} · {d.locator} · {d.text_sha256.slice(0,8)}{drafts.current.has(`capture:${d.id}`) ? ' · draft' : ''}</option>)}</select></label>}
-    {cursor && <button onClick={moreSnapshots}>More saved excerpts</button>}
-    {document && <><p className="reader-help">{document.edition} · {document.locator}<br/>{document.review_scope}</p>
-      {document.source_notice && <details className="reader-source-notice"><summary>Source notice & attribution</summary><pre dir="auto">{document.source_notice}</pre></details>}
-      <div className="reader-toolbar" role="group" aria-label="Passage annotation tools">
-        <button className="reader-select" onPointerDown={e=>e.preventDefault()} onClick={()=>select('highlight')} disabled={capture?.saving}>Annotate selected text</button>
-        <button className="reader-underline" onPointerDown={e=>e.preventDefault()} onClick={()=>select('underline')} disabled={capture?.saving}>Underline</button>
-        <button className="reader-note-only" onPointerDown={e=>e.preventDefault()} onClick={()=>select('none')} disabled={capture?.saving}>Margin note</button>
-        {onFocusChange && <button className="reader-focus" aria-pressed={focused} onClick={()=>onFocusChange(!focused)}>{focused ? 'Show library' : 'Focus on reading'}</button>}
-        <button className="reader-margin-toggle" aria-expanded={marginOpen} aria-controls={marginId} onClick={()=>setMarginOpen(!marginOpen)}>{marginOpen ? 'Hide margin' : 'Show margin'}</button>
-        <button className="reader-refresh" onClick={refreshAnnotations}>Refresh saved notes</button>
-      </div>
-      <p className="reader-help">Select text, then choose a mark. Click a saved mark to write beside it; click a note’s quotation to return. Keyboard: select text, then Alt + N.</p>
+    </form></details>;
+  return <section className="source-reader" aria-labelledby="source-reader-heading">
+    <div className="reader-heading-row"><h3 id="source-reader-heading">Source text</h3><div className="reader-view-actions">
+      {onFocusChange && <button className="reader-focus" aria-pressed={focused} onClick={()=>onFocusChange(!focused)}>{focused ? 'Show library' : 'Focus on reading'}</button>}
+      <button className="reader-margin-toggle" aria-expanded={marginOpen} aria-controls={marginId} onClick={()=>setMarginOpen(!marginOpen)}>{marginOpen ? 'Hide margin' : 'Show margin'}</button>
+    </div></div>
+    {loadingSnapshots && !document && <p className="reader-help" role="status">Opening your reading…</p>}
+    {snapshots.length>0 && <div className="reader-edition-bar"><label className="reader-version">Reading version<select value={documentId} onChange={e=>{requestedAnchor.current=null;setDocumentId(e.target.value);bookmark('',e.target.value);}}>{snapshots.map(d=><option key={d.id} value={d.id}>{d.edition} · {d.locator} · {d.text_sha256.slice(0,8)}{drafts.current.has(`capture:${d.id}`) ? ' · draft' : ''}</option>)}</select></label>{cursor && <button onClick={moreSnapshots}>More saved excerpts</button>}</div>}
+    {document && <>
       {message && <p className="reader-message" role="status">{message}</p>}
       {marked.unanchored.length>0 && <p className="reader-message" role="status">{marked.unanchored.length} saved note(s) need anchor review. Their marks were not moved to other text.</p>}
       {annotations.some(row=>!belongs(row)) && <p className="reader-message" role="status">A returned note did not match this source version and was not displayed. Refresh saved notes to retry.</p>}
-      <ResizablePanes className={`reader-desk${marginOpen ? '' : ' is-margin-collapsed'}`} storageKey="research:reader-margin-width" label="Resize source text and margin notes">
-        <div className="reader-page"><div ref={textRoot} className="reader-text" dir="auto" tabIndex={0} aria-label="Source excerpt" onKeyDown={event=>{
+      <ResizablePanes className={`reader-desk${marginOpen ? '' : ' is-margin-collapsed'}`} storageKey="research:reader-margin-width-v2" minWidth={50} maxWidth={82} defaultWidth={72} label="Resize source text and margin notes">
+        <div className="reader-page"><div className="reader-page-topline"><span>LOCATED EXCERPT</span><button className="reader-annotation-toggle" aria-expanded={!!selectionPreview || annotationTools} onClick={()=>setAnnotationTools(!annotationTools)}>Annotate <span>↗</span></button></div>
+          <div className="reader-toolbar" role="group" aria-label="Passage annotation tools" hidden={!selectionPreview && !annotationTools}>
+            <span className="reader-selection-label">{selectionPreview ? `${Array.from(selectionPreview.exact).length} characters selected` : 'Select a word or passage'}</span>
+            <button className="reader-select" onPointerDown={e=>e.preventDefault()} onClick={()=>select('highlight')} disabled={capture?.saving}>Annotate selected text</button>
+            <button className="reader-underline" onPointerDown={e=>e.preventDefault()} onClick={()=>select('underline')} disabled={capture?.saving}>Underline</button>
+            <button className="reader-note-only" onPointerDown={e=>e.preventDefault()} onClick={()=>select('none')} disabled={capture?.saving}>Margin note</button>
+          </div>
+          <div ref={textRoot} className="reader-text" dir="auto" tabIndex={0} aria-label="Source excerpt" onKeyDown={event=>{
           if(event.altKey && event.key.toLowerCase()==='n') {event.preventDefault();select('none');}
         }}>{marked.runs.map(run=>run.ids.length || run.selected ? <mark key={run.start} ref={run.selected && (!highlight || run.start===highlight.start) ? mark : null}
           className={`${run.highlight ? 'has-highlight ' : ''}${run.underline ? 'has-underline ' : ''}${run.selected ? 'is-selected ' : ''}${run.ids.length>1 ? 'has-overlap' : ''}`}
           {...(run.ids.length ? {role:'button',tabIndex:0,'aria-label':`${run.text} — ${run.ids.length===1 ? 'open margin note' : `${run.ids.length} margin notes; activate to cycle`}`,'aria-pressed':run.ids.includes(activeAnnotation),
-            onClick:()=>openMargin(run.ids),onKeyDown:event=>{if(event.key==='Enter' || event.key===' ') {event.preventDefault();openMargin(run.ids);}}} : {})}>{run.text}</mark> : run.text)}</div></div>
-        <aside ref={margin} id={marginId} hidden={!marginOpen} className="reader-margin" aria-label="Passage margin notes">
-          {!capture && <RecoverableDraft key={document.id+':capture-finder'} api={api} projectId={record.project_id} recordId={record.id} contextKind="capture" document={document} body="" drafts={drafts} changed={changed} onRecover={recoverCapture}/>}
+            onClick:()=>openMargin(run.ids),onKeyDown:event=>{if(event.key==='Enter' || event.key===' ') {event.preventDefault();openMargin(run.ids);}}} : {})}>{run.text}</mark> : run.text)}</div>
+          <p className="reader-selection-hint">Select a phrase to annotate. Alt + N adds a margin note.</p>
+          <details className="reader-edition-details"><summary>Source, edition & attribution</summary><p>{document.edition}</p><p>{document.locator}</p><p>{document.review_scope}</p>
+            {document.representation_url && <a href={document.representation_url} target="_blank" rel="noopener noreferrer">Open original source ↗</a>}
+            {document.source_notice && <div className="reader-source-notice"><h4>Source notice & attribution</h4><pre dir="auto">{document.source_notice}</pre></div>}
+          </details>{importForm}
+        </div>
+        <aside ref={margin} id={marginId} hidden={!marginOpen} className="reader-margin" aria-label="Passage margin notes" onKeyDown={event=>{if(event.key==='Escape' && window.matchMedia('(max-width: 900px)').matches){event.preventDefault();event.stopPropagation();setMarginOpen(false);textRoot.current?.closest('.source-reader')?.querySelector('.reader-margin-toggle')?.focus();}}}>
+          <div className="reader-margin-heading"><h4>In the margin <span>{writingNotes.length}{annotationCursor ? '+' : ''}</span></h4><button className="reader-refresh" onClick={refreshAnnotations}>Refresh saved notes</button><button className="reader-margin-close" aria-label="Close margin notes" onClick={()=>setMarginOpen(false)}>×</button></div>
+          {!capture && !writingNotes.length && <div className="reader-margin-empty"><span aria-hidden="true">✎</span><h4>Make this reading yours.</h4><p>Select a phrase to highlight it, ask a question, or connect an idea. Each note leads back to its exact source passage.</p></div>}
+          {!capture && <details className="reader-recovery-disclosure" open={recoveryOpen || pendingRecovery} onToggle={event=>setRecoveryOpen(event.currentTarget.open)}><summary>Recover unfinished writing</summary><RecoverableDraft key={document.id+':capture-finder'} api={api} projectId={record.project_id} recordId={record.id} contextKind="capture" document={document} body="" drafts={drafts} changed={changed} onRecover={recoverCapture}/></details>}
           {capture && <div className="reader-capture"><h4>In the margin</h4><blockquote dir="auto">{capture.exact}</blockquote>
             <label>Passage mark<select value={capture.mark_style || 'highlight'} disabled={capture.saving || !!capture.submitted} onChange={e=>remember(captureKey,{...capture,mark_style:e.target.value})}><option value="highlight">Highlight</option><option value="underline">Underline</option><option value="none">Margin note only</option></select></label>
             <label>My passage note<textarea ref={composer} value={capture.body} disabled={capture.saving || !!capture.submitted} rows={5} maxLength={10000} onChange={e=>remember(captureKey,{...capture,body:e.target.value})}
@@ -212,12 +232,14 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
             <RecoverableDraft key={document.id+':'+capture.start+':'+capture.end} api={api} projectId={record.project_id} recordId={record.id} contextKind="capture" document={document} selection={capture} body={capture.body} markStyle={capture.mark_style || 'highlight'} drafts={drafts} changed={changed} onRecover={recoverCapture}/>
             {capture.submitted && !capture.saving && <small>The response was not confirmed. Retry sends the original note and ID, so it cannot create a second note. Discarding removes this local draft; a committed note may still exist in the cloud. Refresh saved notes to check.</small>}
             <small>Your note stays attached to this exact source version. Capturing it does not create a reviewed claim.</small></div>}
-          <div className="reader-annotations"><h4>Saved passage notes <span>{annotations.length}{annotationCursor ? '+' : ''}</span></h4>{!annotations.length && <p>Select a passage and write here. Your saved notes will stay beside this source.</p>}
-            {saved.map(row=><SavedPassageNote key={row.id} row={row} sourceId={record.id} document={document} editor={noteEditor} reopen={reopen} api={api} drafts={drafts} changed={changed} navigate={navigate} onOpenVerse={onOpenVerse} active={activeAnnotation===row.id} />)}
+          <div className="reader-annotations"><h4 className="reader-saved-heading">Saved passage notes</h4>
+            {writingNotes.map(row=><SavedPassageNote key={row.id} row={row} sourceId={record.id} document={document} editor={noteEditor} reopen={reopen} api={api} drafts={drafts} changed={changed} navigate={navigate} onOpenVerse={onOpenVerse} active={activeAnnotation===row.id} />)}
+            {sourceAnchors.length>0 && <details className="reader-source-anchors"><summary>Linked source passages · {sourceAnchors.length}</summary><p>These passages anchor source connections. They do not contain a personal note yet.</p>{sourceAnchors.map(row=><SavedPassageNote key={row.id} row={row} sourceId={record.id} document={document} editor={noteEditor} reopen={reopen} api={api} drafts={drafts} changed={changed} navigate={navigate} onOpenVerse={onOpenVerse} active={activeAnnotation===row.id} />)}</details>}
             {annotationCursor && <><p className="reader-help">More notes exist. Load them to see their marks in the text.</p><button onClick={moreAnnotations}>More passage notes</button></>}</div>
         </aside>
       </ResizablePanes>
     </>}
+    {!document && !loadingSnapshots && <div className="reader-empty-state"><h4>{snapshots.length ? 'Open a reading version' : 'This source needs a reading excerpt.'}</h4><p>Save a short, located excerpt with its edition to begin reading and taking passage notes. Your source record is preserved.</p>{importForm}</div>}
     {!document && message && <p className="reader-message" role="status">{message}</p>}
   </section>;
 }

@@ -6,6 +6,11 @@ The research should understand traditions in context before evaluating them. “
 
 ## Start here
 
+- `docs/reader-first-workspace.md` — the Reader A interface connected to saved readings, margin notes, comparison, notebook, search, and sourced agent briefs.
+- `docs/unified-owner-search.md` — owner-only literal retrieval across the current research authorities and actual saved-reading library.
+- `docs/research-tools.md` — source-linked research briefs, notebook saves, and explicit agent exports.
+
+- `docs/reader-ui-samples.md` — three locally runnable reader interface studies: focused reading, linked commentary, and a source-linked notebook; isolated from hosted authoring.
 - `AGENTS.md` — research and graph standards.
 - `sources/original/starting-reading-list.xlsx` — preserved starting workbook.
 - `data/reading-list.csv` — row-level export of the workbook's Reading List sheet.

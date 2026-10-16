@@ -31,9 +31,11 @@ export default function SavedPassageNote({ row,sourceId,document,editor,reopen,a
       {document && <RecoverableDraft key={value.id+':drafts'} api={api} projectId={value.project_id} recordId={sourceId} contextKind="annotation" document={document} annotation={value} body={entry.body} markStyle={entry.markStyle} baseRevision={entry.server.revision} drafts={drafts} changed={changed} onRecover={recovered=>recoverPassageWriting(editor,{id:sourceId,project_id:value.project_id},recovered)}/>}
       <small>Your saved note stays private. Editing it keeps the selected text, source version, and revision history attached.</small>
     </div> : <>{value.body && <p>{value.body}</p>}<button className="passage-note-open" onClick={()=>editor.open(value.id)}>Edit note</button></>}
+    <details className="passage-research-tools"><summary>Explore this passage</summary>
     <button onClick={()=>reopen(value,true)}>Export private annotation</button>
     <ScriptureCitations annotation={value} sourceId={sourceId} api={api} drafts={drafts} changed={changed} navigate={navigate} />
     <VerseLinks api={api} projectId={value.project_id} annotation={value} drafts={drafts} changed={changed} onOpenVerse={onOpenVerse} />
     <LexiconCapture annotation={value} sourceId={sourceId} api={api} drafts={drafts} changed={changed} navigate={navigate} />
+    </details>
   </article>;
 }

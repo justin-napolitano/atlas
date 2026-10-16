@@ -75,6 +75,24 @@ class ReadingDeskTests(unittest.TestCase):
             source_only=self.save(connection,document_id=None,annotation_id=None)
             self.assertIsNone(source_only["start_pos"])
 
+    def test_withdrawn_source_cannot_resume_or_save_but_bookmark_history_is_retained(self):
+        from islam_research.research_search import library
+        with self.db.connect(self.owner_dsn) as connection:
+            self.save(connection)
+            self.assertIsNotNone(self.store.get(connection,self.project))
+            self.assertEqual(len(library(connection,self.project)['items']),1)
+        # Editorial withdrawal is deliberately unavailable to the runtime role.
+        with self.db.connect(self.dsn) as connection:
+            connection.execute("UPDATE research.records SET review_state='withdrawn',revision=revision+1 WHERE id=%s",(self.source,))
+        with self.db.connect(self.owner_dsn) as connection:
+            self.assertIsNone(self.store.get(connection,self.project))
+            self.assertEqual(library(connection,self.project)['items'],[])
+            with self.assertRaises(ValueError):self.save(connection,expected_revision=1)
+            retained=connection.execute('SELECT revision,snapshot FROM research.reading_desk_revisions WHERE project_id=%s',(self.project,)).fetchall()
+            self.assertEqual(len(retained),1)
+            self.assertEqual(retained[0]['snapshot']['record_id'],self.source)
+            self.assertEqual(retained[0]['snapshot']['document_id'],self.document['id'])
+
     def test_simultaneous_different_initial_positions_preserve_one_winner_and_one_conflict(self):
         from concurrent.futures import ThreadPoolExecutor
         import threading

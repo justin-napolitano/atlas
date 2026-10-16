@@ -607,6 +607,17 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     def me():
         return {"mode": "owner", "can_edit": True}
 
+    @router.get("/research/search")
+    def research_search(project_id: Identifier, q: Annotated[str,Query(min_length=1,max_length=300)],
+        limit: Annotated[int,Query(ge=1,le=50)] = 30):
+        if not q.strip(): raise HTTPException(422,"Supply a nonblank research query")
+        return store.research_search(project_id,q,limit)
+
+    @router.get("/reading/library")
+    def reading_library(project_id: Identifier, cursor: Annotated[str,Query(max_length=500)] = "",
+        limit: Annotated[int,Query(ge=1,le=50)] = 30):
+        return store.reading_library(project_id,cursor,limit)
+
     @router.get("/reading/draft")
     def reading_draft(project_id: Identifier,draft_id: Identifier):
         value=store.reading_draft(project_id,draft_id)
@@ -740,6 +751,10 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         policy, digest = registered_policy()
         return {"policy_sha256": digest, "traversal_profiles": policy["traversal_profiles"],
                 "ranking_profiles": policy["ranking_profiles"],
+                "research_search": {"version":1,"scope":"owner_only","endpoint":"/v1/research/search",
+                    "library":"/v1/reading/library","query_max_characters":300,"max_results":50,
+                    "retrieval":"case_insensitive_literal_match","ranking":"exact_title_then_title_prefix_then_literal_match",
+                    "review_effect":"none","graph_effect":"none","publication_effect":"none"},
                 "scripture_references": {"profile_id":QURAN_PROFILE_ID,"parser_version":QURAN_PARSER_VERSION,
                     "candidates":"/v1/reading/scripture-candidates","reverse_lookup":"/v1/reading/scripture-citations",
                     "owner_resolution":"/v1/reading/scripture-citation","max_reverse_lookup_page":25,

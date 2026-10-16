@@ -21,6 +21,11 @@ import { PassageNoteEditor } from './passageNoteEditor.js';
 import { ReadingWorkspace, blankState, markdownDraft, workspaceAPI } from './workspaceClient.js';
 import './style.css';
 import './workspace.css';
+import ResearchSearch from './ResearchSearch.jsx';
+import ResearchBrief from './ResearchBrief.jsx';
+import {verifyReadingPlace} from './readingPlace.js';
+import './atlasWorkspace.css';
+import {currentReadingAnchor,notebookAnchorForProject} from './readingNavigation.js';
 
 const api = workspaceAPI();
 const fromURL = () => Object.fromEntries(new URLSearchParams(location.search));
@@ -55,12 +60,19 @@ function Workspace() {
   const [notice, setNotice] = useState('');
   const [trail, setTrail] = useState(null);
   const [readingFocus,setReadingFocus]=useState(false);
+  const [libraryOpen,setLibraryOpen]=useState(false);
+  const [libraryMode,setLibraryMode]=useState('readings');
+  const [libraryRows,setLibraryRows]=useState([]),[libraryCursor,setLibraryCursor]=useState(null),[libraryError,setLibraryError]=useState(''),[libraryLoading,setLibraryLoading]=useState(false);
+  const [notebookEntryId,setNotebookEntryId]=useState(fromURL().entry_id || '');
+  const [briefAnchor,setBriefAnchor]=useState(null);
+  const libraryGeneration=useRef(0),navigationRef=useRef(null);
+
   const [currentReadingPlace,setCurrentReadingPlace]=useState(null);
   const [libraryView,setLibraryView]=useState(fromURL().view || '');
   const [collectionReading,setCollectionReading]=useState(null);
   const [collectionReadingId,setCollectionReadingId]=useState(fromURL().reading_id || '');
   const [collectionError,setCollectionError]=useState('');
-  const [notebookAnchor,setNotebookAnchor]=useState(()=>fromURL().document ? {record_id:fromURL().record,document_id:fromURL().document,annotation_id:fromURL().annotation || null} : null);
+  const [notebookAnchor,setNotebookAnchor]=useState(()=>fromURL().document ? {project_id:fromURL().project || '',record_id:fromURL().record,document_id:fromURL().document,annotation_id:fromURL().annotation || null} : null);
   const [verseReference,setVerseReference]=useState(verseFromURL());
   const [comparison,setComparison]=useState(()=>({left:{record_id:fromURL().left_source || fromURL().record || '',document_id:fromURL().left_document || fromURL().document || ''},right:{record_id:fromURL().right_source || '',document_id:fromURL().right_document || ''}}));
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem('research-theme') || 'light'; } catch { return 'light'; } });
@@ -86,11 +98,32 @@ function Workspace() {
     return () => { active = false; };
   }, []);
   useEffect(() => {
-    const unload = event => { if (store.current.hasDrafts() || passageNotes.current.hasDrafts() || readingDrafts.current.size) { event.preventDefault(); event.returnValue = ''; } };
-    const pop = () => { const state = fromURL(); setProject(state.project || ''); setSelected(state.record || ''); setSelectedAnnotation(state.annotation || '');setSelectedDocument(state.document || '');setLibraryView(['add-source','article-pilot','pilot','compare','collection','collection-intake','collection-link','notebook'].includes(state.view) ? state.view : '');setVerseReference(verseFromURL());setCollectionReadingId(state.reading_id || '');setNotebookAnchor(state.document ? {record_id:state.record,document_id:state.document,annotation_id:state.annotation || null} : null);setComparison({left:{record_id:state.left_source || state.record || '',document_id:state.left_document || state.document || ''},right:{record_id:state.right_source || '',document_id:state.right_document || ''}}); };
+    const unload = event => { if (store.current.hasDrafts() || passageNotes.current.hasDrafts() || [...readingDrafts.current].some(([key,value])=>!key.startsWith('research-brief:') || !value.saved)) { event.preventDefault(); event.returnValue = ''; } };
+    const pop = () => { const state = fromURL(); setProject(state.project || ''); setSelected(state.record || ''); setSelectedAnnotation(state.annotation || '');setSelectedDocument(state.document || '');setBriefAnchor(null);setNotebookEntryId(state.entry_id || '');setLibraryView(['add-source','article-pilot','pilot','compare','collection','collection-intake','collection-link','notebook','search','assistant'].includes(state.view) ? state.view : '');setVerseReference(verseFromURL());setCollectionReadingId(state.reading_id || '');setNotebookAnchor(state.document ? {project_id:state.project || '',record_id:state.record,document_id:state.document,annotation_id:state.annotation || null} : null);setComparison({left:{record_id:state.left_source || state.record || '',document_id:state.left_document || state.document || ''},right:{record_id:state.right_source || '',document_id:state.right_document || ''}}); };
     addEventListener('beforeunload', unload); addEventListener('popstate', pop);
     return () => { removeEventListener('beforeunload', unload); removeEventListener('popstate', pop); };
   }, []);
+  async function loadLibrary(append=false){
+    if(!project)return;const token=++libraryGeneration.current;setLibraryLoading(true);setLibraryError('');
+    try{const page=await api.request('reading/library',{project_id:project,limit:50,...(append && libraryCursor?{cursor:libraryCursor}:{})});
+      if(!Array.isArray(page.items) || page.items.some(row=>row.project_id!==project || !row.record_id || !row.document_id))throw new Error('The reading library did not match this project.');
+      if(token!==libraryGeneration.current)return;
+      setLibraryRows(old=>append?[...old,...page.items]:page.items);setLibraryCursor(page.next_cursor || null);
+      const locationState=fromURL();
+      if(!append && !locationState.record && !locationState.view){
+        let place=null;try{place=verifyReadingPlace(await api.request('reading/desk',{project_id:project}),project);}catch(error){if(error.status!==404){setLibraryError('Your bookmark could not be loaded. Choose a saved reading below.');return;}}
+        if(token!==libraryGeneration.current || fromURL().record || fromURL().view)return;
+        if(place)open(place.record_id,project,place.annotation_id || '',place.document_id);
+        else if(page.items[0])open(page.items[0].record_id,project,'',page.items[0].document_id);
+      }
+    }catch(error){if(token===libraryGeneration.current)setLibraryError(error.message);}finally{if(token===libraryGeneration.current)setLibraryLoading(false);}
+  }
+  useEffect(()=>{setBriefAnchor(null);setNotebookAnchor(value=>notebookAnchorForProject(project,value));setLibraryRows([]);setLibraryCursor(null);loadLibrary();return()=>{libraryGeneration.current++;};},[project]);
+  navigationRef.current={search:()=>showLibrary('search'),close:()=>setLibraryOpen(false)};
+  useEffect(()=>{if(libraryView==='search')requestAnimationFrame(()=>window.document.getElementById('research-search-query')?.focus());},[libraryView]);
+  useEffect(()=>{const handle=event=>{if((event.metaKey || event.ctrlKey) && event.key.toLowerCase()==='k'){event.preventDefault();navigationRef.current.search();}if(event.key==='Escape')navigationRef.current.close();};addEventListener('keydown',handle);return()=>removeEventListener('keydown',handle);},[]);
+  function prepareResearch(){const valid=record?.project_id===project && record.id===selected,anchor=currentReadingAnchor(project,record?.id,fromURL(),currentReadingPlace);setBriefAnchor(valid?{record,documentId:anchor.documentId,annotationId:anchor.annotationId}:null);showLibrary('assistant');}
+
   async function loadRows({ append = false, search = false } = {}) {
     if (!project) return;
     if(search && scope==='notebook'){showNotebook();return;}
@@ -133,16 +166,18 @@ function Workspace() {
   }, [selected, project]);
   function open(id, nextProject = project, annotationId = '',documentId='') {
     const url = new URL(location.href); url.search = new URLSearchParams({ project: nextProject, ...(id ? { record: id } : {}), ...(annotationId ? { annotation: annotationId } : {}),...(documentId ? {document:documentId} : {}) });
-    history.pushState(null, '', url); setLibraryView('');setSelected(id); setProject(nextProject); setSelectedAnnotation(annotationId);setSelectedDocument(documentId);
+    history.pushState(null, '', url);setLibraryOpen(false);setNotebookEntryId('');setBriefAnchor(null);setNotebookAnchor(null); setLibraryView('');setSelected(id); setProject(nextProject); setSelectedAnnotation(annotationId);setSelectedDocument(documentId);
   }
   function showLibrary(view,reference=null) {
+    setLibraryOpen(false);
     const url=new URL(location.href);url.searchParams.set('project',project);url.searchParams.set('view',view);
     for(const key of ['chapter','ayah_start','ayah_end']) {if(reference)url.searchParams.set(key,reference[key]);else url.searchParams.delete(key);}
-    setVerseReference(reference);
+    setVerseReference(reference);if(view!=='notebook'){setNotebookEntryId('');url.searchParams.delete('entry_id');}
     history.pushState(null,'',url);setLibraryView(view);setReadingFocus(false);
   }
-  function compare(target={record_id:record?.id || '',document_id:currentReadingPlace?.document_id || ''}) {
-    setComparison({left:target,right:{}});
+  function compare(target) {
+    target=target || {record_id:record?.id || '',document_id:currentReadingAnchor(project,record?.id,fromURL(),currentReadingPlace).documentId};
+    setLibraryOpen(false);setComparison({left:target,right:{}});
     const url=new URL(location.href);url.searchParams.set('project',project);url.searchParams.set('view','compare');
     for(const key of ['left_source','left_document','right_source','right_document'])url.searchParams.delete(key);
     if(target.record_id)url.searchParams.set('left_source',target.record_id);if(target.document_id)url.searchParams.set('left_document',target.document_id);
@@ -150,58 +185,76 @@ function Workspace() {
   }
   function chooseCollection(collection,reading){setCollectionReadingId(reading.id);setCollectionReading(collectionPreset(collection,reading));showLibrary('collection-intake');const url=new URL(location.href);url.searchParams.set('reading_id',reading.id);history.replaceState(null,'',url);}
   function afterIntake(result){
-    loadRows();
+    loadRows();loadLibrary();
     if(libraryView==='collection-intake' && collectionReadingId && result.document_id){
       const url=new URL(location.href);url.search=new URLSearchParams({project:result.project_id,record:result.record_id,document:result.document_id,reading_id:collectionReadingId,view:'collection-link'});history.pushState(null,'',url);
       setProject(result.project_id);setSelected(result.record_id);setSelectedDocument(result.document_id);setSelectedAnnotation('');setLibraryView('collection-link');
     }else open(result.record_id,result.project_id,'',result.document_id || '');
   }
-  function showNotebook(){setNotebookAnchor(currentReadingPlace?.project_id===project && currentReadingPlace.record_id===record?.id ? {record_id:currentReadingPlace.record_id,document_id:currentReadingPlace.document_id,annotation_id:currentReadingPlace.annotation_id || null} : null);showLibrary('notebook');}
+  function openNotebookEntry(entryId=''){setNotebookAnchor(null);setNotebookEntryId(entryId);showLibrary('notebook');const url=new URL(location.href);if(entryId)url.searchParams.set('entry_id',entryId);else url.searchParams.delete('entry_id');history.replaceState(null,'',url);}
+  function showNotebook(){setNotebookEntryId('');const anchor=currentReadingAnchor(project,record?.id,fromURL(),currentReadingPlace);setNotebookAnchor(record?.project_id===project && anchor.documentId?{project_id:project,record_id:record.id,document_id:anchor.documentId,annotation_id:anchor.annotationId || null}:null);showLibrary('notebook');}
+
   function comparisonSelection(side,target){const url=new URL(location.href);for(const [key,value] of [[side+'_source',target.record_id],[side+'_document',target.document_id]]){if(value)url.searchParams.set(key,value);else url.searchParams.delete(key);}history.replaceState(null,'',url);}
-  function closeLibrary() {const url=new URL(location.href);url.searchParams.delete('view');history.pushState(null,'',url);setSelectedAnnotation(url.searchParams.get('annotation') || '');setSelectedDocument(url.searchParams.get('document') || '');setLibraryView('');}
+  function closeLibrary() {if(!selected && libraryRows[0]){open(libraryRows[0].record_id,project,'',libraryRows[0].document_id);return;}const url=new URL(location.href);url.searchParams.delete('view');history.pushState(null,'',url);setSelectedAnnotation(url.searchParams.get('annotation') || '');setSelectedDocument(url.searchParams.get('document') || '');setLibraryView('');}
   const entry = record && store.current.entries.get(record.id);
-  function edit(patch, save = false) { store.current.edit(record.id, patch); if (save) store.current.save(record.id); }
+  function edit(patch, save = false) { if(!record || record.project_id!==project)return;store.current.edit(record.id, patch); if (save) store.current.save(record.id); }
   async function exportNote() {
     const url = URL.createObjectURL(new Blob([await markdownDraft(record, entry)], { type: 'text/markdown' }));
     const link = document.createElement('a'); link.href = url; link.download = 'research-note.md'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  return <main className={`shell owner-shell${libraryView ? ' has-library-view' : ''}`}>
-    <a className="skip-link" href={libraryView ? '#workspace-view' : '#workspace-results'}>{libraryView ? 'Skip to reading view' : 'Skip to research records'}</a>
-    <header className="topbar"><a className="brand" href="/">Research notes</a><span>My workspace</span><div className="header-tools"><button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</button><a href={`/publish.html?${new URLSearchParams({project})}`}>Publish research</a><a href="/">Public research ↗</a></div></header>
-    <div className="owner-heading"><h1>Read. Follow the sources. Make notes.</h1><p>Your reading state and notes are private. Saving here does not publish them.</p></div>
-    {error && <div role="alert" className="workspace-alert"><p>{error}</p><button onClick={() => location.reload()}>Reconnect workspace</button><small>Export unsaved notes before reloading. The hosted owner endpoint must be configured at this address.</small></div>}
-    <form className="workspace-search" onSubmit={e => { e.preventDefault(); loadRows({ search: true }); }}>
-      <label>Project<select value={project} onChange={e => open('', e.target.value)}>{projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}</select></label>
-      <label className="workspace-query">Find in my research<input value={query} onChange={e => setQuery(e.target.value)} maxLength={500} placeholder="Words from a title, finding, or note" /></label>
-      <label>Search in<select value={scope} onChange={e => {setScope(e.target.value);if(e.target.value==='lexicon')setKind('');}}><option value="records">Records</option><option value="notes">My record notes</option><option value="annotations">My passage notes</option><option value="lexicon">Concept words & definitions</option><option value="notebook">My notebook</option><option value="all">Records, reading notes & concepts</option></select></label>
-      <label>Type<select value={kind} disabled={scope==='lexicon'} onChange={e => setKind(e.target.value)}><option value="">All types</option>{['source','question','claim','evidence','concept','person'].map(k => <option key={k}>{k}</option>)}</select></label>
-      <button type="submit" disabled={!project || searching}>{searching ? 'Loading…' : 'Search'}</button><button type="button" disabled={!project || searching} onClick={() => { setQuery(''); setScope('records'); setKind(''); loadRows(); }}>Browse all</button>
-    </form>
-    {project && <ReadingPlace key={project} api={api} projectId={project} place={!libraryView && currentReadingPlace?.project_id===project && currentReadingPlace.record_id===record?.id ? currentReadingPlace : null} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onResume={open} />}
-    {libraryView && <label className="library-project">Project<select value={project} onChange={event=>open('',event.target.value)}>{projects.map(row=><option key={row.id} value={row.id}>{row.title}</option>)}</select></label>}
-    <details className="workspace-tools" open={!libraryView}><summary>Reading tools</summary><nav className="workspace-library-actions" aria-label="Reading library actions"><button disabled={!project} onClick={()=>showLibrary('add-source')}>Add a source</button><button disabled={!project} onClick={()=>showLibrary('article-pilot')}>Read the Sirry article</button><button disabled={!project} onClick={()=>showLibrary('pilot')}>Start Qur’an pilot</button><button disabled={!project} onClick={()=>compare()}>Compare readings</button><button disabled={!project} onClick={()=>showLibrary('collection')}>Reading collection & context</button><button disabled={!project} onClick={showNotebook}>My notebook</button></nav></details>
-    <div id="workspace-view" tabIndex={-1}>
-    {libraryView==='collection-link' ? <CollectionReadingLink key={JSON.stringify([project,collectionReadingId,selectedDocument])} api={api} projectId={project} readingId={collectionReadingId} documentId={selectedDocument} sourceRecordId={selected} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onOpen={open} onVerse={reference=>showLibrary('pilot',reference)}/> : libraryView==='notebook' ? <><button onClick={closeLibrary}>Back to my reading</button><ResearchNotebook key={project} api={api} projectId={project} initialQuery={scope==='notebook' ? query : ''} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onOpenSource={open} anchor={notebookAnchor}/></> : libraryView==='collection-intake' && !collectionReading ? <section><p role="status">{collectionError || 'Loading the selected reading…'}</p><button onClick={()=>showLibrary('collection')}>Return to reading collection</button></section> : libraryView==='collection' ? <ReadingCollection api={api} initialAyah={fromURL().collection_ayah} onVerseChange={ayah=>{const url=new URL(location.href);url.searchParams.set('collection_ayah',ayah);history.replaceState(null,'',url);}} onChoose={chooseCollection} onOpenVerse={reference=>showLibrary('pilot',reference)} onClose={closeLibrary}/> : libraryView==='compare' ? <ReadingComparison key={JSON.stringify([project,comparison])} api={api} projectId={project} initialLeft={comparison.left} initialRight={comparison.right} onSelection={comparisonSelection} onOpen={open} onClose={closeLibrary}/> : ['add-source','article-pilot','collection-intake'].includes(libraryView) ? <AddSource key={project+libraryView} initialPreset={libraryView==='article-pilot' ? sirryPilotPreset : libraryView==='collection-intake' ? collectionReading || undefined : undefined} api={api} projectId={project} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onCancel={closeLibrary} onCreated={afterIntake} /> : libraryView==='pilot' ? <PilotReading key={JSON.stringify([project,verseReference])} initialReference={verseReference} api={api} projectId={project} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onOpen={open} onCancel={closeLibrary} /> : <ResizablePanes storageKey="research:hosted-pane-width" className={`owner-panes${readingFocus && ['source','work','edition'].includes(record?.kind) ? ' reading-focus' : ''}`}>
-      <section id="workspace-results" className="workspace-results" aria-label="Research records">
-        <p className="workspace-result-count" role="status">{searching ? 'Loading records…' : `${rows.length} records shown`}{notice && ` · ${notice}`}</p>
+  const effectiveBrief=briefAnchor || (record?.project_id===project && record.id===selected?{record,...currentReadingAnchor(project,record.id,fromURL())}:null);
+  const isReading=record && ['source','work','edition'].includes(record.kind);
+  return <main className={`shell owner-shell atlas-workspace${libraryView ? ' has-library-view' : ''}${libraryOpen?' is-library-open':''}`}>
+    <a className="skip-link" href="#workspace-view">Skip to reading</a>
+    <header className="topbar atlas-header"><button className="atlas-library-toggle" aria-expanded={libraryOpen} aria-controls="atlas-library" onClick={()=>setLibraryOpen(!libraryOpen)}>Library</button><a className="brand" href="/workspace.html">ATLAS</a><span className="atlas-workspace-label">Your research</span><button className="atlas-search-launch" onClick={()=>showLibrary('search')} disabled={!project}>Search your research <kbd>⌘ K</kbd></button><div className="header-tools"><button className="atlas-agent-launch" onClick={prepareResearch} disabled={!project}>Agents</button><button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</button><details className="atlas-account-tools" onKeyDown={event=>{if(event.key==='Escape'){event.currentTarget.open=false;event.currentTarget.querySelector('summary').focus();}}}><summary>More</summary><div className="atlas-account-menu"><a href={`/publish.html?${new URLSearchParams({project})}`}>Publish research</a><a href="/">Public research ↗</a></div></details></div></header>
+    {error && <div role="alert" className="workspace-alert"><p>{error}</p><button onClick={() => location.reload()}>Reconnect workspace</button><small>Export unsaved notes before reloading.</small></div>}
+    <ResizablePanes storageKey="research:reader-library-v1" className={`owner-panes atlas-body${readingFocus?' reading-focus':''}`} minWidth={14} maxWidth={32} defaultWidth={19} label="Resize library and reading workspace">
+      <aside id="atlas-library" className="atlas-library workspace-results" aria-label="Research library">
+        <div className="atlas-library-heading"><span className="atlas-kicker">Your library</span><label className="atlas-project"><span className="sr-only">Research project</span><select aria-label="Research project" value={project} onChange={event=>open('',event.target.value)}>{projects.map(row=><option key={row.id} value={row.id}>{row.title}</option>)}</select></label><p>Read. Make notes. Follow the sources.</p></div>
+        <nav className="atlas-primary-nav" aria-label="Research workspace"><button aria-current={!libraryView?'page':undefined} onClick={closeLibrary}>Reading</button><button aria-current={libraryView==='notebook'?'page':undefined} onClick={showNotebook} disabled={!project}>My notebook</button></nav>
+        <details className="workspace-tools"><summary>Study tools</summary><nav className="workspace-library-actions" aria-label="Reading library actions"><button disabled={!project} onClick={()=>compare()}>Compare readings</button><button disabled={!project} onClick={()=>showLibrary('collection')}>Reading collection & context</button><button disabled={!project} onClick={()=>showLibrary('pilot')}>Start Qur’an pilot</button><button disabled={!project} onClick={()=>showLibrary('add-source')}>Add a source</button><button disabled={!project} onClick={()=>showLibrary('article-pilot')}>Read the Sirry article</button></nav></details>
+        <div className="atlas-library-tabs" role="group" aria-label="Library contents"><button aria-pressed={libraryMode==='readings'} onClick={()=>setLibraryMode('readings')}>Readings</button><button aria-pressed={libraryMode==='records'} onClick={()=>setLibraryMode('records')}>All research</button></div>
+        <section className="atlas-saved-readings" aria-label="Saved readings" hidden={libraryMode!=='readings'}>
+          <p className="workspace-result-count" role="status">{libraryLoading?'Opening your library…':`${libraryRows.length}${libraryCursor?'+':''} saved excerpts`}</p>
+          {libraryError && <p role="status" className="atlas-library-error">{libraryError} <button onClick={()=>loadLibrary()}>Retry library</button></p>}
+          {libraryRows.map(row=><button key={row.document_id} className="atlas-reading-item" aria-current={selected===row.record_id && (!selectedDocument || selectedDocument===row.document_id)?'page':undefined} onClick={()=>open(row.record_id,project,'',row.document_id)}><strong>{row.title}</strong><span>{row.locator}</span><small>{(store.current.entries.get(row.record_id)?.draft.reading || row.reading)==='read'?'Read by you · ':''}{row.edition}</small></button>)}
+          {!libraryLoading && !libraryError && !libraryRows.length && <div className="atlas-library-empty"><p>Your saved reading excerpts will appear here.</p><button onClick={()=>showLibrary('collection')}>Choose a starting reading</button><button onClick={()=>showLibrary('add-source')}>Add your own source</button></div>}
+          {libraryCursor && <button className="workspace-load" disabled={libraryLoading} onClick={()=>loadLibrary(true)}>More saved readings</button>}
+        </section>
+        <section id="workspace-results" className="atlas-all-records" aria-label="Research records" hidden={libraryMode!=='records'}><p className="workspace-result-count" role="status">{searching?'Loading records…':`${rows.length} records shown`}{notice && ` · ${notice}`}</p>
         {rows.map(row => <article key={row.id} className="workspace-hit"><button className="workspace-row" aria-pressed={selected === row.id} onClick={() => open(row.id)}><small>{row.kind} · {row.review_state}{store.current.entries.has(row.id) && ` · ${store.current.entries.get(row.id).draft.reading}`}</small><strong>{row.title}</strong>{row.matches?.filter(match=>match.channel!=='private_annotation').map((match,i) => <span key={match.channel+':'+i}><b>{match.channel === 'private_note' ? 'My note' : match.channel==='lexicon' ? 'Matched wording' : 'Record'}</b> · {match.excerpt}{match.assertion_kind && ` · ${match.assertion_kind.replaceAll('_',' ')}`}</span>)}</button>
           {row.matches?.filter(match=>match.channel==='private_annotation').map(match=><a key={match.target_id} className="workspace-passage-hit" href={`?${new URLSearchParams({project,record:row.id,annotation:match.target_id})}`} onClick={event=>{ if(event.button===0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) { event.preventDefault(); open(row.id,project,match.target_id); } }}><small>My passage note · {match.capture_kind?.replaceAll('_',' ')} · revision {match.revision}</small><span>{match.excerpt}</span><b>Open exact passage →</b></a>)}
           {row.matches_truncated && <small className="workspace-match-limit">More matches exist in this source. Narrow your search.</small>}
         </article>)}
         {cursor && <button className="workspace-load" disabled={searching} onClick={() => loadRows({ append: true })}>Load next 50 records</button>}
-      </section>
-      <section ref={reader} tabIndex={-1} className="workspace-reader" aria-label="Selected record and private notes">
-        {!record ? <div className="workspace-empty"><h2>{selected ? 'Opening record…' : 'Start with a question or a source.'}</h2><p>Select a record on the left. Questions show the claims, evidence, and sources behind them.</p></div> : <>
-          <div className="workspace-record-heading"><small>{record.kind} · {record.review_state}</small><h2 dir="auto">{record.title}</h2></div>
-          <p className="workspace-summary">{record.kind==='concept' && <small>Concept description</small>}{record.summary || 'No summary recorded yet.'}</p>
+        <details className="atlas-advanced-search"><summary>Filter research records</summary>    <form className="workspace-search" onSubmit={e => { e.preventDefault(); loadRows({ search: true }); }}>
+
+      <label className="workspace-query">Find in my research<input value={query} onChange={e => setQuery(e.target.value)} maxLength={500} placeholder="Words from a title, finding, or note" /></label>
+      <label>Search in<select value={scope} onChange={e => {setScope(e.target.value);if(e.target.value==='lexicon')setKind('');}}><option value="records">Records</option><option value="notes">My record notes</option><option value="annotations">My passage notes</option><option value="lexicon">Concept words & definitions</option><option value="notebook">My notebook</option><option value="all">Records, reading notes & concepts</option></select></label>
+      <label>Type<select value={kind} disabled={scope==='lexicon'} onChange={e => setKind(e.target.value)}><option value="">All types</option>{['source','question','claim','evidence','concept','person'].map(k => <option key={k}>{k}</option>)}</select></label>
+      <button type="submit" disabled={!project || searching}>{searching ? 'Loading…' : 'Search'}</button><button type="button" disabled={!project || searching} onClick={() => { setQuery(''); setScope('records'); setKind(''); loadRows(); }}>Browse all</button>
+    </form></details></section>
+        <details className="atlas-bookmark-tools"><summary>Reading place</summary>{project && <ReadingPlace key={project} api={api} projectId={project} place={!libraryView && currentReadingPlace?.project_id===project && currentReadingPlace.record_id===record?.id ? currentReadingPlace : null} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onResume={open}/>}</details>
+        <p className="atlas-private-note">Private workspace. Publishing is a separate choice.</p>
+      </aside>
+      <section ref={reader} id="workspace-view" tabIndex={-1} className="workspace-reader atlas-reading-workspace" aria-label="Selected record and private notes">
+        <div hidden={libraryView!=='search'}>{project && <ResearchSearch key={project} api={api} projectId={project} onOpen={open} onOpenNotebook={openNotebookEntry} onClose={closeLibrary}/>}</div>
+        {libraryView && <div className="atlas-view-back"><button onClick={closeLibrary}>← Back to reading</button></div>}
+        {libraryView==='search' ? null : libraryView==='assistant' ? selected && !effectiveBrief?<p role="status">Opening the source for your research question…</p>:<ResearchBrief key={JSON.stringify([project,effectiveBrief?.record?.id,effectiveBrief?.documentId,effectiveBrief?.annotationId])} api={api} projectId={project} record={effectiveBrief?.record || null} documentId={effectiveBrief?.documentId || ''} annotationId={effectiveBrief?.annotationId || ''} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onOpenNotebook={openNotebookEntry} onClose={closeLibrary}/> : libraryView==='collection-link' ? <CollectionReadingLink key={JSON.stringify([project,collectionReadingId,selectedDocument])} api={api} projectId={project} readingId={collectionReadingId} documentId={selectedDocument} sourceRecordId={selected} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onOpen={open} onVerse={reference=>showLibrary('pilot',reference)}/> : libraryView==='notebook' ? <><button onClick={closeLibrary}>Back to my reading</button><ResearchNotebook key={project+':'+notebookEntryId} initialEntryId={notebookEntryId} api={api} projectId={project} initialQuery={scope==='notebook' ? query : ''} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onOpenSource={open} anchor={notebookAnchorForProject(project,notebookAnchor)}/></> : libraryView==='collection-intake' && !collectionReading ? <section><p role="status">{collectionError || 'Loading the selected reading…'}</p><button onClick={()=>showLibrary('collection')}>Return to reading collection</button></section> : libraryView==='collection' ? <ReadingCollection api={api} initialAyah={fromURL().collection_ayah} onVerseChange={ayah=>{const url=new URL(location.href);url.searchParams.set('collection_ayah',ayah);history.replaceState(null,'',url);}} onChoose={chooseCollection} onOpenVerse={reference=>showLibrary('pilot',reference)} onClose={closeLibrary}/> : libraryView==='compare' ? <ReadingComparison key={JSON.stringify([project,comparison])} api={api} projectId={project} initialLeft={comparison.left} initialRight={comparison.right} onSelection={comparisonSelection} onOpen={open} onClose={closeLibrary}/> : ['add-source','article-pilot','collection-intake'].includes(libraryView) ? <AddSource key={project+libraryView} initialPreset={libraryView==='article-pilot' ? sirryPilotPreset : libraryView==='collection-intake' ? collectionReading || undefined : undefined} api={api} projectId={project} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onCancel={closeLibrary} onCreated={afterIntake} /> : libraryView==='pilot' ? <PilotReading key={JSON.stringify([project,verseReference])} initialReference={verseReference} api={api} projectId={project} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onOpen={open} onCancel={closeLibrary} /> : <>
+          {!record ? <div className="workspace-empty atlas-empty-reading"><span className="atlas-kicker">A place to think</span><h1>{selected?'Opening your reading…':libraryLoading?'Finding your place…':'Start with a source. Follow a question.'}</h1><p>Read the text, keep your notes beside it, and explore its connections when you need them.</p>{!selected && project && <><button onClick={()=>showLibrary('collection')}>Browse starting readings</button><button onClick={()=>showLibrary('add-source')}>Add a source</button><button onClick={()=>showLibrary('search')}>Search your research</button></>}</div> : <>
+            <header className="workspace-record-heading atlas-record-heading"><div><small>{record.kind} · {record.review_state}</small><h2 dir="auto">{record.title}</h2></div>{entry && <button className="atlas-read-status" aria-pressed={entry.draft.reading==='read'} disabled={['saving','conflict'].includes(entry.status)} onClick={()=>edit({reading:entry.draft.reading==='read'?'reading':'read'},true)}>{entry.draft.reading==='read'?'Read by you':'Mark as read'}</button>}</header>
+            {isReading && <nav className="atlas-reading-context-actions" aria-label="Explore this reading"><button onClick={()=>compare()}>Compare</button><button onClick={showNotebook}>Notebook</button><button onClick={prepareResearch}>Ask a research question</button></nav>}
+          {['source','work','edition'].includes(record.kind) && <SourceReader key={JSON.stringify([record.id,selectedAnnotation,selectedDocument])} record={record} api={api} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} initialAnnotationId={selectedAnnotation} initialDocumentId={selectedDocument} noteEditor={passageNotes.current} navigate={open} focused={readingFocus} onFocusChange={setReadingFocus} onReadingPlace={setCurrentReadingPlace} onOpenVerse={reference=>showLibrary('pilot',reference)} />}
+
+            <details className="atlas-record-context" open={!isReading}><summary>{isReading?'Source details & connections':'Findings, evidence & connections'}</summary>          <p className="workspace-summary">{record.kind==='concept' && <small>Concept description</small>}{record.summary || 'No summary recorded yet.'}</p>
           {[['Citation', 'http://purl.org/dc/terms/bibliographicCitation'], ['Location', ir+'locator'], ['Scope', ir+'scope']].map(([label, key]) => property(record, key).length > 0 && <section className="workspace-context" key={key}><h3>{label}</h3>{property(record,key).map((text,i) => <p key={i}>{text}</p>)}</section>)}
           {property(record,'http://purl.org/dc/terms/source').filter(url => /^https?:\/\//i.test(url)).map(url => <a className="source-link" key={url} href={url} target="_blank" rel="noreferrer">Open source ↗</a>)}
           {(record.attributes?.recorded_review_status || []).map(text => <p className="workspace-review-scope" key={text}>{text}</p>)}
           {record.kind === 'question' && <EvidencePaths api={api} trail={trail} onOpen={open} onCompare={compare} />}
           <RecordContext key={record.project_id+record.id} api={api} record={record} onOpen={open} onCompare={compare}/>
           {record.kind === 'concept' && <ConceptPanel key={JSON.stringify([record.project_id,record.id])} record={record} api={api} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} navigate={open} />}
-          {['source','work','edition'].includes(record.kind) && <SourceReader key={JSON.stringify([record.id,selectedAnnotation,selectedDocument])} record={record} api={api} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} initialAnnotationId={selectedAnnotation} initialDocumentId={selectedDocument} noteEditor={passageNotes.current} navigate={open} focused={readingFocus} onFocusChange={setReadingFocus} onReadingPlace={setCurrentReadingPlace} onOpenVerse={reference=>showLibrary('pilot',reference)} />}
-          {entry && <section className="workspace-notes" aria-labelledby="my-notes-heading"><h3 id="my-notes-heading">My reading & notes</h3>
+</details>
+            <details className="atlas-record-notes"><summary>My reading notes & progress {entry && entry.status!=='saved'?`· ${statuses[entry.status]}`:''}</summary>          {entry && <section className="workspace-notes" aria-labelledby="my-notes-heading"><h3 id="my-notes-heading">My reading & notes</h3>
             <label>Reading progress<select value={entry.draft.reading} onChange={e => edit({ reading: e.target.value }, true)}><option value="unread">Unread</option><option value="reading">Reading</option><option value="read">Read by me</option></select></label>
             {entry.server.read_at && <small>Read {new Date(entry.server.read_at).toLocaleDateString()}</small>}
             <div className="workspace-decisions">{[['relevant','Keep'],['not_relevant','Skip'],['read_later','Read later'],['unreviewed','Unscreened']].map(([decision,label]) => <button key={decision} aria-pressed={entry.draft.decision === decision} onClick={() => edit({ decision }, true)}>{label}</button>)}</div>
@@ -210,11 +263,11 @@ function Workspace() {
             <RecoverableDraft key={record.project_id+record.id+':record-note'} api={api} projectId={record.project_id} recordId={record.id} contextKind="record_note" body={entry.draft.note} baseRevision={entry.server.revision} drafts={readingDrafts} changed={()=>redraw(n=>n+1)} onRecover={value=>recoverRecordWriting(store.current,record,value)}/>
             <small>Notes save with the button or ⌘/Ctrl + Enter. Reading and screening choices save immediately. Markdown exports support the optional Obsidian connector; vault sync is explicit.</small>
             {entry.status === 'conflict' && <div className="workspace-conflict" role="alert"><h4>Both versions are safe to compare.</h4><p>Your draft is above. The cloud version is revision {entry.current.revision}, {entry.current.reading}, {entry.current.decision}.</p><pre>{entry.current.note || '(No note text)'}</pre><button onClick={() => store.current.resolve(record.id,'cloud')}>Use cloud version</button><button onClick={() => store.current.resolve(record.id,'draft')}>Save my draft over this revision</button><p>Previous cloud revisions remain in history.</p></div>}
-          </section>}
+          </section>}</details>
+          </>}
         </>}
       </section>
-    </ResizablePanes>}
-    </div>
+    </ResizablePanes>
   </main>;
 }
 

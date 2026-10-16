@@ -3,7 +3,7 @@ import {newThought,notebookKey,notebookMetadata,saveThought,thoughtLabel,thought
 import './researchNotebook.css';
 
 /** Running project notebook. Passage bodies are a live server projection, never copied here. */
-export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},onOpenSource,anchor=null,initialQuery=''}){
+export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},onOpenSource,anchor=null,initialQuery='',initialEntryId=''}){
   const [rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[query,setQuery]=useState(initialQuery),[kind,setKind]=useState(''),[state,setState]=useState('active');
   const [selected,setSelected]=useState(null),[cloud,setCloud]=useState(null),[message,setMessage]=useState(''),[loading,setLoading]=useState(false),[history,setHistory]=useState(null);
   const [link,setLink]=useState({kind:'record',id:'',rationale:''});
@@ -20,7 +20,7 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
     catch(error){if(mounted.current && token===generation.current)setMessage(error.message);}
     finally{if(mounted.current && token===generation.current)setLoading(false);}
   }
-  useEffect(()=>{mounted.current=true;selection.current=null;setQuery(initialQuery);setSelected(null);setCloud(null);setRows([]);setHistory(null);load('',initialQuery);return()=>{mounted.current=false;generation.current++;};},[projectId,initialQuery]);
+  useEffect(()=>{let active=true;mounted.current=true;selection.current=null;setQuery(initialQuery);setSelected(null);setCloud(null);setRows([]);setHistory(null);load('',initialQuery).then(()=>{if(active && initialEntryId)open({id:initialEntryId,item_kind:'entry'});});return()=>{active=false;mounted.current=false;generation.current++;};},[projectId,initialQuery,initialEntryId]);
   function start(useAnchor){selection.current=null;setSelected(null);setCloud(null);setHistory(null);const at=notebookKey(projectId);
     if(drafts.current.has(at)){setMessage('Your unfinished new thought is retained. Save it before starting another.');return;}
     remember({value:newThought(useAnchor || {}),base:null,sent:null,saving:false,error:'',current:null},at);
