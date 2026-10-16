@@ -9,6 +9,7 @@ This is the bounded software delivery under #85, not completion of the whole epi
 3. [#150](https://github.com/justin-napolitano/islam-research/pull/150): automatic private recovery and notebook Unfinished work.
 4. [#151](https://github.com/justin-napolitano/islam-research/pull/151): bounded warm pages, protected unfinished tabs, and actual-save status.
 5. [#152](https://github.com/justin-napolitano/islam-research/pull/152): reversible private writing Trash, Undo, and Restore.
+6. [#153](https://github.com/justin-napolitano/islam-research/pull/153): retain one capture/recovery identity when changing the unfinished capture classification.
 
 See [durable-writing.md](durable-writing.md), [working-tabs.md](working-tabs.md), and [private-writing-trash.md](private-writing-trash.md) for guarantees, limitations, migration/grant requirements, and verification. Preserve small reviewable changes. Do not mark a PR merged, a cloud workflow verified, or an issue complete solely because it appears in this list.
 

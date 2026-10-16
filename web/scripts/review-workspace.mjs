@@ -450,6 +450,13 @@ try {
   await until(()=>evaluate('document.querySelector(".workspace-record-heading")?.textContent.includes("Synthetic question")'),'leave capture draft');
   await evaluate('document.querySelectorAll(".workspace-row")[1].click()');
   await until(()=>evaluate('document.querySelector(".reader-capture textarea")?.value.includes("Synthetic anchored term note")'),'capture draft retained through navigation');
+  await until(()=>[...recoveryCopies.values()].some(row=>row.context_kind==='capture'&&row.body.includes('Synthetic anchored term note')&&row.state==='active'),'automatic capture recovery acknowledged');
+  const captureRecovery=[...recoveryCopies.values()].find(row=>row.context_kind==='capture'&&row.body.includes('Synthetic anchored term note')&&row.state==='active');
+  await evaluate(`{const select=[...document.querySelectorAll('.reader-capture label')].find(label=>label.textContent.startsWith('Capture as')).querySelector('select');select.value='term_candidate';select.dispatchEvent(new Event('change',{bubbles:true}));}`);
+  await until(()=>recoveryCopies.get(captureRecovery.id)?.capture_kind==='term_candidate','pending classification updated under same recovery ID');
+  await evaluate(`{const select=[...document.querySelectorAll('.reader-capture label')].find(label=>label.textContent.startsWith('Capture as')).querySelector('select');select.value='comment';select.dispatchEvent(new Event('change',{bubbles:true}));}`);
+  await until(()=>recoveryCopies.get(captureRecovery.id)?.capture_kind==='comment','capture classification restored without a duplicate recovery');
+  assert.equal([...recoveryCopies.values()].filter(row=>row.context_kind==='capture'&&row.body.includes('Synthetic anchored term note')).length,1);
   await evaluate('document.querySelector(".reader-capture button").click()');
   await until(()=>evaluate('document.querySelector(".reader-annotations")?.textContent.includes("Synthetic anchored term note")'),'persisted passage note');
   assert.equal(captures.length,1);
