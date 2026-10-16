@@ -302,6 +302,7 @@ class NotebookCreate(NotebookMetadata):
     record_id: Identifier | None = None
     document_id: Identifier | None = None
     annotation_id: Identifier | None = None
+    reading_position: Annotated[int,Field(ge=0,le=12000,strict=True)] | None = None
 
 
 class NotebookUpdate(NotebookMetadata):
@@ -327,6 +328,7 @@ class NotebookDraftInput(Input):
     record_id: Identifier | None = None
     document_id: Identifier | None = None
     annotation_id: Identifier | None = None
+    reading_position: Annotated[int,Field(ge=0,le=12000,strict=True)] | None = None
     base_revision: Annotated[int,Field(ge=0)]
     expected_revision: Annotated[int,Field(ge=0)]
     value: NotebookDraftValue
@@ -705,12 +707,12 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         if value is None: raise HTTPException(404,"Record not found in this project")
         return value
     @router.get("/notebook/items")
-    def notebook_items(project_id: Identifier,q: Annotated[str,Query(max_length=300)] = "",
+    def notebook_items(project_id: Identifier,document_id: Identifier | None = None,location_only: bool = False,q: Annotated[str,Query(max_length=300)] = "",
         item_scope: Literal["all","writing","reading"] = "all",
         thought_type: Literal["","note","question","source_claim","interpretation","objection","passage_note","record_note"] = "",
         state: Literal["active","withdrawn"] = "active",cursor: Annotated[str,Query(max_length=1100)] = "",
         limit: Annotated[int,Query(ge=1,le=25)] = 25):
-        rows=store.notebook_items(project_id=project_id,q=q,thought_type=thought_type,state=state,cursor=cursor,limit=limit+1,item_scope=item_scope)
+        rows=store.notebook_items(project_id=project_id,q=q,thought_type=thought_type,state=state,cursor=cursor,limit=limit+1,item_scope=item_scope,**(dict(document_id=document_id,location_only=location_only) if document_id is not None or location_only else {}))
         return {"items":rows[:limit],"next_cursor":rows[limit-1]["cursor"] if len(rows)>limit else None}
 
     @router.get("/notebook/network")

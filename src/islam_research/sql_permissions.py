@@ -30,8 +30,8 @@ OWNER_FUNCTIONS = (
     "research.withdraw_publication(text,integer,text,text)",
 )
 INSERT_COLUMNS = {
-    "notebook_entries": "id project_id creation_sha256 record_id document_id annotation_id thought_type title body links changed_by",
-    "notebook_drafts": "id project_id entry_id request_uuid record_id document_id annotation_id base_revision base_snapshot value state changed_by",
+    "notebook_entries": "id project_id creation_sha256 record_id document_id annotation_id reading_position thought_type title body links changed_by",
+    "notebook_drafts": "id project_id entry_id request_uuid record_id document_id annotation_id reading_position base_revision base_snapshot value state changed_by",
     "note_trash": "project_id target_kind target_id target_revision state changed_by",
     "reading_drafts": "id project_id record_id context_kind document_id annotation_id text_sha256 start_pos end_pos exact prefix suffix capture_kind base_revision body mark_style state changed_by",
     "verse_materials": "id project_id annotation_id document_id text_sha256 creation_sha256 profile_id chapter ayah_start ayah_end material_kind link_kind citation_basis citation_id citation_snapshot marker_start marker_end marker_text attribution language_tag source_scope assertion_mode assertion_text reading_note period_note tradition_note context_basis rationale state changed_by",

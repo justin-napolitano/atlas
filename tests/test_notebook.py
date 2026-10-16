@@ -166,3 +166,24 @@ class NotebookStoreTests(unittest.TestCase):
         history=second.get('/v1/notebook/history',params={**params,'limit':1},headers=headers).json();self.assertEqual(history['items'][0]['revision'],2)
         search=second.get('/v1/notebook/items',params=dict(project_id=self.project,q='correction',limit=1),headers=headers).json();self.assertEqual(search['items'][0]['id'],identifier)
         self.assertEqual(second.get('/v1/notebook/entry',params={**params,'project_id':'other'},headers=headers).status_code,404)
+
+    def test_free_margin_point_is_private_immutable_version_bound_and_page_filtered(self):
+        from psycopg.errors import InsufficientPrivilege
+        with self.db.connect(self.owner_dsn) as connection:
+            values={**self.values,'annotation_id':None,'reading_position':2}
+            saved=self.store.create(connection,**values)
+            row=self.store.get(connection,self.project,saved['id'])
+            self.assertEqual(row['reading_position'],2)
+            self.assertIsNone(row['selected_quote'])
+            self.assertTrue(self.store.create(connection,**values)['replayed'])
+            for patch in [dict(reading_position=-1),dict(reading_position=True),dict(reading_position=1000),
+                          dict(annotation_id=self.annotation['id']),dict(document_id=None),dict(thought_type='source_claim')]:
+                with self.subTest(patch=patch),self.assertRaises(ValueError):
+                    with connection.transaction():self.store.create(connection,**{**values,'request_uuid':str(uuid.uuid4()),**patch})
+            self.store.create(connection,**{**self.values,'request_uuid':str(uuid.uuid4())})
+            page=self.store.items(connection,self.project,'','','active','',1,document_id=self.document['id'],location_only=True)
+            self.assertEqual([r['id'] for r in page],[saved['id']])
+            self.assertEqual(page[0]['reading_position'],2)
+            self.assertEqual(self.store.items(connection,self.project,'','','active','',25,document_id='other',location_only=True),[])
+            with self.assertRaises(InsufficientPrivilege):
+                with connection.transaction():connection.execute('UPDATE research.notebook_entries SET reading_position=3,revision=revision+1 WHERE id=%s',(saved['id'],))

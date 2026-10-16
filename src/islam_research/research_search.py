@@ -10,7 +10,7 @@ from . import database as db
 _DEFAULTS = {
     "record_id": "NULL::text", "document_id": "NULL::text", "annotation_id": "NULL::text",
     "entry_id": "NULL::text", "concept_id": "NULL::text", "source_record_id": "NULL::text",
-    "revision": "NULL::integer", "edition": "NULL::text", "locator": "NULL::text",
+    "reading_position": "NULL::integer", "revision": "NULL::integer", "edition": "NULL::text", "locator": "NULL::text",
     "record_kind": "NULL::text", "thought_type": "NULL::text", "text_sha256": "NULL::text",
     "selected_quote": "NULL::text", "review_state": "NULL::text", "wording_mode": "NULL::text",
 }
@@ -54,7 +54,7 @@ _CANDIDATES = "\nUNION ALL\n".join([
             LEFT JOIN research.reading_annotations a ON a.project_id=n.project_id AND a.id=n.annotation_id CROSS JOIN params p""",
             "n.project_id=p.project_id AND n.state='active' AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed') AND (n.record_id IS NULL OR (" + _LIVE_RECORD + "))",
             record_id="n.record_id", source_record_id="n.record_id", document_id="n.document_id",
-            annotation_id="n.annotation_id", entry_id="n.id", revision="n.revision", edition="d.edition", locator="d.locator",
+            annotation_id="n.annotation_id", reading_position="n.reading_position", entry_id="n.id", revision="n.revision", edition="d.edition", locator="d.locator",
             thought_type="n.thought_type", record_kind="r.kind", text_sha256="d.text_sha256", selected_quote="a.exact",
             review_state="n.review_state", wording_mode="'owner_thought'"),
     _branch("l.id", "'definition'", "c.title", "l.body||' '||l.scope", "'definition_text'",

@@ -79,7 +79,7 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
     if(current?.trashed){setMessage('Restore the original note from Trash before recovering its unfinished writing.');return false;}
     const id=row.entry_id,at=notebookKey(projectId,id || (questionMode?'new-question':'new'));
     if(drafts.current.has(at)){setMessage('Existing unfinished writing is still open. Save or explicitly discard it before recovering another version.');return false;}
-    const value={...row.value,...(!id?{request_uuid:row.request_uuid,record_id:row.record_id,document_id:row.document_id,annotation_id:row.annotation_id}:{})};
+    const value={...row.value,...(!id?{request_uuid:row.request_uuid,record_id:row.record_id,document_id:row.document_id,annotation_id:row.annotation_id,...(row.reading_position!=null?{reading_position:row.reading_position}:{})}:{})};
     selection.current=id;setSelected(id);setCloud(current);setShowGraph(false);setMobileEditor(true);setHistory(null);
     remember({value,base:row.base_snapshot,sent:null,saving:false,error:'',current:current&&current.revision!==row.base_revision?current:null,recovery:{id:row.id,revision:row.revision}},at);
     onEntryChange(id || '',value.title);setMessage('Recovered private writing. Review it before saving the actual note.');return true;

@@ -760,6 +760,19 @@
             "title": "Project Id",
             "type": "string"
           },
+          "reading_position": {
+            "anyOf": [
+              {
+                "maximum": 12000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reading Position"
+          },
           "record_id": {
             "anyOf": [
               {
@@ -875,6 +888,19 @@
             "pattern": "^[^\\x00-\\x1f\\x7f]+$",
             "title": "Project Id",
             "type": "string"
+          },
+          "reading_position": {
+            "anyOf": [
+              {
+                "maximum": 12000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reading Position"
           },
           "record_id": {
             "anyOf": [
@@ -3987,6 +4013,35 @@
               "pattern": "^[^\\x00-\\x1f\\x7f]+$",
               "title": "Project Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "document_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Document Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "location_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Location Only",
+              "type": "boolean"
             }
           },
           {
