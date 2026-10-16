@@ -81,7 +81,7 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
     if(drafts.current.has(at)){setMessage('Existing unfinished writing is still open. Save or explicitly discard it before recovering another version.');return false;}
     const value={...row.value,...(!id?{request_uuid:row.request_uuid,record_id:row.record_id,document_id:row.document_id,annotation_id:row.annotation_id,...(row.reading_position!=null?{reading_position:row.reading_position}:{})}:{})};
     selection.current=id;setSelected(id);setCloud(current);setShowGraph(false);setMobileEditor(true);setHistory(null);
-    remember({value,base:row.base_snapshot || current,sent:null,saving:false,error:'',current:current&&current.revision!==row.base_revision?current:null,recovery:{id:row.id,revision:row.revision}},at);
+    remember({value,base:row.base_snapshot || current,sent:null,saving:false,error:'',current:current&&current.revision!==row.base_revision?current:null,recovery:id===(row.entry_id || null)?{id:row.id,revision:row.revision}:undefined},at);
     onEntryChange(id || '',value.title);setMessage('Recovered private writing. Review it before saving the actual note.');return true;
   }
   function resolve(choice){const current=draft.current;verifyThought(current,projectId,current.id);recovery.queue.finish();clear();selection.current=current.id;setSelected(current.id);setCloud(current);

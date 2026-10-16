@@ -61,6 +61,9 @@ try{
   await evaluate('window.__notebookTest.release()');
   await until(()=>evaluate('[...window.__notebookTest.entries.values()][0].body.includes("Newer typing.")&&window.__notebookTest.drafts.current.size===0'),'newer typing preserved through older acknowledgement');
   assert.equal(await evaluate('window.__notebookTest.entries.size'),1);
+  await click('Move to Trash');await until(()=>evaluate('!!document.querySelector(".location-margin-note")&&document.querySelector(".location-margin-notes").textContent.includes("Undo trash")'),'margin trash acknowledgement');
+  await click('Undo trash');await until(()=>evaluate('!!document.querySelector(".location-margin-note textarea")'),'inline margin restore');
+  assert.equal(await evaluate('window.__notebookTest.entries.size'),1);
   await evaluate('window.__notebookTest.remote();document.querySelector(".location-margin-note textarea").focus()');
   await call('Input.insertText',{text:' My local version.'});
   await until(()=>evaluate('!!document.querySelector(".location-save-error")'),'another device conflict');
@@ -69,7 +72,7 @@ try{
   await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   assert.equal(await evaluate('document.documentElement.scrollWidth<=window.innerWidth'),true);
   assert.deepEqual(problems,[]);
-  process.stdout.write('Free margin: no selection or Save button, autosave, editing, reload, serialized typing, conflict retention and mobile passed.\n');
+  process.stdout.write('Free margin: no selection or Save button, autosave, editing, reload, serialized typing, conflict retention, Trash/Undo and mobile passed.\n');
 }finally{
   socket?.close();const closed=new Promise(resolve=>chrome.once('close',resolve));chrome.kill();await closed;await preview.close();
   for(const item of pending.values()){clearTimeout(item.timeout);item.reject(new Error('Notebook review finished'));}

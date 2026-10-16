@@ -4,6 +4,7 @@ import {marginWriter} from './marginWriter.js';
 import {recoveryFingerprint} from './recoveryQueue.js';
 import {recoverySession,useWritingRecovery,notebookRecoveryPayload,verifyNotebookRecovery} from './useWritingRecovery.js';
 import {readingPosition,revealReadingPosition} from './readingPosition.js';
+import {useSurfaceResume} from './surfaceActivity.js';
 import {TrashAction} from './PrivateTrash.jsx';
 
 function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLeave,onOpenNotebook}){
@@ -16,6 +17,7 @@ function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLe
   const draft=store.get(key),row=writer.row || initial,value=draft?.value || row;
   const recovery=useWritingRecovery({api,store,sessionKey:'margin-recovery:'+JSON.stringify([key,draft?.base?.revision || 0]),path:'notebook/draft',
     payload:notebookRecoveryPayload(record.project_id,draft?.base? id:null,draft),enabled:!!draft,verify:verifyNotebookRecovery});
+  useEffect(()=>{if(!store.has(key))writer.adopt(initial);},[writer,initial.revision,initial.trash_revision]);
   const recoveryRef=useRef(recovery.queue);recoveryRef.current=recovery.queue;
   useEffect(()=>{
     alive.current=true;
@@ -43,6 +45,8 @@ function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLe
   }
   function blur(event){if(event.currentTarget.contains(event.relatedTarget))return;left.current=true;writer.flush();if(writer.status.phase==='saved'&&!store.has(key)&&!promoted.current){promoted.current=true;onLeave?.(writer.row);}}
   const phase=writer.status.phase,failed=['error','conflict'].includes(phase),saved=writer.row;
+  const trashAction=<TrashAction api={api} projectId={record.project_id} kind="entry" id={id} revision={saved?.revision || 1} trashRevision={saved?.trash_revision || initial.trash_revision || 0} trashed={!!saved?.trashed} disabled={!!draft} onChanged={result=>{writer.row={...saved,trashed:result.state==='trashed',trash_revision:result.revision};notify();onLeave?.(writer.row);}}/>;
+  if(saved?.trashed)return <article className="location-margin-note"><small>Moved to Trash. Your note and reading location are retained.</small>{trashAction}</article>;
   return <article className="location-margin-note" data-margin-note-id={id} onBlur={blur}>
     <div className="location-margin-meta"><button className="location-return" onClick={()=>revealReadingPosition(textRoot.current,value.reading_position)}>Near {Math.round(value.reading_position/Math.max(1,Array.from(document.text_body).length)*100)}% ↖</button>
       <small role="status">{failed?'Not saved':draft?['saving','waiting'].includes(phase)?'Saving…':value.body.trim()?'Unsaved':'Write something to save':saved?'Saved':'Private note'}</small></div>
@@ -52,23 +56,24 @@ function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLe
     {failed&&<div className="location-save-error" role="alert"><p>{writer.status.error?.message || 'Save not confirmed. Your writing is retained here.'}</p><button onClick={()=>writer.retry()}>Retry save</button>
       {writer.status.current&&<details><summary>Compare the other version</summary><pre>{writer.status.current.body}</pre><p>Your version stays in the editor. Open Notes to compare and choose which revision to keep.</p></details>}</div>}
     {draft&&!value.body.trim()&&saved&&<small>Empty writing is retained here; use Trash to remove a saved note.</small>}
-    {saved&&<div className="location-note-actions">{onOpenNotebook&&<button onClick={()=>onOpenNotebook(saved)}>Open in Notes</button>}<TrashAction api={api} projectId={record.project_id} kind="entry" id={id} revision={saved.revision} trashRevision={saved.trash_revision || 0} disabled={!!draft} onChanged={result=>onLeave?.({...saved,trashed:result.state==='trashed',trash_revision:result.revision})}/></div>}
+    {saved&&<div className="location-note-actions">{onOpenNotebook&&<button onClick={()=>onOpenNotebook(saved)}>Open in Notes</button>}{trashAction}</div>}
   </article>;
 }
 
 export default function LocationMarginNotes({api,record,document,textRoot,drafts,changed,composerRef,onOpenNotebook}){
   const [rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[error,setError]=useState(''),[loading,setLoading]=useState(true),[next,setNext]=useState(null);
-  const root=useRef(null),position=useRef(null),alive=useRef(true);
+  const root=useRef(null),position=useRef(null),alive=useRef(true),generation=useRef(0);
   function initialNew(){const pending=[...drafts.current.entries()].find(([key,d])=>key.startsWith('notebook:')&&d.workspaceMode==='location-margin'&&d.documentId===document.id&&d.projectId===record.project_id&&!d.base);
     if(pending){const id=JSON.parse(pending[0].slice(9))[1];return {...pending[1].value,id};}return null;}
   const [fresh,setFresh]=useState(initialNew);
   const valid=row=>row.project_id===record.project_id&&row.record_id===record.id&&row.document_id===document.id&&Number.isInteger(row.reading_position)&&row.reading_position>=0&&row.reading_position<=Array.from(document.text_body).length&&!row.annotation_id&&row.item_kind==='entry';
-  async function load(after=''){setLoading(true);try{const page=await api.request('notebook/items',{project_id:record.project_id,document_id:document.id,location_only:true,state:'active',cursor:after,limit:25});
+  async function load(after=''){const token=++generation.current;setLoading(true);try{const page=await api.request('notebook/items',{project_id:record.project_id,document_id:document.id,location_only:true,state:'active',cursor:after,limit:25});
     if(!Array.isArray(page.items))throw new Error();
     if(page.items.some(row=>!valid(row)))throw new Error('Margin notes did not match this reading version.');
-    if(alive.current){setRows(old=>[...new Map([...(after?old:[]),...page.items].map(row=>[row.id,row])).values()]);setCursor(page.next_cursor);setError('');}
-  }catch(err){if(alive.current)setError(err.message || 'Could not load margin notes.');}finally{if(alive.current)setLoading(false);}}
-  useEffect(()=>{alive.current=true;load();return()=>{alive.current=false;};},[document.id]);
+    if(alive.current&&token===generation.current){setRows(old=>[...new Map([...(after?old:[]),...page.items].map(row=>[row.id,row])).values()]);setCursor(page.next_cursor);setError('');}
+  }catch(err){if(alive.current&&token===generation.current)setError(err.message || 'Could not load margin notes.');}finally{if(alive.current&&token===generation.current)setLoading(false);}}
+  useEffect(()=>{alive.current=true;load();return()=>{alive.current=false;generation.current++;};},[document.id]);
+  useSurfaceResume(()=>load());
   useEffect(()=>{if(composerRef)composerRef.current={focus:()=>root.current?.querySelector('.location-margin-composer textarea')?.focus()};return()=>{if(composerRef)composerRef.current=null;};},[composerRef]);
   function start(body){if(!body)return;const value=newThought({record_id:record.id,document_id:document.id,reading_position:position.current ?? readingPosition(textRoot.current)});
     value.title=('Margin note · '+document.locator).slice(0,300);value.body=body;
@@ -82,7 +87,7 @@ export default function LocationMarginNotes({api,record,document,textRoot,drafts
     <div className="location-margin-composer">{fresh?<MarginWriting key={fresh.id} {...shared} initial={fresh} onLeave={settle}/>:<textarea aria-label="Write in the margin" dir="auto" placeholder="Write in the margin…" rows={3} onFocus={()=>{position.current=readingPosition(textRoot.current);}} onChange={event=>start(event.target.value)}/>}</div>
     <small className="location-margin-hint">Just your thoughts, saved here as you write. Markdown welcome.</small>
     {loading&&<small role="status">Opening margin notes…</small>}{error&&<p role="alert">{error} <button onClick={()=>load()}>Retry loading</button></p>}
-    {rows.filter(row=>row.id!==fresh?.id&&!row.trashed).sort((a,b)=>a.reading_position-b.reading_position).map(row=><MarginWriting key={row.id} {...shared} initial={row} onLeave={settle}/>)}
+    {rows.filter(row=>row.id!==fresh?.id).sort((a,b)=>a.reading_position-b.reading_position).map(row=><MarginWriting key={row.id} {...shared} initial={row} onLeave={settle}/>)}
     {cursor&&<button onClick={()=>load(cursor)}>Earlier margin notes</button>}
   </section>;
 }

@@ -151,19 +151,19 @@ def items(connection,project_id,q,thought_type,state,cursor,limit,item_scope="al
     return connection.execute('''WITH thoughts AS (
         SELECT 'entry' AS item_kind,n.id,n.project_id,n.thought_type,n.title,n.body,n.state,n.revision,n.updated_at,
             n.record_id,n.document_id,n.annotation_id,n.reading_position,r.title AS source_title,d.edition,d.locator,a.exact AS selected_quote,
-            n.links,'entry:'||n.id AS item_key FROM research.notebook_entries n
+            n.links,coalesce((SELECT t.revision FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id),0) AS trash_revision,'entry:'||n.id AS item_key FROM research.notebook_entries n
         LEFT JOIN research.records r ON r.project_id=n.project_id AND r.id=n.record_id
         LEFT JOIN research.reading_documents d ON d.project_id=n.project_id AND d.id=n.document_id
         LEFT JOIN research.reading_annotations a ON a.project_id=n.project_id AND a.id=n.annotation_id WHERE n.project_id=%s AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed')
         UNION ALL
         SELECT 'passage_note',a.id,a.project_id,'passage_note',r.title,a.body,'active',a.revision,a.updated_at,
-            r.id,d.id,a.id,NULL::integer,r.title,d.edition,d.locator,a.exact,'[]'::jsonb,'passage_note:'||a.id
+            r.id,d.id,a.id,NULL::integer,r.title,d.edition,d.locator,a.exact,'[]'::jsonb,0,'passage_note:'||a.id
         FROM research.reading_annotations a JOIN research.reading_documents d ON d.project_id=a.project_id AND d.id=a.document_id
         JOIN research.records r ON r.project_id=d.project_id AND r.id=d.source_record_id
         WHERE a.project_id=%s AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed') AND btrim(a.body)<>'' AND r.deleted_at IS NULL
         UNION ALL
         SELECT 'record_note',p.record_id,p.project_id,'record_note',r.title,p.note,'active',p.revision,p.updated_at,
-            r.id,NULL::text,NULL::text,NULL::integer,r.title,NULL::text,NULL::text,NULL::text,'[]'::jsonb,'record_note:'||r.id
+            r.id,NULL::text,NULL::text,NULL::integer,r.title,NULL::text,NULL::text,NULL::text,'[]'::jsonb,0,'record_note:'||r.id
         FROM research.personal_states p JOIN research.records r ON r.project_id=p.project_id AND r.id=p.record_id
         WHERE p.project_id=%s AND btrim(p.note)<>'' AND r.deleted_at IS NULL), ordered AS (
         SELECT thoughts.*,to_char(updated_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US')||':'||item_key AS cursor FROM thoughts)

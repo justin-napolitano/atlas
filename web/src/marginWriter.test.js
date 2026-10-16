@@ -42,3 +42,11 @@ test('leaving an already saved editor does not write a redundant revision',async
   const f=fixture(),q=marginWriter({api:f.api,projectId,id,initial});q.enqueue(notebookMetadata(initial));await q.flush();await q.flush();await q.flush();
   assert.equal(f.requests.length,1);assert.equal(q.row.revision,1);
 });
+test('clean cached readers adopt newer notebook revisions without replacing unfinished writing',async()=>{
+  const f=fixture(),q=marginWriter({api:f.api,projectId,id,initial});q.enqueue(notebookMetadata(initial));await q.flush();
+  f.remote();assert.equal(q.adopt(f.row),true);assert.equal(q.row.body,'Other device');assert.equal(q.revision,2);
+  assert.equal(q.adopt({...f.row,revision:1}),false);
+  q.enqueue({...notebookMetadata(initial),body:'My correction'});await q.flush();assert.equal(q.row.revision,3);
+  f.remote();q.enqueue({...notebookMetadata(initial),body:'My unfinished version'});await q.flush();
+  assert.equal(q.adopt(f.row),false);assert.equal(q.status.phase,'conflict');assert.equal(q.latest.body,'My unfinished version');
+});

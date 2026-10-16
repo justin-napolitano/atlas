@@ -35,6 +35,7 @@ const api={async post(path,value){if(path==='reading/annotations'){quoteRequests
   if(path==='writing/trash')return {items:[...trashRows.values()].filter(row=>row.state==='trashed').map(row=>({...row,...(row.target_kind==='entry'?{title:entries.get(row.target_id).title,body:entries.get(row.target_id).body}:{title:'Margin note',body:'Synthetic margin writing'})})),next_cursor:null};
   if(path==='notebook/draft' && value){
     const id='urn:research:writing-draft:'+value.draft_uuid,current=recoveryRows.get(id);
+    if(current&&['entry_id','request_uuid','record_id','document_id','annotation_id','reading_position','base_revision'].some(k=>(current[k] ?? null)!==(value[k] ?? null)))throw Object.assign(new Error('Immutable recovery target'),{status:422});
     if(current && current.revision!==value.expected_revision){
       if(current.revision===value.expected_revision+1 && JSON.stringify(current.value)===JSON.stringify(value.value) && current.state===value.state)return structuredClone(current);
       throw {status:409,current:structuredClone(current)};

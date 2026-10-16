@@ -21,5 +21,15 @@ export function marginWriter({api,projectId,id,initial,onConfirmed=()=>{},delay=
     }
     queue.row=row;onConfirmed(row);return row;
   }});
-  queue.row=initial.revision?initial:null;return queue;
+  queue.row=initial.revision?initial:null;
+  queue.adopt=row=>{
+    if(!row.revision||queue.busy||queue.sent||['error','conflict'].includes(queue.status.phase)||row.revision<queue.revision||
+      (row.revision===queue.revision&&(row.trash_revision || 0)<=(queue.row?.trash_revision || 0)))return false;
+    verifyThought(row,projectId,id);
+    if(Object.keys(anchor).some(k=>(row[k] ?? null)!==anchor[k]))throw new Error('Margin location changed');
+    clearTimeout(queue.quiet);clearTimeout(queue.deadline);queue.quiet=queue.deadline=null;
+    queue.row=row;queue.revision=row.revision;queue.latest=null;queue.latestFingerprint=queue.confirmedFingerprint=null;
+    queue.publish('saved',{row});return true;
+  };
+  return queue;
 }
