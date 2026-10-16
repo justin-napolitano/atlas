@@ -25,6 +25,7 @@ class NotebookBoundaryTests(unittest.TestCase):
         self.assertEqual(client.post('/v1/notebook/entries',json=value,headers=self.headers(sub='other')).status_code,403)
         self.assertEqual(client.post('/v1/notebook/entries',json=value,headers=self.headers(origin='https://other.example.invalid')).status_code,403)
         self.assertEqual(client.get('/v1/notebook/items',params=dict(project_id='synthetic:project'),headers=self.headers()).json(),dict(items=[],next_cursor=None))
+        self.assertEqual(client.get('/v1/notebook/items',params=dict(project_id='synthetic:project',item_scope='unknown'),headers=self.headers()).status_code,422)
         network=client.get('/v1/notebook/network',params=dict(project_id='synthetic:project',limit=1),headers=self.headers())
         self.assertEqual(network.status_code,200)
         self.assertEqual(network.json(),dict(project_id='synthetic:project',items=[dict(id='synthetic:note',project_id='synthetic:project')],truncated=True))

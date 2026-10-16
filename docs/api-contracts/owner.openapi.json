@@ -3633,6 +3633,21 @@
           },
           {
             "in": "query",
+            "name": "item_scope",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "enum": [
+                "all",
+                "writing",
+                "reading"
+              ],
+              "title": "Item Scope",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "thought_type",
             "required": false,
             "schema": {
