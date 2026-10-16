@@ -16,10 +16,10 @@ export default function RecoverableDraft(props) {
   const session=useRef({key:contextKey,uuid:captureUUID || crypto.randomUUID(),revision:0});if(session.current.key!==contextKey)session.current={key:contextKey,uuid:captureUUID || crypto.randomUUID(),revision:0};
   const [rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[state,setState]=useState('active'),[message,setMessage]=useState(''),[loading,setLoading]=useState(false),[preview,setPreview]=useState(null),[history,setHistory]=useState(null),[,render]=useState(0);
   const pending=store.current.get(key);
-  const auto=useWritingRecovery({api,store:store.current,sessionKey:'automatic-reading:'+contextKey,path:'reading/draft',
+  const auto=useWritingRecovery({api,store:store.current,sessionKey:'automatic-reading:'+JSON.stringify([{...context,capture_kind:contextKind==='capture'?undefined:context.capture_kind},captureUUID]),path:'reading/draft',
     identity:captureUUID || undefined,
     payload:{...context,body,mark_style:contextKind==='record_note'?'none':markStyle,state:'active'},enabled:dirty,
-    verify:(row,sent)=>{verifyRecoveredDraft(row,context);if(row.id!=='urn:research:draft:'+sent.draft_uuid || row.body!==sent.body || row.mark_style!==sent.mark_style || row.state!==sent.state)throw new Error('Recovery did not confirm the exact reading draft.');}});
+    verify:(row,sent)=>{verifyRecoveredDraft(row,context);if(row.id!=='urn:research:draft:'+sent.draft_uuid || row.body!==sent.body || row.capture_kind!==sent.capture_kind || row.mark_style!==sent.mark_style || row.state!==sent.state)throw new Error('Recovery did not confirm the exact reading draft.');}});
   const previousAuto=useRef(null);
   useEffect(()=>{if(!dirty && previousAuto.current?.dirty)previousAuto.current.queue.finish();previousAuto.current={dirty,queue:auto.queue};},[dirty,auto.queue]);
   useEffect(()=>{alive.current=true;generation.current++;setRows([]);setPreview(null);setHistory(null);setCursor(null);setMessage('');return()=>{alive.current=false;generation.current++;};},[contextKey]);
