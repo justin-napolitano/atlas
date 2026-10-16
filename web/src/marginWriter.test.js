@@ -38,3 +38,7 @@ test('reading points count Unicode characters and reject fractional, missing or 
   for(const point of [0,1,2,3])assert.equal(boundedPosition('😀عx',point),point);
   for(const point of [-1,4,null,1.5,'1'])assert.equal(boundedPosition('😀عx',point),null);
 });
+test('leaving an already saved editor does not write a redundant revision',async()=>{
+  const f=fixture(),q=marginWriter({api:f.api,projectId,id,initial});q.enqueue(notebookMetadata(initial));await q.flush();await q.flush();await q.flush();
+  assert.equal(f.requests.length,1);assert.equal(q.row.revision,1);
+});

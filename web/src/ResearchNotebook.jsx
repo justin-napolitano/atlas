@@ -177,6 +177,6 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
           </div>
         </>}
       </section>
-    </div>{sourceTarget && <NotebookSourcePane hidden={showGraph} api={api} projectId={projectId} target={sourceTarget} drafts={drafts} changed={changed} noteEditor={noteEditor || localNoteEditor.current} onNavigate={openSource} onClose={()=>{setSourceTarget(null);requestAnimationFrame(()=>{const target=sourceTrigger.current?.isConnected?sourceTrigger.current:notebookRoot.current?.querySelector('.notebook-note-title input,.notebook-note-title textarea');target?.focus({preventScroll:true});});}} onExpand={onOpenSource} onQuote={value&&!locked?input=>insertQuote(input):undefined}/>}</div>
+    </div>{sourceTarget && <NotebookSourcePane hidden={showGraph} api={api} projectId={projectId} target={sourceTarget} drafts={drafts} changed={changed} noteEditor={noteEditor || localNoteEditor.current} onNavigate={openSource} onOpenNotebook={row=>open({...row,item_kind:'entry'})} onClose={()=>{setSourceTarget(null);requestAnimationFrame(()=>{const target=sourceTrigger.current?.isConnected?sourceTrigger.current:notebookRoot.current?.querySelector('.notebook-note-title input,.notebook-note-title textarea');target?.focus({preventScroll:true});});}} onExpand={onOpenSource} onQuote={value&&!locked?input=>insertQuote(input):undefined}/>}</div>
   </section>;
 }

@@ -50,7 +50,7 @@ try{
   await call('Input.insertText',{text:' Still thinking.'});
   await until(()=>evaluate('[...window.__notebookTest.entries.values()][0].revision===2&&window.__notebookTest.drafts.current.size===0'),'automatic correction');
   await evaluate('document.querySelector(".reader-text").focus()');
-  await until(()=>evaluate('!!document.querySelector(".location-margin-composer textarea[aria-label=\"Write in the margin\"]")'),'fresh margin after leaving saved note');
+  await until(()=>evaluate('!!document.querySelector(".location-margin-composer > textarea")'),'fresh margin after leaving saved note');
   assert.equal(await evaluate('document.querySelectorAll(".location-margin-note").length'),1);
   await evaluate('window.__notebookTest.losePageMemory()');
   await until(()=>evaluate('document.querySelector(".location-margin-note textarea")?.value.includes("Still thinking.")'),'confirmed note survives loss of page memory');

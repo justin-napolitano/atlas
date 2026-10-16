@@ -14,7 +14,7 @@ import './sourceReader.css';
 import './readerPresentation.css';
 
 /** Edition-bound reading surface with saved inline marks and adjacent private notes. */
-export default function SourceReader({ record, api, drafts, changed, noteEditor, navigate, initialAnnotationId = '',initialDocumentId='',initialReadingPosition=null,focused=false,onFocusChange,onOpenVerse,onReadingPlace,onBookmark,initialMarginOpen,onQuote }) {
+export default function SourceReader({ record, api, drafts, changed, noteEditor, navigate, initialAnnotationId = '',initialDocumentId='',initialReadingPosition=null,focused=false,onFocusChange,onOpenVerse,onReadingPlace,onBookmark,initialMarginOpen,onQuote,onOpenNotebook }) {
   const [snapshots,setSnapshots]=useState([]), [cursor,setCursor]=useState(null), [documentId,setDocumentId]=useState('');
   const [document,setDocument]=useState(null), [annotations,setAnnotations]=useState([]), [annotationCursor,setAnnotationCursor]=useState(null);
   const [message,setMessage]=useState(''), [highlight,setHighlight]=useState(null);
@@ -232,7 +232,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
         </div>
         <aside ref={margin} id={marginId} hidden={!marginOpen} className="reader-margin" aria-label="Passage margin notes" onKeyDown={event=>{if(event.key==='Escape' && window.matchMedia('(max-width: 900px)').matches){event.preventDefault();event.stopPropagation();setMarginOpen(false);textRoot.current?.closest('.source-reader')?.querySelector('.reader-margin-toggle')?.focus();}}}>
           <div className="reader-margin-heading"><h4>In the margin <span>{writingNotes.length}{annotationCursor ? '+' : ''}</span></h4><button className="reader-refresh" onClick={refreshAnnotations}>Refresh saved notes</button><button className="reader-margin-close" aria-label="Close margin notes" onClick={()=>setMarginOpen(false)}>×</button></div>
-          <LocationMarginNotes key={document.id} api={api} record={record} document={document} textRoot={textRoot} drafts={drafts} changed={changed} composerRef={freeComposer}/>
+          <LocationMarginNotes key={document.id} api={api} record={record} document={document} textRoot={textRoot} drafts={drafts} changed={changed} composerRef={freeComposer} onOpenNotebook={onOpenNotebook}/>
           {!capture && !writingNotes.length && <p className="reader-margin-empty">Select a phrase when you want a note attached to an exact quotation.</p>}
           {!capture && <details className="reader-recovery-disclosure" open={recoveryOpen || pendingRecovery} onToggle={event=>setRecoveryOpen(event.currentTarget.open)}><summary>Recover unfinished writing</summary><RecoverableDraft key={document.id+':capture-finder'} api={api} projectId={record.project_id} recordId={record.id} contextKind="capture" document={document} body="" drafts={drafts} changed={changed} onRecover={recoverCapture}/></details>}
           {capture && <div className="reader-capture"><h4>In the margin</h4><blockquote dir="auto">{capture.exact}</blockquote>

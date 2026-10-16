@@ -34,6 +34,7 @@ function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLe
     if(draft?.value.body.trim()&&!draft.current)writer.enqueue(notebookMetadata(draft.value));
   },[writer,JSON.stringify(draft?.value)]);
   useEffect(()=>{const flush=()=>writer.flush();window.addEventListener('pagehide',flush);return()=>window.removeEventListener('pagehide',flush);},[writer]);
+  useEffect(()=>{if(input.current){input.current.style.height='auto';input.current.style.height=input.current.scrollHeight+'px';}},[value.body]);
   function edit(body){
     const current=store.get(key),source=writer.row || initial;
     store.set(key,{...current,value:{...(current?.value || source),body},base:current?.base || writer.row || null,
