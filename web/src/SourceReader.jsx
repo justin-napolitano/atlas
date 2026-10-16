@@ -9,12 +9,12 @@ import './sourceReader.css';
 import './readerPresentation.css';
 
 /** Edition-bound reading surface with saved inline marks and adjacent private notes. */
-export default function SourceReader({ record, api, drafts, changed, noteEditor, navigate, initialAnnotationId = '',initialDocumentId='',focused=false,onFocusChange,onOpenVerse,onReadingPlace }) {
+export default function SourceReader({ record, api, drafts, changed, noteEditor, navigate, initialAnnotationId = '',initialDocumentId='',focused=false,onFocusChange,onOpenVerse,onReadingPlace,onBookmark,initialMarginOpen,onQuote }) {
   const [snapshots,setSnapshots]=useState([]), [cursor,setCursor]=useState(null), [documentId,setDocumentId]=useState('');
   const [document,setDocument]=useState(null), [annotations,setAnnotations]=useState([]), [annotationCursor,setAnnotationCursor]=useState(null);
   const [message,setMessage]=useState(''), [highlight,setHighlight]=useState(null);
   const [activeAnnotation,setActiveAnnotation]=useState('');
-  const [marginOpen,setMarginOpen]=useState(()=>window.matchMedia('(min-width: 901px)').matches),marginId=useId();
+  const [marginOpen,setMarginOpen]=useState(()=>initialMarginOpen ?? window.matchMedia('(min-width: 901px)').matches),marginId=useId();
   const [selectionPreview,setSelectionPreview]=useState(null),[annotationTools,setAnnotationTools]=useState(false),[loadingSnapshots,setLoadingSnapshots]=useState(true),[recoveryOpen,setRecoveryOpen]=useState(false);
   useEffect(()=>{
     function inspectSelection(){try{setSelectionPreview(textRoot.current ? selectedPassage(textRoot.current,window.getSelection()) : null);}catch{setSelectionPreview(null);}}
@@ -62,7 +62,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
           if(target.project_id!==record.project_id || target.document_id!==value.id || target.text_sha256!==value.text_sha256) throw new Error('The saved passage did not match this reading version.');
           setAnnotations(rows=>rows.some(row=>row.id===target.id) ? rows : [...rows,target]);
           setActiveAnnotation(target.id);setHighlight(requested.anchor);setMessage('Opened the saved source version and exact passage.');
-          requestAnimationFrame(()=>mark.current?.scrollIntoView({block:'nearest'}));
+          requestAnimationFrame(()=>revealMark());
         }
         else setMessage('The requested passage needs anchor review. Its position was not changed.');
       } else if(retained) setHighlight(retained);
@@ -70,7 +70,9 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
     return ()=>{ active=false; };
   },[documentId]);
   function remember(key,value) { drafts.current.set(key,value); changed(); }
+  function revealMark(){const element=mark.current,pane=element?.closest('[data-contained-reader]');if(pane){pane.scrollTop+=element.getBoundingClientRect().top-pane.getBoundingClientRect().top-90;}else element?.scrollIntoView({block:'nearest'});}
   function bookmark(annotationId,snapshotId=documentId) {
+    if(onBookmark){onBookmark({project_id:record.project_id,record_id:record.id,document_id:snapshotId,annotation_id:annotationId || ''});return;}
     const url=new URL(window.location.href);
     url.searchParams.set('project',record.project_id);url.searchParams.set('record',record.id);url.searchParams.set('document',snapshotId);
     if(annotationId)url.searchParams.set('annotation',annotationId);else url.searchParams.delete('annotation');
@@ -142,7 +144,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
         const link=window.document.createElement('a'); link.href=url; link.download='private-research-annotation.jsonld'; link.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
       } else if(value.anchor.anchored) {
         if(value.annotation.id!==row.id || value.annotation.project_id!==record.project_id || value.annotation.document_id!==documentId || value.annotation.text_sha256!==document.text_sha256) throw new Error('The passage response did not match this source version.');
-        setActiveAnnotation(row.id);setHighlight(value.anchor);bookmark(row.id);requestAnimationFrame(()=>{mark.current?.scrollIntoView({block:'nearest'});textRoot.current?.focus({preventScroll:true});});
+        setActiveAnnotation(row.id);setHighlight(value.anchor);bookmark(row.id);requestAnimationFrame(()=>{revealMark();textRoot.current?.focus({preventScroll:true});});
       }
       else setMessage(`Passage needs review: ${value.anchor.status.replaceAll('_',' ')}. Its position was not changed.`);
     } catch(error) { if(alive.current) setMessage(error.message); }
@@ -206,6 +208,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
             <button className="reader-select" onPointerDown={e=>e.preventDefault()} onClick={()=>select('highlight')} disabled={capture?.saving}>Annotate selected text</button>
             <button className="reader-underline" onPointerDown={e=>e.preventDefault()} onClick={()=>select('underline')} disabled={capture?.saving}>Underline</button>
             <button className="reader-note-only" onPointerDown={e=>e.preventDefault()} onClick={()=>select('none')} disabled={capture?.saving}>Margin note</button>
+            {onQuote && <button onPointerDown={e=>e.preventDefault()} disabled={!selectionPreview} onClick={()=>onQuote({document,selection:selectionPreview})}>Quote in notebook</button>}
           </div>
           <div ref={textRoot} className="reader-text" dir="auto" tabIndex={0} aria-label="Source excerpt" onKeyDown={event=>{
           if(event.altKey && event.key.toLowerCase()==='n') {event.preventDefault();select('none');}

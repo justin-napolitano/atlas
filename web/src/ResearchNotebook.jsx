@@ -4,12 +4,17 @@ import './researchNotebook.css';
 import NotebookConnections from './NotebookConnections.jsx';
 import NotebookMarkdown from './NotebookMarkdown.jsx';
 import NotebookNetwork from './NotebookNetwork.jsx';
+import NotebookSourcePane from './NotebookSourcePane.jsx';
+import {PassageNoteEditor} from './passageNoteEditor.js';
 import {notebookGraph} from './notebookMarkdown.js';
 
 /** Running project notebook. Passage bodies are a live server projection, never copied here. */
-export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},onOpenSource,anchor=null,initialQuery='',initialEntryId='',projectTitle='',onEntryChange=()=>{}}){
+export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},onOpenSource,anchor=null,initialQuery='',initialEntryId='',projectTitle='',onEntryChange=()=>{},inlineSources=false,noteEditor=null}){
   const [rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[query,setQuery]=useState(initialQuery),[kind,setKind]=useState(''),[state,setState]=useState('active');
   const [selected,setSelected]=useState(null),[cloud,setCloud]=useState(null),[message,setMessage]=useState(''),[loading,setLoading]=useState(false),[history,setHistory]=useState(null);
+  const [sourceTarget,setSourceTarget]=useState(null);
+  const localNoteEditor=useRef(null);if(!localNoteEditor.current)localNoteEditor.current=new PassageNoteEditor(api,changed);
+  function openSource(recordId,targetProject=projectId,annotationId='',documentId=''){if(targetProject!==projectId)return;if(inlineSources)setSourceTarget({recordId,annotationId,documentId});else onOpenSource?.(recordId,targetProject,annotationId,documentId);}
   const [mobileEditor,setMobileEditor]=useState(false);
   const [editorMode,setEditorMode]=useState('write'),[network,setNetwork]=useState(null),[networkError,setNetworkError]=useState(''),[networkLoading,setNetworkLoading]=useState(false),[showGraph,setShowGraph]=useState(false);
   const networkGeneration=useRef(0),networkBusy=useRef(false);
@@ -43,7 +48,7 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
     remember({value:newThought(useAnchor || {}),base:null,sent:null,saving:false,error:'',current:null},at);
   }
   async function open(row){
-    if(row.item_kind==='passage_note' || row.item_kind==='record_note'){onOpenSource?.(row.record_id,projectId,row.annotation_id || '',row.document_id || '');return;}
+    if(row.item_kind==='passage_note' || row.item_kind==='record_note'){openSource(row.record_id,projectId,row.annotation_id || '',row.document_id || '');return;}
     setShowGraph(false);setEditorMode('write');setMobileEditor(true);onEntryChange(row.id);selection.current=row.id;setSelected(row.id);setCloud(null);setHistory(null);setMessage('');
     const token=++generation.current;
     try{const result=verifyThought(await api.request('notebook/entry',{project_id:projectId,entry_id:row.id}),projectId,row.id);
@@ -61,23 +66,23 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
     if(mounted.current && activeProject.current===projectId && selection.current===selected)setHistory(old=>({items:before?[...(old?.items || []),...page.items]:page.items,next:page.next_before_revision}));}catch(error){setMessage(error.message);}}
   async function follow(item){try{
     if(item.kind==='entry'){await open({id:item.id,item_kind:'entry'});return;}
-    if(item.kind==='record'){onOpenSource?.(item.id,projectId,'','');return;}
+    if(item.kind==='record'){openSource(item.id,projectId,'','');return;}
     const bundle=await api.request('reading/annotation',{project_id:projectId,annotation_id:item.id});
     if(bundle.annotation?.project_id!==projectId || bundle.annotation.id!==item.id || !bundle.anchor?.anchored)throw new Error('Connection did not resolve to its exact saved passage.');
     const document=await api.request('reading/document',{project_id:projectId,document_id:bundle.annotation.document_id});
     if(document.project_id!==projectId || document.id!==bundle.annotation.document_id || document.text_sha256!==bundle.annotation.text_sha256)throw new Error('Connection source document did not match.');
-    if(mounted.current && activeProject.current===projectId)onOpenSource?.(document.source_record_id,projectId,item.id,document.id);
+    if(mounted.current && activeProject.current===projectId)openSource(document.source_record_id,projectId,item.id,document.id);
   }catch(error){setMessage(error.message);}}
   const value=draft?.value || (cloud?notebookMetadata(cloud):null),locked=!!draft?.saving || !!draft?.sent;
   const context=selected?cloud:draft?.value;
   function exportNote(){if(!cloud)return;const content=`# ${cloud.title}\n\n${cloud.body}\n\n---\nNote: ${cloud.id}\nRevision: ${cloud.revision}\n${cloud.record_id?`Source: ${cloud.record_id}\n`:''}${cloud.document_id?`Edition ID: ${cloud.document_id}\n`:''}${cloud.annotation_id?`Passage: ${cloud.annotation_id}\n`:''}\n${(cloud.links || []).map(item=>`- ${item.kind}: ${item.id} — ${item.rationale}`).join('\n')}\n`;
     const url=URL.createObjectURL(new Blob([content],{type:'text/markdown;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='research-note.md';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
   const saveLabel=draft?.saving?'Saving…':draft?.sent?'Retry original notebook save':'Save note';
-  return <section className={`research-notebook${mobileEditor?' is-editing':''}`} aria-label="Research notebook" onKeyDown={event=>{if((event.metaKey || event.ctrlKey)&&event.key.toLowerCase()==='s'){event.preventDefault();if(draft && !locked && !draft.current && value?.title.trim() && value?.body.trim())save();}}}>
+  return <section className={`research-notebook${sourceTarget&&!showGraph?' has-source-pane':''}${mobileEditor?' is-editing':''}`} aria-label="Research notebook" onKeyDown={event=>{if((event.metaKey || event.ctrlKey)&&event.key.toLowerCase()==='s'){event.preventDefault();if(draft && !locked && !draft.current && value?.title.trim() && value?.body.trim())save();}}}>
     <header className="notebook-heading"><div><span className="notebook-eyebrow">{projectTitle || 'Your space to think'}</span><h2>Notebook</h2><p>Start with an idea. Connect it when you’re ready.</p></div><div className="notebook-heading-actions"><button aria-pressed={showGraph} onClick={()=>{setShowGraph(value=>!value);ensureNetwork();}}>Note graph</button><button className="notebook-new" onClick={()=>start(null)}>New note</button></div></header>
     {networkError && <p role="alert">{networkError} <button onClick={loadNetwork}>Retry note connections</button></p>}
     {showGraph && <><button onClick={()=>setShowGraph(false)}>← Back to notes</button>{networkLoading && <p role="status">Loading saved note connections…</p>}{network && <NotebookNetwork network={network} graph={graph} selected={selected} onOpen={id=>open({id,item_kind:'entry'})}/>}</>}
-    <div className="notebook-layout" hidden={showGraph}>
+    <div className="notebook-with-source"><div className="notebook-layout" hidden={showGraph}>
       <section className="notebook-index" aria-label="Notebook entries">
         <form className="notebook-filters" onSubmit={event=>{event.preventDefault();load();}}><label>Search notebook<input value={query} maxLength={300} onChange={event=>setQuery(event.target.value)} placeholder="Find a note…"/></label>
           <details><summary>Filter notes</summary><label>Thought type<select value={kind} onChange={event=>setKind(event.target.value)}><option value="">All thoughts and reading notes</option>{[...thoughtTypes,'passage_note','record_note'].map(type=><option key={type} value={type}>{thoughtLabel(type)}</option>)}</select></label>
@@ -109,7 +114,7 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
               <h4>Notes linking here</h4>{!graph.edges.some(edge=>edge.to===selected)&&<p>No saved backlinks in the loaded notes.</p>}{graph.edges.filter(edge=>edge.to===selected).map((edge,i)=><p key={i}><button onClick={()=>open({id:edge.from,item_kind:'entry'})}>{network.items.find(row=>row.id===edge.from)?.title}</button> · {edge.rationale}</p>)}
               <details><summary>Insert a wiki link</summary><p>Choose a note to insert a stable Markdown link at your cursor. Save to update the graph.</p>{network.items.filter(row=>row.id!==selected).map(row=><button key={row.id} disabled={locked} onClick={()=>insertWiki(row.id,row.title)}>{row.title}</button>)}</details></>}
             </details>
-            {context?.record_id && <details className="notebook-source" open><summary>Linked reading</summary>{cloud?.selected_quote && <blockquote dir="auto">{cloud.selected_quote}<footer>{cloud.source_title} · {cloud.edition} · {cloud.locator}</footer></blockquote>}<button onClick={()=>onOpenSource?.(context.record_id,projectId,context.annotation_id || '',context.document_id || '')}>Return to anchored source</button><p>This note keeps its original source anchor. Add further connections below.</p></details>}
+            {context?.record_id && <details className="notebook-source" open><summary>Linked reading</summary>{cloud?.selected_quote && <blockquote dir="auto">{cloud.selected_quote}<footer>{cloud.source_title} · {cloud.edition} · {cloud.locator}</footer></blockquote>}<button onClick={()=>openSource(context.record_id,projectId,context.annotation_id || '',context.document_id || '')}>Return to anchored source</button><p>This note keeps its original source anchor. Add further connections below.</p></details>}
             <details className="notebook-links"><summary>Connections <span>{value.links.length || 'Add a source or idea'}</span></summary><fieldset disabled={locked}><NotebookConnections api={api} projectId={projectId} entryId={selected} links={value.links} onChange={links=>edit({links})} onFollow={follow}/>
               <details className="notebook-manual-link"><summary>Link by ID</summary><label>Connection target type<select value={link.kind} onChange={event=>setLink({...link,kind:event.target.value})}><option value="record">Record</option><option value="annotation">Saved passage</option><option value="entry">Notebook thought</option></select></label><label>Target ID<input value={link.id} maxLength={500} onChange={event=>setLink({...link,id:event.target.value})}/></label><label>Why connect these?<textarea value={link.rationale} maxLength={2000} rows={2} onChange={event=>setLink({...link,rationale:event.target.value})}/></label><button disabled={!link.id.trim() || !link.rationale.trim() || value.links.length>=25} onClick={()=>{edit({links:[...value.links,link]});setLink({kind:'record',id:'',rationale:''});}}>Add explained connection</button></details>
             </fieldset></details>
@@ -119,6 +124,6 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
           </div>
         </>}
       </section>
-    </div>
+    </div>{sourceTarget && <NotebookSourcePane hidden={showGraph} api={api} projectId={projectId} target={sourceTarget} drafts={drafts} changed={changed} noteEditor={noteEditor || localNoteEditor.current} onNavigate={openSource} onClose={()=>setSourceTarget(null)} onExpand={onOpenSource}/>}</div>
   </section>;
 }
