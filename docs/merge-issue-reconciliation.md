@@ -2,6 +2,8 @@
 
 Audit date: 2026-10-16 UTC (2026-10-15 evening in the owner's timezone). The owner authorized merging all outstanding PRs and reviewing the issues. This records code integration and backlog decisions, not deployment or completion of scholarly research.
 
+Subsequent owner-approved prioritization: [the current Now / Next / Later plan](second-brain-roadmap.md) adds trash/restore #145 and a real reading-session checkpoint #146. It defers advanced ranking/history, agent expansion, full Obsidian sync, and elaborate graph exploration beyond the first release. The merge/closure evidence below is retained as the historical audit.
+
 ## Integrated workspace
 
 | PR | Integrated scope |
