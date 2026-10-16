@@ -21,7 +21,7 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
   function openSource(recordId,targetProject=projectId,annotationId='',documentId=''){if(targetProject!==projectId)return;if(inlineSources){sourceTrigger.current=window.document.activeElement;setShowGraph(false);setSourceTarget({recordId,annotationId,documentId});}else onOpenSource?.(recordId,targetProject,annotationId,documentId);}
   const [mobileEditor,setMobileEditor]=useState(false);
   const [editorMode,setEditorMode]=useState('write'),[network,setNetwork]=useState(null),[networkError,setNetworkError]=useState(''),[networkLoading,setNetworkLoading]=useState(false),[showGraph,setShowGraph]=useState(false);
-  const networkGeneration=useRef(0),networkBusy=useRef(false);
+  const networkGeneration=useRef(0),networkBusy=useRef(false),quoteBusy=useRef(false);
   const graph=useMemo(()=>notebookGraph(network?.items || [],{complete:!network?.truncated}),[network]);
   const [link,setLink]=useState({kind:'record',id:'',rationale:''});
   const [,render]=useState(0),generation=useRef(0),mounted=useRef(true),busy=useRef(false),selection=useRef(null),activeProject=useRef(projectId);
@@ -80,7 +80,7 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
   const value=draft?.value || (cloud?notebookMetadata(cloud):null),locked=!!draft?.saving || !!draft?.sent || !!quoteDraft;
   const context=selected?cloud:draft?.value;
   async function insertQuote(input){
-    if(!value || draft?.saving || draft?.sent || quoteDraft?.saving)return;
+    if(!value || draft?.saving || draft?.sent || quoteDraft?.saving || quoteBusy.current)return;quoteBusy.current=true;
     const originalId=selected,at=key,quoteAt=quoteKey;
     let pending=quoteDraft;
     try{
@@ -95,7 +95,7 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
       if(body.length>20000)throw new Error('This note is too long to insert the quote. Your saved passage remains available.');
       const links=value.links.some(link=>link.kind==='annotation'&&link.id===annotation.id)?value.links:[...value.links,{kind:'annotation',id:annotation.id,rationale:('Quoted from '+pending.title+' · '+pending.document.locator).slice(0,2000)}];
       edit({body,links});clear(quoteAt);setEditorMode('write');setMessage('Quote and exact citation inserted. Save your note to keep the change.');
-    }catch(error){if(pending)remember({...pending,saving:false,error:error.message || 'Quote save was not confirmed. Retry uses the original passage ID.'},quoteAt);else setMessage(error.message);}
+    }catch(error){if(pending)remember({...pending,saving:false,error:error.message || 'Quote save was not confirmed. Retry uses the original passage ID.'},quoteAt);else setMessage(error.message);}finally{quoteBusy.current=false;}
   }
   function exportNote(){if(!cloud)return;const content=`# ${cloud.title}\n\n${cloud.body}\n\n---\nNote: ${cloud.id}\nRevision: ${cloud.revision}\n${cloud.record_id?`Source: ${cloud.record_id}\n`:''}${cloud.document_id?`Edition ID: ${cloud.document_id}\n`:''}${cloud.annotation_id?`Passage: ${cloud.annotation_id}\n`:''}\n${(cloud.links || []).map(item=>`- ${item.kind}: ${item.id} — ${item.rationale}`).join('\n')}\n`;
     const url=URL.createObjectURL(new Blob([content],{type:'text/markdown;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='research-note.md';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
