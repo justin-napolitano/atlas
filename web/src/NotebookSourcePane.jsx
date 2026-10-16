@@ -12,7 +12,7 @@ export default function NotebookSourcePane({api,projectId,target,drafts,changed,
     <header><span>Alongside your notes</span><button onClick={onClose} aria-label="Close source panel">Close source ×</button></header>
     {error && <p role="alert">{error}</p>}{!error&&!record&&<p role="status">Opening the source…</p>}
     {record && <><h3 dir="auto">{record.title}</h3><button className="notebook-source-expand" onClick={()=>onExpand?.(record.id,projectId,place?.annotation_id || target.annotationId,place?.document_id || target.documentId)}>Open full reader ↗</button>
-      {['source','work','edition'].includes(record.kind)?<SourceReader key={JSON.stringify([projectId,target.recordId,target.annotationId,target.documentId])} record={record} api={api} drafts={drafts} changed={changed} noteEditor={noteEditor} navigate={onNavigate} initialDocumentId={target.documentId} initialAnnotationId={target.annotationId} initialMarginOpen={false} onBookmark={setPlace} onReadingPlace={setPlace} onQuote={onQuote}/>:<p>{record.summary || 'No summary recorded.'}</p>}
+      {['source','work','edition'].includes(record.kind)?<SourceReader key={JSON.stringify([projectId,target.recordId,target.annotationId,target.documentId])} record={record} api={api} drafts={drafts} changed={changed} noteEditor={noteEditor} navigate={onNavigate} initialDocumentId={target.documentId} initialAnnotationId={target.annotationId} initialMarginOpen={false} onBookmark={setPlace} onReadingPlace={setPlace} onQuote={onQuote?value=>onQuote({...value,title:record.title}):undefined}/>:<p>{record.summary || 'No summary recorded.'}</p>}
     </>}
   </aside>;
 }
