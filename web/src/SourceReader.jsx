@@ -64,7 +64,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
           const target=requested.annotation;
           if(target.project_id!==record.project_id || target.document_id!==value.id || target.text_sha256!==value.text_sha256) throw new Error('The saved passage did not match this reading version.');
           setAnnotations(rows=>rows.some(row=>row.id===target.id) ? rows : [...rows,target]);
-          setActiveAnnotation(target.id);setHighlight(requested.anchor);setMessage('Opened the saved source version and exact passage.');
+          setActiveAnnotation(target.id);setHighlight(requested.anchor);setMessage(target.trashed?'This margin writing is in Trash. Its source anchor is retained; restore it before editing.':'Opened the saved source version and exact passage.');
           requestAnimationFrame(()=>revealMark());
         }
         else setMessage('The requested passage needs anchor review. Its position was not changed.');
@@ -178,10 +178,10 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
     });
   }
   const belongs=row=>row.project_id===record.project_id && row.document_id===documentId;
-  const saved=annotations.filter(belongs).map(row=>noteEditor.adopt(row,record.id).server).sort((a,b)=>a.start_pos-b.start_pos || a.end_pos-b.end_pos || a.id.localeCompare(b.id));
+  const saved=annotations.filter(belongs).map(row=>({...noteEditor.adopt(row,record.id).server,trashed:row.trashed || false,trash_revision:row.trash_revision || 0})).sort((a,b)=>a.start_pos-b.start_pos || a.end_pos-b.end_pos || a.id.localeCompare(b.id));
   const isWriting=row=>row.body.trim() || (row.mark_style || 'highlight')!=='none' || row.capture_kind!=='comment' || noteEditor.entries.get(row.id)?.open || noteEditor.entries.get(row.id)?.status!=='saved' || activeAnnotation===row.id;
   const writingNotes=saved.filter(isWriting),sourceAnchors=saved.filter(row=>!isWriting(row));
-  const marked=document ? readingMarks(document,saved,highlight) : {runs:[],unanchored:[]};
+  const marked=document ? readingMarks(document,saved.filter(row=>!row.trashed),highlight) : {runs:[],unanchored:[]};
   const pendingRecovery=document && [...drafts.current.values()].some(value=>value?.sent?.document_id===document.id && (value.saving || value.error || value.current));
   const pendingSavedNote=saved.some(row=>{const entry=noteEditor.adopt(row,record.id);return entry.pending || entry.current || entry.status==='error' || entry.status==='conflict';});
   useEffect(()=>{if(capture || pendingRecovery || pendingSavedNote)setMarginOpen(true);},[document?.id,!!capture,pendingRecovery,pendingSavedNote]);
@@ -239,8 +239,8 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
             {capture.submitted && !capture.saving && <small>The response was not confirmed. Retry sends the original note and ID, so it cannot create a second note. Discarding removes this local draft; a committed note may still exist in the cloud. Refresh saved notes to check.</small>}
             <small>Your note stays attached to this exact source version. Capturing it does not create a reviewed claim.</small></div>}
           <div className="reader-annotations"><h4 className="reader-saved-heading">Saved passage notes</h4>
-            {writingNotes.map(row=><SavedPassageNote key={row.id} row={row} sourceId={record.id} document={document} editor={noteEditor} reopen={reopen} api={api} drafts={drafts} changed={changed} navigate={navigate} onOpenVerse={onOpenVerse} active={activeAnnotation===row.id} />)}
-            {sourceAnchors.length>0 && <details className="reader-source-anchors"><summary>Linked source passages · {sourceAnchors.length}</summary><p>These passages anchor source connections. They do not contain a personal note yet.</p>{sourceAnchors.map(row=><SavedPassageNote key={row.id} row={row} sourceId={record.id} document={document} editor={noteEditor} reopen={reopen} api={api} drafts={drafts} changed={changed} navigate={navigate} onOpenVerse={onOpenVerse} active={activeAnnotation===row.id} />)}</details>}
+            {writingNotes.map(row=><SavedPassageNote key={row.id} row={row} sourceId={record.id} document={document} editor={noteEditor} reopen={reopen} api={api} drafts={drafts} changed={changed} navigate={navigate} onOpenVerse={onOpenVerse} onTrashChange={result=>setAnnotations(rows=>rows.map(item=>item.id===result.target_id?{...item,trashed:result.state==='trashed',trash_revision:result.revision}:item))} active={activeAnnotation===row.id} />)}
+            {sourceAnchors.length>0 && <details className="reader-source-anchors"><summary>Linked source passages · {sourceAnchors.length}</summary><p>These passages anchor source connections. They do not contain a personal note yet.</p>{sourceAnchors.map(row=><SavedPassageNote key={row.id} row={row} sourceId={record.id} document={document} editor={noteEditor} reopen={reopen} api={api} drafts={drafts} changed={changed} navigate={navigate} onOpenVerse={onOpenVerse} onTrashChange={result=>setAnnotations(rows=>rows.map(item=>item.id===result.target_id?{...item,trashed:result.state==='trashed',trash_revision:result.revision}:item))} active={activeAnnotation===row.id} />)}</details>}
             {annotationCursor && <><p className="reader-help">More notes exist. Load them to see their marks in the text.</p><button onClick={moreAnnotations}>More passage notes</button></>}</div>
         </aside>
       </ResizablePanes>

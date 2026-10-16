@@ -23,3 +23,8 @@
 @media(max-width:760px){.has-source-pane .notebook-with-source{display:block}.notebook-source-pane{position:fixed;z-index:90;inset:var(--atlas-header-height,0px) 0 0;max-height:none;padding:20px;background:var(--paper,#fff);border:0}.has-source-pane .notebook-index{max-height:none;overflow:visible}.notebook-source-pane>header{position:sticky;top:-20px;background:var(--paper,#fff);padding:12px 0;z-index:3}.notebook-source-pane .reader-text{font-size:21px!important}}
 .notebook-collections{display:grid;gap:3px;padding:0 0 18px;border-bottom:1px solid var(--notebook-rule);margin-bottom:16px}.notebook-collections>button{text-align:left;font-size:12px;min-height:36px}.notebook-collections>button[aria-pressed=true]{color:var(--accent,#a32626);background:var(--accent-wash,#f8eded);font-weight:600}.notebook-source-pane[hidden]{display:none!important}.has-source-pane .notebook-layout{max-height:calc(100dvh - 160px);overflow:auto;scrollbar-gutter:stable}.notebook-source-pane .reader-margin-close{display:block!important}
 @media(max-width:760px){.notebook-collections{display:flex;gap:4px;flex-wrap:wrap}.notebook-collections>button{font-size:11px}.has-source-pane .notebook-layout{max-height:none;overflow:visible}}
+.private-trash {padding:.65rem 0;border-bottom:1px solid var(--rule);font:12px/1.5 system-ui;}
+.private-trash article {padding:.75rem 0;}
+.private-trash pre {white-space:pre-wrap;overflow-wrap:anywhere;max-height:12rem;overflow:auto;}
+.private-trash-action {display:inline-flex;gap:.5rem;align-items:center;flex-wrap:wrap;}
+.private-trash-action small {max-width:40ch;color:var(--muted);}

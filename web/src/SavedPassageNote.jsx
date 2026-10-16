@@ -1,4 +1,5 @@
-import React from 'react';
+import React,{useState} from 'react';
+import {TrashAction} from './PrivateTrash.jsx';
 import ScriptureCitations from './ScriptureCitations.jsx';
 import LexiconCapture from './LexiconCapture.jsx';
 import VerseLinks from './VerseLinks.jsx';
@@ -7,8 +8,11 @@ import {recoverPassageWriting} from './recoverIntoEditor.js';
 
 const statuses={saved:'Saved to your workspace',unsaved:'Unsaved changes',saving:'Saving…',conflict:'Changed on another device',error:'Save failed. Your draft is still here.'};
 /** A revisioned margin note; source selection and note identity remain immutable. */
-export default function SavedPassageNote({ row,sourceId,document,editor,reopen,api,drafts,changed,navigate,onOpenVerse,active=false }) {
+export default function SavedPassageNote({ row,sourceId,document,editor,reopen,api,drafts,changed,navigate,onOpenVerse,active=false,onTrashChange=()=>{} }) {
   const entry=editor.adopt(row,sourceId), value=entry.server;
+  const [trash,setTrash]=useState(null);
+  const action=<TrashAction api={api} projectId={value.project_id} kind="annotation" id={value.id} revision={value.revision} trashRevision={trash?.revision ?? row.trash_revision ?? 0} trashed={trash?trash.state==='trashed':row.trashed} disabled={entry.status!=='saved'} onChanged={result=>{setTrash(result);onTrashChange(result);}}/>;
+  if(trash?trash.state==='trashed':row.trashed)return <article className="saved-passage-note"><p>Margin writing moved to Trash. Its exact source anchor is retained.</p>{action}</article>;
   return <article className={`saved-passage-note${active ? ' is-active' : ''}`} data-annotation-id={value.id} aria-label={active ? 'Selected passage note' : 'Passage note'}>
     <a className="reader-reopen" dir="auto" href={`?${new URLSearchParams({project:value.project_id,record:sourceId,document:value.document_id,annotation:value.id})}`} onClick={event=>{
       if(event.button===0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {event.preventDefault();reopen(value);}
@@ -31,7 +35,7 @@ export default function SavedPassageNote({ row,sourceId,document,editor,reopen,a
       {document && <RecoverableDraft dirty={entry.body!==value.body || entry.markStyle!==(value.mark_style || 'highlight')} key={value.id+':drafts'} api={api} projectId={value.project_id} recordId={sourceId} contextKind="annotation" document={document} annotation={value} body={entry.body} markStyle={entry.markStyle} baseRevision={entry.server.revision} drafts={drafts} changed={changed} onRecover={recovered=>recoverPassageWriting(editor,{id:sourceId,project_id:value.project_id},recovered)}/>}
       <small>Your saved note stays private. Editing it keeps the selected text, source version, and revision history attached.</small>
     </div> : <>{value.body && <p>{value.body}</p>}<button className="passage-note-open" onClick={()=>editor.open(value.id)}>Edit note</button></>}
-    <details className="passage-research-tools"><summary>Explore this passage</summary>
+    {action}<details className="passage-research-tools"><summary>Explore this passage</summary>
     <button onClick={()=>reopen(value,true)}>Export private annotation</button>
     <ScriptureCitations annotation={value} sourceId={sourceId} api={api} drafts={drafts} changed={changed} navigate={navigate} />
     <VerseLinks api={api} projectId={value.project_id} annotation={value} drafts={drafts} changed={changed} onOpenVerse={onOpenVerse} />

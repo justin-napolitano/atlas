@@ -9,6 +9,7 @@ const project='synthetic:project',anchor={record_id:'synthetic:source',document_
 const entries=new Map(),history=new Map(),requests=[],receipts=new Map();let lose=true,loseEdit=true,wrong=false;
 const fixture=window.__notebookTest={entries,requests,history,anchor};
 const recoveryRows=new Map();fixture.recoveryRows=recoveryRows;
+const trashRows=new Map();fixture.trashRows=trashRows;
 const records=[{id:'synthetic:source',project_id:project,kind:'source',title:'Synthetic Arabic source',summary:'A source with saved text',review_state:'pending'},{id:'synthetic:reference',project_id:project,kind:'source',title:'Metadata-only reference',summary:'An independent bibliographic record',review_state:'pending'},{id:'synthetic:work',project_id:project,kind:'work',title:'A source work',summary:'A bibliographic work',review_state:'pending'},{id:'synthetic:curated-question',project_id:project,kind:'question',title:'A recorded research question',summary:'A question from the research graph',revision:1,review_state:'pending'}];
 const passage={item_kind:'passage_note',thought_type:'passage_note',id:anchor.annotation_id,project_id:project,title:'Original passage note',body:'Single authoritative passage body',...anchor,
   source_title:'Synthetic Arabic source',edition:'Synthetic edition',locator:'p. 2',selected_quote:'😀 التفسير tafsīr',revision:1,state:'active',cursor:'passage_note:'+anchor.annotation_id};
@@ -22,6 +23,14 @@ const api={async post(path,value){if(path==='reading/annotations'){quoteRequests
   if(!receipt){const row=record({...value,id:'urn:research:notebook:'+value.request_uuid,revision:1,state:'active',source_title:value.record_id?passage.source_title:null,selected_quote:value.annotation_id?passage.selected_quote:null,edition:value.document_id?passage.edition:null,locator:value.document_id?passage.locator:null});receipt={id:row.id,project_id:project,revision:1};receipts.set(value.request_uuid,receipt);}
   if(lose){lose=false;throw {status:503,message:'Notebook save could not be confirmed.'};}return receipt;
 },async request(path,params={},value){
+  if(path==='writing/trash' && value){
+    const key=value.target_kind+':'+value.target_id,previous=trashRows.get(key);
+    if(previous && previous.revision!==value.expected_revision){if(previous.revision===value.expected_revision+1 && previous.state===value.state)return structuredClone(previous);throw {status:409,current:previous};}
+    const row={...value,revision:value.expected_revision+1};trashRows.set(key,row);
+    if(value.target_kind==='entry'){const entry=entries.get(value.target_id);entry.trashed=value.state==='trashed';entry.trash_revision=row.revision;}
+    if(fixture.loseTrash){fixture.loseTrash=false;throw {status:503};}return structuredClone(row);
+  }
+  if(path==='writing/trash')return {items:[...trashRows.values()].filter(row=>row.state==='trashed').map(row=>({...row,...(row.target_kind==='entry'?{title:entries.get(row.target_id).title,body:entries.get(row.target_id).body}:{title:'Margin note',body:'Synthetic margin writing'})})),next_cursor:null};
   if(path==='notebook/draft' && value){
     const id='urn:research:writing-draft:'+value.draft_uuid,current=recoveryRows.get(id);
     if(current && current.revision!==value.expected_revision){
@@ -43,8 +52,8 @@ const api={async post(path,value){if(path==='reading/annotations'){quoteRequests
   if(path==='reading/annotation'){const annotation=params.annotation_id===anchor.annotation_id?await sourceAnnotation():quoteCaptures.get(params.annotation_id);return {annotation,anchor:{anchored:true,start:annotation.start_pos,end:annotation.end_pos}};}
   if(['reading/scripture-citations','verses/annotation-links','lexicon/annotation-links'].includes(path))return {items:[],next_cursor:null};
   if(path==='research/search')return {truncated:false,items:[{kind:'record',id:'synthetic:source',project_id:project,record_id:'synthetic:source',title:'Synthetic authority source',excerpt:'Background on authority',record_kind:'source'},{kind:'concept',id:'synthetic:concept',project_id:project,concept_id:'synthetic:concept',title:'Authority',excerpt:'Synthetic concept'}]};
-  if(path==='notebook/network')return {project_id:project,items:[...entries.values()].filter(row=>row.state==='active'),truncated:false};
-  if(path==='notebook/items'){const rows=[...[...entries.values()].map(row=>({...row,item_kind:'entry',cursor:'entry:'+row.id})),passage,recordNote].filter(row=>(!params.item_scope || params.item_scope==='all' || (params.item_scope==='writing'?row.item_kind==='entry':row.item_kind!=='entry')) && row.state===params.state && (!params.thought_type || row.thought_type===params.thought_type) && (!params.q || (row.body+' '+row.title+' '+row.selected_quote).includes(params.q))).sort((a,b)=>a.cursor.localeCompare(b.cursor));return {items:(wrong&&!rows.length?[recordNote]:rows.filter(row=>row.cursor>(params.cursor || '')).slice(0,25)).map(row=>({...row,...(wrong?{project_id:'other'}:{})})),next_cursor:null};}
+  if(path==='notebook/network')return {project_id:project,items:[...entries.values()].filter(row=>row.state==='active'&&!row.trashed),truncated:false};
+  if(path==='notebook/items'){const rows=[...[...entries.values()].map(row=>({...row,item_kind:'entry',cursor:'entry:'+row.id})),passage,recordNote].filter(row=>!row.trashed && (!params.item_scope || params.item_scope==='all' || (params.item_scope==='writing'?row.item_kind==='entry':row.item_kind!=='entry')) && row.state===params.state && (!params.thought_type || row.thought_type===params.thought_type) && (!params.q || (row.body+' '+row.title+' '+row.selected_quote).includes(params.q))).sort((a,b)=>a.cursor.localeCompare(b.cursor));return {items:(wrong&&!rows.length?[recordNote]:rows.filter(row=>row.cursor>(params.cursor || '')).slice(0,25)).map(row=>({...row,...(wrong?{project_id:'other'}:{})})),next_cursor:null};}
   if(path==='notebook/entry' && !value){const row=structuredClone(entries.get(params.entry_id));row.links=row.links.map(link=>({rationale:link.rationale,id:link.id,kind:link.kind}));return row;}
   if(path==='notebook/entry' && value){requests.push(structuredClone(value));if(fixture.hold){fixture.hold=false;await new Promise(resolve=>{fixture.release=resolve;});}const current=entries.get(value.entry_id),fields=['thought_type','title','body','links','state'];
     if(current.revision!==value.expected_revision){if(current.revision===value.expected_revision+1 && fields.every(key=>JSON.stringify(current[key])===JSON.stringify(value[key])))return structuredClone(current);throw {status:409,current:structuredClone(current),message:'Another device changed this thought.'};}
