@@ -92,6 +92,9 @@ class PostgreSQLStore:
     def notebook_entry(self,project_id,entry_id):
         with db.connect(self.dsn) as connection:return notebook.get(connection,project_id,entry_id)
 
+    def notebook_network(self,project_id,limit):
+        with db.connect(self.dsn) as connection:return notebook.network(connection,project_id,limit)
+
     def notebook_create(self,**values):
         with db.connect(self.dsn) as connection:return notebook.create(connection,**values)
 

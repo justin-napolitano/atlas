@@ -40,6 +40,21 @@ def get(connection,project_id,entry_id):
         WHERE n.project_id=%s AND n.id=%s''',(project_id,entry_id)).fetchone()
 
 
+def network(connection,project_id,limit):
+    """Bounded current private notes for explicit links and Markdown navigation.
+
+    This is a projection, never an independently edited graph authority. Bodies
+    are required for Markdown-aware wiki-link extraction; no revision history,
+    actors, source document text, or other project rows are returned.
+    """
+    if type(limit) is not int or not 1 <= limit <= 201:
+        raise ValueError('Notebook network limit must be between 1 and 201')
+    return connection.execute('''SELECT id,project_id,title,body,thought_type,revision,
+        record_id,document_id,annotation_id,links FROM research.notebook_entries
+        WHERE project_id=%s AND state='active'
+        ORDER BY updated_at DESC,id COLLATE "C" LIMIT %s''',(project_id,limit)).fetchall()
+
+
 def _targets(connection,project_id,record_id,document_id,annotation_id,links):
     if record_id and not connection.execute('SELECT id FROM research.records WHERE project_id=%s AND id=%s AND deleted_at IS NULL',(project_id,record_id)).fetchone():
         raise ValueError('Notebook source is unavailable in this project')

@@ -681,6 +681,11 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         rows=store.notebook_items(project_id=project_id,q=q,thought_type=thought_type,state=state,cursor=cursor,limit=limit+1)
         return {"items":rows[:limit],"next_cursor":rows[limit-1]["cursor"] if len(rows)>limit else None}
 
+    @router.get("/notebook/network")
+    def notebook_network(project_id: Identifier,limit: Annotated[int,Query(ge=1,le=200)]=200):
+        rows=store.notebook_network(project_id,limit+1)
+        return {"project_id":project_id,"items":rows[:limit],"truncated":len(rows)>limit}
+
     @router.get("/notebook/entry")
     def notebook_entry(project_id: Identifier,entry_id: Identifier):
         row=store.notebook_entry(project_id,entry_id)
@@ -755,6 +760,7 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
                     "library":"/v1/reading/library","query_max_characters":300,"max_results":50,
                     "retrieval":"case_insensitive_literal_match","ranking":"exact_title_then_title_prefix_then_literal_match",
                     "review_effect":"none","graph_effect":"none","publication_effect":"none"},
+                "notebook_network": {"scope":"owner_only","endpoint":"/v1/notebook/network","max_results":200,"authority":"current_active_private_notes","canonical_graph_effect":"none","publication_effect":"none"},
                 "scripture_references": {"profile_id":QURAN_PROFILE_ID,"parser_version":QURAN_PARSER_VERSION,
                     "candidates":"/v1/reading/scripture-candidates","reverse_lookup":"/v1/reading/scripture-citations",
                     "owner_resolution":"/v1/reading/scripture-citation","max_reverse_lookup_page":25,
