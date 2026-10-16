@@ -18,8 +18,9 @@ export default function WritingRecovery({api,projectId,onRecover}){
   async function inspect(row){const token=++generation.current;try{
     const fresh=await api.request('notebook/draft',{project_id:projectId,draft_id:row.id});
     if(fresh.id!==row.id||fresh.project_id!==projectId||fresh.state!=='active')throw new Error();
-    let current=null;if(fresh.entry_id)current=await api.request('notebook/entry',{project_id:projectId,entry_id:fresh.entry_id});
-    if(current&&(current.id!==fresh.entry_id||current.project_id!==projectId))throw new Error();
+    let current=null;const entryId=fresh.entry_id || (fresh.request_uuid?'urn:research:notebook:'+fresh.request_uuid:null);
+    if(entryId){try{current=await api.request('notebook/entry',{project_id:projectId,entry_id:entryId});}catch(error){if(fresh.entry_id || error.status!==404)throw error;}}
+    if(current&&(current.id!==entryId||current.project_id!==projectId))throw new Error();
     if(alive.current&&token===generation.current)setPreview({row:fresh,current});
   }catch{if(alive.current&&token===generation.current)setMessage('This recovery copy could not be verified. Your editor is unchanged.');}}
   return <section className="unfinished-writing" aria-label="Unfinished writing"><button disabled={loading} onClick={()=>load()}>{loading?'Finding unfinished work…':'Unfinished work'}</button>{message&&<p role="status">{message}</p>}

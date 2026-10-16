@@ -23,3 +23,11 @@ test('tab status tracks the actual project and confirmed note state',()=>{
   drafts.set('notebook:'+JSON.stringify(['one','new']),{saving:false,current:{revision:2}});
   assert.equal(workStatus({...item,snapshot:{libraryView:'notebook'}},{records,passages,drafts}),'Conflict');
 });
+test('free margin writing protects the reading tab for its own source and project',()=>{
+  const item={project:'one',snapshot:{selected:'source',selectedDocument:'edition',libraryView:''}};
+  const drafts=new Map([['notebook:'+JSON.stringify(['one','note']),{workspaceMode:'location-margin',sourceRecordId:'source',projectId:'one',documentId:'edition',saving:true}]]);
+  const values={drafts,records:new Map(),passages:new Map()};
+  assert.equal(workStatus(item,values),'Saving');
+  assert.equal(workStatus({...item,project:'other'},values),'');
+  assert.equal(workStatus({...item,snapshot:{...item.snapshot,selected:'other'}},values),'');
+});
