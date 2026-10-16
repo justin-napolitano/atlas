@@ -66,6 +66,24 @@ class NotebookStoreTests(unittest.TestCase):
             self.assertEqual(self.store.history(connection,self.project,saved['id'],2,25)[0]['snapshot']['body'],self.values['body'])
             self.assertIsNone(self.store.get(connection,'other',saved['id']));self.assertIsNone(self.store.history(connection,'other',saved['id'],None,25))
 
+    def test_network_is_bounded_private_current_project_projection(self):
+        with self.db.connect(self.owner_dsn) as connection:
+            first=self.store.create(connection,**self.values)
+            second=self.store.create(connection,**{**self.values,'request_uuid':str(uuid.uuid4()),'title':'An independent note',
+                'record_id':None,'document_id':None,'annotation_id':None,'links':[dict(kind='entry',id=first['id'],rationale='Compare this question')]})
+            rows=self.store.network(connection,self.project,1)
+            self.assertEqual(len(rows),1)
+            all_rows=self.store.network(connection,self.project,201)
+            self.assertEqual(len(all_rows),2)
+            self.assertEqual(next(row for row in all_rows if row['id']==second['id'])['links'][0]['id'],first['id'])
+            self.assertNotIn('changed_by',rows[0])
+            self.assertEqual(self.store.network(connection,'other',201),[])
+            self.store.update(connection,project_id=self.project,entry_id=first['id'],expected_revision=1,
+                **metadata(self.values['thought_type'],self.values['title'],self.values['body'],[],'withdrawn'),actor='owner')
+            self.assertEqual([row['id'] for row in self.store.network(connection,self.project,201)],[second['id']])
+            for limit in [0,202,True]:
+                with self.assertRaises(ValueError):self.store.network(connection,self.project,limit)
+
     def test_existing_passage_note_is_live_single_authority_and_filters_page_before_limit(self):
         with self.db.connect(self.owner_dsn) as connection:
             saved=self.store.create(connection,**self.values)
