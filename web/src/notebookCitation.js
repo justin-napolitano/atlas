@@ -5,5 +5,5 @@ export function quoteCapture(projectId,document,selection){
 }
 export function quoteMarkdown(exact,title,locator,annotationId){
   const label=[title,locator].filter(Boolean).join(' · ').slice(0,600).replaceAll('\\','\\\\').replaceAll('[','\\[').replaceAll(']','\\]').replaceAll('\n',' ');
-  return exact.split('\n').map(line=>'> '+line.replace(/[\\`*_{}\[\]()#+\-.!>|~]/g,'\\$&')).join('\n')+`\n\n[${label || 'Open exact passage'}](research-passage:${encodeURIComponent(annotationId)})`;
+  return exact.split('\n').map(line=>'> '+line.replace(/[\\`*_{}\[\]()#+\-.!<>|~]/g,'\\$&')).join('\n')+`\n\n[${label || 'Open exact passage'}](research-passage:${encodeURIComponent(annotationId)})`;
 }

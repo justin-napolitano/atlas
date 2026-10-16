@@ -891,9 +891,13 @@ try {
 
   await click('Back to my reading');
   await click('My notebook');
+  await click('Reading notes');
   await until(()=>evaluate('document.querySelectorAll(".research-notebook .notebook-title").length>0'),'workspace notebook shows live passage notes');
   await evaluate('document.querySelector(".research-notebook .notebook-title").click()');
   await until(()=>evaluate('!!document.querySelector(".reader-text mark.is-selected")'),'notebook backlink opens saved passage');
+  assert.equal(await evaluate('new URL(location.href).searchParams.get("view")'),'notebook');
+  assert.ok(await evaluate('!!document.querySelector(".notebook-source-pane .reader-text mark.is-selected")'));
+  await click('Close source ×');
   await click('Read the Sirry article');
   await until(()=>evaluate('document.querySelector("[name=title]")?.value.includes("Who Are Those in Authority")'),'real article preset reachable from workspace');
   assert.ok(await evaluate('document.querySelector(".intake-preset-note").textContent.includes("manual transcription")'));

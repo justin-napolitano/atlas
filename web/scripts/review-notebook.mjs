@@ -125,8 +125,36 @@ try{
   await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'mobile graph no overflow');
   await writeFile(join(artifacts,'06-note-graph-mobile.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
+  await click('← Back to notes');await click('Everything');
+  await call('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+  await click('Another unfinished thought');await until(()=>evaluate('!!document.querySelector(".notebook-note-body textarea")'),'current note');
+  await evaluate('window.__notebookTest.inline(true)');
+  await evaluate(`{const input=document.querySelector('.notebook-note-body textarea');input.focus();input.setSelectionRange(input.value.length,input.value.length);window.__notebookEditor=input;void 0;}`);
+  await call('Input.insertText',{text:'\n\nStill working on this sentence.'});
+  const bodyBefore=await evaluate('document.querySelector(".notebook-note-body textarea").value'),urlBefore=await evaluate('location.href');
+  await click('Reading notes');await until(()=>evaluate('document.querySelectorAll(".notebook-index article").length===2'),'reading collection server filter');
+  await click('Original passage note');await until(()=>evaluate('!!document.querySelector(".notebook-source-pane .reader-text mark.is-selected")'),'contained exact passage');
+  assert.equal(await evaluate('location.href'),urlBefore);assert.equal(await evaluate('document.querySelector(".notebook-note-body textarea")===window.__notebookEditor'),true);
+  assert.equal(await evaluate('document.querySelector(".notebook-note-body textarea").value'),bodyBefore);
+  await evaluate(`{const root=document.querySelector('.notebook-source-pane .reader-text'),walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let node;while(node=walker.nextNode())if(node.textContent.includes('tafsīr'))break;const start=node.textContent.indexOf('tafsīr'),range=document.createRange();range.setStart(node,start);range.setEnd(node,start+6);getSelection().removeAllRanges();getSelection().addRange(range);document.dispatchEvent(new Event('selectionchange'));}`);
+  await evaluate('window.__notebookTest.loseQuote=true');await click('Quote in notebook');
+  await until(()=>evaluate('document.body.textContent.includes("Quote response lost")'),'uncertain quote retained');
+  assert.equal(await evaluate('window.__notebookTest.quoteCaptures.size'),1);
+  await click('Retry original quote insertion');await until(()=>evaluate('document.querySelector(".notebook-note-body textarea").value.includes("research-passage:")'),'quoted exact passage inserted');
+  assert.equal(await evaluate('JSON.stringify(window.__notebookTest.quoteRequests[0])===JSON.stringify(window.__notebookTest.quoteRequests[1])'),true);
+  assert.ok(await evaluate('document.querySelector(".notebook-note-body textarea").value.includes("Still working on this sentence.")'));
+  await click('Preview');await until(()=>evaluate('document.querySelectorAll(".notebook-markdown button").length>1'),'citation preview');
+  const noteIdBefore=await evaluate('document.querySelector(".notebook-note-title input").value');
+  await evaluate(`[...document.querySelectorAll('.notebook-writing .notebook-markdown button')].find(button=>button.textContent.includes('Synthetic Arabic source')).click()`);
+  await until(()=>evaluate('document.querySelector(".notebook-source-pane .reader-text mark.is-selected")?.textContent==="tafsīr"'),'citation reopens its exact saved selection');
+  assert.equal(await evaluate('location.href'),urlBefore);assert.equal(await evaluate('document.querySelector(".notebook-note-title input").value'),noteIdBefore);
+  await writeFile(join(artifacts,'07-fluid-notebook-source.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
+  await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'source overlay mobile width');
+  await click('Close source ×');assert.equal(await evaluate('document.querySelector(".notebook-note-body textarea").value.includes("research-passage:")'),true);
+  assert.equal(await evaluate('location.href'),urlBefore);
   assert.deepEqual(problems,[]);
-  console.log(JSON.stringify({notebookPassed:true,checks:['compiled owner notebook','live passage note backlink','anchored thought and explained connection','Unicode Markdown inert text','retained creation UUID and exact lost-response retry','source context readback','two-device correction comparison','CAS lost acknowledgement retry','paged revision history','withdrawal filter','wrong-project refusal','independent note without source','searchable explained connection saved','mobile list to editor','CommonMark and GFM preview','inert script and unsafe links','wiki link to saved note','saved backlinks','actual saved note graph','dark390px','no private localStorage'],artifacts}));
+  console.log(JSON.stringify({notebookPassed:true,checks:['compiled owner notebook','live passage note backlink','anchored thought and explained connection','Unicode Markdown inert text','retained creation UUID and exact lost-response retry','source context readback','two-device correction comparison','CAS lost acknowledgement retry','paged revision history','withdrawal filter','wrong-project refusal','independent note without source','searchable explained connection saved','mobile list to editor','CommonMark and GFM preview','inert script and unsafe links','wiki link to saved note','saved backlinks','actual saved note graph','inline source keeps editor and route','organization filters before pagination','quote lost acknowledgement exact retry','citation returns to source without leaving note','mobile source overlay','dark390px','no private localStorage'],artifacts}));
 }finally{
   socket?.close();const closed=new Promise(resolve=>chrome.once('close',resolve));chrome.kill();await closed;await preview.close();
   for(const item of pending.values()){clearTimeout(item.timeout);item.reject(new Error('Notebook review finished'));}
