@@ -6,6 +6,7 @@ The research should understand traditions in context before evaluating them. “
 
 ## Start here
 
+- `docs/reader-ui-samples.md` — three locally runnable reader interface studies: focused reading, linked commentary, and a source-linked notebook; isolated from hosted authoring.
 - `AGENTS.md` — research and graph standards.
 - `sources/original/starting-reading-list.xlsx` — preserved starting workbook.
 - `data/reading-list.csv` — row-level export of the workbook's Reading List sheet.
