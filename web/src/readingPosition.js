@@ -12,15 +12,20 @@ export function readingPosition(root){
   }catch{/* Geometry fallback is deliberately approximate. */}
   return Math.round(Math.max(0,Math.min(1,(top-box.top)/Math.max(1,box.height)))*Array.from(root.textContent).length);
 }
-export function revealReadingPosition(root,position){
-  if(!root||boundedPosition(root.textContent,position)===null)return false;
+export function readingPointRect(root,position){
+  if(!root||boundedPosition(root.textContent,position)===null)return null;
   const doc=root.ownerDocument,walker=doc.createTreeWalker(root,4);let left=position,node;
   while((node=walker.nextNode())){const chars=Array.from(node.textContent);if(left<=chars.length){
     const range=doc.createRange(),offset=chars.slice(0,left).join('').length;range.setStart(node,offset);range.setEnd(node,Math.min(node.length,offset+(left<chars.length?chars[left].length:0)));
-    const rect=range.getBoundingClientRect(),container=root.closest('[data-contained-reader],.workspace-reader');
-    if(container)container.scrollTop+=rect.top-container.getBoundingClientRect().top-40;
-    else window.scrollBy({top:rect.top-40});
-    return true;
+    return range.getBoundingClientRect();
   }left-=chars.length;}
-  return false;
+  return null;
+}
+export function revealReadingPosition(root,position){
+  let rect=readingPointRect(root,position);if(!rect)return false;
+  if(root.scrollHeight>root.clientHeight){root.scrollTop+=rect.top-root.getBoundingClientRect().top-40;rect=readingPointRect(root,position);}
+  const container=root.closest('[data-contained-reader],.workspace-reader');
+  if(container)container.scrollTop+=rect.top-container.getBoundingClientRect().top-40;
+  else window.scrollBy({top:rect.top-40});
+  return true;
 }

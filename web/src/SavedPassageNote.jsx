@@ -1,4 +1,5 @@
 import React,{useState} from 'react';
+import NotebookMarkdown from './NotebookMarkdown.jsx';
 import {TrashAction} from './PrivateTrash.jsx';
 import {finishReadingRecovery} from './useWritingRecovery.js';
 import ScriptureCitations from './ScriptureCitations.jsx';
@@ -14,7 +15,7 @@ export default function SavedPassageNote({ row,sourceId,document,editor,reopen,a
   const [trash,setTrash]=useState(null);
   const action=<TrashAction api={api} projectId={value.project_id} kind="annotation" id={value.id} revision={value.revision} trashRevision={trash?.revision ?? row.trash_revision ?? 0} trashed={trash?trash.state==='trashed':row.trashed} disabled={entry.status!=='saved'} onChanged={result=>{setTrash(result);onTrashChange(result);}}/>;
   if(trash?trash.state==='trashed':row.trashed)return <article className="saved-passage-note"><p>Margin writing moved to Trash. Its exact source anchor is retained.</p>{action}</article>;
-  return <article className={`saved-passage-note${active ? ' is-active' : ''}`} data-annotation-id={value.id} aria-label={active ? 'Selected passage note' : 'Passage note'}>
+  return <article className={`saved-passage-note${active ? ' is-active' : ''}`} data-annotation-id={value.id} tabIndex={-1} aria-label={active ? 'Selected passage note' : 'Passage note'}>
     <a className="reader-reopen" dir="auto" href={`?${new URLSearchParams({project:value.project_id,record:sourceId,document:value.document_id,annotation:value.id})}`} onClick={event=>{
       if(event.button===0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {event.preventDefault();reopen(value);}
     }}>{value.exact}</a>
@@ -35,7 +36,7 @@ export default function SavedPassageNote({ row,sourceId,document,editor,reopen,a
       <button disabled={!!entry.pending} onClick={()=>{finishReadingRecovery(drafts.current,{projectId:value.project_id,recordId:sourceId,documentId:value.document_id,annotationId:value.id});editor.close(value.id);}}>{entry.status==='saved' ? 'Close editor' : 'Discard my changes'}</button>
       {document && <RecoverableDraft dirty={entry.body!==value.body || entry.markStyle!==(value.mark_style || 'highlight')} key={value.id+':drafts'} api={api} projectId={value.project_id} recordId={sourceId} contextKind="annotation" document={document} annotation={value} body={entry.body} markStyle={entry.markStyle} baseRevision={entry.server.revision} drafts={drafts} changed={changed} onRecover={recovered=>recoverPassageWriting(editor,{id:sourceId,project_id:value.project_id},recovered)}/>}
       <small>Your saved note stays private. Editing it keeps the selected text, source version, and revision history attached.</small>
-    </div> : <>{value.body && <p>{value.body}</p>}<button className="passage-note-open" onClick={()=>editor.open(value.id)}>Edit note</button></>}
+    </div> : <>{value.body && <NotebookMarkdown body={value.body} notes={[]} complete={false}/>}<button className="passage-note-open" onClick={()=>editor.open(value.id)}>Edit note</button></>}
     {action}<details className="passage-research-tools"><summary>Explore this passage</summary>
     <button onClick={()=>reopen(value,true)}>Export private annotation</button>
     <ScriptureCitations annotation={value} sourceId={sourceId} api={api} drafts={drafts} changed={changed} navigate={navigate} />

@@ -836,7 +836,7 @@ try {
   await until(()=>evaluate('!!document.querySelector(".reader-text mark.has-overlap.has-underline")'),'overlapping underline survives reload');
   assert.equal(await evaluate('document.querySelector(".reader-text").textContent'),readingDocument.text_body);
   await evaluate('[...document.querySelectorAll(".reader-text mark")].find(node=>node.textContent==="Before ").click()');
-  await until(()=>evaluate(`document.activeElement===document.querySelector('[data-annotation-id="${marginId}"] textarea')`),'click source mark focuses its saved margin note');
+  await until(()=>evaluate(`document.activeElement===document.querySelector('[data-annotation-id="${marginId}"]')`),'click source mark focuses its saved margin note');
   await evaluate(`document.querySelector('[data-annotation-id="${marginId}"] .reader-reopen').click()`);
   await until(()=>evaluate('document.activeElement===document.querySelector(".reader-text")'),'note quotation returns keyboard focus to source');
   assert.equal(await evaluate('[...document.querySelectorAll(".reader-text mark.is-selected")].map(node=>node.textContent).join("")'),'Before tafsīr');
