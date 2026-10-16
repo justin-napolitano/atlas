@@ -1,3 +1,4 @@
+import {useSurfaceResume} from './surfaceActivity.js';
 import React, { useEffect, useId, useRef, useState } from 'react';
 import {readingVersionLabel} from './readingVersionLabel.js';
 import { selectedPassage } from './passageSelection.js';
@@ -27,6 +28,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
   const requestedAnchor=useRef(null);
   const importKey=`import:${record.id}`, captureKey=`capture:${documentId}`;
   useEffect(()=>{onReadingPlace?.(document ? {project_id:record.project_id,record_id:record.id,document_id:document.id,annotation_id:activeAnnotation || null} : null,{projectId:record.project_id,recordId:record.id});return()=>onReadingPlace?.(null,{projectId:record.project_id,recordId:record.id});},[document?.id,record.id,activeAnnotation,onReadingPlace]);
+  useSurfaceResume(()=>onReadingPlace?.(document ? {project_id:record.project_id,record_id:record.id,document_id:document.id,annotation_id:activeAnnotation || null}:null,{projectId:record.project_id,recordId:record.id}));
   const importDraft=drafts.current.get(importKey) || { edition:'',locator:'',representation_url:'',text:'',saving:false };
   const capture=drafts.current.get(captureKey);
   useEffect(()=>{

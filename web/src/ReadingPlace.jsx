@@ -1,11 +1,13 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {saveReadingPlace,verifyReadingPlace} from './readingPlace.js';
+import {useSurfaceResume} from './surfaceActivity.js';
 
 /** Explicit durable bookmark; drafts and viewport scrolling are not synchronized. */
 export default function ReadingPlace({api,projectId,place,drafts,changed,onResume}) {
   const [cloud,setCloud]=useState(null),[ready,setReady]=useState(false),[message,setMessage]=useState('');
   const alive=useRef(true),busy=useRef(false),key=`reading-place:${JSON.stringify(projectId)}`;
   const draft=drafts.current.get(key);
+  useSurfaceResume(load);
   function remember(value){drafts.current.set(key,value);changed();}
   function clear(){drafts.current.delete(key);changed();}
   async function load(){setReady(false);setMessage('');try{const row=await api.request('reading/desk',{project_id:projectId});verifyReadingPlace(row,projectId);if(alive.current){setCloud(row);setReady(true);}}

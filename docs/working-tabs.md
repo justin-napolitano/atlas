@@ -1,6 +1,6 @@
 # Working tabs and project navigation
 
-The sidebar is a project tree. The active project exposes Sources, Questions, and Notes. Each destination has its own creation action. Occasional reading tools and the saved reading bookmark live below the Sources catalog; comparison, questions, notes, and passage research actions remain with the reading. There is no separate Explore menu in the sidebar.
+The sidebar is a project tree. The active project exposes Sources, Questions, and Notes. Each destination has its own creation action. Occasional reading tools live below the Sources catalog; comparison, questions, notes, bookmarks, and passage research actions remain with the reading. The catalog also provides access to the project's saved bookmark. There is no separate Explore menu in the sidebar.
 
 Opening a research record adds a working tab. Each record has one tab; changing its edition or selected passage updates that reading. Questions and Notes each have one working tab per project, preserving their selected entry, filters, editor mode, and contained source pane. Choosing their sidebar link resumes the open workspace. Explicit new-entry and search-result actions still select the requested entry.
 
