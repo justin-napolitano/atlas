@@ -103,7 +103,7 @@ def create_annotation(connection, *, annotation_uuid, project_id, document_id, t
 def annotations(connection, project_id, document_id, cursor, limit):
     if get_document(connection,project_id,document_id) is None:
         return []
-    return connection.execute("SELECT * FROM research.reading_annotations WHERE project_id=%s AND document_id=%s AND id>%s ORDER BY id LIMIT %s",
+    return connection.execute("SELECT a.*,coalesce((SELECT t.revision FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id),0) AS trash_revision FROM research.reading_annotations a WHERE project_id=%s AND document_id=%s AND id>%s AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed') ORDER BY id LIMIT %s",
                               (project_id,document_id,cursor,limit)).fetchall()
 
 
@@ -115,6 +115,8 @@ def update_annotation(connection, *, annotation_id, project_id, body, expected_r
     if type(expected_revision) is not int or expected_revision < 1:
         raise ValueError("Supply the last confirmed annotation revision")
     with connection.transaction():
+        from .private_trash import assert_active
+        assert_active(connection,project_id,'annotation',annotation_id)
         current = annotation(connection,project_id,annotation_id)
         if current is None:
             raise ValueError("Active annotation not found")

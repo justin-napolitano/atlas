@@ -333,6 +333,15 @@ class NotebookDraftInput(Input):
     state: Literal["active","discarded"] = "active"
 
 
+class PrivateTrashInput(Input):
+    project_id: Identifier
+    target_kind: Literal["entry","annotation"]
+    target_id: Identifier
+    target_revision: Annotated[int,Field(ge=1)]
+    expected_revision: Annotated[int,Field(ge=0)]
+    state: Literal["trashed","active"]
+
+
 class PublicationSelection(Input):
     record_id: Identifier
     include_summary: bool = False
@@ -720,6 +729,15 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         limit: Annotated[int,Query(ge=1,le=25)]=25):
         rows=store.notebook_drafts(project_id,cursor,limit+1)
         return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
+
+    @router.get("/writing/trash")
+    def private_trash(project_id: Identifier,cursor: Annotated[str,Query(max_length=1100)]="",limit: Annotated[int,Query(ge=1,le=25)]=25):
+        rows=store.private_trash(project_id,cursor,limit+1)
+        return {"items":rows[:limit],"next_cursor":rows[limit-1]['target_kind']+':'+rows[limit-1]['target_id'] if len(rows)>limit else None}
+
+    @router.put("/writing/trash")
+    def change_private_trash(value: PrivateTrashInput,actor: str=Depends(owner)):
+        return store.change_private_trash(actor=actor,**value.model_dump())
 
     @router.get("/notebook/draft")
     def notebook_draft(project_id: Identifier,draft_id: Identifier):

@@ -33,6 +33,8 @@ def metadata(thought_type,title,body,links,state):
 
 def get(connection,project_id,entry_id):
     return connection.execute('''SELECT n.*,r.title AS source_title,r.deleted_at IS NULL AS source_active,
+        EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed') AS trashed,
+        coalesce((SELECT t.revision FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id),0) AS trash_revision,
         d.edition,d.locator,d.text_sha256,a.exact AS selected_quote,a.start_pos,a.end_pos
         FROM research.notebook_entries n LEFT JOIN research.records r ON r.project_id=n.project_id AND r.id=n.record_id
         LEFT JOIN research.reading_documents d ON d.project_id=n.project_id AND d.id=n.document_id
@@ -51,7 +53,7 @@ def network(connection,project_id,limit):
         raise ValueError('Notebook network limit must be between 1 and 201')
     return connection.execute('''SELECT id,project_id,title,body,thought_type,revision,
         record_id,document_id,annotation_id,links FROM research.notebook_entries
-        WHERE project_id=%s AND state='active'
+        WHERE project_id=%s AND state='active' AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=notebook_entries.project_id AND t.target_kind='entry' AND t.target_id=notebook_entries.id AND t.state='trashed')
         ORDER BY updated_at DESC,id COLLATE "C" LIMIT %s''',(project_id,limit)).fetchall()
 
 
@@ -105,6 +107,8 @@ def update(connection,*,project_id,entry_id,expected_revision,thought_type,title
     values=metadata(thought_type,title,body,links,state);db._text(actor,'actor',500)
     if type(expected_revision) is not int or expected_revision<1: raise ValueError('Supply the last confirmed notebook revision')
     with connection.transaction():
+        from .private_trash import assert_active
+        assert_active(connection,project_id,'entry',entry_id)
         previous=get(connection,project_id,entry_id)
         if previous is None:raise db.RevisionConflict(None)
         if previous['revision']!=expected_revision:
@@ -138,13 +142,13 @@ def items(connection,project_id,q,thought_type,state,cursor,limit,item_scope="al
             'entry:'||n.id AS item_key FROM research.notebook_entries n
         LEFT JOIN research.records r ON r.project_id=n.project_id AND r.id=n.record_id
         LEFT JOIN research.reading_documents d ON d.project_id=n.project_id AND d.id=n.document_id
-        LEFT JOIN research.reading_annotations a ON a.project_id=n.project_id AND a.id=n.annotation_id WHERE n.project_id=%s
+        LEFT JOIN research.reading_annotations a ON a.project_id=n.project_id AND a.id=n.annotation_id WHERE n.project_id=%s AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed')
         UNION ALL
         SELECT 'passage_note',a.id,a.project_id,'passage_note',r.title,a.body,'active',a.revision,a.updated_at,
             r.id,d.id,a.id,r.title,d.edition,d.locator,a.exact,'passage_note:'||a.id
         FROM research.reading_annotations a JOIN research.reading_documents d ON d.project_id=a.project_id AND d.id=a.document_id
         JOIN research.records r ON r.project_id=d.project_id AND r.id=d.source_record_id
-        WHERE a.project_id=%s AND btrim(a.body)<>'' AND r.deleted_at IS NULL
+        WHERE a.project_id=%s AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed') AND btrim(a.body)<>'' AND r.deleted_at IS NULL
         UNION ALL
         SELECT 'record_note',p.record_id,p.project_id,'record_note',r.title,p.note,'active',p.revision,p.updated_at,
             r.id,NULL::text,NULL::text,r.title,NULL::text,NULL::text,NULL::text,'record_note:'||r.id
