@@ -20,6 +20,16 @@ be automatic. See [seamless-open-catalog.md](seamless-open-catalog.md). Gutenber
 Open Library and arXiv share this catalog contract; no live adapters are claimed by
 this planning update. Track the shared catalog in #168, Gutenberg direct reading in #170, and Open Library discovery/availability in #169.
 
+## Current content priority: Qur’an reading first
+
+The owner's subsequent clarification supersedes the Gutenberg-first provider order:
+**open Qur’an → choose surah/ayah → read continuously → write or inspect commentary
+→ resume**. Build under #45/#19 with sidebar work #164; retain the no-import goal.
+See [quran-first-reading.md](quran-first-reading.md). General catalog adapters
+#170/#169 and paper flow #166 follow a useful Qur’an session. Reuse a few composable
+reading structures as actual texts require them, rather than designing a universal
+plugin framework before the first reading experience works.
+
 ## Now: make the core reading loop dependable
 
 The first-release focus is **add a source → read → highlight → write → link → find it again**. Keep exact citations, explicit personal read status, ordinary search, simple source/backlink navigation, and basic Markdown export. This is the owner-approved scope reduction after the merge audit; advanced features remain open for later delivery.

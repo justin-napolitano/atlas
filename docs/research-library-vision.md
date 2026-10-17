@@ -5,6 +5,16 @@ The owner's references are Obsidian's simple document navigation and Open Librar
 catalog/discovery model. Research, reading, annotation, and commentary remain core;
 the notebook is one way of working with the library.
 
+## Immediate priority: the Qur’an
+
+The owner is reading the Qur’an now. Build its continuous surah/ayah reading,
+translation, commentary and private-note flow before general catalog integrations.
+Use Quran.com as an interaction reference; keep edition-aware resources and
+attribution explicit. [quran-first-reading.md](quran-first-reading.md) describes the
+flow and small, composable reading patterns for future books. This priority
+supersedes the earlier Gutenberg-first delivery order; the unified catalog remains
+the broader goal.
+
 ## Everyday interface
 
 - **Library:** search connected open catalogs, open a readable edition directly, resume reading. Saving to a personal collection is optional.
@@ -78,7 +88,7 @@ not the codebase for this project. Open-source release licensing/setup remains #
 - #165 simplifies the existing notebook explorer using project roots and saved
   collection views. It does not implement arbitrary nested notebook folders.
 - #164 covers one contextual notes/reference sidebar.
-- Prove direct catalog-to-note reading with Gutenberg and shared Open Library discovery/availability; #166 separately proves versioned papers. Expand adapters through the same catalog contract.
+- First make Qur’an reading and notes useful under #45/#19; then expand the same source/note flow into Gutenberg, Open Library and versioned papers. Add structure-specific navigation only when an actual text requires it.
 - Current source reading is based on saved bounded excerpts. A compact notebook
   does not constitute full PDF/EPUB/arXiv support. The local preview is local-only;
   hosted identity, database operations, backup and cross-device validation remain

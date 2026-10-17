@@ -10,6 +10,13 @@ Open Library; #166 is arXiv. These extend #84/#88/#100/#101.
 This is a proposed delivery contract. It is not a claim
 that the current excerpt-based application already supplies federated full-text reading.
 
+## Delivery priority update
+
+The Qur’an is first under #45/#19 because it is the owner's current reading.
+See [quran-first-reading.md](quran-first-reading.md). The same direct-reading and
+automatic note-association contract applies; Gutenberg/Open Library/arXiv expansion
+follows that usable reading loop.
+
 ## User flow
 
 1. Search once across connected catalogs. Results show a title, responsible people,
@@ -113,8 +120,8 @@ to internal services. Apply redirect, content, XML parsing, network and extracti
 limits; keep remote HTML/scripts inert. External integrations and new reading formats
 need their existing security review and tests before release.
 
-Deliver a Gutenberg search-to-first-note slice, then Open Library discovery/availability
-through the same catalog, while #166 proves paper versions. Test supported reading,
+First deliver the Qur’an reading-to-note flow under #45/#19. Then deliver Gutenberg
+and Open Library through the same catalog, with #166 proving paper versions. Test supported reading,
 missing text, related editions, partial provider failure, interrupted saves, duplicate
 retries, changed upstream content, exact-note return, public/private isolation and
 mobile use. User-defined files/manual capture remain supported fallbacks.
