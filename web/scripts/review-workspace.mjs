@@ -413,6 +413,7 @@ try {
   const originalSource=await evaluate('document.querySelector(".reader-text").textContent');
   assert.equal(await evaluate('getComputedStyle(document.querySelector(".reader-text")).fontSize'),'22px');
   const renderedBefore=await evaluate('{const r=document.createRange();r.selectNodeContents(document.querySelector(".reader-text"));r.getBoundingClientRect().height}');
+  await evaluate('document.querySelector(".reading-appearance-panel").open=true');
   const sizeButton=await evaluate(`{const b=document.querySelector('[aria-label="Increase source text size"]');b.scrollIntoView({block:'nearest'});const r=b.getBoundingClientRect();({x:r.left+r.width/2,y:r.top+r.height/2})}`);
   await call('Input.dispatchMouseEvent',{type:'mouseMoved',...sizeButton});
   await call('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...sizeButton});

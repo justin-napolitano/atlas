@@ -155,3 +155,9 @@
 .is-reading .atlas-record-context { margin-top:16px; }
 .atlas-body.reading-focus>.atlas-reading-workspace { padding-inline:clamp(20px,3vw,52px); }
 @media(max-width:600px) { .is-reading .atlas-record-heading h2 { font-size:21px; } .is-reading .atlas-record-heading { gap:10px; } .is-reading .atlas-read-status { font-size:11px; min-width:60px; } }
+
+/* Reading and writing share a quiet document scale. */
+:root[data-theme=dark] .atlas-workspace { --paper:#1b1b1d; --ink:#e8e8e8; --muted:#b2b2b5; --rule:#39393c; --atlas-sidebar:#202023; }
+.is-reading .atlas-record-heading { margin-bottom:4px; }
+.is-reading .atlas-record-heading h2 { font-size:22px; font-family:ui-sans-serif,system-ui,sans-serif; font-weight:600; letter-spacing:0; }
+.is-reading .working-tabs { margin-bottom:12px; }

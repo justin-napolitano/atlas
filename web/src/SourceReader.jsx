@@ -214,12 +214,10 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
     </form></details>;
   return <section className="source-reader" style={readingStyle(appearance)} data-reading-theme={appearance.theme} data-reading-flow={appearance.mode} aria-labelledby={headingId} aria-busy={loadingSnapshots || (!!documentId && !document)}>
     <div className="reader-heading-row"><h3 id={headingId}>Source text</h3><div className="reader-view-actions"><ReadingAppearance value={appearance} onChange={changeAppearance}/>
-      <button className="reader-annotation-toggle" aria-expanded={!!selectionPreview || annotationTools} onClick={()=>setAnnotationTools(!annotationTools)}>Annotate <span>↗</span></button>
-      {onFocusChange && <button className="reader-focus" aria-pressed={focused} onClick={()=>onFocusChange(!focused)}>{focused ? 'Show library' : 'Hide library'}</button>}
-      <button className="reader-margin-toggle" aria-expanded={marginOpen} aria-controls={marginId} onClick={()=>setMarginOpen(!marginOpen)}>{marginOpen ? 'Hide notes' : 'Notes'}</button>
+      {onFocusChange && <button className="reader-focus" aria-pressed={!focused} onClick={()=>onFocusChange(!focused)}>Library</button>}
+      <button className="reader-margin-toggle" aria-expanded={marginOpen} aria-controls={marginId} onClick={()=>setMarginOpen(!marginOpen)}>Notes</button>
     </div></div>
     {loadingSnapshots && !document && <p className="reader-help" role="status">Opening your reading…</p>}
-    {snapshots.length>0 && <div className="reader-edition-bar"><details className="reader-edition-picker"><summary>{readingVersionLabel(document || snapshots.find(row=>row.id===documentId))}</summary><label className="reader-version">Reading version<select value={documentId} onChange={e=>{requestedAnchor.current=null;setDocumentId(e.target.value);bookmark('',e.target.value);}}>{snapshots.map(d=><option key={d.id} value={d.id}>{d.edition} · {d.locator} · {d.text_sha256.slice(0,8)}{drafts.current.has(`capture:${d.id}`) ? ' · draft' : ''}</option>)}</select></label></details>{cursor && <button onClick={moreSnapshots}>More saved excerpts</button>}</div>}
     {document && <>
       {message && <p className="reader-message" role="status">{message}</p>}
       {marked.unanchored.length>0 && <p className="reader-message" role="status">{marked.unanchored.length} saved note(s) need anchor review. Their marks were not moved to other text.</p>}
@@ -242,11 +240,14 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
           {...(run.ids.length ? {role:'button',tabIndex:0,'aria-label':`${run.text} — ${run.ids.length===1 ? 'open margin note' : `${run.ids.length} margin notes; activate to cycle`}`,'aria-pressed':run.ids.includes(activeAnnotation),
             onClick:()=>openMargin(run.ids),onKeyDown:event=>{if(event.key==='Enter' || event.key===' ') {event.preventDefault();openMargin(run.ids);}}} : {})}>{run.text}</mark> : run.text)}</div></div>
           {appearance.mode==='pages'&&<nav className="reading-page-steps" aria-label="Reading pages"><button onClick={()=>turnPage(-1)}>← Previous screen</button><button onClick={()=>turnPage(1)}>Next screen →</button></nav>}
-          <p className="reader-selection-hint">Select a phrase to annotate. Alt + N adds a margin note.</p>
-          <details className="reader-edition-details"><summary>Source, edition & attribution</summary><p>{document.edition}</p><p>{document.locator}</p><p>{document.review_scope}</p>
+          <p className="reader-selection-hint">Select text to annotate · Alt + N to write a note <button className="reader-annotation-toggle" aria-expanded={!!selectionPreview || annotationTools} onClick={()=>setAnnotationTools(!annotationTools)}>Annotation tools</button></p>
+          <details className="reader-edition-details"><summary>Source information · {readingVersionLabel(document)}</summary>
+            <label className="reader-version">Reading version<select value={documentId} onChange={e=>{requestedAnchor.current=null;setDocumentId(e.target.value);bookmark('',e.target.value);}}>{snapshots.map(d=><option key={d.id} value={d.id}>{d.edition} · {d.locator} · {d.text_sha256.slice(0,8)}{drafts.current.has(`capture:${d.id}`) ? ' · draft' : ''}</option>)}</select></label>{cursor && <button onClick={moreSnapshots}>More saved excerpts</button>}
+            <p>{document.edition}</p><p>{document.locator}</p><p>{document.review_scope}</p>
             {document.representation_url && <a href={document.representation_url} target="_blank" rel="noopener noreferrer">Open original source ↗</a>}
             {document.source_notice && <div className="reader-source-notice"><h4>Source notice & attribution</h4><pre dir="auto">{document.source_notice}</pre></div>}
-          </details>{importForm}
+            {importForm}
+          </details>
         </div>
         <aside ref={margin} id={marginId} hidden={!marginOpen} className="reader-margin" aria-label="Passage margin notes" onKeyDown={event=>{if(!event.defaultPrevented && event.key==='Escape' && window.matchMedia('(max-width: 900px)').matches){event.preventDefault();event.stopPropagation();setMarginOpen(false);textRoot.current?.closest('.source-reader')?.querySelector('.reader-margin-toggle')?.focus();}}}>
           <div className="reader-margin-heading"><h4>Notes</h4><button className="reader-refresh" onClick={refreshAnnotations}>Refresh saved notes</button><button className="reader-margin-close" aria-label="Close margin notes" onClick={()=>setMarginOpen(false)}>×</button></div>
