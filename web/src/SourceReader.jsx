@@ -213,9 +213,9 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
       <div><button disabled={importDraft.saving}>{importDraft.saving ? 'Saving…' : 'Save private excerpt'}</button><button type="button" disabled={importDraft.saving} onClick={()=>forget(importKey)}>Discard import draft</button></div>
     </form></details>;
   return <section className="source-reader" style={readingStyle(appearance)} data-reading-theme={appearance.theme} data-reading-flow={appearance.mode} aria-labelledby={headingId} aria-busy={loadingSnapshots || (!!documentId && !document)}>
-    <div className="reader-heading-row"><h3 id={headingId}>Source text</h3><div className="reader-view-actions"><ReadingAppearance value={appearance} onChange={changeAppearance}/>
+    <div className="reader-heading-row"><h3 id={headingId}>Source text</h3><div className="reader-view-actions">
       {onFocusChange && <button className="reader-focus" aria-pressed={!focused} onClick={()=>onFocusChange(!focused)}>Library</button>}
-      <button className="reader-margin-toggle" aria-expanded={marginOpen} aria-controls={marginId} onClick={()=>setMarginOpen(!marginOpen)}>Notes</button>
+      <button className="reader-margin-toggle" aria-expanded={marginOpen} aria-controls={marginId} onClick={()=>setMarginOpen(!marginOpen)}>Notes</button><ReadingAppearance value={appearance} onChange={changeAppearance}/>
     </div></div>
     {loadingSnapshots && !document && <p className="reader-help" role="status">Opening your reading…</p>}
     {document && <>

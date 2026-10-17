@@ -75,7 +75,7 @@
 @media(max-width:600px) { .source-reader .reader-view-actions { gap:6px; } .source-reader .reading-appearance { width:100%; gap:8px; } .source-reader .reading-options { top:calc(var(--atlas-header-height,64px) + 12px); max-height:calc(100dvh - var(--atlas-header-height,64px) - 28px); } }
 
 /* A document first: one quiet toolbar and the source immediately below it. */
-.source-reader .reader-view-actions { flex-direction:row-reverse; justify-content:flex-end; }
+.source-reader .reader-view-actions { flex-direction:row; justify-content:flex-start; }
 .source-reader .reading-appearance { margin-inline: auto 0; }
 .source-reader .reader-view-actions > button,.source-reader .reading-appearance-panel > summary { border:0; background:transparent; min-height:44px; }
 .source-reader .reader-view-actions > button[aria-expanded=true],.source-reader .reader-view-actions > button[aria-pressed=true] { color:var(--accent); background:var(--accent-wash); }
