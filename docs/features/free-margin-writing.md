@@ -35,3 +35,28 @@ Verification: the margin browser harness exercises typing without selection or
 Save, automatic correction, loss of page memory, typing during a pending request,
 conflicts, and mobile width. Unit checks cover lost create/edit acknowledgements,
 Unicode bounds, response relocation, and source-specific warm-tab protection.
+
+## Markdown sidebar and source navigation
+
+Issue #156 replaces permanent saved-note textareas with rendered CommonMark/GFM.
+Click a note's body or focus it and press Enter to write in place. Leaving the
+note or pressing Escape returns to the formatted view; autosave and recovery keep
+using the existing notebook authority. The writing line sits below notes, and
+secondary actions stay quiet until hover/focus (visible on touch devices).
+
+Headings, emphasis, lists/tasks, tables, fenced code, links, strikethrough, and
+footnotes render through the same NotebookMarkdown component as Notes. Footnote
+identities are scoped per component. Raw HTML and unsafe URLs remain inert;
+external images load only after an explicit click. Notebook links resolve against
+a bounded project projection, and passage links are verified before navigation.
+
+Clicking a saved exact highlight reveals its passage note in the sidebar rather
+than opening its editing form. Existing overlapping marks still cycle and retain
+their exact original selectors. Freeform notes have separate location buttons in
+the source gutter. These markers are siblings of the immutable source text, so
+they cannot change quotation offsets, copied text, or source hash verification.
+
+The compiled margin browser check covers formatted Markdown, keyboard/click
+editing, automatic saves, reload, conflicts, Trash/Undo, source markers and exact
+highlight navigation, unchanged source text, unsafe-link/HTML handling and mobile
+width. The existing workspace browser check verifies overlap and backlink focus.

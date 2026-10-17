@@ -40,7 +40,7 @@ try{
   await until(()=>evaluate('!!document.querySelector(".location-margin-composer textarea")'),'free margin mounted');
   const sourceBefore=await evaluate('document.querySelector(".reader-text").textContent');
   await evaluate('window.__notebookTest.normal();window.getSelection().removeAllRanges();document.querySelector(".location-margin-composer textarea").focus()');
-  const markdown=['# A thought','😀 A thought without a selected quote. **Markdown** and *emphasis*.','', '- [x] Read this','- [ ] Follow the thread','', '> A working interpretation','', '| Term | Meaning |','| --- | --- |','| tafsīr | commentary |','', '```js','const thought = true;','```','', 'A footnote[^1] and ~~reconsidered~~ text.','', '[^1]: A private note, not evidence.','', '[Unsafe](javascript:alert(1))','<script>window.__unsafeMargin=true</script>'].join('\n');
+  const markdown=['# A thought','😀 A thought without a selected quote. **Markdown** and *emphasis*.','', '- [x] Read this','- [ ] Follow the thread','', '> A working interpretation','', '| Term | Meaning |','| --- | --- |','| tafsīr | commentary |','', '```js','const thought = true;','```','', 'A footnote[^1] and ~~reconsidered~~ text.','', '[^1]: A private note, not evidence.','', '[Unsafe](javascript:alert(1))','<script>window.__unsafeMargin=true</script>','',''].join('\n');
   await call('Input.insertText',{text:markdown});
   await until(()=>evaluate('window.__notebookTest.entries.size===1&&window.__notebookTest.drafts.current.size===0'),'actual automatic notebook save');
   assert.equal(await evaluate('[...window.__notebookTest.entries.values()][0].body'),markdown);

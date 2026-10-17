@@ -53,7 +53,7 @@ function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLe
     requestAnimationFrame(()=>{input.current?.focus({preventScroll:true});const at=caret.current ?? value.body.length;input.current?.setSelectionRange(at,at);});
   }
   const phase=writer.status.phase,failed=['error','conflict'].includes(phase),saved=writer.row;
-  const trashAction=<TrashAction api={api} projectId={record.project_id} kind="entry" id={id} revision={saved?.revision || 1} trashRevision={saved?.trash_revision || initial.trash_revision || 0} trashed={!!saved?.trashed} disabled={!!draft} onChanged={result=>{writer.row={...saved,trashed:result.state==='trashed',trash_revision:result.revision};notify();onLeave?.(writer.row);}}/>;
+  const trashAction=<TrashAction api={api} projectId={record.project_id} kind="entry" id={id} revision={saved?.revision || 1} trashRevision={saved?.trash_revision || initial.trash_revision || 0} trashed={!!saved?.trashed} disabled={!!draft} onChanged={result=>{setEditing(false);writer.row={...saved,trashed:result.state==='trashed',trash_revision:result.revision};notify();onLeave?.(writer.row);}}/>;
   if(saved?.trashed)return <article className="location-margin-note"><small>Moved to Trash. Your note and reading location are retained.</small>{trashAction}</article>;
   return <article className={`location-margin-note${active?' is-active':''}${editing?' is-writing':''}`} data-margin-note-id={id} onBlur={blur}>
     <div className="location-margin-meta"><button className="location-return" onClick={()=>revealReadingPosition(textRoot.current,value.reading_position)}>Near {Math.round(value.reading_position/Math.max(1,Array.from(document.text_body).length)*100)}% ↖</button>
