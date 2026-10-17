@@ -18,6 +18,7 @@ export class RecoveryQueue {
   async flush(){
     clearTimeout(this.quiet);clearTimeout(this.deadline);this.quiet=this.deadline=null;
     if(this.busy || !this.latest || ['error','conflict'].includes(this.status.phase))return;
+    if(!this.sent&&this.latestFingerprint===this.confirmedFingerprint)return;
     if(!this.sent)this.sent={...this.latest,draft_uuid:this.identity,expected_revision:this.revision};
     const sent=this.sent;this.busy=true;this.publish('saving');
     try{
@@ -25,12 +26,13 @@ export class RecoveryQueue {
       if(row.revision!==sent.expected_revision+1)throw new Error('Recovery revision was not confirmed');
       this.revision=row.revision;this.sent=null;this.busy=false;
       const {draft_uuid,expected_revision,...payload}=sent;
+      this.confirmedFingerprint=recoveryFingerprint(payload);
       if(recoveryFingerprint(payload)!==this.latestFingerprint){this.publish('waiting');return this.flush();}
       this.publish('saved',{row});
     }catch(error){this.busy=false;this.publish(error.status===409?'conflict':'error',{error,current:error.current || null});}
   }
   retry(){if(this.busy)return;this.publish('waiting');return this.flush();}
-  fork(){if(this.busy)return;this.identity=crypto.randomUUID();this.revision=0;this.sent=null;this.publish('waiting');return this.flush();}
+  fork(){if(this.busy)return;this.identity=crypto.randomUUID();this.revision=0;this.sent=null;this.confirmedFingerprint=null;this.publish('waiting');return this.flush();}
   finish(){
     if(!this.latest)return Promise.resolve();
     this.enqueue({...this.latest,state:'discarded'});

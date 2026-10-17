@@ -23,7 +23,7 @@ def listing(connection, project_id, cursor='', limit=26):
 
 
 def save(connection, *, draft_uuid, project_id, entry_id, request_uuid, record_id, document_id,
-         annotation_id, base_revision, expected_revision, value, state, actor):
+         annotation_id, base_revision, expected_revision, value, state, actor, reading_position=None):
     draft_id = identifier(draft_uuid)
     db._text(actor, 'actor', 500)
     if type(base_revision) is not int or base_revision < 0 or type(expected_revision) is not int or expected_revision < 0:
@@ -45,7 +45,7 @@ def save(connection, *, draft_uuid, project_id, entry_id, request_uuid, record_i
             if not historical:
                 raise ValueError('Notebook baseline is unavailable in this project')
             baseline = historical['snapshot']
-            if any(baseline[key] != val for key, val in [('record_id', record_id), ('document_id', document_id), ('annotation_id', annotation_id)]):
+            if any(baseline.get(key) != val for key, val in [('record_id', record_id), ('document_id', document_id), ('annotation_id', annotation_id), ('reading_position', reading_position)]):
                 raise ValueError('Recovery cannot relocate an existing thought')
         elif base_revision != 0 or request_uuid is None:
             raise ValueError('New writing needs its original creation identity and zero baseline')
@@ -56,17 +56,18 @@ def save(connection, *, draft_uuid, project_id, entry_id, request_uuid, record_i
                 db._text(val, key, 500)
         if (document_id and not record_id) or (annotation_id and not document_id) or (clean['thought_type'] == 'source_claim' and not annotation_id):
             raise ValueError('Retain the complete original source anchor')
+        notebook.position_anchor(connection, project_id, record_id, document_id, annotation_id, reading_position)
         notebook._targets(connection, project_id, record_id, document_id, annotation_id, clean['links'])
         identity = dict(entry_id=entry_id, request_uuid=request_uuid, record_id=record_id,
-                        document_id=document_id, annotation_id=annotation_id, base_revision=base_revision)
+                        document_id=document_id, annotation_id=annotation_id, reading_position=reading_position, base_revision=base_revision)
         current = get(connection, project_id, draft_id)
         if current and any(current[key] != val for key, val in identity.items()):
             raise ValueError('Recovery identity and original baseline are immutable')
         if expected_revision == 0:
             row = connection.execute('''INSERT INTO research.notebook_drafts
-                (id,project_id,entry_id,request_uuid,record_id,document_id,annotation_id,base_revision,base_snapshot,value,state,changed_by)
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT(id) DO NOTHING RETURNING id''',
-                (draft_id, project_id, entry_id, request_uuid, record_id, document_id, annotation_id,
+                (id,project_id,entry_id,request_uuid,record_id,document_id,annotation_id,reading_position,base_revision,base_snapshot,value,state,changed_by)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT(id) DO NOTHING RETURNING id''',
+                (draft_id, project_id, entry_id, request_uuid, record_id, document_id, annotation_id, reading_position,
                  base_revision, db.Jsonb(baseline), db.Jsonb(clean), state, actor)).fetchone()
         else:
             row = connection.execute('''UPDATE research.notebook_drafts SET value=%s,state=%s,

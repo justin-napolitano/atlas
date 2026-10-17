@@ -2,6 +2,8 @@ import {useSurfaceResume} from './surfaceActivity.js';
 import React, { useEffect, useId, useRef, useState } from 'react';
 import {readingVersionLabel} from './readingVersionLabel.js';
 import { selectedPassage } from './passageSelection.js';
+import LocationMarginNotes from './LocationMarginNotes.jsx';
+import {revealReadingPosition} from './readingPosition.js';
 import SavedPassageNote from './SavedPassageNote.jsx';
 import {readingMarks,verifyReadingCapture} from './readingMarks.js';
 import ResizablePanes from './ResizablePanes.jsx';
@@ -12,7 +14,7 @@ import './sourceReader.css';
 import './readerPresentation.css';
 
 /** Edition-bound reading surface with saved inline marks and adjacent private notes. */
-export default function SourceReader({ record, api, drafts, changed, noteEditor, navigate, initialAnnotationId = '',initialDocumentId='',focused=false,onFocusChange,onOpenVerse,onReadingPlace,onBookmark,initialMarginOpen,onQuote }) {
+export default function SourceReader({ record, api, drafts, changed, noteEditor, navigate, initialAnnotationId = '',initialDocumentId='',initialReadingPosition=null,focused=false,onFocusChange,onOpenVerse,onReadingPlace,onBookmark,initialMarginOpen,onQuote,onOpenNotebook }) {
   const [snapshots,setSnapshots]=useState([]), [cursor,setCursor]=useState(null), [documentId,setDocumentId]=useState('');
   const [document,setDocument]=useState(null), [annotations,setAnnotations]=useState([]), [annotationCursor,setAnnotationCursor]=useState(null);
   const [message,setMessage]=useState(''), [highlight,setHighlight]=useState(null);
@@ -25,11 +27,12 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
     return()=>window.document.removeEventListener('selectionchange',inspectSelection);
   },[]);
   const textRoot=useRef(null), mark=useRef(null), alive=useRef(true), currentDocument=useRef('');
-  const margin=useRef(null), composer=useRef(null);
+  const margin=useRef(null), composer=useRef(null), freeComposer=useRef(null);
   const requestedAnchor=useRef(null);
   const importKey=`import:${record.id}`, captureKey=`capture:${documentId}`;
   useEffect(()=>{onReadingPlace?.(document ? {project_id:record.project_id,record_id:record.id,document_id:document.id,annotation_id:activeAnnotation || null} : null,{projectId:record.project_id,recordId:record.id});return()=>onReadingPlace?.(null,{projectId:record.project_id,recordId:record.id});},[document?.id,record.id,activeAnnotation,onReadingPlace]);
   useSurfaceResume(()=>onReadingPlace?.(document ? {project_id:record.project_id,record_id:record.id,document_id:document.id,annotation_id:activeAnnotation || null}:null,{projectId:record.project_id,recordId:record.id}));
+  useEffect(()=>{if(document?.id===initialDocumentId&&Number.isInteger(initialReadingPosition))requestAnimationFrame(()=>revealReadingPosition(textRoot.current,initialReadingPosition));},[document?.id,initialDocumentId,initialReadingPosition]);
   const importDraft=drafts.current.get(importKey) || { edition:'',locator:'',representation_url:'',text:'',saving:false };
   const capture=drafts.current.get(captureKey);
   useEffect(()=>{
@@ -216,7 +219,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
             {onQuote && <button onPointerDown={e=>e.preventDefault()} disabled={!selectionPreview} onClick={()=>onQuote({document,selection:selectionPreview})}>Quote in notebook</button>}
           </div>
           <div ref={textRoot} className="reader-text" dir="auto" tabIndex={0} aria-label="Source excerpt" onKeyDown={event=>{
-          if(event.altKey && event.key.toLowerCase()==='n') {event.preventDefault();select('none');}
+          if(event.altKey && event.key.toLowerCase()==='n') {event.preventDefault();if(window.getSelection()?.isCollapsed){setMarginOpen(true);requestAnimationFrame(()=>freeComposer.current?.focus());}else select('none');}
         }}>{marked.runs.map(run=>run.ids.length || run.selected ? <mark key={run.start} ref={run.selected && (!highlight || run.start===highlight.start) ? mark : null}
           className={`${run.highlight ? 'has-highlight ' : ''}${run.underline ? 'has-underline ' : ''}${run.selected ? 'is-selected ' : ''}${run.ids.length>1 ? 'has-overlap' : ''}`}
           {...(run.ids.length ? {role:'button',tabIndex:0,'aria-label':`${run.text} — ${run.ids.length===1 ? 'open margin note' : `${run.ids.length} margin notes; activate to cycle`}`,'aria-pressed':run.ids.includes(activeAnnotation),
@@ -228,8 +231,9 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
           </details>{importForm}
         </div>
         <aside ref={margin} id={marginId} hidden={!marginOpen} className="reader-margin" aria-label="Passage margin notes" onKeyDown={event=>{if(event.key==='Escape' && window.matchMedia('(max-width: 900px)').matches){event.preventDefault();event.stopPropagation();setMarginOpen(false);textRoot.current?.closest('.source-reader')?.querySelector('.reader-margin-toggle')?.focus();}}}>
-          <div className="reader-margin-heading"><h4>In the margin <span>{writingNotes.length}{annotationCursor ? '+' : ''}</span></h4><button className="reader-refresh" onClick={refreshAnnotations}>Refresh saved notes</button><button className="reader-margin-close" aria-label="Close margin notes" onClick={()=>setMarginOpen(false)}>×</button></div>
-          {!capture && !writingNotes.length && <div className="reader-margin-empty"><span aria-hidden="true">✎</span><h4>Make this reading yours.</h4><p>Select a phrase to highlight it, ask a question, or connect an idea. Each note leads back to its exact source passage.</p></div>}
+          <div className="reader-margin-heading"><h4>In the margin</h4><button className="reader-refresh" onClick={refreshAnnotations}>Refresh saved notes</button><button className="reader-margin-close" aria-label="Close margin notes" onClick={()=>setMarginOpen(false)}>×</button></div>
+          <LocationMarginNotes key={document.id} api={api} record={record} document={document} textRoot={textRoot} drafts={drafts} changed={changed} composerRef={freeComposer} onOpenNotebook={onOpenNotebook}/>
+          {!capture && !writingNotes.length && <p className="reader-margin-empty">Select a phrase when you want a note attached to an exact quotation.</p>}
           {!capture && <details className="reader-recovery-disclosure" open={recoveryOpen || pendingRecovery} onToggle={event=>setRecoveryOpen(event.currentTarget.open)}><summary>Recover unfinished writing</summary><RecoverableDraft key={document.id+':capture-finder'} api={api} projectId={record.project_id} recordId={record.id} contextKind="capture" document={document} body="" drafts={drafts} changed={changed} onRecover={recoverCapture}/></details>}
           {capture && <div className="reader-capture"><h4>In the margin</h4><blockquote dir="auto">{capture.exact}</blockquote>
             <label>Passage mark<select value={capture.mark_style || 'highlight'} disabled={capture.saving || !!capture.submitted} onChange={e=>remember(captureKey,{...capture,mark_style:e.target.value})}><option value="highlight">Highlight</option><option value="underline">Underline</option><option value="none">Margin note only</option></select></label>

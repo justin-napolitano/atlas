@@ -16,7 +16,7 @@ export function workStatus(item,{drafts,records,passages}){
     const record=records.get(source);if(record?.server.project_id===project&&record.status!=='saved')pending.push(record);
     for(const value of passages.values())if(value.sourceId===source&&value.server.project_id===project&&value.status!=='saved')pending.push(value);
     for(const [key,value] of drafts){
-      if(key.startsWith('notebook:')||key.startsWith('research-brief:'))continue;
+      if((key.startsWith('notebook:')&&value.workspaceMode!=='location-margin')||key.startsWith('research-brief:'))continue;
       const target=value.sourceRecordId || value.record_id || value.sent?.record_id;
       const targetProject=value.projectId || value.project_id || value.sent?.project_id;
       if(target===source&&(!targetProject||targetProject===project))pending.push(value);

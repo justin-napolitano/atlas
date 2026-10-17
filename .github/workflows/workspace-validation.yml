@@ -43,6 +43,9 @@ jobs:
       - run: node scripts/review-notebook.mjs
         env:
           CHROME_PATH: /usr/bin/google-chrome
+      - run: node scripts/review-margin-writing.mjs
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
       - run: node scripts/review-working-cache.mjs
         env:
           CHROME_PATH: /usr/bin/google-chrome

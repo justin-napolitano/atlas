@@ -96,3 +96,15 @@ class NotebookDraftStoreTests(unittest.TestCase):
             for table in ['notebook_drafts','notebook_draft_revisions']:
                 with self.assertRaises(InsufficientPrivilege):
                     with connection.transaction(): connection.execute('SELECT * FROM research.'+table)
+
+    def test_margin_point_survives_recovery_and_cannot_relocate_baseline(self):
+        from islam_research import notebook_drafts as recovery
+        with self.db.connect(self.owner_dsn) as connection:
+            values={**self.payload(),'record_id':self.source,'document_id':self.document['id'],'reading_position':2}
+            draft=recovery.save(connection,**values)
+            self.assertEqual(draft['reading_position'],2)
+            saved=self.store.create(connection,**{**self.values,'annotation_id':None,'reading_position':2})
+            bound={**values,'draft_uuid':str(uuid.uuid4()),'entry_id':saved['id'],'request_uuid':None,'base_revision':1}
+            self.assertEqual(recovery.save(connection,**bound)['base_snapshot']['reading_position'],2)
+            for position in [None,3]:
+                with self.assertRaises(ValueError): recovery.save(connection,**{**bound,'reading_position':position})
