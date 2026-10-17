@@ -3,6 +3,7 @@ import React,{useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import '../../src/style.css';
 import ResearchNotebook from '../../src/ResearchNotebook.jsx';
+import {readingPosition,readingPointRect} from '../../src/readingPosition.js';
 import SourceReader from '../../src/SourceReader.jsx';
 import {PassageNoteEditor} from '../../src/passageNoteEditor.js';
 import ResearchSources from '../../src/ResearchSources.jsx';
@@ -17,9 +18,9 @@ const passage={item_kind:'passage_note',thought_type:'passage_note',id:anchor.an
   source_title:'Synthetic Arabic source',edition:'Synthetic edition',locator:'p. 2',selected_quote:'😀 التفسير tafsīr',revision:1,state:'active',cursor:'passage_note:'+anchor.annotation_id};
 const recordNote={...passage,id:anchor.record_id,item_kind:'record_note',thought_type:'record_note',title:'Original record note',body:'Single authoritative reading-record note',document_id:null,annotation_id:null,selected_quote:null,cursor:'record_note:'+anchor.record_id};
 function record(row){entries.set(row.id,row);history.set(row.id,[structuredClone(row),...(history.get(row.id) || [])]);return structuredClone(row);}
-const sourceText='😀 التفسير tafsīr',sourceHash=crypto.subtle.digest('SHA-256',new TextEncoder().encode(sourceText)).then(buffer=>[...new Uint8Array(buffer)].map(value=>value.toString(16).padStart(2,'0')).join(''));
-const quoteCaptures=new Map(),quoteRequests=[];fixture.quoteRequests=quoteRequests;fixture.quoteCaptures=quoteCaptures;
-async function sourceDocument(){return {id:anchor.document_id,project_id:project,source_record_id:anchor.record_id,text_body:sourceText,text_sha256:await sourceHash,edition:'Synthetic edition',locator:'p. 2',source_notice:'Synthetic test text',representation_url:''};}
+const sourceText='😀 التفسير tafsīr',documentText=sourceText+(new URLSearchParams(location.search).has('appearance')?'\n\n'+Array.from({length:60},(_,i)=>`Synthetic paragraph ${i+1}. Reading across editions keeps the original wording and annotations intact.`).join('\n\n'):''),sourceHash=crypto.subtle.digest('SHA-256',new TextEncoder().encode(documentText)).then(buffer=>[...new Uint8Array(buffer)].map(value=>value.toString(16).padStart(2,'0')).join(''));
+const quoteCaptures=new Map(),quoteRequests=[];fixture.quoteRequests=quoteRequests;fixture.quoteCaptures=quoteCaptures;fixture.readingPosition=()=>readingPosition(document.querySelector('.reader-text'));fixture.pointTop=position=>readingPointRect(document.querySelector('.reader-text'),position)?.top;
+async function sourceDocument(){return {id:anchor.document_id,project_id:project,source_record_id:anchor.record_id,text_body:documentText,text_sha256:await sourceHash,edition:'Synthetic edition',locator:'p. 2',source_notice:'Synthetic test text',representation_url:''};}
 async function sourceAnnotation(){return {id:anchor.annotation_id,project_id:project,document_id:anchor.document_id,text_sha256:await sourceHash,start_pos:0,end_pos:Array.from(sourceText).length,exact:sourceText,capture_kind:'comment',mark_style:'highlight',body:'Original passage note',revision:1};}
 const api={async post(path,value){if(path==='reading/annotations'){quoteRequests.push(structuredClone(value));const id='urn:research:annotation:'+value.annotation_uuid;let row=quoteCaptures.get(id);if(!row){row={...value,id,start_pos:value.start,end_pos:value.end,revision:1};quoteCaptures.set(id,row);}if(fixture.loseQuote){fixture.loseQuote=false;throw new Error('Quote response lost.');}return row;}if(path!=='notebook/entries')throw new Error('Unexpected fixture POST');requests.push(structuredClone(value));let receipt=receipts.get(value.request_uuid);
   if(!receipt){const row=record({...value,id:'urn:research:notebook:'+value.request_uuid,revision:1,state:'active',source_title:value.record_id?passage.source_title:null,selected_quote:value.annotation_id?passage.selected_quote:null,edition:value.document_id?passage.edition:null,locator:value.document_id?passage.locator:null});receipt={id:row.id,project_id:project,revision:1};receipts.set(value.request_uuid,receipt);}

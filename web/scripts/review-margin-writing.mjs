@@ -36,7 +36,7 @@ try{
   socket=new WebSocket(targets.find(target=>target.type==='page').webSocketDebuggerUrl);
   await new Promise((resolve,reject)=>{socket.onopen=resolve;socket.onerror=reject;});
   socket.onmessage=event=>{const value=JSON.parse(event.data);if(value.id){const item=pending.get(value.id);if(item){clearTimeout(item.timeout);pending.delete(value.id);value.error?item.reject(new Error(value.error.message)):item.resolve(value.result);}}else if(value.method==='Runtime.exceptionThrown')problems.push(value.params.exceptionDetails.text);};
-  await call('Runtime.enable');await call('Page.enable');await call('Page.navigate',{url:origin+'/scripts/fixtures/notebook-harness.html?margin=1'});
+  await call('Runtime.enable');await call('Page.enable');await call('Page.navigate',{url:origin+'/scripts/fixtures/notebook-harness.html?margin=1&appearance=1'});
   await until(()=>evaluate('!!document.querySelector(".location-margin-composer textarea")'),'free margin mounted');
   const sourceBefore=await evaluate('document.querySelector(".reader-text").textContent');
   await evaluate('window.__notebookTest.normal();window.getSelection().removeAllRanges();document.querySelector(".location-margin-composer textarea").focus()');
@@ -90,9 +90,43 @@ try{
   await until(()=>evaluate('document.activeElement===document.querySelector(".saved-passage-note.is-active")'),'highlight reveals its note in sidebar');
   assert.equal(await evaluate('!!document.querySelector(".saved-passage-note.is-active .passage-note-edit")'),false);
   assert.equal(await evaluate('document.querySelector(".saved-passage-note.is-active .notebook-markdown")?.textContent'),'Original passage note');
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".reader-text")).fontSize'),'22px');
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".reader-margin .notebook-markdown")).fontSize'),'17px');
+  await evaluate(`document.querySelector('[aria-label="Increase source text size"]').click();document.querySelector(".reading-appearance-panel").open=true`);
+  await until(()=>evaluate('getComputedStyle(document.querySelector(".reader-text")).fontSize==="24px"'),'source size control');
+  await evaluate('document.querySelector(".reader-text").scrollTop=900;window.__appearancePoint=window.__notebookTest.readingPosition();window.__appearanceTop=window.__notebookTest.pointTop(window.__appearancePoint)');
+  await click('System');
+  assert.ok(Math.abs(await evaluate('window.__notebookTest.pointTop(window.__appearancePoint)-window.__appearanceTop'))<3,'font change preserves visible source position');
+  await click('Paper');await click('narrow');await click('Airy');
+  async function range(label,value){await evaluate(`{const input=document.querySelector('input[aria-label="${label}"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${value});input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));}`);}
+  await range('Notes text size',21);await range('Reading zoom',150);
+  await until(()=>evaluate('getComputedStyle(document.querySelector(".reader-text")).fontSize==="36px"'),'reading magnification');
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".reader-margin .notebook-markdown")).fontSize'),'31.5px');
+  assert.equal(await evaluate('document.querySelector(".source-reader").dataset.readingTheme'),'paper');
+  assert.equal(await evaluate('JSON.parse(localStorage.getItem("research:reading-appearance:v1")).font'),'sans');
+  assert.equal(await evaluate('document.querySelector(".reader-text").textContent'),sourceBefore);
+  await click('Page steps');await until(()=>evaluate('!!document.querySelector(".reading-page-steps")'),'page controls');
+  const pageBefore=await evaluate('document.querySelector(".reader-text").scrollTop');await click('Next screen →');
+  assert.ok(await evaluate('document.querySelector(".reader-text").scrollTop')>pageBefore,'page step advances through long source');
+  await evaluate('document.querySelector(".reading-appearance-panel").open=false;window.__notebookTest.remount()');
+  await until(()=>evaluate('getComputedStyle(document.querySelector(".reader-text")).fontSize==="36px"'),'appearance survives reader reopen');
+  assert.equal(await evaluate('document.querySelector(".source-reader").dataset.readingFlow'),'pages');
+  // Large text uses responsive reflow, keeping browser zoom and source selectors intact.
+  await evaluate('document.querySelector(".reading-appearance-panel").open=true');await range('Reading zoom',200);
+  await click('Dark');await evaluate('document.querySelector(".reading-appearance-panel").open=false');
+  await writeFile(join(artifacts,'reader-appearance-desktop.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
   await call('Emulation.setDeviceMetricsOverride' ,{width:390,height:844,deviceScaleFactor:1,mobile:true});
   assert.equal(await evaluate('document.documentElement.scrollWidth<=window.innerWidth'),true);
+  await evaluate('document.querySelector(".reading-appearance-panel").open=true');
+  assert.equal(await evaluate('document.querySelector(".reading-options").getBoundingClientRect().right<=innerWidth'),true);
+  await call('Emulation.setDeviceMetricsOverride',{width:320,height:800,deviceScaleFactor:1,mobile:false});
+  assert.equal(await evaluate('document.documentElement.scrollWidth<=window.innerWidth'),true);
+  await writeFile(join(artifacts,'reader-appearance-320px.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
+  await click('Reset reading preferences');await evaluate('document.querySelector(".reading-appearance-panel").open=false');
+  await until(()=>evaluate('getComputedStyle(document.querySelector(".reader-text")).fontSize==="22px"'),'reset reading appearance');
+  assert.equal(await evaluate('Object.values(localStorage).some(v=>v.includes("My local version")||v.includes("Cloud thought"))'),false);
   assert.deepEqual(problems,[]);
+  process.stdout.write('Appearance: source and notes size, font, zoom, themes, saved preferences, reading position, page steps and 320px reflow passed.\n');
   process.stdout.write('Free margin: no selection or Save button, autosave, editing, reload, serialized typing, conflict retention, Trash/Undo and mobile passed.\n');
 }catch(error){await writeFile(join(artifacts,'sidebar-failure.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));process.stderr.write('Sidebar failure artifact: '+artifacts+'\n');throw error;}finally{
   socket?.close();const closed=new Promise(resolve=>chrome.once('close',resolve));chrome.kill();await closed;await preview.close();
