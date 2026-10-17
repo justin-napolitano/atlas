@@ -188,6 +188,24 @@ try{
   assert.equal(await evaluate('window.__notebookTest.entries.size'),confirmedCount,'recovery does not save actual note');
   assert.equal(await evaluate('Object.values(localStorage).some(v=>v.includes("A loose idea retained"))'),false);
   await click('Save note');await until(()=>evaluate('window.__notebookTest.entries.size==='+String(confirmedCount+1)),'explicit save commits recovered thought once');
+  await until(()=>evaluate('!!document.querySelector(".notebook-writing .private-trash-action")'),'saved note trash action');
+  const restoredBody=await evaluate('document.querySelector(".notebook-note-body textarea").value');
+  await evaluate('window.__notebookTest.loseTrash=true');await click('Move to Trash');
+  await until(()=>evaluate('document.body.textContent.includes("Trash update was not confirmed")'),'uncertain trash retains retry');
+  await click('Retry Trash update');await until(()=>evaluate('document.body.textContent.includes("This writing is in Trash")'),'trashed note has explicit unavailable state');
+  await click('Undo trash');await until(()=>evaluate('!!document.querySelector(".notebook-note-body textarea")'),'undo restores actual editor');
+  assert.equal(await evaluate('document.querySelector(".notebook-note-body textarea").value'),restoredBody);
+  await click('Move to Trash');await until(()=>evaluate('document.body.textContent.includes("This writing is in Trash")'),'trash again with updated revision');
+  await click('Back to notes');await click('Trash');await until(()=>evaluate('!!document.querySelector(".private-trash article")'),'persistent trash list');
+  await click('Restore');await until(()=>evaluate('document.querySelectorAll(".private-trash article").length===0'),'restore removes item from trash');
+  assert.equal(await evaluate('[...window.__notebookTest.entries.values()].filter(r=>r.title==="Unfinished independent note" && !r.trashed).length'),1);
+  await click('What does authority mean here?');await until(()=>evaluate('!!document.querySelector(".notebook-source")'),'source-linked question available');
+  await click('Read linked passage');await until(()=>evaluate('!!document.querySelector(".notebook-source-pane .saved-passage-note .private-trash-action button")'),'margin writing trash action');
+  await evaluate('document.querySelector(".notebook-source-pane .saved-passage-note .private-trash-action button").click()');
+  await until(()=>evaluate('document.querySelector(".notebook-source-pane .saved-passage-note")?.textContent.includes("Margin writing moved to Trash")'),'margin writing hidden with exact anchor retained');
+  await evaluate('document.querySelector(".notebook-source-pane .saved-passage-note .private-trash-action button").click()');
+  await until(()=>evaluate('document.querySelector(".notebook-source-pane .saved-passage-note")?.textContent.includes("Original passage note")'),'margin undo restores original writing');
+  assert.deepEqual(problems,[]);
   console.log(JSON.stringify({notebookPassed:true,checks:['compiled owner notebook','live passage note backlink','anchored thought and explained connection','Unicode Markdown inert text','retained creation UUID and exact lost-response retry','source context readback','two-device correction comparison','CAS lost acknowledgement retry','paged revision history','withdrawal filter','wrong-project refusal','independent note without source','searchable explained connection saved','mobile list to editor','CommonMark and GFM preview','inert script and unsafe links','wiki link to saved note','saved backlinks','actual saved note graph','inline source keeps editor and route','organization filters before pagination','quote lost acknowledgement exact retry','citation returns to source without leaving note','mobile source overlay','complete source/work catalog','metadata-only source retained','source filter and direct intake','private question create and reopen','question draft distinct from unfinished note','curated question evidence remains distinct','dark390px','no private localStorage'],artifacts}));
 }finally{
   socket?.close();const closed=new Promise(resolve=>chrome.once('close',resolve));chrome.kill();await closed;await preview.close();

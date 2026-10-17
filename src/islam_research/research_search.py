@@ -41,7 +41,7 @@ _CANDIDATES = "\nUNION ALL\n".join([
     _branch("d.id", "'document'", "r.title", "d.text_body", "'document_text'", _SOURCE_JOINS,
             "d.project_id=p.project_id AND " + _LIVE_RECORD, **_DOCUMENT_FIELDS, review_state="r.review_state"),
     _branch("a.id", "'passage_note'", "r.title", "a.exact||' '||a.body", "'passage_note'", _ANNOTATION_JOINS,
-            "a.project_id=p.project_id AND " + _LIVE_RECORD,
+            "a.project_id=p.project_id AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed') AND " + _LIVE_RECORD,
             **_DOCUMENT_FIELDS, annotation_id="a.id", revision="a.revision", selected_quote="a.exact",
             review_state="'captured_unreviewed'"),
     _branch("s.record_id", "'record_note'", "r.title", "s.note", "'record_note'",
@@ -52,7 +52,7 @@ _CANDIDATES = "\nUNION ALL\n".join([
             """research.notebook_entries n LEFT JOIN research.records r ON r.project_id=n.project_id AND r.id=n.record_id
             LEFT JOIN research.reading_documents d ON d.project_id=n.project_id AND d.id=n.document_id
             LEFT JOIN research.reading_annotations a ON a.project_id=n.project_id AND a.id=n.annotation_id CROSS JOIN params p""",
-            "n.project_id=p.project_id AND n.state='active' AND (n.record_id IS NULL OR (" + _LIVE_RECORD + "))",
+            "n.project_id=p.project_id AND n.state='active' AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed') AND (n.record_id IS NULL OR (" + _LIVE_RECORD + "))",
             record_id="n.record_id", source_record_id="n.record_id", document_id="n.document_id",
             annotation_id="n.annotation_id", entry_id="n.id", revision="n.revision", edition="d.edition", locator="d.locator",
             thought_type="n.thought_type", record_kind="r.kind", text_sha256="d.text_sha256", selected_quote="a.exact",

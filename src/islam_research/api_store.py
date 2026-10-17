@@ -13,6 +13,7 @@ from . import reading_desk
 from . import record_context
 from . import notebook
 from . import notebook_drafts
+from . import private_trash
 from . import reading_drafts
 from . import collection_link
 from . import research_search
@@ -95,6 +96,12 @@ class PostgreSQLStore:
 
     def notebook_draft(self,project_id,draft_id):
         with db.connect(self.dsn) as connection:return notebook_drafts.get(connection,project_id,draft_id)
+
+    def private_trash(self,project_id,cursor,limit):
+        with db.connect(self.dsn) as connection:return private_trash.listing(connection,project_id,cursor,limit)
+
+    def change_private_trash(self,**values):
+        with db.connect(self.dsn) as connection:return private_trash.change(connection,**values)
 
     def notebook_drafts(self,project_id,cursor,limit):
         with db.connect(self.dsn) as connection:return notebook_drafts.listing(connection,project_id,cursor,limit)
@@ -218,7 +225,7 @@ class PostgreSQLStore:
                     JOIN research.reading_documents d ON d.project_id=a.project_id AND d.id=a.document_id
                     JOIN research.records r ON r.project_id=d.project_id AND r.id=d.source_record_id CROSS JOIN query
                     WHERE r.project_id=%s AND r.deleted_at IS NULL AND (%s::text IS NULL OR r.kind=%s)
-                        AND %s::text IN ('annotations','all')
+                        AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed') AND %s::text IN ('annotations','all')
                         AND to_tsvector('simple',a.exact || ' ' || a.body) @@ query.terms
                 ), bounded AS (
                     SELECT *,row_number() OVER(PARTITION BY id,channel ORDER BY score DESC,target_id) AS match_number
@@ -314,6 +321,9 @@ class PostgreSQLStore:
         with db.connect(self.dsn) as connection:
             value = passage_store.annotation(connection,project_id,annotation_id)
             if value is not None:
+                trash=private_trash.get(connection,project_id,'annotation',annotation_id)
+                value['annotation']['trashed']=bool(trash and trash['state']=='trashed')
+                value['annotation']['trash_revision']=trash['revision'] if trash else 0
                 rows = citation_store.candidates(connection,project_id,annotation_id)["resolutions"]
                 value["web_annotation"]["ir:scriptureReferences"] = [citation_store.export_resolution(row) for row in rows]
             return value

@@ -1145,6 +1145,61 @@
         "title": "PersonalInput",
         "type": "object"
       },
+      "PrivateTrashInput": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "trashed",
+              "active"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "target_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_kind": {
+            "enum": [
+              "entry",
+              "annotation"
+            ],
+            "title": "Target Kind",
+            "type": "string"
+          },
+          "target_revision": {
+            "minimum": 1.0,
+            "title": "Target Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "target_kind",
+          "target_id",
+          "target_revision",
+          "expected_revision",
+          "state"
+        ],
+        "title": "PrivateTrashInput",
+        "type": "object"
+      },
       "ProjectInput": {
         "additionalProperties": false,
         "properties": {
@@ -6758,6 +6813,103 @@
           }
         },
         "summary": "Verse Pilot"
+      }
+    },
+    "/v1/writing/trash": {
+      "get": {
+        "operationId": "private_trash_v1_writing_trash_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 1100,
+              "title": "Cursor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 25,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Private Trash"
+      },
+      "put": {
+        "operationId": "change_private_trash_v1_writing_trash_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrivateTrashInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Private Trash"
       }
     }
   }
