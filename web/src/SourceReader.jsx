@@ -1,7 +1,10 @@
 import {useSurfaceResume} from './surfaceActivity.js';
-import React, { useEffect, useId, useRef, useState } from 'react';
+import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import {readingVersionLabel} from './readingVersionLabel.js';
 import { selectedPassage } from './passageSelection.js';
+import ReadingAppearance from './ReadingAppearance.jsx';
+import {readReadingPreferences,writeReadingPreferences,normalizeReadingPreferences,readingStyle} from './readingPreferences.js';
+import {readingPosition,readingPointRect} from './readingPosition.js';
 import ReadingNoteMarkers from './ReadingNoteMarkers.jsx';
 import LocationMarginNotes from './LocationMarginNotes.jsx';
 import {revealReadingPosition} from './readingPosition.js';
@@ -13,9 +16,11 @@ import {recoverPassageWriting} from './recoverIntoEditor.js';
 import {finishReadingRecovery} from './useWritingRecovery.js';
 import './sourceReader.css';
 import './readerPresentation.css';
+import './readingAppearance.css';
 
 /** Edition-bound reading surface with saved inline marks and adjacent private notes. */
 export default function SourceReader({ record, api, drafts, changed, noteEditor, navigate, initialAnnotationId = '',initialDocumentId='',initialReadingPosition=null,focused=false,onFocusChange,onOpenVerse,onReadingPlace,onBookmark,initialMarginOpen,onQuote,onOpenNotebook }) {
+  const [appearance,setAppearance]=useState(()=>{try{return readReadingPreferences(window.localStorage);}catch{return normalizeReadingPreferences();}}),appearancePlace=useRef(null);
   const [snapshots,setSnapshots]=useState([]), [cursor,setCursor]=useState(null), [documentId,setDocumentId]=useState('');
   const [document,setDocument]=useState(null), [annotations,setAnnotations]=useState([]), [annotationCursor,setAnnotationCursor]=useState(null);
   const [message,setMessage]=useState(''), [highlight,setHighlight]=useState(null);
@@ -29,6 +34,14 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
   },[]);
   const textRoot=useRef(null), mark=useRef(null), alive=useRef(true), currentDocument=useRef('');
   const margin=useRef(null), composer=useRef(null), freeComposer=useRef(null);
+  function changeAppearance(next){const root=textRoot.current,position=root?readingPosition(root):0;appearancePlace.current=root?{position,top:readingPointRect(root,position)?.top}:null;const clean=normalizeReadingPreferences(next);setAppearance(clean);try{writeReadingPreferences(window.localStorage,clean);}catch{/* Presentation remains available without storage. */}}
+  useLayoutEffect(()=>{const place=appearancePlace.current,root=textRoot.current;appearancePlace.current=null;if(!place||!root||place.top==null)return;
+    const rect=readingPointRect(root,place.position);if(!rect)return;const delta=rect.top-place.top;
+    if(root.scrollHeight>root.clientHeight)root.scrollTop+=delta;else {const container=root.closest('[data-contained-reader],.workspace-reader');if(container)container.scrollTop+=delta;else window.scrollBy({top:delta});}
+  },[appearance]);
+  useEffect(()=>{const sync=event=>{if(event.key==='research:reading-appearance:v1'){try{changeAppearance(readReadingPreferences(window.localStorage));}catch{}}};window.addEventListener('storage',sync);return()=>window.removeEventListener('storage',sync);},[]);
+  useSurfaceResume(()=>{try{const next=readReadingPreferences(window.localStorage);if(JSON.stringify(next)!==JSON.stringify(appearance))changeAppearance(next);}catch{}});
+  function turnPage(direction){const root=textRoot.current;if(root)root.scrollBy({top:direction*Math.max(1,root.clientHeight-parseFloat(getComputedStyle(root).lineHeight)),behavior:'instant'});}
   const requestedAnchor=useRef(null);
   const importKey=`import:${record.id}`, captureKey=`capture:${documentId}`;
   useEffect(()=>{onReadingPlace?.(document ? {project_id:record.project_id,record_id:record.id,document_id:document.id,annotation_id:activeAnnotation || null} : null,{projectId:record.project_id,recordId:record.id});return()=>onReadingPlace?.(null,{projectId:record.project_id,recordId:record.id});},[document?.id,record.id,activeAnnotation,onReadingPlace]);
@@ -199,8 +212,8 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
       <small>Up to 12,000 characters. Imported text stays private and is not marked as verified scholarship.</small>
       <div><button disabled={importDraft.saving}>{importDraft.saving ? 'Saving…' : 'Save private excerpt'}</button><button type="button" disabled={importDraft.saving} onClick={()=>forget(importKey)}>Discard import draft</button></div>
     </form></details>;
-  return <section className="source-reader" aria-labelledby={headingId} aria-busy={loadingSnapshots || (!!documentId && !document)}>
-    <div className="reader-heading-row"><h3 id={headingId}>Source text</h3><div className="reader-view-actions">
+  return <section className="source-reader" style={readingStyle(appearance)} data-reading-theme={appearance.theme} data-reading-flow={appearance.mode} aria-labelledby={headingId} aria-busy={loadingSnapshots || (!!documentId && !document)}>
+    <div className="reader-heading-row"><h3 id={headingId}>Source text</h3><div className="reader-view-actions"><ReadingAppearance value={appearance} onChange={changeAppearance}/>
       {onFocusChange && <button className="reader-focus" aria-pressed={focused} onClick={()=>onFocusChange(!focused)}>{focused ? 'Show library' : 'Focus on reading'}</button>}
       <button className="reader-margin-toggle" aria-expanded={marginOpen} aria-controls={marginId} onClick={()=>setMarginOpen(!marginOpen)}>{marginOpen ? 'Hide margin' : 'Show margin'}</button>
     </div></div>
@@ -219,13 +232,15 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
             <button className="reader-note-only" onPointerDown={e=>e.preventDefault()} onClick={()=>select('none')} disabled={capture?.saving}>Margin note</button>
             {onQuote && <button onPointerDown={e=>e.preventDefault()} disabled={!selectionPreview} onClick={()=>onQuote({document,selection:selectionPreview})}>Quote in notebook</button>}
           </div>
-          <div className="reader-text-wrap"><ReadingNoteMarkers textRoot={textRoot} notes={locationNotes} documentId={document.id} activeId={activeLocation} onOpen={ids=>{const i=ids.indexOf(activeLocation),id=ids[(i+1)%ids.length];setActiveLocation(id);setActiveAnnotation('');setHighlight(null);setMarginOpen(true);requestAnimationFrame(()=>freeComposer.current?.open(id));}}/>
+          <div className="reader-text-wrap"><ReadingNoteMarkers textRoot={textRoot} notes={locationNotes} layoutKey={JSON.stringify(appearance)} documentId={document.id} activeId={activeLocation} onOpen={ids=>{const i=ids.indexOf(activeLocation),id=ids[(i+1)%ids.length];setActiveLocation(id);setActiveAnnotation('');setHighlight(null);setMarginOpen(true);requestAnimationFrame(()=>freeComposer.current?.open(id));}}/>
           <div ref={textRoot} className="reader-text" dir="auto" tabIndex={0} aria-label="Source excerpt" onKeyDown={event=>{
+          if(appearance.mode==='pages'&&['PageDown','PageUp'].includes(event.key)){event.preventDefault();turnPage(event.key==='PageDown'?1:-1);}
           if(event.altKey && event.key.toLowerCase()==='n') {event.preventDefault();if(window.getSelection()?.isCollapsed){setMarginOpen(true);requestAnimationFrame(()=>freeComposer.current?.focus());}else select('none');}
         }}>{marked.runs.map(run=>run.ids.length || run.selected ? <mark key={run.start} ref={run.selected && (!highlight || run.start===highlight.start) ? mark : null}
           className={`${run.highlight ? 'has-highlight ' : ''}${run.underline ? 'has-underline ' : ''}${run.selected ? 'is-selected ' : ''}${run.ids.length>1 ? 'has-overlap' : ''}`}
           {...(run.ids.length ? {role:'button',tabIndex:0,'aria-label':`${run.text} — ${run.ids.length===1 ? 'open margin note' : `${run.ids.length} margin notes; activate to cycle`}`,'aria-pressed':run.ids.includes(activeAnnotation),
             onClick:()=>openMargin(run.ids),onKeyDown:event=>{if(event.key==='Enter' || event.key===' ') {event.preventDefault();openMargin(run.ids);}}} : {})}>{run.text}</mark> : run.text)}</div></div>
+          {appearance.mode==='pages'&&<nav className="reading-page-steps" aria-label="Reading pages"><button onClick={()=>turnPage(-1)}>← Previous screen</button><button onClick={()=>turnPage(1)}>Next screen →</button></nav>}
           <p className="reader-selection-hint">Select a phrase to annotate. Alt + N adds a margin note.</p>
           <details className="reader-edition-details"><summary>Source, edition & attribution</summary><p>{document.edition}</p><p>{document.locator}</p><p>{document.review_scope}</p>
             {document.representation_url && <a href={document.representation_url} target="_blank" rel="noopener noreferrer">Open original source ↗</a>}

@@ -2,7 +2,7 @@ import React,{useLayoutEffect,useRef,useState} from 'react';
 import {readingPointRect} from './readingPosition.js';
 
 /** Point markers live outside source text so selecting/copying it stays exact. */
-export default function ReadingNoteMarkers({textRoot,notes,documentId,activeId,onOpen}){
+export default function ReadingNoteMarkers({textRoot,notes,documentId,layoutKey,activeId,onOpen}){
   const layer=useRef(null),[groups,setGroups]=useState([]);
   useLayoutEffect(()=>{
     const root=textRoot.current,container=layer.current?.parentElement;if(!root||!container)return;
@@ -15,6 +15,6 @@ export default function ReadingNoteMarkers({textRoot,notes,documentId,activeId,o
     });};
     const observer=new ResizeObserver(measure);observer.observe(root);root.addEventListener('scroll',measure);window.addEventListener('resize',measure);measure();
     return()=>{cancelAnimationFrame(frame);observer.disconnect();root.removeEventListener('scroll',measure);window.removeEventListener('resize',measure);};
-  },[textRoot,documentId,notes]);
+  },[textRoot,documentId,notes,layoutKey]);
   return <div ref={layer} className="reading-point-markers">{groups.map(group=><button key={group.ids.join(':')} style={{top:group.top}} className="reading-point-marker" aria-label={`Open ${group.ids.length===1?'location note':group.ids.length+' location notes'}`} aria-pressed={group.ids.includes(activeId)} onClick={()=>onOpen(group.ids)}><span aria-hidden="true">{group.ids.length>1?group.ids.length:'•'}</span></button>)}</div>;
 }
