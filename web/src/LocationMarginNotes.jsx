@@ -5,10 +5,12 @@ import {recoveryFingerprint} from './recoveryQueue.js';
 import {recoverySession,useWritingRecovery,notebookRecoveryPayload,verifyNotebookRecovery} from './useWritingRecovery.js';
 import {readingPosition,revealReadingPosition} from './readingPosition.js';
 import {useSurfaceResume} from './surfaceActivity.js';
+import NotebookMarkdown from './NotebookMarkdown.jsx';
 import {TrashAction} from './PrivateTrash.jsx';
 
-function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLeave,onOpenNotebook}){
+function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLeave,onOpenNotebook,markdown,active=false}){
   const id=initial.id,key=notebookKey(record.project_id,id),store=drafts.current;
+  const [editing,setEditing]=useState(!initial.revision || store.has(key)),caret=useRef(null);
   const [,render]=useState(0),alive=useRef(true),input=useRef(null),left=useRef(false),promoted=useRef(false);
   const notify=()=>{changed();if(alive.current)render(n=>n+1);};
   const writer=useMemo(()=>recoverySession(store,'actual-margin:'+key,()=>marginWriter({api,projectId:record.project_id,id,initial,onConfirmed:row=>{
@@ -36,23 +38,32 @@ function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLe
     if(draft?.value.body.trim()&&!draft.current)writer.enqueue(notebookMetadata(draft.value));
   },[writer,JSON.stringify(draft?.value)]);
   useEffect(()=>{const flush=()=>writer.flush();window.addEventListener('pagehide',flush);return()=>window.removeEventListener('pagehide',flush);},[writer]);
-  useEffect(()=>{if(input.current){input.current.style.height='auto';input.current.style.height=input.current.scrollHeight+'px';}},[value.body]);
+  useEffect(()=>{if(input.current){input.current.style.height='auto';input.current.style.height=input.current.scrollHeight+'px';}},[value.body,editing]);
   function edit(body){
     const current=store.get(key),source=writer.row || initial;
     store.set(key,{...current,value:{...(current?.value || source),body},base:current?.base || writer.row || null,
       workspaceMode:'location-margin',sourceRecordId:record.id,projectId:record.project_id,documentId:document.id});
     notify();
   }
-  function blur(event){if(event.currentTarget.contains(event.relatedTarget))return;left.current=true;writer.flush();if(writer.status.phase==='saved'&&!store.has(key)&&!promoted.current){promoted.current=true;onLeave?.(writer.row);}}
+  function blur(event){if(event.currentTarget.contains(event.relatedTarget))return;if(value.body.trim())setEditing(false);left.current=true;writer.flush();if(writer.status.phase==='saved'&&!store.has(key)&&!promoted.current){promoted.current=true;onLeave?.(writer.row);}}
+  function beginEditing(event){
+    if(event?.target?.closest('a,button,input'))return;
+    if(event?.type==='keydown'&&!['Enter',' '].includes(event.key))return;
+    event?.preventDefault();left.current=false;setEditing(true);
+    requestAnimationFrame(()=>{input.current?.focus({preventScroll:true});const at=caret.current ?? value.body.length;input.current?.setSelectionRange(at,at);});
+  }
   const phase=writer.status.phase,failed=['error','conflict'].includes(phase),saved=writer.row;
-  const trashAction=<TrashAction api={api} projectId={record.project_id} kind="entry" id={id} revision={saved?.revision || 1} trashRevision={saved?.trash_revision || initial.trash_revision || 0} trashed={!!saved?.trashed} disabled={!!draft} onChanged={result=>{writer.row={...saved,trashed:result.state==='trashed',trash_revision:result.revision};notify();onLeave?.(writer.row);}}/>;
+  const trashAction=<TrashAction api={api} projectId={record.project_id} kind="entry" id={id} revision={saved?.revision || 1} trashRevision={saved?.trash_revision || initial.trash_revision || 0} trashed={!!saved?.trashed} disabled={!!draft} onChanged={result=>{setEditing(false);writer.row={...saved,trashed:result.state==='trashed',trash_revision:result.revision};notify();onLeave?.(writer.row);}}/>;
   if(saved?.trashed)return <article className="location-margin-note"><small>Moved to Trash. Your note and reading location are retained.</small>{trashAction}</article>;
-  return <article className="location-margin-note" data-margin-note-id={id} onBlur={blur}>
+  return <article className={`location-margin-note${active?' is-active':''}${editing?' is-writing':''}`} data-margin-note-id={id} onBlur={blur}>
     <div className="location-margin-meta"><button className="location-return" onClick={()=>revealReadingPosition(textRoot.current,value.reading_position)}>Near {Math.round(value.reading_position/Math.max(1,Array.from(document.text_body).length)*100)}% ↖</button>
       <small role="status">{failed?'Not saved':draft?['saving','waiting'].includes(phase)?'Saving…':value.body.trim()?'Unsaved':'Write something to save':saved?'Saved':'Private note'}</small></div>
-    <textarea ref={input} aria-label="Margin thought" dir="auto" rows={3} maxLength={20000} placeholder="Write in the margin…" value={value.body}
-      onFocus={()=>{left.current=false;}} onChange={event=>edit(event.target.value)} onInput={event=>{event.currentTarget.style.height='auto';event.currentTarget.style.height=event.currentTarget.scrollHeight+'px';}}
-      onKeyDown={event=>{if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();writer.flush();}}}/>
+    {editing?<textarea ref={input} aria-label="Margin thought" dir="auto" rows={3} maxLength={20000} placeholder="Write in the margin…" value={value.body}
+      onFocus={()=>{left.current=false;}} onSelect={event=>{caret.current=event.currentTarget.selectionStart;}} onChange={event=>edit(event.target.value)} onInput={event=>{event.currentTarget.style.height='auto';event.currentTarget.style.height=event.currentTarget.scrollHeight+'px';}}
+      onKeyDown={event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();const root=event.currentTarget.closest('.source-reader');setEditing(false);writer.flush();requestAnimationFrame(()=>[...(root?.querySelectorAll('[data-margin-note-id]') || [])].find(n=>n.dataset.marginNoteId===id)?.querySelector('.location-note-body')?.focus());}else if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();writer.flush();}}}/>
+      :<div className="location-note-body" role="group" tabIndex={0} aria-label="Margin note. Press Enter to edit" onClick={beginEditing} onKeyDown={beginEditing}>
+        <NotebookMarkdown body={value.body} {...markdown}/>
+      </div>}
     {failed&&<div className="location-save-error" role="alert"><p>{writer.status.error?.message || 'Save not confirmed. Your writing is retained here.'}</p><button onClick={()=>writer.retry()}>Retry save</button>
       {writer.status.current&&<details><summary>Compare the other version</summary><pre>{writer.status.current.body}</pre><p>Your version stays in the editor. Open Notes to compare and choose which revision to keep.</p></details>}</div>}
     {draft&&!value.body.trim()&&saved&&<small>Empty writing is retained here; use Trash to remove a saved note.</small>}
@@ -60,7 +71,8 @@ function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLe
   </article>;
 }
 
-export default function LocationMarginNotes({api,record,document,textRoot,drafts,changed,composerRef,onOpenNotebook}){
+export default function LocationMarginNotes({api,record,document,textRoot,drafts,changed,composerRef,onOpenNotebook,navigate,onLocations,activeId=''}){
+  const [network,setNetwork]=useState({items:[],truncated:true}),[linkError,setLinkError]=useState('');
   const [rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[error,setError]=useState(''),[loading,setLoading]=useState(true),[next,setNext]=useState(null);
   const root=useRef(null),position=useRef(null),alive=useRef(true),generation=useRef(0);
   function initialNew(){const pending=[...drafts.current.entries()].find(([key,d])=>key.startsWith('notebook:')&&d.workspaceMode==='location-margin'&&d.documentId===document.id&&d.projectId===record.project_id&&!d.base);
@@ -74,20 +86,34 @@ export default function LocationMarginNotes({api,record,document,textRoot,drafts
   }catch(err){if(alive.current&&token===generation.current)setError(err.message || 'Could not load margin notes.');}finally{if(alive.current&&token===generation.current)setLoading(false);}}
   useEffect(()=>{alive.current=true;load();return()=>{alive.current=false;generation.current++;};},[document.id]);
   useSurfaceResume(()=>load());
-  useEffect(()=>{if(composerRef)composerRef.current={focus:()=>root.current?.querySelector('.location-margin-composer textarea')?.focus()};return()=>{if(composerRef)composerRef.current=null;};},[composerRef]);
+  useEffect(()=>{let mounted=true;api.request('notebook/network',{project_id:record.project_id,limit:200}).then(value=>{
+    if(value.project_id!==record.project_id||!Array.isArray(value.items)||typeof value.truncated!=='boolean'||value.items.some(n=>n.project_id!==record.project_id))throw new Error();
+    if(mounted)setNetwork(value);
+  }).catch(()=>{});return()=>{mounted=false;};},[api,record.project_id]);
+  useEffect(()=>{onLocations?.(rows.filter(row=>!row.trashed).map(({id,reading_position,body})=>({id,reading_position,body})));},[rows,onLocations]);
+  async function openPassage(id){try{
+    const bundle=await api.request('reading/annotation',{project_id:record.project_id,annotation_id:id});
+    if(bundle.annotation?.id!==id||bundle.annotation.project_id!==record.project_id||!bundle.anchor?.anchored)throw new Error();
+    const doc=await api.request('reading/document',{project_id:record.project_id,document_id:bundle.annotation.document_id});
+    if(doc.project_id!==record.project_id||doc.id!==bundle.annotation.document_id||doc.text_sha256!==bundle.annotation.text_sha256)throw new Error();
+    navigate?.(doc.source_record_id,record.project_id,id,doc.id);
+  }catch{if(alive.current)setLinkError('Could not verify that passage link. Your note is unchanged.');}}
+
+  useEffect(()=>{if(composerRef)composerRef.current={focus:()=>root.current?.querySelector('.location-margin-composer textarea')?.focus(),open:id=>{const card=[...(root.current?.querySelectorAll('[data-margin-note-id]') || [])].find(node=>node.dataset.marginNoteId===id);card?.scrollIntoView({block:'nearest'});card?.querySelector('.location-note-body,textarea')?.focus({preventScroll:true});}};return()=>{if(composerRef)composerRef.current=null;};},[composerRef]);
   function start(body){if(!body)return;const value=newThought({record_id:record.id,document_id:document.id,reading_position:position.current ?? readingPosition(textRoot.current)});
     value.title=('Margin note · '+document.locator).slice(0,300);value.body=body;
     const id='urn:research:notebook:'+value.request_uuid;
     drafts.current.set(notebookKey(record.project_id,id),{value,base:null,workspaceMode:'location-margin',sourceRecordId:record.id,projectId:record.project_id,documentId:document.id});
     setFresh({...value,id});setNext(id);changed();}
-  useEffect(()=>{if(next){root.current?.querySelector('.location-margin-composer textarea')?.focus();setNext(null);}},[next]);
+  useEffect(()=>{if(next){const field=root.current?.querySelector('.location-margin-composer textarea');field?.focus();field?.setSelectionRange(field.value.length,field.value.length);setNext(null);}},[next]);
   function settle(row){if(!alive.current)return;setRows(old=>[row,...old.filter(r=>r.id!==row.id)]);if(fresh?.id===row.id){setFresh(null);position.current=null;}}
-  const shared={api,record,document,textRoot,drafts,changed,onOpenNotebook};
+  const shared={api,record,document,textRoot,drafts,changed,onOpenNotebook,markdown:{notes:[...new Map([...network.items,...rows].map(n=>[n.id,n])).values()],complete:!network.truncated,onOpen:onOpenNotebook?id=>onOpenNotebook({id}):undefined,onOpenPassage:navigate?openPassage:undefined}};
   return <section ref={root} className="location-margin-notes" aria-label="Free margin writing">
-    <div className="location-margin-composer">{fresh?<MarginWriting key={fresh.id} {...shared} initial={fresh} onLeave={settle}/>:<textarea aria-label="Write in the margin" dir="auto" placeholder="Write in the margin…" rows={3} onFocus={()=>{position.current=readingPosition(textRoot.current);}} onChange={event=>start(event.target.value)}/>}</div>
-    <small className="location-margin-hint">Just your thoughts, saved here as you write. Markdown welcome.</small>
+
     {loading&&<small role="status">Opening margin notes…</small>}{error&&<p role="alert">{error} <button onClick={()=>load()}>Retry loading</button></p>}
-    {rows.filter(row=>row.id!==fresh?.id).sort((a,b)=>a.reading_position-b.reading_position).map(row=><MarginWriting key={row.id} {...shared} initial={row} onLeave={settle}/>)}
+    {linkError&&<p role="alert">{linkError}</p>}
+    {rows.filter(row=>row.id!==fresh?.id).sort((a,b)=>a.reading_position-b.reading_position).map(row=><MarginWriting key={row.id} {...shared} active={activeId===row.id} initial={row} onLeave={settle}/>)}
     {cursor&&<button onClick={()=>load(cursor)}>Earlier margin notes</button>}
+    <div className="location-margin-composer">{fresh?<MarginWriting key={fresh.id} {...shared} initial={fresh} onLeave={settle}/>:<textarea aria-label="Write in the margin" dir="auto" placeholder="Write a note…" rows={1} onFocus={()=>{position.current=readingPosition(textRoot.current);}} onChange={event=>start(event.target.value)}/>}</div>
   </section>;
 }

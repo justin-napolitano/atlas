@@ -1,4 +1,4 @@
-// Exercise compiled ResearchNotebook with an explicit synthetic boundary adapter.
+// Exercise the compiled Markdown notes sidebar through an explicit synthetic boundary.
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {mkdtemp,mkdir,writeFile,readFile,rm} from 'node:fs/promises';
@@ -38,10 +38,12 @@ try{
   socket.onmessage=event=>{const value=JSON.parse(event.data);if(value.id){const item=pending.get(value.id);if(item){clearTimeout(item.timeout);pending.delete(value.id);value.error?item.reject(new Error(value.error.message)):item.resolve(value.result);}}else if(value.method==='Runtime.exceptionThrown')problems.push(value.params.exceptionDetails.text);};
   await call('Runtime.enable');await call('Page.enable');await call('Page.navigate',{url:origin+'/scripts/fixtures/notebook-harness.html?margin=1'});
   await until(()=>evaluate('!!document.querySelector(".location-margin-composer textarea")'),'free margin mounted');
+  const sourceBefore=await evaluate('document.querySelector(".reader-text").textContent');
   await evaluate('window.__notebookTest.normal();window.getSelection().removeAllRanges();document.querySelector(".location-margin-composer textarea").focus()');
-  await call('Input.insertText',{text:'😀 A thought without a selected quote. **Markdown**'});
+  const markdown=['# A thought','😀 A thought without a selected quote. **Markdown** and *emphasis*.','', '- [x] Read this','- [ ] Follow the thread','', '> A working interpretation','', '| Term | Meaning |','| --- | --- |','| tafsīr | commentary |','', '```js','const thought = true;','```','', 'A footnote[^1] and ~~reconsidered~~ text.','', '[^1]: A private note, not evidence.','', '[Unsafe](javascript:alert(1))','<script>window.__unsafeMargin=true</script>','',''].join('\n');
+  await call('Input.insertText',{text:markdown});
   await until(()=>evaluate('window.__notebookTest.entries.size===1&&window.__notebookTest.drafts.current.size===0'),'actual automatic notebook save');
-  assert.equal(await evaluate('[...window.__notebookTest.entries.values()][0].body'),'😀 A thought without a selected quote. **Markdown**');
+  assert.equal(await evaluate('[...window.__notebookTest.entries.values()][0].body'),markdown);
   assert.equal(await evaluate('[...window.__notebookTest.entries.values()][0].annotation_id'),null);
   assert.ok(Number.isInteger(await evaluate('[...window.__notebookTest.entries.values()][0].reading_position')));
   assert.equal(await evaluate('!!document.querySelector(".reader-capture")'),false);
@@ -49,12 +51,26 @@ try{
   await writeFile(join(artifacts,'margin-writing.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
   await call('Input.insertText',{text:' Still thinking.'});
   await until(()=>evaluate('[...window.__notebookTest.entries.values()][0].revision===2&&window.__notebookTest.drafts.current.size===0'),'automatic correction');
+  assert.equal(await evaluate('[...window.__notebookTest.entries.values()][0].body'),markdown+' Still thinking.');
   await evaluate('document.querySelector(".reader-text").focus()');
   await until(()=>evaluate('!!document.querySelector(".location-margin-composer > textarea")'),'fresh margin after leaving saved note');
   assert.equal(await evaluate('document.querySelectorAll(".location-margin-note").length'),1);
+  await until(()=>evaluate('!!document.querySelector(".location-note-body h1")'),'Markdown heading rendered');
+  assert.equal(await evaluate('document.querySelector(".location-note-body h1")?.textContent'),'A thought');
+  assert.equal(await evaluate('document.querySelector(".location-note-body strong")?.textContent'),'Markdown');
+  for(const selector of ['table','pre code','blockquote','em','del','.footnotes','input[type=checkbox]'])assert.ok(await evaluate(`!!document.querySelector('.location-note-body ${selector}')`),selector);
+  assert.equal(await evaluate('window.__unsafeMargin'),undefined);
+  assert.equal(await evaluate('!!document.querySelector(".location-note-body a[href^=javascript]")'),false);
+  assert.equal(await evaluate('document.querySelector(".reader-text").textContent'),sourceBefore);
+  await until(()=>evaluate('!!document.querySelector(".reading-point-marker")'),'point marker appears beside reading');
+  await evaluate('document.querySelector(".reading-point-marker").click()');
+  await until(()=>evaluate('document.activeElement===document.querySelector(".location-note-body")'),'location marker opens formatted note');
+  await writeFile(join(artifacts,'markdown-sidebar.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
+
   await evaluate('window.__notebookTest.losePageMemory()');
-  await until(()=>evaluate('document.querySelector(".location-margin-note textarea")?.value.includes("Still thinking.")'),'confirmed note survives loss of page memory');
-  await evaluate('window.__notebookTest.hold=true;document.querySelector(".location-margin-note textarea").focus()');
+  await until(()=>evaluate('document.querySelector(".location-note-body")?.textContent.includes("Still thinking.")'),'confirmed note survives loss of page memory');
+  await evaluate('window.__notebookTest.hold=true;document.querySelector(".location-note-body").click()');
+  await until(()=>evaluate('document.activeElement===document.querySelector(".location-margin-note textarea")'),'click note enters inline editor');
   await call('Input.insertText',{text:' Older pending.'});
   await until(()=>evaluate('!!window.__notebookTest.release'),'correction in flight');
   await call('Input.insertText',{text:' Newer typing.'});
@@ -62,18 +78,23 @@ try{
   await until(()=>evaluate('[...window.__notebookTest.entries.values()][0].body.includes("Newer typing.")&&window.__notebookTest.drafts.current.size===0'),'newer typing preserved through older acknowledgement');
   assert.equal(await evaluate('window.__notebookTest.entries.size'),1);
   await click('Move to Trash');await until(()=>evaluate('!!document.querySelector(".location-margin-note")&&document.querySelector(".location-margin-notes").textContent.includes("Undo trash")'),'margin trash acknowledgement');
-  await click('Undo trash');await until(()=>evaluate('!!document.querySelector(".location-margin-note textarea")'),'inline margin restore');
+  await click('Undo trash');await until(()=>evaluate('!!document.querySelector(".location-note-body")'),'inline margin restore');
   assert.equal(await evaluate('window.__notebookTest.entries.size'),1);
-  await evaluate('window.__notebookTest.remote();document.querySelector(".location-margin-note textarea").focus()');
+  await evaluate('window.__notebookTest.remote();document.querySelector(".location-note-body").click()');
+  await until(()=>evaluate('document.activeElement===document.querySelector(".location-margin-note textarea")'),'restored note enters editor');
   await call('Input.insertText',{text:' My local version.'});
   await until(()=>evaluate('!!document.querySelector(".location-save-error")'),'another device conflict');
   assert.equal(await evaluate('document.querySelector(".location-margin-note textarea").value.includes("My local version.")'),true);
   assert.equal(await evaluate('[...window.__notebookTest.entries.values()][0].body'),'Cloud thought from another device');
-  await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  await evaluate('document.querySelector(".reader-text mark[role=button]").click()');
+  await until(()=>evaluate('document.activeElement===document.querySelector(".saved-passage-note.is-active")'),'highlight reveals its note in sidebar');
+  assert.equal(await evaluate('!!document.querySelector(".saved-passage-note.is-active .passage-note-edit")'),false);
+  assert.equal(await evaluate('document.querySelector(".saved-passage-note.is-active .notebook-markdown")?.textContent'),'Original passage note');
+  await call('Emulation.setDeviceMetricsOverride' ,{width:390,height:844,deviceScaleFactor:1,mobile:true});
   assert.equal(await evaluate('document.documentElement.scrollWidth<=window.innerWidth'),true);
   assert.deepEqual(problems,[]);
   process.stdout.write('Free margin: no selection or Save button, autosave, editing, reload, serialized typing, conflict retention, Trash/Undo and mobile passed.\n');
-}finally{
+}catch(error){await writeFile(join(artifacts,'sidebar-failure.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));process.stderr.write('Sidebar failure artifact: '+artifacts+'\n');throw error;}finally{
   socket?.close();const closed=new Promise(resolve=>chrome.once('close',resolve));chrome.kill();await closed;await preview.close();
   for(const item of pending.values()){clearTimeout(item.timeout);item.reject(new Error('Notebook review finished'));}
   await sleep(200);await rm(join(temporary,'profile'),{recursive:true,force:true});
