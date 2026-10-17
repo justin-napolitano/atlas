@@ -71,7 +71,9 @@ domain validation; do not build a speculative plugin system or replace current I
 
 ## Tracking and acceptance
 
-Build under #45 with provider work #19 and shared sidebar #164. The no-import
+Build under #45: #172 supplies identified resources, #173 delivers continuous
+reading, and #174 connects first-note saving. Provider work remains #19 and the
+shared context sidebar remains #164. The no-import
 catalog contract #168 and stable library identity #101 remain applicable. Defer
 general catalog provider slices #170/#169 and paper reading #166 until this core
 reading loop is useful.

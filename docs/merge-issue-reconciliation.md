@@ -1,5 +1,51 @@
 # Workspace merge and issue reconciliation
 
+## Current reconciliation — 2026-10-17
+
+The owner authorized merging the open stack and reconciling the issues before
+further implementation. All 12 previously open PRs merged into main in dependency
+order, retargeting each dependent to main and matching its checked head:
+
+| PRs | Integrated work |
+| --- | --- |
+| #148, #150, #151, #152, #153 | Private writing recovery, status, bounded tabs, Trash and capture recovery identity |
+| #155, #157 | Free margin writing, formatted Markdown sidebar and highlight-to-note navigation |
+| #159, #161 | Appearance preferences and actual full-app font/zoom repair |
+| #163, #167 | Document-first reading/writing and compact notebook explorer |
+| #171 | Qur’an-first reading and seamless catalog plan |
+
+#149 was already merged. The final application merge
+[`21390a9`](https://github.com/justin-napolitano/islam-research/commit/21390a91aba1c70d5653ff7068c524115a864d2d)
+passed main [reading/browser](https://github.com/justin-napolitano/islam-research/actions/runs/39054016648),
+[public container](https://github.com/justin-napolitano/islam-research/actions/runs/39054016722)
+and [owner container](https://github.com/justin-napolitano/islam-research/actions/runs/39054016703)
+checks. The final backend-bearing integration `aa6cda3` passed real
+[PostgreSQL 17/18 contracts](https://github.com/justin-napolitano/islam-research/actions/runs/39053946986).
+The subsequent #171 merge is planning documentation. Main retained its newer nightly
+public snapshot; the checked stack's application source, tests and workflows were
+not replaced by older data. No branch deletion or destructive reset was needed.
+
+Completed bounded software issues #135/#136/#137/#145 and #162/#165 were closed
+with evidence. #154/#156/#158/#160 closed through their merge links. #134 is closed
+as a superseded planning checklist; [#84](https://github.com/justin-napolitano/islam-research/issues/84)
+is the authoritative product roadmap, with #30 retained as the technical umbrella.
+Parent epics, #15 scholarly pilot, #146 owner session, #31/#33/#42 hosted gates,
+#139 custom folders and deferred features remain open.
+
+Next implementation is **#172 → #173 → #174**, coordinated with #164:
+identified Qur’an resources, continuous reading, and verse/source-bound private
+notes. Hosted cross-device release follows the real reading checkpoint; general
+catalog adapters and additional book structures follow that core experience.
+See [the current roadmap](second-brain-roadmap.md). Roadmap labels were reconciled;
+labels are delivery order, not proof of release or scholarly review.
+
+This pass merges existing software and updates planning. It does not implement the
+continuous full Qur’an reader, deploy GCP/PostgreSQL, establish real cross-device
+sync, change source permissions, or complete the scholarly review. Existing
+migration/grant/security review and hosted launch requirements remain in force.
+
+## Historical audit — 2026-10-16
+
 Audit date: 2026-10-16 UTC (2026-10-15 evening in the owner's timezone). The owner authorized merging all outstanding PRs and reviewing the issues. This records code integration and backlog decisions, not deployment or completion of scholarly research.
 
 Subsequent owner-approved prioritization: [the current Now / Next / Later plan](second-brain-roadmap.md) adds trash/restore #145 and a real reading-session checkpoint #146. It defers advanced ranking/history, agent expansion, full Obsidian sync, and elaborate graph exploration beyond the first release. The merge/closure evidence below is retained as the historical audit.

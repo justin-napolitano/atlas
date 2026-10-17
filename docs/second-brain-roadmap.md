@@ -1,77 +1,44 @@
-# Academic second-brain priorities
+# Qur’an-first product roadmap
 
-The product combines independent writing and project organization with a source-grounded reading workspace. Personal notes, open questions, source claims, and reviewed scholarship remain distinct and connected through stable identities and exact citations. Islam is the first corpus; future subjects reuse the platform with explicit domain models.
+The product is a research library with a reader and connected Markdown notebook. The next useful experience is **open the Qur’an → choose surah/ayah → read continuously → write or inspect commentary → resume**. Open Library, Gutenberg and arXiv remain the wider catalog goal; they come after this reading loop works.
 
-Tracking plan: [#134](https://github.com/justin-napolitano/islam-research/issues/134). This is a focused execution plan under the existing [product roadmap #84](https://github.com/justin-napolitano/islam-research/issues/84), notebook epic #87, and ownership/recovery epic #91. These are planned improvements, not claims that the current app already supplies them.
+This issue is the authoritative product roadmap. #30 remains the technical/hosting umbrella. Roadmap labels indicate order, not completion. The earlier hardening checklist #134 is superseded by this reconciled plan.
 
-## Product direction clarified on 2026-10-17
+## Already merged
 
-The owner wants a research library with a first-class reader, sources, annotation,
-commentary and independent notes. A simpler Obsidian-like notebook supports that
-experience. See [research-library-vision.md](research-library-vision.md) for the
-source/version/notes contract and honest full-text/hosting limits. The compact
-explorer is #165; durable user-created folders remain #139. The first proposed
-general-paper vertical slice is [#166: arXiv paper reading and review](https://github.com/justin-napolitano/islam-research/issues/166), under universal intake #88/#100 and reusable identities #101. No new full-text provider is implemented by this UI pass.
+The owner-approved stack #148 → #150 → #151 → #152 → #153 → #155 → #157 → #159 → #161 → #163 → #167 → #171 is merged into main. It supplies private recovery, save state, bounded warm tabs, reversible Trash, free margin writing, Markdown/highlight navigation, working appearance controls, document-first notes, and the compact notebook explorer. #149 was already merged separately.
 
-The later catalog clarification makes **search connected open catalogs → open →
-read → write a note** the default target. Manual source intake remains a fallback;
-first-note source/version association and permitted representation caching should
-be automatic. See [seamless-open-catalog.md](seamless-open-catalog.md). Gutenberg,
-Open Library and arXiv share this catalog contract; no live adapters are claimed by
-this planning update. Track the shared catalog in #168, Gutenberg direct reading in #170, and Open Library discovery/availability in #169.
+Completed bounded slices: #135/#136/#137/#145/#154/#156/#158/#160/#162/#165. This is software integration, not deployment, scholarly review, a complete Qur’an corpus, arbitrary nested folders, or Obsidian sync.
 
-## Current content priority: Qur’an reading first
+Integration evidence: final application merge 21390a9 passed main browser/public-container/owner-container checks; final backend-bearing integration aa6cda3 passed PostgreSQL 17/18 contracts. PR heads had passing checks before merge. The newer nightly public snapshot on main was preserved.
 
-The owner's subsequent clarification supersedes the Gutenberg-first provider order:
-**open Qur’an → choose surah/ayah → read continuously → write or inspect commentary
-→ resume**. Build under #45/#19 with sidebar work #164; retain the no-import goal.
-See [quran-first-reading.md](quran-first-reading.md). General catalog adapters
-#170/#169 and paper flow #166 follow a useful Qur’an session. Reuse a few composable
-reading structures as actual texts require them, rather than designing a universal
-plugin framework before the first reading experience works.
+## Build order and demonstration gates
 
-## Now: make the core reading loop dependable
-
-The first-release focus is **add a source → read → highlight → write → link → find it again**. Keep exact citations, explicit personal read status, ordinary search, simple source/backlink navigation, and basic Markdown export. This is the owner-approved scope reduction after the merge audit; advanced features remain open for later delivery.
-
-The owner authorized merging the existing stack on 2026-10-16 UTC. The priorities originally identified before merge remain unfinished and come next; integration did not implement them. See the [merge and issue audit](merge-issue-reconciliation.md) for shipped scope, evidence, closures, and remaining gates.
-
-| Order | Issue | Outcome |
+| Order | Work | Done when |
 | --- | --- | --- |
-| 1 | [#135: automatic draft recovery](https://github.com/justin-napolitano/islam-research/issues/135) | Unfinished notes, questions, and supported reading annotations can recover after reload or process loss, with authenticated private storage and explicit revision/conflict handling. |
-| 2 | [#136: save state and unfinished work](https://github.com/justin-napolitano/islam-research/issues/136) | Tabs distinguish unsaved, saving, saved, failed, and conflicting work; closed unfinished writing has a direct reopening path. Durable guarantees depend on #135. |
-| 3 | [#137: bounded tab memory](https://github.com/justin-napolitano/islam-research/issues/137) | A measured, bounded warm-page cache safely suspends inactive readings. Dirty or pending work cannot be evicted without recovery protection from #135/#136. |
-| Independent | [#138: stable reference-navigation verification](https://github.com/justin-napolitano/islam-research/issues/138) | Investigate intermittent local reference-tool timing failures, distinguish harness readiness from application regressions, and retain exact-anchor and draft assertions. Final CI on b07573f passed; stability still needs investigation. |
-| After recovery boundaries | [#145: trash, undo, and restore](https://github.com/justin-napolitano/islam-research/issues/145) | Recover private notes and working questions with the same identities and backlinks; preserve concurrent/unfinished writing and keep publication lifecycle separate. |
-| Core-flow checkpoint | [#146: real reading session](https://github.com/justin-napolitano/islam-research/issues/146) | Observe the owner researching an actual article for approximately 30 minutes, record friction, fix core blockers, and verify find/reopen/export actions. No claim of completion before the owner performs it. |
+| 1 | **#172: actual reading resources**, under #19/#45 | An identified permitted Arabic text and named translation supply a complete supported surah, with resource/version/coverage recorded. Two pilot verses are insufficient. |
+| 2 | **#173: continuous Qur’an reader** | Open a surah or direct ayah link, read comfortably, navigate, change presentation/resource choices, and resume. No mandatory import wizard. |
+| 3 | **#174 + #164: seamless notes and context** | Write free notes or exact annotations, inspect actual attributed commentary in one sidebar, then find a note and return to its same verse/resource. First-note source association happens safely behind the scenes. |
+| 4 | **#146: real reading session and fixes** | The owner actually reads for about 30 minutes. Record and fix blocked navigation, lost writing or readability friction before expanding. Fixture tests do not complete this gate. |
+| 5 | **#31/#33/#42/#52: usable hosted release** | One-owner PostgreSQL/IAP authoring works from two machines, notes/progress survive, backup/restore is demonstrated, and anonymous visitors see only explicitly published read-only material. Source/resource and open-source release requirements remain explicit. |
+| 6 | **#168/#170/#169/#166: broader open catalog** | One search → open → read → note flow spans supported Gutenberg texts, Open Library discovery/availability, then versioned papers. Reading does not require importing every catalog result into a project. |
 
-Keep this batch focused on trust, resource use, and navigation reliability. Do not add automatic scholarly approval, publication, inferred agreement, or reading-completion status. Recovery copies and confirmed saved notes must have separate status. Existing session-only tabs are not crash recovery or cross-device tab sync.
+Proposed English starting preference: Mustafa Khattab’s The Clear Quran; Saheeh International for comparison where supported. Neither is a universally authoritative English standard. #172 must verify resource access/terms and record exact attribution. Morphology in #19 is not a prerequisite for basic reading. Public text coverage never implies full scholarly commentary/research coverage.
 
-The actual scholarly pilot #15 and hosted/privacy/recovery release gate #42 remain mandatory. Retain the necessary foundation, identity, licensing, and operational work in #31/#33/#52; reducing feature scope does not remove release prerequisites. Basic Markdown export is not live Obsidian synchronization or a complete portable archive restore (#54).
+## Organization and reusable reading patterns
 
-## Next: simple organization informed by actual use
+#139 custom folders, #140 project home and #143 project lifecycle follow observed reading needs; the compact explorer currently shows existing project/collection views. Do not claim those views implement arbitrary nested storage folders.
 
-- [#139: folders within projects](https://github.com/justin-napolitano/islam-research/issues/139): lightweight optional organization; moves preserve identities, references, authoring roles, and visibility. These are application folders, not host directories.
-- [#140: project home](https://github.com/justin-napolitano/islam-research/issues/140): continue reading, recent notes, open questions, queued sources, and useful empty-project actions using real bounded queries.
+Reuse a few composable structures as actual texts require them: numbered units now, chapter/section prose next, fixed pages when PDFs/scans arrive, and line/stanza locators when needed. #92/#104 validate later domain extensions; avoid a speculative universal plugin system.
 
-These follow the trust/resource work above. Each issue includes scope, acceptance criteria, validation, and links to the existing epics rather than replacing them. [#143: project lifecycle](https://github.com/justin-napolitano/islam-research/issues/143) adds rename, archive, and restore while preserving identities and references; project creation and folders do not cover this lifecycle.
+## Later
 
-Findings from #146 take priority over optional organization enhancements when they expose data loss, blocked navigation, or inaccessible core actions.
+Advanced ranking #36; complexity/background/history/concordances #46/#55–58; expanded agent proposals/automation #53/#90; full bidirectional Obsidian sync #40; complete portable archive restore #54; elaborate graph exploration #141. Basic source attribution, useful evidence links and Markdown export remain core. Existing features and deterministic harvesting are preserved.
 
-## Later: outside the first-release milestone
+## Research and release boundaries
 
-- Advanced ranking profiles (#36) and complexity scoring (#55).
-- Expanded historical/context models, concordances, author maps, and before-reading briefings (#46/#56–58). Basic source/author/edition attribution remains core.
-- Agent proposal and automation expansion (#53/#90). Existing deterministic discovery and harvesting remain available with their current review boundaries.
-- Full bidirectional Obsidian sync (#40). Start with basic Markdown export and preserve stable identities; keep complete archive/restore scope in #54 distinct.
-- Elaborate graph exploration (#141). Useful typed links, evidence paths, backlinks, and readable source navigation remain part of the core experience; a new graph visualization is not a launch prerequisite.
+#15 remains the actual scholarly pilot, with #13/#50 editorial standards and explicit review scope. Coding or displaying a source does not mean its full argument was read or reviewed. #85–92 remain broader epics where acceptance extends beyond merged software slices.
 
-These tickets retain their full acceptance criteria and remain open. Existing implemented features are not removed. GitHub labels `roadmap:now`, `roadmap:next`, and `roadmap:later` make this delivery order visible; they do not indicate completion or academic review.
+Keep stable IDs, exact quotation/resource anchors, personal notes versus attributed findings, owner-only writes, private defaults and explicit public publication. A translation switch must not move a highlight to different wording. The local preview still saves on this Mac; merged code and synthetic cross-session tests do not establish a hosted synchronized service. This reconciliation covers integration and planning only; the owner requested a roadmap explanation before further feature implementation.
 
-## Merge and release coordination
-
-The production stack merged in dependency order: **#122 → #123 → #124 → #129 → #131 → #133**, followed by planning documentation #142. Dependents were retargeted to main before merging. Main-branch reader and container checks passed on the integrated application commit; PostgreSQL integration also passed for the backend integration. Continue the hardening in small reviewable changes with relevant exact-head checks.
-
-GitHub marked design-sample PR **#121** merged because its commits were already included in #122. It does not require a separate merge or closure.
-
-Hosted PostgreSQL, owner sign-in, deployment, and cross-device verification remain separate from the loopback review adapter. A local preview is not evidence of a deployed synchronized service.
+Repository plan: [second-brain roadmap](https://github.com/justin-napolitano/islam-research/blob/main/docs/second-brain-roadmap.md). Reading design: [Qur’an first](https://github.com/justin-napolitano/islam-research/blob/main/docs/quran-first-reading.md). Catalog contract: [seamless open catalog](https://github.com/justin-napolitano/islam-research/blob/main/docs/seamless-open-catalog.md).

@@ -2,7 +2,15 @@
 
 This is the bounded software delivery under #85, not completion of the whole epic or scholarly pilot. The first useful loop is add/find a source → read → highlight → write → follow evidence → return → find the writing again.
 
-## Implemented slices and review order
+## Current status
+
+The existing stack through #171 is merged. Main application/browser/container and
+backend PostgreSQL 17/18 checks passed; see [merge reconciliation](merge-issue-reconciliation.md).
+The active product roadmap is #84. Qur’an resources #172, continuous reading #173,
+and first-note saving #174 with sidebar #164 are the next implementation sequence.
+The existing Q 4:59/4:83 and Sirry excerpts remain bounded reading aids.
+
+## Merged foundation slices
 
 1. [#148](https://github.com/justin-napolitano/islam-research/pull/148): private notebook/question recovery storage, immutable baselines and revision checks.
 2. [#149](https://github.com/justin-napolitano/islam-research/pull/149): active-page reference verification under delayed/reordered loading; merged separately after passing checks.
@@ -14,6 +22,10 @@ This is the bounded software delivery under #85, not completion of the whole epi
 See [durable-writing.md](durable-writing.md), [working-tabs.md](working-tabs.md), and [private-writing-trash.md](private-writing-trash.md) for guarantees, limitations, migration/grant requirements, and verification. Preserve small reviewable changes. Do not mark a PR merged, a cloud workflow verified, or an issue complete solely because it appears in this list.
 
 ## A real 30-minute owner session (#146)
+
+The next acceptance session should use the continuous Qur’an reader once #172–174
+are ready. Until then, the following older article exercise remains available for
+checking the existing desk; it is not proof of complete Qur’an reading.
 
 Use the built-in **Read the Sirry article** action in Sources → Reading tools. Its identified article is Mun'im Sirry, *Who Are Those in Authority? Early Muslim Exegesis of the Qur'anic Ulū'l-Amr*, DOI `10.3390/rel12070483`. The built-in representation is only the first four abstract sentences manually transcribed from the screenshot the owner supplied. It is not checked publisher extraction, the whole article, or a scholarly review. Review the displayed source/edition/rights basis before saving; use a lawfully accessible full article later if available.
 
