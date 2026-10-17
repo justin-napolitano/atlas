@@ -398,7 +398,7 @@ try {
   await evaluate(`[...document.querySelectorAll('.working-tab>button:first-child')].find(button=>button.querySelector('small')?.textContent==='Note').click()`);
   await until(()=>evaluate('!!document.querySelector(".notebook-note-title input")'),'note tab before closing');
   await evaluate(`[...document.querySelectorAll('.working-tab')].find(tab=>tab.querySelector('small')?.textContent==='Note').querySelector('.working-tab-close').click()`);
-  assert.equal(await evaluate(`[...document.querySelectorAll('.working-tab small')].some(node=>node.textContent==='Note')`),false,'closed note tab removed');
+  assert.equal(await evaluate(`[...document.querySelectorAll('.working-tab small')].some(node=>node.textContent==='Note')`),true,'unfinished note tab stays accessible instead of losing work');
   await click('Notes');await until(()=>evaluate('document.querySelector(".notebook-note-title input")?.value==="Synthetic working note"'),'closed note draft reopens without loss');
   assert.match(await evaluate('document.querySelector(".notebook-note-body textarea").value'),/unfinished thought/);
   await until(()=>evaluate('!document.querySelector(".notebook-editor-toolbar button").disabled'),'reopened note ready to save');
