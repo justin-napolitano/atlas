@@ -1,0 +1,11 @@
+# Private unfinished writing
+
+Independent notebook/question recovery uses `/v1/notebook/draft` (GET/PUT) and `/v1/notebook/drafts` (GET, project-scoped cursor pagination). These owner-only endpoints are separate from confirmed notebook entry creation and editing. Untitled and empty drafts are valid; actual note saves still require title/body and explicit confirmation.
+
+Migration `0016_notebook_recovery.sql` adds private current rows and immutable revision history. Run the existing migration and role-grant workflow before deploying the updated owner service. Publisher roles receive no access. The public service does not register these routes, and the explicit publication projection does not select recovery rows.
+
+Each recovery identity has an immutable project, entry/creation identity, original source/edition/passage anchors, and historical baseline revision. Server-derived baseline snapshots allow comparison after another session changes a note. Writes use expected revisions; exact immediate retries are idempotent, and conflicting values return the current copy rather than overwrite it. New writing keeps its original note-creation UUID to avoid duplicate actual notes after recovery.
+
+Recovery never marks a source read, approves scholarship, publishes writing, or updates a confirmed note. Active copies are retained until explicitly discarded; discard hides the current copy while retaining private revision history. No automatic expiry or permanent purge is introduced. Backup retention remains part of the hosted operator policy. Do not interpret this API foundation alone as automatic keystroke protection: the editor integration and its status must be verified separately.
+
+Security review scope: private data access and three owner API routes, with existing IAP/origin/write-header checks unchanged. Boundary tests verify wrong owner/origin, extra fields, no-store responses, and public route absence. Real PostgreSQL tests cover independent sessions, retries/conflicts, immutable baselines/history, and publisher grants. Local runs without an isolated PostgreSQL DSN skip those integration tests; the PR's PostgreSQL 17/18 checks provide the actual database verification. Human review of the API/grant changes remains required before production release under the repository's applicable security guidance.

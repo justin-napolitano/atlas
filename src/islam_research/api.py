@@ -311,6 +311,28 @@ class NotebookUpdate(NotebookMetadata):
     state: Literal["active","withdrawn"] = "active"
 
 
+class NotebookDraftValue(Input):
+    thought_type: Literal["note","question","source_claim","interpretation","objection"] = "note"
+    title: Annotated[str,Field(max_length=300)] = ""
+    body: Annotated[str,Field(max_length=20000)] = ""
+    links: Annotated[list[NotebookLink],Field(max_length=25)] = Field(default_factory=list)
+    state: Literal["active","withdrawn"] = "active"
+
+
+class NotebookDraftInput(Input):
+    draft_uuid: Annotated[str,Field(pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")]
+    project_id: Identifier
+    entry_id: Identifier | None = None
+    request_uuid: Annotated[str,Field(min_length=36,max_length=36)] | None = None
+    record_id: Identifier | None = None
+    document_id: Identifier | None = None
+    annotation_id: Identifier | None = None
+    base_revision: Annotated[int,Field(ge=0)]
+    expected_revision: Annotated[int,Field(ge=0)]
+    value: NotebookDraftValue
+    state: Literal["active","discarded"] = "active"
+
+
 class PublicationSelection(Input):
     record_id: Identifier
     include_summary: bool = False
@@ -692,6 +714,22 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         row=store.notebook_entry(project_id,entry_id)
         if row is None:raise HTTPException(404,"Notebook thought not found in this project")
         return row
+
+    @router.get("/notebook/drafts")
+    def notebook_drafts(project_id: Identifier,cursor: Annotated[str,Query(max_length=500)]="",
+        limit: Annotated[int,Query(ge=1,le=25)]=25):
+        rows=store.notebook_drafts(project_id,cursor,limit+1)
+        return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
+
+    @router.get("/notebook/draft")
+    def notebook_draft(project_id: Identifier,draft_id: Identifier):
+        row=store.notebook_draft(project_id,draft_id)
+        if row is None:raise HTTPException(404,"Writing recovery not found in this project")
+        return row
+
+    @router.put("/notebook/draft")
+    def save_notebook_draft(value: NotebookDraftInput,actor: str=Depends(owner)):
+        return store.save_notebook_draft(actor=actor,**value.model_dump())
 
     @router.post("/notebook/entries",status_code=201)
     def notebook_create(value: NotebookCreate,actor: str = Depends(owner)):

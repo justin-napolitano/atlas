@@ -12,6 +12,7 @@ from . import source_intake
 from . import reading_desk
 from . import record_context
 from . import notebook
+from . import notebook_drafts
 from . import reading_drafts
 from . import collection_link
 from . import research_search
@@ -91,6 +92,15 @@ class PostgreSQLStore:
 
     def notebook_entry(self,project_id,entry_id):
         with db.connect(self.dsn) as connection:return notebook.get(connection,project_id,entry_id)
+
+    def notebook_draft(self,project_id,draft_id):
+        with db.connect(self.dsn) as connection:return notebook_drafts.get(connection,project_id,draft_id)
+
+    def notebook_drafts(self,project_id,cursor,limit):
+        with db.connect(self.dsn) as connection:return notebook_drafts.listing(connection,project_id,cursor,limit)
+
+    def save_notebook_draft(self,**values):
+        with db.connect(self.dsn) as connection:return notebook_drafts.save(connection,**values)
 
     def notebook_network(self,project_id,limit):
         with db.connect(self.dsn) as connection:return notebook.network(connection,project_id,limit)
