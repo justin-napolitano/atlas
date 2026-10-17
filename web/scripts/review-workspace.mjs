@@ -409,6 +409,27 @@ try {
   const readingURL=await evaluate('location.href');releaseNoteSave();
   await until(()=>evaluate(`[...window.document.querySelectorAll('.working-surface[hidden] .notebook-editor-toolbar>span')].some(node=>node.textContent==='Saved · revision 1')`),'save completes in background notebook');
   assert.equal(await evaluate('location.href'),readingURL,'background notebook save cannot redirect the active source');
+  // Reproduce user-reported sizing failure in the full workspace CSS cascade.
+  const originalSource=await evaluate('document.querySelector(".reader-text").textContent');
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".reader-text")).fontSize'),'22px');
+  const renderedBefore=await evaluate('{const r=document.createRange();r.selectNodeContents(document.querySelector(".reader-text"));r.getBoundingClientRect().height}');
+  const sizeButton=await evaluate(`{const b=document.querySelector('[aria-label="Increase source text size"]');b.scrollIntoView({block:'nearest'});const r=b.getBoundingClientRect();({x:r.left+r.width/2,y:r.top+r.height/2})}`);
+  await call('Input.dispatchMouseEvent',{type:'mouseMoved',...sizeButton});
+  await call('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...sizeButton});
+  await call('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...sizeButton});
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".reader-text")).fontSize'),'24px');
+  await evaluate('document.querySelector(".reading-appearance-panel").open=true');
+  await evaluate(`{const f=document.querySelector('input[aria-label="Reading zoom"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(f,180);f.dispatchEvent(new Event('input',{bubbles:true}));f.dispatchEvent(new Event('change',{bubbles:true}));}`);
+  await until(()=>evaluate('getComputedStyle(document.querySelector(".reader-text")).fontSize==="43.2px"'),'full-workspace zoom changes rendered source');
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".reader-margin .location-margin-composer textarea")).fontSize'),'30.6px','zoom enlarges actual notes too');
+  const renderedAfter=await evaluate('{const r=document.createRange();r.selectNodeContents(document.querySelector(".reader-text"));r.getBoundingClientRect().height}');
+  assert.ok(renderedAfter>renderedBefore,'glyph layout grows, not just a counter or CSS variable');
+  assert.equal(await evaluate('document.querySelector(".reader-text").textContent'),originalSource);
+  await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".reader-text")).fontSize'),'43.2px','mobile stylesheet cannot override reading preference');
+  assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
+  await click('Reset reading preferences');await evaluate('document.querySelector(".reading-appearance-panel").open=false');
+  await call('Emulation.clearDeviceMetricsOverride');
   assert.equal(await evaluate('document.querySelector(".reader-edition-details").open'),false);
   await evaluate('document.querySelector(".reader-edition-details summary").click()');
   assert.equal(await evaluate('document.querySelector(".reader-source-notice pre").textContent'),readingDocument.source_notice);
