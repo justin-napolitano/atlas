@@ -413,11 +413,15 @@ try {
   const originalSource=await evaluate('document.querySelector(".reader-text").textContent');
   assert.equal(await evaluate('getComputedStyle(document.querySelector(".reader-text")).fontSize'),'22px');
   const renderedBefore=await evaluate('{const r=document.createRange();r.selectNodeContents(document.querySelector(".reader-text"));r.getBoundingClientRect().height}');
-  await evaluate(`document.querySelector('[aria-label="Increase source text size"]').click()`);
+  const sizeButton=await evaluate(`{const b=document.querySelector('[aria-label="Increase source text size"]');b.scrollIntoView({block:'nearest'});const r=b.getBoundingClientRect();({x:r.left+r.width/2,y:r.top+r.height/2})}`);
+  await call('Input.dispatchMouseEvent',{type:'mouseMoved',...sizeButton});
+  await call('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...sizeButton});
+  await call('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...sizeButton});
   assert.equal(await evaluate('getComputedStyle(document.querySelector(".reader-text")).fontSize'),'24px');
   await evaluate('document.querySelector(".reading-appearance-panel").open=true');
   await evaluate(`{const f=document.querySelector('input[aria-label="Reading zoom"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(f,180);f.dispatchEvent(new Event('input',{bubbles:true}));f.dispatchEvent(new Event('change',{bubbles:true}));}`);
   await until(()=>evaluate('getComputedStyle(document.querySelector(".reader-text")).fontSize==="43.2px"'),'full-workspace zoom changes rendered source');
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".reader-margin .location-margin-composer textarea")).fontSize'),'30.6px','zoom enlarges actual notes too');
   const renderedAfter=await evaluate('{const r=document.createRange();r.selectNodeContents(document.querySelector(".reader-text"));r.getBoundingClientRect().height}');
   assert.ok(renderedAfter>renderedBefore,'glyph layout grows, not just a counter or CSS variable');
   assert.equal(await evaluate('document.querySelector(".reader-text").textContent'),originalSource);
