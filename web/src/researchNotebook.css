@@ -28,3 +28,27 @@
 .private-trash pre {white-space:pre-wrap;overflow-wrap:anywhere;max-height:12rem;overflow:auto;}
 .private-trash-action {display:inline-flex;gap:.5rem;align-items:center;flex-wrap:wrap;}
 .private-trash-action small {max-width:40ch;color:var(--muted);}
+
+/* Notes are pages, with the same measure in reading and editing. */
+.research-notebook .notebook-heading { padding-bottom:14px; margin-bottom:18px; }
+.research-notebook .notebook-heading h2 { font:600 22px/1.4 ui-sans-serif,system-ui,sans-serif; letter-spacing:0; margin:4px 0; }
+.research-notebook .notebook-heading p { display:none; }
+.research-notebook .notebook-writing { max-width:820px; padding-inline:clamp(18px,3vw,46px); }
+.research-notebook .notebook-editor-toolbar { margin-bottom:8px; min-height:40px; }
+.research-notebook .notebook-editor-toolbar .notebook-save { background:transparent; color:var(--muted); padding:8px; }
+.research-notebook .notebook-editor-toolbar .notebook-save:disabled { display:none; }
+.research-notebook .notebook-editor-modes { border:0; margin:0 0 8px; padding:0; justify-content:flex-end; }
+.research-notebook .notebook-editor-modes button { min-height:36px; font-size:12px; }
+.research-notebook .notebook-page .notebook-note-title input { font:600 28px/1.35 ui-sans-serif,system-ui,sans-serif; letter-spacing:0; padding-bottom:14px; }
+.research-notebook .notebook-page .notebook-note-body textarea,.research-notebook .notebook-document .notebook-markdown { font:20px/1.7 ui-sans-serif,system-ui,"Geeza Pro",Tahoma,sans-serif; max-width:65ch; padding:0; margin:0; }
+.research-notebook .notebook-page .notebook-note-body textarea { resize:none; overflow:hidden; min-height:45vh; }
+.research-notebook .notebook-document { min-height:35vh; cursor:text; }
+.research-notebook .notebook-document .notebook-markdown > :first-child { margin-top:0; }
+.research-notebook .notebook-document .notebook-markdown p { font:inherit; margin:0 0 1em; }
+.research-notebook .notebook-document .notebook-markdown h1,.research-notebook .notebook-document .notebook-markdown h2,.research-notebook .notebook-document .notebook-markdown h3 { font-family:inherit; }
+.research-notebook .notebook-context { margin-top:24px; }
+.research-notebook .notebook-page-footer { border:0; margin-top:20px; }
+@media(max-width:760px) { .research-notebook .notebook-writing { padding-inline:0; } }
+
+.research-notebook .notebook-page-footer { flex-wrap:wrap; gap:8px 16px; }
+.research-notebook .notebook-page-footer .notebook-editor-modes { margin:0; }

@@ -73,3 +73,18 @@
 .source-reader .reading-options input[type=range]::-moz-range-thumb { height:18px; width:18px; border-radius:50%; background:var(--accent); border:2px solid var(--paper); }
 .source-reader .reading-options input[type=range]:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 @media(max-width:600px) { .source-reader .reader-view-actions { gap:6px; } .source-reader .reading-appearance { width:100%; gap:8px; } .source-reader .reading-options { top:calc(var(--atlas-header-height,64px) + 12px); max-height:calc(100dvh - var(--atlas-header-height,64px) - 28px); } }
+
+/* A document first: one quiet toolbar and the source immediately below it. */
+.source-reader .reader-view-actions { flex-direction:row; justify-content:flex-start; }
+.source-reader .reading-appearance { margin-inline: auto 0; }
+.source-reader .reader-view-actions > button,.source-reader .reading-appearance-panel > summary { border:0; background:transparent; min-height:44px; }
+.source-reader .reader-view-actions > button[aria-expanded=true],.source-reader .reader-view-actions > button[aria-pressed=true] { color:var(--accent); background:var(--accent-wash); }
+.source-reader .reader-heading-row { border-bottom:0; padding:0 0 16px; }
+.source-reader .reader-page { position:static; padding-top:0; }
+.source-reader .reader-text { padding-block:8px 24px; overflow-wrap:anywhere; }
+.source-reader .reader-selection-hint { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.source-reader .reader-selection-hint button { font:inherit; color:var(--muted); padding:6px; min-height:36px; }
+.source-reader .reader-edition-details > summary { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
+.source-reader .reader-edition-details[open] > summary { white-space:normal; }
+.source-reader .reader-margin-heading { border-bottom:0; }
+@media(max-width:600px) { .source-reader .reading-appearance { width:auto; } .source-reader .reader-view-actions { flex-wrap:nowrap; } }

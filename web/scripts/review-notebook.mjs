@@ -53,6 +53,7 @@ try{
   assert.equal(await evaluate('JSON.stringify(window.__notebookTest.requests[0])===JSON.stringify(window.__notebookTest.requests[1])'),true);
   assert.equal(await evaluate('document.querySelector("script:not([src])")'),null);
   await click('Return to anchored source');assert.equal(await evaluate('window.__notebookTest.opened[3]'),'synthetic:document');
+  await click('Write');
   await evaluate(`{const input=[...document.querySelectorAll('label')].find(label=>label.textContent.startsWith('Thought (Markdown')).querySelector('textarea');input.focus();input.select();}`);
   await call('Input.insertText',{text:'My revised reading'});await evaluate('window.__notebookTest.remote()');await click('Save note');
   await until(()=>evaluate('document.body.textContent.includes("Another revision needs comparison")'),'two-device correction conflict');
@@ -74,6 +75,7 @@ try{
   assert.equal(await evaluate('document.querySelector(".notebook-filters input").value'),'No matching routed thought');
   await evaluate('window.__notebookTest.search("")');await until(()=>evaluate('document.body.textContent.includes("My contextual question")'),'routed query cleared');
   await click('My contextual question');await until(()=>evaluate('document.body.textContent.includes("Thought ID:")'),'reopen correction target');
+  await click('Write');
   await evaluate(`{const input=[...document.querySelectorAll('label')].find(label=>label.textContent.startsWith('Thought (Markdown')).querySelector('textarea');input.focus();input.select();}`);
   await call('Input.insertText',{text:'Late saved correction'});await evaluate('window.__notebookTest.hold=true');await click('Save note');
   await until(()=>evaluate('typeof window.__notebookTest.release==="function"'),'held save');await click('New note');await fillLabel('Title','Another unfinished thought');
@@ -100,6 +102,7 @@ try{
   await call('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
   await writeFile(join(artifacts,'03-independent-note-desktop.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
   await evaluate('window.__notebookTest.seed()');
+  await click('Write');
   await evaluate(`{const input=document.querySelector('.notebook-note-body textarea');input.focus();input.select();}`);
   await call('Input.insertText',{text:'## A working idea\n\n**Important** and ~~revised~~. See [[synthetic:linked-note|a related idea]].\n\n- [x] Read\n- [ ] Compare\n\n| Concept | Question |\n| --- | --- |\n| Authority | Which kind? |\n\n> A distinction to investigate.\n\n```js\nconst safe = "[[not a link]]";\n```\n\n<script>window.__markdownExecuted=true</script>\n\n[unsafe](javascript:alert(1))\n\nA footnote[^1].\n\n[^1]: A located observation.\n\n![external image](https://example.invalid/tracking.png)'});
   await click('Save note');await until(()=>evaluate('window.__notebookTest.drafts.current.size===0'),'Markdown save');
@@ -129,6 +132,7 @@ try{
   await call('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
   await click('Another unfinished thought');await until(()=>evaluate('!!document.querySelector(".notebook-note-body textarea")'),'current note');
   await evaluate('window.__notebookTest.inline(true)');
+  await click('Write');
   await evaluate(`{const input=document.querySelector('.notebook-note-body textarea');input.focus();input.setSelectionRange(input.value.length,input.value.length);window.__notebookEditor=input;void 0;}`);
   await call('Input.insertText',{text:'\n\nStill working on this sentence.'});
   const bodyBefore=await evaluate('document.querySelector(".notebook-note-body textarea").value'),urlBefore=await evaluate('location.href');
@@ -206,7 +210,31 @@ try{
   await evaluate('document.querySelector(".notebook-source-pane .saved-passage-note .private-trash-action button").click()');
   await until(()=>evaluate('document.querySelector(".notebook-source-pane .saved-passage-note")?.textContent.includes("Original passage note")'),'margin undo restores original writing');
   assert.deepEqual(problems,[]);
-  console.log(JSON.stringify({notebookPassed:true,checks:['compiled owner notebook','live passage note backlink','anchored thought and explained connection','Unicode Markdown inert text','retained creation UUID and exact lost-response retry','source context readback','two-device correction comparison','CAS lost acknowledgement retry','paged revision history','withdrawal filter','wrong-project refusal','independent note without source','searchable explained connection saved','mobile list to editor','CommonMark and GFM preview','inert script and unsafe links','wiki link to saved note','saved backlinks','actual saved note graph','inline source keeps editor and route','organization filters before pagination','quote lost acknowledgement exact retry','citation returns to source without leaving note','mobile source overlay','complete source/work catalog','metadata-only source retained','source filter and direct intake','private question create and reopen','question draft distinct from unfinished note','curated question evidence remains distinct','dark390px','no private localStorage'],artifacts}));
+  // Document-first notebook: direct editing, automatic saves, and typing during an uncertain save.
+  await click('Sample notes');await click('Everything');await click('Unfinished independent note');
+  await until(()=>evaluate('!!document.querySelector(".notebook-document .notebook-markdown")'),'saved note opens formatted');
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".notebook-note-body")).display'),'none');
+  await evaluate('document.querySelector(".notebook-document").focus()');await call('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+  await until(()=>evaluate('document.activeElement===document.querySelector(".notebook-note-body textarea")'),'Enter edits document directly');
+  await evaluate('window.__notebookTest.normal();window.__notebookTest.hold=true;window.__notebookTest.release=null;window.__notebookTest.loseCorrection();document.querySelector(".notebook-note-body textarea").select()');
+  await call('Input.insertText',{text:'## Automatic save\n\nThe first version.'});
+  await until(()=>evaluate('typeof window.__notebookTest.release==="function"'),'automatic save begins without clicking save');
+  assert.equal(await evaluate('document.querySelector(".notebook-note-body textarea").disabled'),false,'ordinary writing remains editable during automatic save');
+  const continued='## Continued writing\n\n'+('A paragraph written while the request is pending.\n\n'.repeat(24));
+  await evaluate('document.querySelector(".notebook-note-body textarea").select()');await call('Input.insertText',{text:continued});
+  assert.ok(await evaluate('document.querySelector(".notebook-note-body textarea").clientHeight>700'),'editor grows with document');
+  await evaluate('window.__notebookTest.release()');
+  await until(()=>evaluate('document.body.textContent.includes("Correction save could not be confirmed")'),'uncertain autosave is retained');
+  assert.equal(await evaluate('document.querySelector(".notebook-note-body textarea").value'),continued,'new writing survives lost response');
+  await click('Retry original notebook save');
+  await until(()=>evaluate('window.__notebookTest.drafts.current.size===0 && [...window.__notebookTest.entries.values()].some(r=>r.title==="Unfinished independent note"&&r.body.startsWith("## Continued writing"))'),'frozen original retry then newer writing saved against acknowledged revision');
+  await evaluate('document.querySelector(".notebook-note-body textarea").focus()');await call('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+  await until(()=>evaluate('document.querySelector(".notebook-document h2")?.textContent==="Continued writing"'),'Escape returns to formatted reading');
+  assert.equal(await evaluate('document.querySelector(".notebook-document")===document.activeElement'),true,'keyboard focus returns to document');
+  assert.equal(await evaluate('Object.values(localStorage).some(v=>v.includes("A paragraph written while"))'),false);
+  await writeFile(join(artifacts,'09-document-first-notes.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
+  assert.deepEqual(problems,[]);
+  console.log(JSON.stringify({notebookPassed:true,checks:['saved notes open formatted','Enter and Escape document editing','automatic save without a button','typing during pending automatic save','lost autosave response preserves newer writing','exact retry followed by next revision','growing document editor','compiled owner notebook','live passage note backlink','anchored thought and explained connection','Unicode Markdown inert text','retained creation UUID and exact lost-response retry','source context readback','two-device correction comparison','CAS lost acknowledgement retry','paged revision history','withdrawal filter','wrong-project refusal','independent note without source','searchable explained connection saved','mobile list to editor','CommonMark and GFM preview','inert script and unsafe links','wiki link to saved note','saved backlinks','actual saved note graph','inline source keeps editor and route','organization filters before pagination','quote lost acknowledgement exact retry','citation returns to source without leaving note','mobile source overlay','complete source/work catalog','metadata-only source retained','source filter and direct intake','private question create and reopen','question draft distinct from unfinished note','curated question evidence remains distinct','dark390px','no private localStorage'],artifacts}));
 }finally{
   socket?.close();const closed=new Promise(resolve=>chrome.once('close',resolve));chrome.kill();await closed;await preview.close();
   for(const item of pending.values()){clearTimeout(item.timeout);item.reject(new Error('Notebook review finished'));}

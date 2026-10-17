@@ -3,14 +3,14 @@ import {readingDefaults,readingFonts} from './readingPreferences.js';
 export default function ReadingAppearance({value,onChange}){
   const id=useId(),pick=(key,next)=>onChange({...value,[key]:next});
   return <div className="reading-appearance" aria-label="Reading appearance">
-    <div className="reading-size-controls" role="group" aria-label="Source text size">
-      <button aria-label="Decrease source text size" disabled={value.size<=14} onClick={()=>pick('size',value.size-2)}>Smaller</button>
-      <output aria-label="Source font size">{Math.round(value.size*value.zoom/100)}px</output>
-      <button aria-label="Increase source text size" disabled={value.size>=48} onClick={()=>pick('size',value.size+2)}>Larger</button>
-    </div>
     <details className="reading-appearance-panel" onKeyDown={event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();event.currentTarget.open=false;event.currentTarget.querySelector('summary').focus();}}}>
-      <summary><span>Text & page</span></summary>
+      <summary><span>Appearance</span></summary>
       <div className="reading-options" id={id}>
+        <div className="reading-size-controls" role="group" aria-label="Source text size">
+          <button aria-label="Decrease source text size" disabled={value.size<=14} onClick={()=>pick('size',value.size-2)}>Smaller</button>
+          <output aria-label="Source font size">{Math.round(value.size*value.zoom/100)}px</output>
+          <button aria-label="Increase source text size" disabled={value.size>=48} onClick={()=>pick('size',value.size+2)}>Larger</button>
+        </div>
         <label>Reading text size <output>{Math.round(value.size*value.zoom/100)}px</output><input aria-label="Reading text size" type="range" min="14" max="48" step="1" value={value.size} style={{'--range-progress':`${(value.size-14)/34*100}%`}} onChange={e=>pick('size',Number(e.target.value))}/></label>
         <fieldset><legend>Font</legend><div className="reading-choices">{[['serif','Georgia'],['book','Palatino'],['sans','System']].map(([font,label])=><button key={font} style={{fontFamily:readingFonts[font]}} aria-pressed={value.font===font} onClick={()=>pick('font',font)}>{label}</button>)}</div></fieldset>
         <label>Notes text size <output>{Math.round(value.notesSize*value.zoom/100)}px</output><input aria-label="Notes text size" type="range" min="12" max="32" step="1" value={value.notesSize} style={{'--range-progress':`${(value.notesSize-12)/20*100}%`}} onChange={e=>pick('notesSize',Number(e.target.value))}/></label>

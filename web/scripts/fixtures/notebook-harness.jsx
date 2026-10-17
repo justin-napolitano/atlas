@@ -67,7 +67,7 @@ const api={async post(path,value){if(path==='reading/annotations'){quoteRequests
   throw new Error('Unexpected synthetic notebook route');
 }};
 fixture.seed=()=>{const target=[...entries.values()].find(row=>row.state==='active');return record({id:'synthetic:linked-note',project_id:project,title:'A related idea',body:`A note linking back: [[${target.id}|original idea]]`,thought_type:'note',links:[],state:'active',revision:1,record_id:null,document_id:null,annotation_id:null});};
-fixture.remote=()=>{const row=[...entries.values()][0];record({...row,body:'Cloud thought from another device',revision:row.revision+1});};fixture.wrong=v=>{wrong=v;};fixture.normal=()=>{lose=false;loseEdit=false;};
+fixture.remote=()=>{const row=[...entries.values()][0];record({...row,body:'Cloud thought from another device',revision:row.revision+1});};fixture.wrong=v=>{wrong=v;};fixture.normal=()=>{lose=false;loseEdit=false;};fixture.loseCorrection=()=>{loseEdit=true;};
 function Harness(){const drafts=useRef(new Map()),[round,setRound]=useState(0),[initialQuery,setInitialQuery]=useState(''),[inlineSources,setInlineSources]=useState(false),[destination,setDestination]=useState(new URLSearchParams(location.search).has('margin')?'margin':'notes'),[compose,setCompose]=useState(''),[questionAnchor,setQuestionAnchor]=useState(null);fixture.inline=setInlineSources;fixture.drafts=drafts;fixture.remount=()=>setRound(v=>v+1);fixture.search=setInitialQuery;fixture.losePageMemory=()=>{drafts.current=new Map();setRound(v=>v+1);};
   const editor=useRef(null);if(!editor.current)editor.current=new PassageNoteEditor(api,()=>setRound(v=>v));
   const common={api,projectId:project,drafts,inlineSources,initialQuery,onOpenSource:(...args)=>{fixture.opened=args;}};

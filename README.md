@@ -11,6 +11,7 @@ The research should understand traditions in context before evaluating them. “
 - `docs/second-brain-roadmap.md` — Now / Next / Later: reliable reading and writing first, simple organization next, advanced research features later.
 - `docs/merge-issue-reconciliation.md` — merged workspace scope, integration checks, backlog closures, and unfinished research/release gates.
 - `docs/reader-first-workspace.md` — the Reader A interface connected to saved readings, margin notes, comparison, notebook, search, and sourced agent briefs.
+- `docs/features/document-first-workspace.md` — simplified reader controls, formatted notebook pages, direct editing, and automatic private writing saves.
 - `docs/notebook-writing-workspace.md` — independent project notebooks, a dedicated writing view, searchable explained connections, revision-aware saves, and Markdown export.
 - `docs/fluid-notebook-reading.md` — sources beside the notebook, exact quote insertion, contained citation navigation, and separate writing/reading-note views.
 - `docs/research-destinations.md` — direct Sources/Questions/Notes navigation, complete reference records, typed working questions, and fewer nested menus.
