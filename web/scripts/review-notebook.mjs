@@ -25,7 +25,9 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function until(fn,label){for(let i=0;i<100;i++){if(failure)throw failure;try{const value=await fn();if(value)return value;}catch{}await sleep(100);}throw new Error(`Timed out: ${label}`);}
 function call(method,params={}){return new Promise((resolve,reject)=>{const id=++serial,timeout=setTimeout(()=>{pending.delete(id);reject(new Error(`CDP timeout: ${method}`));},20000);pending.set(id,{resolve,reject,timeout});socket.send(JSON.stringify({id,method,params}));});}
 async function evaluate(expression){const result=await call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(result.exceptionDetails)throw new Error(JSON.stringify(result.exceptionDetails));return result.result.value;}
-async function click(text){await evaluate(`{const button=[...document.querySelectorAll('button')].find(button=>button.textContent===${JSON.stringify(text)});if(!button)throw new Error('Missing button');for(let p=button.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;button.click();}`);}
+async function click(text){await evaluate(`{const button=[...document.querySelectorAll('button')].find(button=>button.textContent===${JSON.stringify(text)});if(!button)throw new Error('Missing button '+${JSON.stringify(text)}+'; available '+[...document.querySelectorAll('.notebook-index button')].map(b=>b.textContent).join(', '));for(let p=button.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;button.click();}`);}
+// Selecting a collection is distinct from deliberately collapsing its folder.
+async function collection(text){const expanded=await evaluate(`[...document.querySelectorAll('.notebook-folder-toggle')].find(button=>button.textContent===${JSON.stringify(text)})?.getAttribute('aria-expanded')==='true'`);if(!expanded)await click(text);}
 async function fill(name,text){await evaluate(`document.querySelector('[name="${name}"]').focus()`);await call('Input.insertText',{text});}
 async function fillLabel(label,text){await evaluate(`{const labelNode=[...document.querySelectorAll('label')].find(label=>label.textContent.startsWith(${JSON.stringify(label)}));for(let p=labelNode.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;labelNode.querySelector('input,textarea').focus();}`);await call('Input.insertText',{text});}
 async function select(label,value){await evaluate(`{const input=[...document.querySelectorAll('label')].filter(label=>label.textContent.startsWith(${JSON.stringify(label)})).at(-1).querySelector('select');for(let p=input.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;input.value=${JSON.stringify(value)};input.dispatchEvent(new Event('change',{bubbles:true}));}`);}
@@ -40,6 +42,17 @@ try{
   await call('Runtime.enable');await call('Page.enable');await call('Page.navigate',{url:origin+'/scripts/fixtures/notebook-harness.html'});
   await until(()=>evaluate('document.body.textContent.includes("Original passage note")'),'notebook mounted');
   assert.equal(await evaluate('window.__notebookTest.requests.length'),0);
+  assert.equal(await evaluate('document.querySelector(".notebook-tools").open'),false,'recovery, trash and filters are secondary');
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".notebook-heading h2")).fontSize'),'16px');
+  assert.equal(await evaluate('document.querySelectorAll(".notebook-index article p,.notebook-index article small").length'),0,'explorer contains titles, not duplicate prose');
+  await evaluate('document.querySelector(".notebook-folder-toggle[aria-expanded=true]").click()');
+  assert.equal(await evaluate('document.querySelectorAll(".notebook-index article").length'),0,'folder collapses');
+  await collection('Everything');
+  assert.equal(await evaluate('document.querySelectorAll(".notebook-index article").length'),2,'folder expands to its real collection');
+  await evaluate('document.querySelector(".notebook-search input").focus()');await call('Input.insertText',{text:'Original passage'});
+  await until(()=>evaluate('document.querySelectorAll(".notebook-index article").length===1'),'live search without Apply filters');
+  await evaluate(`{const input=document.querySelector('.notebook-search input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'');input.dispatchEvent(new Event('input',{bubbles:true}));}`);
+  await until(()=>evaluate('document.querySelectorAll(".notebook-index article").length===2'),'clearing search restores collection');
   await writeFile(join(artifacts,'01-notebook-desktop.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
   await click('Original record note');assert.equal(await evaluate('window.__notebookTest.opened[2]'),'');
   await click('Original passage note');assert.equal(await evaluate('window.__notebookTest.opened[2]'),'synthetic:annotation');
@@ -98,6 +111,7 @@ try{
   assert.equal(await evaluate('[...window.__notebookTest.entries.values()][1].links[0].id'),'synthetic:source');
   await writeFile(join(artifacts,'02-independent-note-mobile.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
   await click('← All notes');assert.equal(await evaluate('getComputedStyle(document.querySelector(".notebook-writing")).display'),'none');
+  await until(()=>evaluate('[...document.querySelectorAll(".notebook-index .notebook-title")].some(b=>b.textContent==="Another unfinished thought")'),'saved note listed after reload');
   await click('Another unfinished thought');await until(()=>evaluate('document.querySelector(".research-notebook").classList.contains("is-editing")'),'mobile reopen independent note');
   await call('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
   await writeFile(join(artifacts,'03-independent-note-desktop.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
@@ -128,7 +142,7 @@ try{
   await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'mobile graph no overflow');
   await writeFile(join(artifacts,'06-note-graph-mobile.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
-  await click('← Back to notes');await click('Everything');
+  await click('← Back to notes');await collection('Everything');
   await call('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
   await click('Another unfinished thought');await until(()=>evaluate('!!document.querySelector(".notebook-note-body textarea")'),'current note');
   await evaluate('window.__notebookTest.inline(true)');
@@ -136,7 +150,7 @@ try{
   await evaluate(`{const input=document.querySelector('.notebook-note-body textarea');input.focus();input.setSelectionRange(input.value.length,input.value.length);window.__notebookEditor=input;void 0;}`);
   await call('Input.insertText',{text:'\n\nStill working on this sentence.'});
   const bodyBefore=await evaluate('document.querySelector(".notebook-note-body textarea").value'),urlBefore=await evaluate('location.href');
-  await click('Reading notes');await until(()=>evaluate('document.querySelectorAll(".notebook-index article").length===2'),'reading collection server filter');
+  await collection('Reading notes');await until(()=>evaluate('document.querySelectorAll(".notebook-index article").length===2'),'reading collection server filter');
   await click('Original passage note');await until(()=>evaluate('!!document.querySelector(".notebook-source-pane .reader-text mark.is-selected")'),'contained exact passage');
   assert.equal(await evaluate('location.href'),urlBefore);assert.equal(await evaluate('document.querySelector(".notebook-note-body textarea")===window.__notebookEditor'),true);
   assert.equal(await evaluate('document.querySelector(".notebook-note-body textarea").value'),bodyBefore);
@@ -211,7 +225,7 @@ try{
   await until(()=>evaluate('document.querySelector(".notebook-source-pane .saved-passage-note")?.textContent.includes("Original passage note")'),'margin undo restores original writing');
   assert.deepEqual(problems,[]);
   // Document-first notebook: direct editing, automatic saves, and typing during an uncertain save.
-  await click('Sample notes');await click('Everything');await click('Unfinished independent note');
+  await click('Sample notes');await collection('Everything');await click('Unfinished independent note');
   await until(()=>evaluate('!!document.querySelector(".notebook-document .notebook-markdown")'),'saved note opens formatted');
   assert.equal(await evaluate('getComputedStyle(document.querySelector(".notebook-note-body")).display'),'none');
   await evaluate('document.querySelector(".notebook-document").focus()');await call('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
@@ -234,7 +248,7 @@ try{
   assert.equal(await evaluate('Object.values(localStorage).some(v=>v.includes("A paragraph written while"))'),false);
   await writeFile(join(artifacts,'09-document-first-notes.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
   assert.deepEqual(problems,[]);
-  console.log(JSON.stringify({notebookPassed:true,checks:['saved notes open formatted','Enter and Escape document editing','automatic save without a button','typing during pending automatic save','lost autosave response preserves newer writing','exact retry followed by next revision','growing document editor','compiled owner notebook','live passage note backlink','anchored thought and explained connection','Unicode Markdown inert text','retained creation UUID and exact lost-response retry','source context readback','two-device correction comparison','CAS lost acknowledgement retry','paged revision history','withdrawal filter','wrong-project refusal','independent note without source','searchable explained connection saved','mobile list to editor','CommonMark and GFM preview','inert script and unsafe links','wiki link to saved note','saved backlinks','actual saved note graph','inline source keeps editor and route','organization filters before pagination','quote lost acknowledgement exact retry','citation returns to source without leaving note','mobile source overlay','complete source/work catalog','metadata-only source retained','source filter and direct intake','private question create and reopen','question draft distinct from unfinished note','curated question evidence remains distinct','dark390px','no private localStorage'],artifacts}));
+  console.log(JSON.stringify({notebookPassed:true,checks:['compact 16px header','title-only folder explorer','collapsed secondary tools','folder collapse and expand','live search without Apply filters','saved notes open formatted','Enter and Escape document editing','automatic save without a button','typing during pending automatic save','lost autosave response preserves newer writing','exact retry followed by next revision','growing document editor','compiled owner notebook','live passage note backlink','anchored thought and explained connection','Unicode Markdown inert text','retained creation UUID and exact lost-response retry','source context readback','two-device correction comparison','CAS lost acknowledgement retry','paged revision history','withdrawal filter','wrong-project refusal','independent note without source','searchable explained connection saved','mobile list to editor','CommonMark and GFM preview','inert script and unsafe links','wiki link to saved note','saved backlinks','actual saved note graph','inline source keeps editor and route','organization filters before pagination','quote lost acknowledgement exact retry','citation returns to source without leaving note','mobile source overlay','complete source/work catalog','metadata-only source retained','source filter and direct intake','private question create and reopen','question draft distinct from unfinished note','curated question evidence remains distinct','dark390px','no private localStorage'],artifacts}));
 }finally{
   socket?.close();const closed=new Promise(resolve=>chrome.once('close',resolve));chrome.kill();await closed;await preview.close();
   for(const item of pending.values()){clearTimeout(item.timeout);item.reject(new Error('Notebook review finished'));}

@@ -104,8 +104,8 @@
 .atlas-workspace .source-reader .reader-page{padding-right:20px}
 .atlas-workspace .source-reader .reader-margin{padding-left:18px}
 
-.atlas-workspace .research-notebook>header{margin-bottom:20px}
-.atlas-workspace .research-notebook>header h2,.atlas-workspace .reading-comparison h2,.atlas-workspace .reading-collection h2{font:500 30px/1.3 Georgia,serif;letter-spacing:-.5px}
+
+.atlas-workspace .reading-comparison h2,.atlas-workspace .reading-collection h2{font:500 30px/1.3 Georgia,serif;letter-spacing:-.5px}
 .atlas-workspace .notebook-filters{font-size:11px}
 .atlas-workspace .notebook-filters input,.atlas-workspace .notebook-filters select{font-size:12px;min-width:0}
 .atlas-workspace .reading-comparison>p,.atlas-workspace .reading-collection>p{font-size:12px;line-height:1.8;color:var(--muted)}
@@ -134,14 +134,14 @@
 .is-notebook .atlas-body>.atlas-library,.is-notebook .atlas-body>.pane-divider{display:none}
 .is-notebook .atlas-body>.atlas-reading-workspace{padding:32px clamp(24px,4vw,64px) 60px}
 .is-notebook.is-library-open .atlas-body>.atlas-library{display:flex;position:fixed;left:0;top:var(--atlas-header-height);bottom:0;width:min(310px,88vw);z-index:80;box-shadow:15px 0 40px #0002}
-.atlas-workspace .research-notebook>header h2{font-size:36px;margin-bottom:9px}
-.atlas-workspace .notebook-heading{margin-bottom:28px}
+
+
 .atlas-workspace .notebook-filters{font-size:12px}
 .atlas-workspace .notebook-filters input,.atlas-workspace .notebook-filters select{font-size:13px;min-height:40px}
 .notebook-heading .notebook-eyebrow{display:block;max-width:50ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .atlas-reading-context-actions button,.atlas-library .workspace-library-actions button{min-height:36px}
 @media(max-width:1100px){.atlas-header{gap:10px}.atlas-destinations{padding-left:10px}.atlas-destinations button{padding-inline:9px}.atlas-search-launch{min-width:160px}}
-@media(max-width:760px){.is-notebook .atlas-body>.atlas-reading-workspace{padding:24px 22px 45px}.atlas-workspace .research-notebook>header h2{font-size:30px}.notebook-heading .notebook-eyebrow{max-width:29ch}}
+@media(max-width:760px){.is-notebook .atlas-body>.atlas-reading-workspace{padding:24px 22px 45px}.notebook-heading .notebook-eyebrow{max-width:29ch}}
 @media(max-width:560px){.atlas-header .brand{display:none}.atlas-destinations{grid-column:2;grid-row:1;border:0;padding:0;gap:0;justify-content:start}.atlas-destinations button{font-size:11px;padding:8px 9px}.atlas-header .header-tools{gap:2px}.atlas-library-toggle{min-height:36px}.atlas-header{gap:7px 9px}.is-notebook .atlas-body>.atlas-reading-workspace{padding:18px 20px 40px}.notebook-heading .notebook-eyebrow{max-width:24ch}.notebook-heading>div{min-width:0}}
 
 /* Reading workspace: get to the source without an administrative preamble. */

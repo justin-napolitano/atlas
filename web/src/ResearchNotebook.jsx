@@ -19,8 +19,9 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
   const questionMode=mode==='questions', notebookRoot=useRef(null);
   const [rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[query,setQuery]=useState(initialQuery),[kind,setKind]=useState(questionMode?'question':''),[state,setState]=useState('active');
   const [selected,setSelected]=useState(null),[cloud,setCloud]=useState(null),[message,setMessage]=useState(''),[loading,setLoading]=useState(false),[history,setHistory]=useState(null);
-  const [collection,setCollection]=useState(initialCollection);
-  function chooseCollection(next){setCollection(next);setKind(questionMode?'question':'');load('',query,{thoughtType:questionMode?'question':'',noteState:state,itemScope:next});}
+  const [collection,setCollection]=useState(initialCollection),[folderOpen,setFolderOpen]=useState(true);
+  const searchQuery=useRef(initialQuery);
+  function chooseCollection(next){setFolderOpen(true);setCollection(next);setKind(questionMode?'question':'');load('',query,{thoughtType:questionMode?'question':'',noteState:state,itemScope:next});}
   const [sourceTarget,setSourceTarget]=useState(null),sourceTrigger=useRef(null);
   const localNoteEditor=useRef(null);if(!localNoteEditor.current)localNoteEditor.current=new PassageNoteEditor(api,changed);
   function openSource(recordId,targetProject=projectId,annotationId='',documentId='',readingPosition=null){if(targetProject!==projectId)return;if(inlineSources){sourceTrigger.current=window.document.activeElement;setShowGraph(false);setSourceTarget({recordId,annotationId,documentId,readingPosition});}else onOpenSource?.(recordId,targetProject,annotationId,documentId,...(readingPosition!=null?[readingPosition]:[]));}
@@ -29,7 +30,7 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
   const networkGeneration=useRef(0),networkBusy=useRef(false),quoteBusy=useRef(false);
   const graph=useMemo(()=>notebookGraph(network?.items || [],{complete:!network?.truncated}),[network]);
   const [link,setLink]=useState({kind:'record',id:'',rationale:''});
-  const [,render]=useState(0),generation=useRef(0),mounted=useRef(true),busy=useRef(false),selection=useRef(null),activeProject=useRef(projectId);
+  const [,render]=useState(0),generation=useRef(0),listGeneration=useRef(0),mounted=useRef(true),busy=useRef(false),selection=useRef(null),activeProject=useRef(projectId);
   activeProject.current=projectId;
   useSurfaceResume(()=>{load();if(network)loadNetwork();});
   const key=notebookKey(projectId,selected || (questionMode?'new-question':'new')),draft=drafts.current.get(key),quoteKey='notebook-quote:'+key,quoteDraft=drafts.current.get(quoteKey);
@@ -39,14 +40,15 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
   function remember(value,at=key){drafts.current.set(at,{...value,workspaceMode:mode});changed();render(v=>v+1);}
   function clear(at=key){drafts.current.delete(at);changed();render(v=>v+1);}
   async function load(after='',queryValue=query,{thoughtType=kind,noteState=state,itemScope=collection}={}){
-    const token=++generation.current;setLoading(true);setMessage('');
+    const token=++listGeneration.current;setLoading(true);setMessage('');
     try{const page=await api.request('notebook/items',{project_id:projectId,q:queryValue,thought_type:thoughtType,state:noteState,item_scope:itemScope,cursor:after,limit:25});
       if(!Array.isArray(page.items) || page.items.some(r=>r.project_id!==projectId))throw new Error('Notebook list did not match this project.');
-      if(mounted.current && token===generation.current){setRows(old=>after?[...old,...page.items]:page.items);setCursor(page.next_cursor);}}
-    catch(error){if(mounted.current && token===generation.current)setMessage(error.message);}
-    finally{if(mounted.current && token===generation.current)setLoading(false);}
+      if(mounted.current && token===listGeneration.current){setRows(old=>after?[...old,...page.items]:page.items);setCursor(page.next_cursor);}}
+    catch(error){if(mounted.current && token===listGeneration.current)setMessage(error.message);}
+    finally{if(mounted.current && token===listGeneration.current)setLoading(false);}
   }
-  useEffect(()=>{let active=true;mounted.current=true;selection.current=null;setQuery(initialQuery);setSelected(null);setCloud(null);setRows([]);setHistory(null);load('',initialQuery).then(()=>{if(active && initialEntryId)open({id:initialEntryId,item_kind:'entry'});});return()=>{active=false;mounted.current=false;generation.current++;};},[projectId,initialQuery,initialEntryId]);
+  useEffect(()=>{if(searchQuery.current===query)return;const timer=setTimeout(()=>{searchQuery.current=query;load('',query);},250);return()=>clearTimeout(timer);},[query,projectId,kind,state,collection]);
+  useEffect(()=>{let active=true;mounted.current=true;selection.current=null;setQuery(initialQuery);setSelected(null);setCloud(null);setRows([]);setHistory(null);load('',initialQuery).then(()=>{if(active && initialEntryId)open({id:initialEntryId,item_kind:'entry'});});return()=>{active=false;mounted.current=false;generation.current++;listGeneration.current++;};},[projectId,initialQuery,initialEntryId]);
   async function loadNetwork(){if(networkBusy.current)return;const token=++networkGeneration.current;networkBusy.current=true;setNetworkLoading(true);setNetworkError('');
     try{const result=await api.request('notebook/network',{project_id:projectId,limit:200});
       if(result.project_id!==projectId || !Array.isArray(result.items) || result.items.length>200 || typeof result.truncated!=='boolean' || result.items.some(row=>row.project_id!==projectId || typeof row.id!=='string' || typeof row.title!=='string' || typeof row.body!=='string' || !Array.isArray(row.links)))throw new Error('Notebook network did not match this project.');
@@ -56,7 +58,7 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
   useEffect(()=>{setNetwork(null);setNetworkError('');setShowGraph(false);setEditorMode('write');networkBusy.current=false;return()=>{networkGeneration.current++;};},[projectId]);
   function ensureNetwork(){if(!network)loadNetwork();}
   function insertWiki(id,title){const input=notebookRoot.current?.querySelector('.notebook-note-body textarea');const start=input?.selectionStart ?? value.body.length,end=input?.selectionEnd ?? start;const text=`[[${id}|${title.replaceAll(']','').replaceAll('|','')}]]`;edit({body:value.body.slice(0,start)+text+value.body.slice(end)});setEditorMode('write');requestAnimationFrame(()=>{input?.focus();input?.setSelectionRange(start+text.length,start+text.length);});}
-  function start(useAnchor){setCollection('writing');setShowGraph(false);setEditorMode('write');setState('active');setKind(questionMode?'question':'');setQuery('');load('','',{thoughtType:questionMode?'question':'',noteState:'active',itemScope:'writing'});setMobileEditor(true);onEntryChange('','');selection.current=null;setSelected(null);setCloud(null);setHistory(null);const at=notebookKey(projectId,questionMode?'new-question':'new');
+  function start(useAnchor){setFolderOpen(true);setCollection('writing');setShowGraph(false);setEditorMode('write');setState('active');setKind(questionMode?'question':'');setQuery('');load('','',{thoughtType:questionMode?'question':'',noteState:'active',itemScope:'writing'});setMobileEditor(true);onEntryChange('','');selection.current=null;setSelected(null);setCloud(null);setHistory(null);const at=notebookKey(projectId,questionMode?'new-question':'new');
     if(drafts.current.has(at)){setMessage('Your unfinished new thought is retained. Save it before starting another.');return;}
     const initial=newThought(useAnchor || {});if(questionMode){initial.thought_type='question';initial.body='## Scope\n\n## Working answer\n\n## What remains unclear\n\n## Evidence to investigate\n';}
     remember({value:initial,base:null,sent:null,saving:false,error:'',current:null},at);
@@ -139,28 +141,35 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
   function openTrashed(row){if(row.target_kind==='entry')open({id:row.target_id,item_kind:'entry'});else openSource(row.record_id,projectId,row.annotation_id,row.document_id);}
   if(cloud?.trashed&&!draft)return <section className="research-notebook" aria-label="Trashed notebook thought"><h2>This writing is in Trash</h2><p>Its original identity, source links, and revision history remain. Restore it to read or edit it here.</p><TrashAction api={api} projectId={projectId} kind="entry" id={cloud.id} revision={cloud.revision} trashRevision={cloud.trash_revision} trashed onChanged={trashChanged}/><button onClick={()=>{setSelected(null);selection.current=null;setCloud(null);onEntryChange('','');}}>Back to notes</button></section>;
   return <section ref={notebookRoot} className={`research-notebook${sourceTarget&&!showGraph?' has-source-pane':''}${mobileEditor?' is-editing':''}`} aria-label={questionMode?'Research questions':'Research notebook'} onKeyDown={event=>{if((event.metaKey || event.ctrlKey)&&event.key.toLowerCase()==='s'){event.preventDefault();if(draft && !locked && !draft.current && value?.title.trim() && value?.body.trim())save();}}}>
-    <header className="notebook-heading"><div><span className="notebook-eyebrow">{projectTitle || 'Your space to think'}</span><h2>{questionMode?'Questions':'Notes'}</h2><p>{questionMode?'Define the question. Develop a working answer. Follow the evidence.':'Start with an idea. Connect it when you’re ready.'}</p></div><div className="notebook-heading-actions"><button aria-pressed={showGraph} onClick={()=>{setShowGraph(value=>!value);ensureNetwork();}}>Note graph</button><button className="notebook-new" onClick={()=>start(null)}>{questionMode?'New question':'New note'}</button></div></header>
+    <header className="notebook-heading"><h2>{questionMode?'Questions':'Notes'}</h2><div className="notebook-heading-actions"><button aria-pressed={showGraph} onClick={()=>{setShowGraph(value=>!value);ensureNetwork();}}>Note graph</button><button className="notebook-new" onClick={()=>start(null)}>{questionMode?'New question':'New note'}</button></div></header>
     {networkError && <p role="alert">{networkError} <button onClick={loadNetwork}>Retry note connections</button></p>}
     {showGraph && <><button onClick={()=>setShowGraph(false)}>← Back to notes</button>{networkLoading && <p role="status">Loading saved note connections…</p>}{network && <NotebookNetwork network={network} graph={graph} selected={selected} onOpen={id=>open({id,item_kind:'entry'})} onOpenPassage={id=>follow({kind:'annotation',id})}/>}</>}
     <div className="notebook-with-source"><div className="notebook-layout" hidden={showGraph}>
-      <section className="notebook-index" aria-label="Notebook entries"><nav className="notebook-collections" aria-label="Notebook collections">{(questionMode?[['writing','My questions']]:[['writing','My writing'],['reading','Reading notes'],['all','Everything']]).map(([id,label])=><button key={id} aria-pressed={collection===id} onClick={()=>chooseCollection(id)}>{label}</button>)}</nav>
-        <WritingRecovery api={api} projectId={projectId} onRecover={recoverWriting}/>
-        <PrivateTrash api={api} projectId={projectId} onOpen={openTrashed} onChanged={trashChanged}/>
-        <form className="notebook-filters" onSubmit={event=>{event.preventDefault();load();}}><label>Search notebook<input value={query} maxLength={300} onChange={event=>setQuery(event.target.value)} placeholder="Find a note…"/></label>
-          <details><summary>Filter notes</summary><label>Thought type<select disabled={questionMode} value={kind} onChange={event=>setKind(event.target.value)}><option value="">All thoughts and reading notes</option>{(questionMode?['question']:[...thoughtTypes,'passage_note','record_note']).map(type=><option key={type} value={type}>{thoughtLabel(type)}</option>)}</select></label>
-          <label>State<select value={state} onChange={event=>setState(event.target.value)}><option value="active">Active</option><option value="withdrawn">Withdrawn thoughts</option></select></label></details><button disabled={loading}>{loading?'Finding…':'Apply filters'}</button></form>
-        <div className="notebook-index-label"><h3>{questionMode?'Your questions':'Your notes'}</h3><small>{rows.length}{cursor?'+':''}</small></div>
-        {!rows.length && !loading && <p className="notebook-index-empty">No matching entries. New notes will appear here after saving.</p>}
-        {rows.map(row=><article key={`${row.item_kind}:${row.id}`} className={row.id===selected?'is-selected':''}><small>{thoughtLabel(row.thought_type)}</small><button className="notebook-title" aria-current={row.id===selected?'page':undefined} onClick={()=>open(row)}>{row.title}</button><p dir="auto">{row.body.slice(0,150)}{row.body.length>150?'…':''}</p>
-          {['passage_note','record_note'].includes(row.item_kind) && <small>From your reading · opens alongside</small>}
-        </article>)}
+      <section className="notebook-index" aria-label="Notebook entries">
+        <form className="notebook-filters notebook-search" role="search" aria-label="Search notebook" onSubmit={event=>{event.preventDefault();load();}}><label><span className="sr-only">Search notebook</span><input type="search" value={query} maxLength={300} onChange={event=>{setQuery(event.target.value);setFolderOpen(true);const folder=notebookRoot.current?.querySelector('.notebook-project-folder');if(folder)folder.open=true;}} placeholder="Find a note…"/></label></form>
+        <details className="notebook-project-folder" open><summary title={projectTitle || 'Notebook'}><NotebookIcon folder/><span className="notebook-file-title">{projectTitle || 'Notebook'}</span></summary>
+          <nav className="notebook-collections" aria-label="Notebook collections">{(questionMode?[['writing','My questions']]:[['writing','My writing'],['reading','Reading notes'],['all','Everything']]).map(([id,label])=><div className="notebook-folder" key={id}>
+            <button className="notebook-folder-toggle" aria-pressed={collection===id} aria-expanded={collection===id&&folderOpen} onClick={()=>{if(collection===id)setFolderOpen(!folderOpen);else chooseCollection(id);}}><span className="notebook-chevron" aria-hidden="true" data-expanded={collection===id&&folderOpen}/><NotebookIcon folder/>{label}</button>
+            {collection===id&&folderOpen&&<div className="notebook-folder-notes">
+              {!rows.length&&!loading&&<p className="notebook-index-empty">No matching entries.</p>}
+              {loading&&!rows.length&&<p className="notebook-index-empty" role="status">Loading…</p>}
+              {rows.map(row=><article key={`${row.item_kind}:${row.id}`} className={row.id===selected?'is-selected':''}><button className="notebook-title" title={`${row.title} · ${thoughtLabel(row.thought_type)}`} aria-current={row.id===selected?'page':undefined} onClick={()=>open(row)}><NotebookIcon/><span className="notebook-file-title">{row.title}</span></button></article>)}
+              {cursor&&<button disabled={loading} onClick={()=>load(cursor)}>More notes</button>}
+            </div>}
+          </div>)}</nav>
+        </details>
+        <details className="notebook-tools"><summary>Notebook tools</summary>
+          <WritingRecovery api={api} projectId={projectId} onRecover={recoverWriting}/>
+          <PrivateTrash api={api} projectId={projectId} onOpen={openTrashed} onChanged={trashChanged}/>
+          <form className="notebook-filters" onSubmit={event=>{event.preventDefault();load();}}><details><summary>Filter notes</summary><label>Thought type<select disabled={questionMode} value={kind} onChange={event=>setKind(event.target.value)}><option value="">All thoughts and reading notes</option>{(questionMode?['question']:[...thoughtTypes,'passage_note','record_note']).map(type=><option key={type} value={type}>{thoughtLabel(type)}</option>)}</select></label>
+            <label>State<select value={state} onChange={event=>setState(event.target.value)}><option value="active">Active</option><option value="withdrawn">Withdrawn thoughts</option></select></label></details><button disabled={loading}>{loading?'Finding…':'Apply filters'}</button></form>
+        </details>
         {questionMode && <section className="notebook-research-questions"><h3>From the research graph</h3><p>Existing research questions retain their recorded review status.</p>{researchQuestionError && <p role="alert">{researchQuestionError}</p>}{researchQuestions.map(row=><article key={row.id}><small>{row.review_state || 'Review not stated'}</small><button className="notebook-title" onClick={()=>openSource(row.id,projectId)}>{row.title}</button><p>{row.summary}</p></article>)}{!researchQuestions.length&&!researchQuestionError&&<p>No graph questions loaded.</p>}{moreResearchQuestions&&<button onClick={moreResearchQuestions}>More graph questions</button>}</section>}
-        {cursor && <button disabled={loading} onClick={()=>load(cursor)}>More notebook entries</button>}
       </section>
       <section className="notebook-writing" aria-label="Notebook editor">
         <button className="notebook-mobile-back" onClick={()=>setMobileEditor(false)}>← All notes</button>
         <p className="notebook-message" role="status">{message}</p>
-        {!value && <div className="notebook-welcome"><span className="notebook-eyebrow">An open page</span><h3>{questionMode?'What do you want to understand?':'What’s on your mind?'}</h3><p>{questionMode?'Keep your scope, working answer, evidence, and open questions together. Your answer can change as you read.':'A question, a loose idea, a connection you haven’t figured out yet. This is your notebook; a source is optional.'}</p><button className="notebook-new" onClick={()=>start(null)}>{questionMode?'Write your first question':'Write your first note'}</button>{anchor?.record_id && <button onClick={()=>start(anchor)}>New thought at this passage</button>}</div>}
+        {!value && <div className="notebook-welcome"><p>{questionMode?'Choose a question or start a new one.':'Choose a note or start writing.'}</p><button className="notebook-new" onClick={()=>start(null)}>{questionMode?'Write your first question':'Write your first note'}</button>{anchor?.record_id && <button onClick={()=>start(anchor)}>New thought at this passage</button>}</div>}
         {value && <>
           <div className="notebook-editor-toolbar"><span role="status">{draft?.current?'Compare revisions':draft?.saving?'Saving…':draft?.sent?'Save needs confirmation':draft?(!value.title.trim()?'Add a title to save':!value.body.trim()?'Start writing to save':draft.autoSave&&!draft.error&&value.thought_type!=='source_claim'&&value.state==='active'?'Saving shortly…':'Unsaved changes'):`Saved · revision ${cloud?.revision}`}</span><button className="notebook-save" disabled={!draft || draft.saving || !!draft.current || !!quoteDraft || !value.title.trim() || !value.body.trim()} onClick={()=>save()}>{saveLabel}</button></div>
           {draft&&(!draft.autoSave || ['error','conflict'].includes(recovery.status.phase))&&<RecoveryStatus {...recovery}/>}
@@ -191,3 +200,5 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
     </div>{sourceTarget && <NotebookSourcePane hidden={showGraph} api={api} projectId={projectId} target={sourceTarget} drafts={drafts} changed={changed} noteEditor={noteEditor || localNoteEditor.current} onNavigate={openSource} onOpenNotebook={row=>open({...row,item_kind:'entry'})} onClose={()=>{setSourceTarget(null);requestAnimationFrame(()=>{const target=sourceTrigger.current?.isConnected?sourceTrigger.current:notebookRoot.current?.querySelector('.notebook-note-title input,.notebook-note-title textarea');target?.focus({preventScroll:true});});}} onExpand={onOpenSource} onQuote={value&&!locked?input=>insertQuote(input):undefined}/>}</div>
   </section>;
 }
+
+function NotebookIcon({folder=false}){return <svg className="notebook-file-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">{folder?<path d="M3 6h7l2 2h9v11H3z"/>:<><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h4M9 12h6M9 16h6"/></>}</svg>;}
