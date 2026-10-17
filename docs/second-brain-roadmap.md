@@ -4,6 +4,15 @@ The product combines independent writing and project organization with a source-
 
 Tracking plan: [#134](https://github.com/justin-napolitano/islam-research/issues/134). This is a focused execution plan under the existing [product roadmap #84](https://github.com/justin-napolitano/islam-research/issues/84), notebook epic #87, and ownership/recovery epic #91. These are planned improvements, not claims that the current app already supplies them.
 
+## Product direction clarified on 2026-10-17
+
+The owner wants a research library with a first-class reader, sources, annotation,
+commentary and independent notes. A simpler Obsidian-like notebook supports that
+experience. See [research-library-vision.md](research-library-vision.md) for the
+source/version/notes contract and honest full-text/hosting limits. The compact
+explorer is #165; durable user-created folders remain #139. The first proposed
+general-paper vertical slice is [#166: arXiv paper reading and review](https://github.com/justin-napolitano/islam-research/issues/166), under universal intake #88/#100 and reusable identities #101. No new full-text provider is implemented by this UI pass.
+
 ## Now: make the core reading loop dependable
 
 The first-release focus is **add a source → read → highlight → write → link → find it again**. Keep exact citations, explicit personal read status, ordinary search, simple source/backlink navigation, and basic Markdown export. This is the owner-approved scope reduction after the merge audit; advanced features remain open for later delivery.

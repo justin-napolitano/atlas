@@ -380,7 +380,11 @@ try {
   assert.equal(await evaluate('!!document.querySelector("#atlas-library .workspace-tools")'),false,'occasional tools leave the sidebar');
   assert.equal(await evaluate('!!document.querySelector(".atlas-project-branch .atlas-primary-nav")'),true,'project contains its research navigation');
   await evaluate(`{window.__retainedReader=document.querySelector('.reader-text');const range=document.createRange();range.selectNodeContents(window.__retainedReader);range.setEnd(range.startContainer,0);const node=window.__retainedReader.querySelector('span')?.firstChild || window.__retainedReader.firstChild;const walker=document.createTreeWalker(window.__retainedReader,NodeFilter.SHOW_TEXT);const first=walker.nextNode();range.setStart(first,0);range.setEnd(first,2);getSelection().removeAllRanges();getSelection().addRange(range);document.querySelector('#workspace-view').scrollTop=100;window.__readingTabScroll=document.querySelector('#workspace-view').scrollTop;}`);
-  await click('Notes');await until(()=>evaluate('!!document.querySelector(".notebook-heading")'),'notes workspace');await click('New note');
+  await click('Notes');await until(()=>evaluate('!!document.querySelector(".notebook-heading")'),'notes workspace');
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".notebook-heading h2")).fontSize'),'16px','full workspace preserves compact explorer heading');
+  assert.equal(await evaluate('document.querySelector(".notebook-tools").open'),false);
+  await writeFile(join(artifacts,'compact-notebook-full-app.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
+  await click('New note');
   await evaluate('document.querySelector(".notebook-note-title input").focus()');await call('Input.insertText',{text:'Synthetic working note'});
   await evaluate('document.querySelector(".notebook-note-body textarea").focus()');await call('Input.insertText',{text:'An unfinished thought kept while reading.'});
   await evaluate('window.__retainedNote=document.querySelector(".notebook-note-title input");true');

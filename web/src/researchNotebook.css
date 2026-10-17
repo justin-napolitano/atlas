@@ -52,3 +52,43 @@
 
 .research-notebook .notebook-page-footer { flex-wrap:wrap; gap:8px 16px; }
 .research-notebook .notebook-page-footer .notebook-editor-modes { margin:0; }
+
+/* Compact notebook explorer: project, saved collections, note titles. */
+.research-notebook .notebook-heading { border:0; padding:0; margin:0 0 12px; min-height:36px; gap:12px; }
+.research-notebook .notebook-heading h2 { font:600 16px/1.5 ui-sans-serif,system-ui,sans-serif; letter-spacing:0; margin:0; }
+.research-notebook .notebook-heading-actions { flex-direction:row; align-items:center; gap:4px; }
+.research-notebook .notebook-heading-actions button { min-height:36px; font-size:12px; padding:6px 10px; }
+.research-notebook .notebook-layout { grid-template-columns:minmax(180px,220px) minmax(0,1fr); }
+.research-notebook .notebook-index { padding-inline-end:14px; }
+.research-notebook .notebook-search { margin-bottom:12px; }
+.research-notebook .notebook-search label { margin:0; }
+.research-notebook .notebook-search input { min-height:36px; font-size:13px; padding:6px 9px; }
+.research-notebook .notebook-project-folder > summary { display:flex; gap:6px; align-items:center; list-style:none; cursor:pointer; font:500 12px/1.5 ui-sans-serif,system-ui,sans-serif; padding:7px 2px; min-height:32px; overflow-wrap:anywhere; }
+.research-notebook .notebook-project-folder > summary::-webkit-details-marker { display:none; }
+.research-notebook .notebook-project-folder > summary::before { content:'›'; width:10px; flex-shrink:0; color:var(--notebook-muted); }
+.research-notebook .notebook-project-folder[open] > summary::before { content:'⌄'; }
+.research-notebook .notebook-collections { display:block; padding:2px 0; margin:0; border:0; }
+.research-notebook .notebook-folder-toggle { display:flex; align-items:center; gap:6px; width:100%; text-align:start; font:400 13px/1.4 ui-sans-serif,system-ui,sans-serif; padding:6px 8px; min-height:34px; }
+.research-notebook .notebook-folder-toggle[aria-pressed=true] { color:var(--ink); background:var(--accent-wash); }
+.notebook-chevron { width:10px; color:var(--notebook-muted); flex-shrink:0; }
+.notebook-file-icon { flex-shrink:0; color:var(--notebook-muted); }
+.research-notebook .notebook-folder-notes { padding:2px 0 6px 16px; }
+.research-notebook .notebook-index article { padding:0; margin:0; border:0; border-radius:3px; }
+.research-notebook .notebook-index article.is-selected { background:var(--accent-wash); box-shadow:inset 2px 0 var(--accent); }
+.research-notebook .notebook-index .notebook-title { display:flex; align-items:center; gap:7px; min-height:34px; padding:6px 8px; font:400 13px/1.5 ui-sans-serif,system-ui,sans-serif; text-decoration:none; }
+.research-notebook .notebook-index .notebook-title svg { width:14px; height:14px; }
+.research-notebook .notebook-index-empty { font:12px/1.5 ui-sans-serif,system-ui,sans-serif; padding:6px 8px; margin:0; }
+.research-notebook .notebook-tools { margin-top:16px; border-top:1px solid var(--notebook-rule); padding-top:8px; font:12px/1.5 ui-sans-serif,system-ui,sans-serif; }
+.research-notebook .notebook-tools > summary { cursor:pointer; padding:8px; color:var(--notebook-muted); }
+.research-notebook .notebook-tools .unfinished-writing,.research-notebook .notebook-tools .private-trash { border:0; padding:4px 0; }
+.research-notebook .notebook-tools > .notebook-filters { margin-top:8px; }
+.research-notebook .notebook-welcome { margin:clamp(40px,12vh,110px) auto; max-width:40ch; text-align:center; }
+.research-notebook .notebook-welcome p { font:14px/1.6 ui-sans-serif,system-ui,sans-serif; margin:0 0 12px; color:var(--notebook-muted); }
+.research-notebook .notebook-welcome .notebook-new { font-size:13px; }
+@media(max-width:760px) { .research-notebook .notebook-layout { display:block; } .research-notebook .notebook-index { padding-inline-end:0; } }
+@media(min-width:761px) and (max-width:1200px) { .research-notebook.has-source-pane .notebook-layout { grid-template-columns:minmax(0,1fr); } }
+
+.notebook-chevron::before { content:'›'; }
+.notebook-chevron[data-expanded=true]::before { content:'⌄'; }
+
+.notebook-file-title { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

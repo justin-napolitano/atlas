@@ -1,5 +1,7 @@
 # Reading and writing as equal destinations
 
+Current reading/editing and automatic-save behavior is described in [document-first-workspace.md](features/document-first-workspace.md). The later compact explorer replaces the original prose-heavy notebook index with project/collection folders and note titles; recovery, Trash, and advanced filters remain in Notebook tools.
+
 The owner workspace has two persistent destinations: **Reading** and **Notebook**. The notebook is a project-level writing surface that opens directly with `/workspace.html?project=PROJECT_ID&view=notebook`. It does not require a source or a reading selection. The existing source-based annotation and personal-notebook authorities remain separate.
 
 ## Flow
