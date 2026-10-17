@@ -56,7 +56,7 @@ UPDATE_COLUMNS = {
     "notebook_entries": "thought_type title body links state revision changed_by",
     "notebook_drafts": "value state revision changed_by",
     "note_trash": "target_revision state revision changed_by",
-    "reading_drafts": "body mark_style state revision changed_by",
+    "reading_drafts": "body mark_style state capture_kind revision changed_by",
     "verse_materials": "attribution language_tag source_scope assertion_mode assertion_text reading_note period_note tradition_note context_basis rationale state revision changed_by",
     "reading_desks": "record_id document_id annotation_id start_pos end_pos changed_by revision",
     "records": "title summary attributes changed_by revision",

@@ -72,6 +72,17 @@ class ReadingDraftTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 with connection.transaction():self.save(connection,draft_uuid=str(uuid.uuid4()),context_kind='annotation',annotation_id=self.annotation['id'],base_revision=999)
 
+    def test_pending_capture_can_change_classification_without_relocating_or_duplicating(self):
+        with self.db.connect(self.owner_dsn) as connection:
+            first=self.save(connection)
+            second=self.save(connection,expected_revision=1,capture_kind='term_candidate')
+            self.assertEqual(second['id'],first['id'])
+            self.assertEqual(second['capture_kind'],'term_candidate')
+            self.assertEqual(second['exact'],first['exact'])
+            self.assertEqual(len(self.store.history(connection,self.project,first['id'],None,25)),2)
+            with self.assertRaises(ValueError):
+                self.save(connection,draft_uuid=str(uuid.uuid4()),context_kind='annotation',annotation_id=self.annotation['id'],base_revision=1,capture_kind='term_candidate')
+
     def test_source_baseline_and_selector_are_immutable_and_project_isolated(self):
         with self.db.connect(self.owner_dsn) as connection:
             first=self.save(connection)

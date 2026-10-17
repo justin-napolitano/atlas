@@ -61,15 +61,15 @@ def save(connection,*,draft_uuid,project_id,record_id,context_kind,document_id,a
             baseline=connection.execute("SELECT 1 FROM research.personal_state_revisions WHERE record_id=%s AND revision=%s AND snapshot->>'project_id'=%s",(record_id,base_revision,project_id)).fetchone()
             if baseline is None:raise ValueError('Record-note baseline revision is unavailable')
         current=get(connection,project_id,draft_id)
-        if current and any(current[key]!=values[key] for key in IDENTITY): raise ValueError('A draft identity cannot move to another source or baseline')
+        if current and any(current[key]!=values[key] for key in IDENTITY if key!='capture_kind' or context_kind!='capture'): raise ValueError('A draft identity cannot move to another source or baseline')
         fields=(*IDENTITY,'body','mark_style','state','changed_by')
         complete={**values,'body':body,'mark_style':mark_style,'state':state,'changed_by':actor}
         if expected_revision==0:
             from psycopg import sql
             row=connection.execute(sql.SQL('INSERT INTO research.reading_drafts (id,{}) VALUES (%s,{}) ON CONFLICT(id) DO NOTHING RETURNING id').format(sql.SQL(',').join(map(sql.Identifier,fields)),sql.SQL(',').join(sql.Placeholder() for _ in fields)),(draft_id,*(complete[key] for key in fields))).fetchone()
         else:
-            row=connection.execute('''UPDATE research.reading_drafts SET body=%s,mark_style=%s,state=%s,changed_by=%s,revision=revision+1
-                WHERE project_id=%s AND id=%s AND revision=%s RETURNING id''',(body,mark_style,state,actor,project_id,draft_id,expected_revision)).fetchone()
+            row=connection.execute('''UPDATE research.reading_drafts SET body=%s,mark_style=%s,state=%s,capture_kind=%s,changed_by=%s,revision=revision+1
+                WHERE project_id=%s AND id=%s AND revision=%s RETURNING id''',(body,mark_style,state,capture_kind,actor,project_id,draft_id,expected_revision)).fetchone()
         if row: return get(connection,project_id,draft_id)
         current=get(connection,project_id,draft_id)
         if current and current['revision']==expected_revision+1 and all(current[key]==value for key,value in complete.items()):return current
