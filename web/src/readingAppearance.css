@@ -44,3 +44,5 @@
 .source-reader .reading-page-steps button { font-size:14px; padding:6px 10px; border:1px solid var(--rule); }
 .source-reader .reader-selection-hint { font-size:12px; }
 @media(max-width:600px) { .reading-appearance-panel > summary span { display:none; } .reading-options { position:fixed; top:100px; inset-inline:12px; width:auto; max-height:calc(100dvh - 125px); } .source-reader .reader-text { padding-inline-end:0; } }
+/* Resolve each preserved paragraph independently in mixed Arabic/English text. */
+.source-reader .reader-text { unicode-bidi:plaintext; }
