@@ -2,6 +2,15 @@
 
 First manual vertical slice of #88 / #100. It uses existing private source/work/edition records and immutable reading excerpts. It does not change the canonical RDF graph or establish the shared-source architecture in #101.
 
+## Product direction update
+
+This document records the implemented manual fallback. The planned default is
+[seamless catalog reading](seamless-open-catalog.md): find a source, open it, and
+write notes without a mandatory import. Metadata resolution and any permitted
+representation storage should happen behind the scenes. Existing manual receipt,
+identity, privacy and version checks remain valid; direct provider reading requires
+new adapter/identity work rather than bypassing them.
+
 ## Owner workflow
 
 1. Enter a title, URL and/or identifier, responsible people, publication/date, language, access date, edition/version, source role, and the reason for adding it. Unknown bibliographic fields stay unknown. URLs/identifiers are recorded without fetching or resolving their metadata.

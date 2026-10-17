@@ -13,6 +13,13 @@ source/version/notes contract and honest full-text/hosting limits. The compact
 explorer is #165; durable user-created folders remain #139. The first proposed
 general-paper vertical slice is [#166: arXiv paper reading and review](https://github.com/justin-napolitano/islam-research/issues/166), under universal intake #88/#100 and reusable identities #101. No new full-text provider is implemented by this UI pass.
 
+The later catalog clarification makes **search connected open catalogs → open →
+read → write a note** the default target. Manual source intake remains a fallback;
+first-note source/version association and permitted representation caching should
+be automatic. See [seamless-open-catalog.md](seamless-open-catalog.md). Gutenberg,
+Open Library and arXiv share this catalog contract; no live adapters are claimed by
+this planning update. Track the shared catalog in #168, Gutenberg direct reading in #170, and Open Library discovery/availability in #169.
+
 ## Now: make the core reading loop dependable
 
 The first-release focus is **add a source → read → highlight → write → link → find it again**. Keep exact citations, explicit personal read status, ordinary search, simple source/backlink navigation, and basic Markdown export. This is the owner-approved scope reduction after the merge audit; advanced features remain open for later delivery.

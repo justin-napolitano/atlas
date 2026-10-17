@@ -7,7 +7,7 @@ the notebook is one way of working with the library.
 
 ## Everyday interface
 
-- **Library:** find or add a source, choose the edition/version, resume reading.
+- **Library:** search connected open catalogs, open a readable edition directly, resume reading. Saving to a personal collection is optional.
 - **Reader:** read comfortably; select a passage to annotate, inspect references,
   add commentary, or write a free thought near the current position.
 - **Notes:** independent Markdown pages and questions, organized within projects,
@@ -18,6 +18,17 @@ the notebook is one way of working with the library.
 Keep the default interface quiet: folders, titles, the open document, and an optional
 notes/context sidebar. Source attribution, review scope, version history, recovery
 and publication controls stay accessible. Simplicity must not erase their meaning.
+
+## Seamless catalog before manual intake
+
+Search → open → read → write a note is the default flow. Open Library,
+Project Gutenberg, arXiv and later verified open-text providers belong behind
+one catalog. No mandatory import or project-add wizard precedes reading.
+The first saved note can establish its source/version association automatically;
+provider metadata resolution and permitted caching happen behind the scenes.
+Manual import remains useful for personal files, blocked sources and unsupported
+representations. See [seamless-open-catalog.md](seamless-open-catalog.md) for the
+catalog, source identity, annotation and provider contracts.
 
 ## Universal intake contract
 
@@ -36,7 +47,7 @@ or scholarly-reviewed merely because an import or agent run completed.
 
 ## First general-paper workflow: arXiv
 
-Paste an arXiv link → resolve the work and requested version → open a supported
+Find a paper in the catalog or paste an arXiv link → resolve its requested version → open a supported
 available representation → read and annotate → write a personal review → follow
 references → reopen notes at the exact source version.
 
@@ -67,8 +78,7 @@ not the codebase for this project. Open-source release licensing/setup remains #
 - #165 simplifies the existing notebook explorer using project roots and saved
   collection views. It does not implement arbitrary nested notebook folders.
 - #164 covers one contextual notes/reference sidebar.
-- Use the arXiv vertical slice to prove a complete general-paper reading flow before
-  expanding providers and document formats.
+- Prove direct catalog-to-note reading with Gutenberg and shared Open Library discovery/availability; #166 separately proves versioned papers. Expand adapters through the same catalog contract.
 - Current source reading is based on saved bounded excerpts. A compact notebook
   does not constitute full PDF/EPUB/arXiv support. The local preview is local-only;
   hosted identity, database operations, backup and cross-device validation remain
