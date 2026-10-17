@@ -214,8 +214,9 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
     </form></details>;
   return <section className="source-reader" style={readingStyle(appearance)} data-reading-theme={appearance.theme} data-reading-flow={appearance.mode} aria-labelledby={headingId} aria-busy={loadingSnapshots || (!!documentId && !document)}>
     <div className="reader-heading-row"><h3 id={headingId}>Source text</h3><div className="reader-view-actions"><ReadingAppearance value={appearance} onChange={changeAppearance}/>
-      {onFocusChange && <button className="reader-focus" aria-pressed={focused} onClick={()=>onFocusChange(!focused)}>{focused ? 'Show library' : 'Focus on reading'}</button>}
-      <button className="reader-margin-toggle" aria-expanded={marginOpen} aria-controls={marginId} onClick={()=>setMarginOpen(!marginOpen)}>{marginOpen ? 'Hide margin' : 'Show margin'}</button>
+      <button className="reader-annotation-toggle" aria-expanded={!!selectionPreview || annotationTools} onClick={()=>setAnnotationTools(!annotationTools)}>Annotate <span>↗</span></button>
+      {onFocusChange && <button className="reader-focus" aria-pressed={focused} onClick={()=>onFocusChange(!focused)}>{focused ? 'Show library' : 'Hide library'}</button>}
+      <button className="reader-margin-toggle" aria-expanded={marginOpen} aria-controls={marginId} onClick={()=>setMarginOpen(!marginOpen)}>{marginOpen ? 'Hide notes' : 'Notes'}</button>
     </div></div>
     {loadingSnapshots && !document && <p className="reader-help" role="status">Opening your reading…</p>}
     {snapshots.length>0 && <div className="reader-edition-bar"><details className="reader-edition-picker"><summary>{readingVersionLabel(document || snapshots.find(row=>row.id===documentId))}</summary><label className="reader-version">Reading version<select value={documentId} onChange={e=>{requestedAnchor.current=null;setDocumentId(e.target.value);bookmark('',e.target.value);}}>{snapshots.map(d=><option key={d.id} value={d.id}>{d.edition} · {d.locator} · {d.text_sha256.slice(0,8)}{drafts.current.has(`capture:${d.id}`) ? ' · draft' : ''}</option>)}</select></label></details>{cursor && <button onClick={moreSnapshots}>More saved excerpts</button>}</div>}
@@ -224,7 +225,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
       {marked.unanchored.length>0 && <p className="reader-message" role="status">{marked.unanchored.length} saved note(s) need anchor review. Their marks were not moved to other text.</p>}
       {annotations.some(row=>!belongs(row)) && <p className="reader-message" role="status">A returned note did not match this source version and was not displayed. Refresh saved notes to retry.</p>}
       <ResizablePanes className={`reader-desk${marginOpen ? '' : ' is-margin-collapsed'}`} storageKey="research:reader-margin-width-v2" minWidth={50} maxWidth={82} defaultWidth={72} label="Resize source text and margin notes">
-        <div className="reader-page"><div className="reader-page-topline"><span>LOCATED EXCERPT</span><button className="reader-annotation-toggle" aria-expanded={!!selectionPreview || annotationTools} onClick={()=>setAnnotationTools(!annotationTools)}>Annotate <span>↗</span></button></div>
+        <div className="reader-page">
           <div className="reader-toolbar" role="group" aria-label="Passage annotation tools" hidden={!selectionPreview && !annotationTools}>
             <span className="reader-selection-label">{selectionPreview ? `${Array.from(selectionPreview.exact).length} characters selected` : 'Select a word or passage'}</span>
             <button className="reader-select" onPointerDown={e=>e.preventDefault()} onClick={()=>select('highlight')} disabled={capture?.saving}>Annotate selected text</button>
@@ -250,7 +251,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
         <aside ref={margin} id={marginId} hidden={!marginOpen} className="reader-margin" aria-label="Passage margin notes" onKeyDown={event=>{if(!event.defaultPrevented && event.key==='Escape' && window.matchMedia('(max-width: 900px)').matches){event.preventDefault();event.stopPropagation();setMarginOpen(false);textRoot.current?.closest('.source-reader')?.querySelector('.reader-margin-toggle')?.focus();}}}>
           <div className="reader-margin-heading"><h4>Notes</h4><button className="reader-refresh" onClick={refreshAnnotations}>Refresh saved notes</button><button className="reader-margin-close" aria-label="Close margin notes" onClick={()=>setMarginOpen(false)}>×</button></div>
           <LocationMarginNotes key={document.id} api={api} record={record} document={document} textRoot={textRoot} drafts={drafts} changed={changed} composerRef={freeComposer} onOpenNotebook={onOpenNotebook} navigate={navigate} onLocations={setLocationNotes} activeId={activeLocation}/>
-          {!capture && !writingNotes.length && <p className="reader-margin-empty">Select a phrase when you want a note attached to an exact quotation.</p>}
+
           {!capture && <details className="reader-recovery-disclosure" open={recoveryOpen || pendingRecovery} onToggle={event=>setRecoveryOpen(event.currentTarget.open)}><summary>Recover unfinished writing</summary><RecoverableDraft key={document.id+':capture-finder'} api={api} projectId={record.project_id} recordId={record.id} contextKind="capture" document={document} body="" drafts={drafts} changed={changed} onRecover={recoverCapture}/></details>}
           {capture && <div className="reader-capture"><h4>In the margin</h4><blockquote dir="auto">{capture.exact}</blockquote>
             <label>Passage mark<select value={capture.mark_style || 'highlight'} disabled={capture.saving || !!capture.submitted} onChange={e=>remember(captureKey,{...capture,mark_style:e.target.value})}><option value="highlight">Highlight</option><option value="underline">Underline</option><option value="none">Margin note only</option></select></label>
