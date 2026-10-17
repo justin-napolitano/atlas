@@ -1,6 +1,8 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {draftRowPayload,recoveryContext,retainedCaptureUUID,saveRecoverableDraft,verifyRecoveredDraft} from './recoverableDraftClient.js';
 import './recoverableDraft.css';
+import {useWritingRecovery} from './useWritingRecovery.js';
+import {RecoveryStatus} from './WritingRecovery.jsx';
 
 /** Explicit private save/recovery alongside an existing editor.
  * @param {{api:object,projectId:string,recordId:string,contextKind:'record_note'|'capture'|'annotation',document?:object,annotation?:object,selection?:object,body:string,markStyle?:string,baseRevision?:number,onRecover:function,drafts?:object,changed?:function}} props
@@ -8,12 +10,18 @@ import './recoverableDraft.css';
  * only to its editor. This component never commits a note, mark or annotation.
  */
 export default function RecoverableDraft(props) {
-  const {api,projectId,recordId,contextKind,document,annotation,selection,body,markStyle='none',baseRevision=0,onRecover,drafts,changed=()=>{}}=props;
+  const {api,projectId,recordId,contextKind,document,annotation,selection,body,markStyle='none',baseRevision=0,onRecover,drafts,changed=()=>{},dirty=false}=props;
   const context=recoveryContext(props),captureUUID=contextKind==='capture' ? retainedCaptureUUID(selection) : null,contextKey=JSON.stringify([context,captureUUID]),key='recoverable:'+JSON.stringify([{...context,base_revision:undefined},captureUUID]);
   const local=useRef(new Map()),store=drafts || local,alive=useRef(true),generation=useRef(0),busy=useRef(false);
   const session=useRef({key:contextKey,uuid:captureUUID || crypto.randomUUID(),revision:0});if(session.current.key!==contextKey)session.current={key:contextKey,uuid:captureUUID || crypto.randomUUID(),revision:0};
   const [rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[state,setState]=useState('active'),[message,setMessage]=useState(''),[loading,setLoading]=useState(false),[preview,setPreview]=useState(null),[history,setHistory]=useState(null),[,render]=useState(0);
   const pending=store.current.get(key);
+  const auto=useWritingRecovery({api,store:store.current,sessionKey:'automatic-reading:'+contextKey,path:'reading/draft',
+    identity:captureUUID || undefined,
+    payload:{...context,body,mark_style:contextKind==='record_note'?'none':markStyle,state:'active'},enabled:dirty,
+    verify:(row,sent)=>{verifyRecoveredDraft(row,context);if(row.id!=='urn:research:draft:'+sent.draft_uuid || row.body!==sent.body || row.mark_style!==sent.mark_style || row.state!==sent.state)throw new Error('Recovery did not confirm the exact reading draft.');}});
+  const previousAuto=useRef(null);
+  useEffect(()=>{if(!dirty && previousAuto.current?.dirty)previousAuto.current.queue.finish();previousAuto.current={dirty,queue:auto.queue};},[dirty,auto.queue]);
   useEffect(()=>{alive.current=true;generation.current++;setRows([]);setPreview(null);setHistory(null);setCursor(null);setMessage('');return()=>{alive.current=false;generation.current++;};},[contextKey]);
   function update(value){store.current.set(key,value);changed();if(alive.current)render(n=>n+1);}
   function clear(){store.current.delete(key);changed();if(alive.current)render(n=>n+1);}
@@ -48,8 +56,8 @@ export default function RecoverableDraft(props) {
   function fork(){const sent={...pending.sent,draft_uuid:crypto.randomUUID(),expected_revision:0};save(sent,null);}
   const captureReady=contextKind!=='capture' || (Number.isInteger(context.start) && Number.isInteger(context.end) && context.start>=0 && context.end>context.start && typeof context.exact==='string' && Array.from(context.exact).length===context.end-context.start);
   const changedBaseline=preview?.current && preview.current.revision!==preview.row.base_revision;
-  return <section className="recoverable-draft" aria-label="Recoverable private writing"><div className="draft-actions"><button disabled={!!pending?.saving || !!pending?.current || (!captureReady && !pending?.sent)} onClick={saveCurrent}>{pending?.saving ? 'Saving draft…' : pending?.sent ? 'Retry original draft save' : 'Save recoverable draft'}</button><button disabled={loading} onClick={()=>list()}>Find saved drafts</button><button disabled={loading} onClick={()=>list(false,state==='active' ? 'discarded' : 'active')}>{state==='active' ? 'Show discarded drafts' : 'Show active drafts'}</button></div>
-    <small>Explicit private recovery copy. No note or highlight is committed; unsaved keystrokes stay in this tab.</small>
+  return <section className="recoverable-draft" aria-label="Recoverable private writing">{dirty&&<RecoveryStatus {...auto}/>}<div className="draft-actions"><button disabled={!!pending?.saving || !!pending?.current || (!captureReady && !pending?.sent)} onClick={saveCurrent}>{pending?.saving ? 'Saving draft…' : pending?.sent ? 'Retry original draft save' : 'Save recoverable draft'}</button><button disabled={loading} onClick={()=>list()}>Find saved drafts</button><button disabled={loading} onClick={()=>list(false,state==='active' ? 'discarded' : 'active')}>{state==='active' ? 'Show discarded drafts' : 'Show active drafts'}</button></div>
+    <small>Private recovery is separate from saving the actual note. Keep this page open until the recovery copy is confirmed; network loss or closing too early can leave recent keystrokes unprotected.</small>
     {pending?.error && <p role="status">{pending.error}</p>}{message && <p role="status">{message}</p>}{loading && <p role="status">Loading saved drafts…</p>}
     {pending?.current && <div className="draft-conflict"><h4>Cloud draft · revision {pending.current.revision}</h4><pre dir="auto">{pending.current.body}</pre><h4>Your retained draft</h4><pre dir="auto">{pending.sent.body}</pre><button onClick={()=>{clear();inspect(pending.current);}}>Keep cloud draft & inspect</button><button onClick={fork}>Keep both as separate drafts</button></div>}
     {rows.map(row=><article key={row.id}><p>{row.context_kind.replaceAll('_',' ')} · {row.state} · revision {row.revision}{row.locator && ` · ${row.locator}`}</p>{row.exact && <blockquote dir="auto">{row.exact}</blockquote>}<pre dir="auto">{row.body}</pre><div className="draft-actions"><button onClick={()=>inspect(row)}>Inspect & recover</button><button disabled={!!pending?.sent} onClick={()=>save({...draftRowPayload(row),state:row.state==='active' ? 'discarded' : 'active'},null)}>{row.state==='active' ? 'Discard recovery copy' : 'Restore recovery copy'}</button><button onClick={()=>showHistory(row)}>Draft history</button></div></article>)}

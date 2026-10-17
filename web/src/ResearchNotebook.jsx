@@ -10,6 +10,8 @@ import {verifyReadingCapture} from './readingMarks.js';
 import {PassageNoteEditor} from './passageNoteEditor.js';
 import {notebookGraph} from './notebookMarkdown.js';
 import {useSurfaceResume} from './surfaceActivity.js';
+import {useWritingRecovery,notebookRecoveryPayload,verifyNotebookRecovery} from './useWritingRecovery.js';
+import WritingRecovery,{RecoveryStatus} from './WritingRecovery.jsx';
 
 /** Running project notebook. Passage bodies are a live server projection, never copied here. */
 export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},onOpenSource,anchor=null,initialQuery='',initialEntryId='',projectTitle='',onEntryChange=()=>{},inlineSources=false,noteEditor=null,initialCollection='all',mode='notes',composeRequest='',onComposeConsumed=()=>{},researchQuestions=[],moreResearchQuestions=null,researchQuestionError=''}){
@@ -30,6 +32,9 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
   activeProject.current=projectId;
   useSurfaceResume(()=>{load();if(network)loadNetwork();});
   const key=notebookKey(projectId,selected || (questionMode?'new-question':'new')),draft=drafts.current.get(key),quoteKey='notebook-quote:'+key,quoteDraft=drafts.current.get(quoteKey);
+  const recoveryPayload=notebookRecoveryPayload(projectId,selected,draft);
+  const recovery=useWritingRecovery({api,store:drafts.current,sessionKey:JSON.stringify([key,draft?.base?.revision || 0,draft?.value.request_uuid || '',draft?.recovery?.id || '']),path:'notebook/draft',payload:recoveryPayload,enabled:!!draft,
+    identity:draft?.recovery?.id?.slice('urn:research:writing-draft:'.length),revision:draft?.recovery?.revision || 0,verify:verifyNotebookRecovery});
   function remember(value,at=key){drafts.current.set(at,value);changed();render(v=>v+1);}
   function clear(at=key){drafts.current.delete(at);changed();render(v=>v+1);}
   async function load(after='',queryValue=query,{thoughtType=kind,noteState=state,itemScope=collection}={}){
@@ -68,9 +73,17 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
   function edit(patch){const next=draft || {value:notebookMetadata(cloud),base:cloud,sent:null,saving:false,error:'',current:null};remember({...next,value:{...next.value,...patch}});if(patch.title!==undefined)onEntryChange(selected || '',patch.title);}
   async function save(){if(!draft || busy.current || draft.current || quoteDraft)return;busy.current=true;const at=key,id=selected;
     const row=await saveThought({api,projectId,id,draft,update:value=>remember(value,at)});busy.current=false;
-    if(row){clear(at);if(mounted.current && activeProject.current===projectId && selection.current===id){selection.current=row.id;setSelected(row.id);setCloud(row);setHistory(null);setMessage('Note saved.');onEntryChange(row.id,row.title);load();if(network)loadNetwork();}}}
-  function resolve(choice){const current=draft.current;verifyThought(current,projectId,current.id);clear();selection.current=current.id;setSelected(current.id);setCloud(current);
-    if(choice==='draft')remember({...draft,base:current,value:{...draft.value},sent:null,current:null,error:'',saving:false},notebookKey(projectId,current.id));}
+    if(row){recovery.queue.finish();clear(at);if(mounted.current && activeProject.current===projectId && selection.current===id){selection.current=row.id;setSelected(row.id);setCloud(row);setHistory(null);setMessage('Note saved.');onEntryChange(row.id,row.title);load();if(network)loadNetwork();}}}
+  function recoverWriting(row,current){
+    const id=row.entry_id,at=notebookKey(projectId,id || (questionMode?'new-question':'new'));
+    if(drafts.current.has(at)){setMessage('Existing unfinished writing is still open. Save or explicitly discard it before recovering another version.');return false;}
+    const value={...row.value,...(!id?{request_uuid:row.request_uuid,record_id:row.record_id,document_id:row.document_id,annotation_id:row.annotation_id}:{})};
+    selection.current=id;setSelected(id);setCloud(current);setShowGraph(false);setMobileEditor(true);setHistory(null);
+    remember({value,base:row.base_snapshot,sent:null,saving:false,error:'',current:current&&current.revision!==row.base_revision?current:null,recovery:{id:row.id,revision:row.revision}},at);
+    onEntryChange(id || '',value.title);setMessage('Recovered private writing. Review it before saving the actual note.');return true;
+  }
+  function resolve(choice){const current=draft.current;verifyThought(current,projectId,current.id);recovery.queue.finish();clear();selection.current=current.id;setSelected(current.id);setCloud(current);
+    if(choice==='draft')remember({...draft,base:current,value:{...draft.value},recovery:undefined,sent:null,current:null,error:'',saving:false},notebookKey(projectId,current.id));}
   async function revisions(before){try{const page=await api.request('notebook/history',{project_id:projectId,entry_id:selected,limit:10,...(before?{before_revision:before}:{})});
     if(page.items.some(r=>r.snapshot.project_id!==projectId || r.snapshot.id!==selected))throw new Error('History did not match this thought.');
     if(mounted.current && activeProject.current===projectId && selection.current===selected)setHistory(old=>({items:before?[...(old?.items || []),...page.items]:page.items,next:page.next_before_revision}));}catch(error){setMessage(error.message);}}
@@ -112,6 +125,7 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
     {showGraph && <><button onClick={()=>setShowGraph(false)}>← Back to notes</button>{networkLoading && <p role="status">Loading saved note connections…</p>}{network && <NotebookNetwork network={network} graph={graph} selected={selected} onOpen={id=>open({id,item_kind:'entry'})} onOpenPassage={id=>follow({kind:'annotation',id})}/>}</>}
     <div className="notebook-with-source"><div className="notebook-layout" hidden={showGraph}>
       <section className="notebook-index" aria-label="Notebook entries"><nav className="notebook-collections" aria-label="Notebook collections">{(questionMode?[['writing','My questions']]:[['writing','My writing'],['reading','Reading notes'],['all','Everything']]).map(([id,label])=><button key={id} aria-pressed={collection===id} onClick={()=>chooseCollection(id)}>{label}</button>)}</nav>
+        <WritingRecovery api={api} projectId={projectId} onRecover={recoverWriting}/>
         <form className="notebook-filters" onSubmit={event=>{event.preventDefault();load();}}><label>Search notebook<input value={query} maxLength={300} onChange={event=>setQuery(event.target.value)} placeholder="Find a note…"/></label>
           <details><summary>Filter notes</summary><label>Thought type<select disabled={questionMode} value={kind} onChange={event=>setKind(event.target.value)}><option value="">All thoughts and reading notes</option>{(questionMode?['question']:[...thoughtTypes,'passage_note','record_note']).map(type=><option key={type} value={type}>{thoughtLabel(type)}</option>)}</select></label>
           <label>State<select value={state} onChange={event=>setState(event.target.value)}><option value="active">Active</option><option value="withdrawn">Withdrawn thoughts</option></select></label></details><button disabled={loading}>{loading?'Finding…':'Apply filters'}</button></form>
@@ -129,6 +143,8 @@ export default function ResearchNotebook({api,projectId,drafts,changed=()=>{},on
         {!value && <div className="notebook-welcome"><span className="notebook-eyebrow">An open page</span><h3>{questionMode?'What do you want to understand?':'What’s on your mind?'}</h3><p>{questionMode?'Keep your scope, working answer, evidence, and open questions together. Your answer can change as you read.':'A question, a loose idea, a connection you haven’t figured out yet. This is your notebook; a source is optional.'}</p><button className="notebook-new" onClick={()=>start(null)}>{questionMode?'Write your first question':'Write your first note'}</button>{anchor?.record_id && <button onClick={()=>start(anchor)}>New thought at this passage</button>}</div>}
         {value && <>
           <div className="notebook-editor-toolbar"><span role="status">{draft?.current?'Compare revisions':draft?.saving?'Saving…':draft?.sent?'Save needs confirmation':draft?'Unsaved changes':`Saved · revision ${cloud?.revision}`}</span><button className="notebook-save" disabled={!draft || draft.saving || !!draft.current || !!quoteDraft || !value.title.trim() || !value.body.trim()} onClick={save}>{saveLabel}</button></div>
+          {draft&&<RecoveryStatus {...recovery}/>}
+          {draft&&!locked&&!draft.current&&<button disabled={['error','conflict'].includes(recovery.status.phase)} onClick={()=>{recovery.queue.finish();clear();setMessage('Editor changes discarded. Recovery history remains private.');}}>Discard editor changes</button>}
           <div className="notebook-editor-modes" role="group" aria-label="Note editor mode">{['write','preview'].map(mode=><button key={mode} aria-pressed={editorMode===mode} onClick={()=>{setEditorMode(mode);if(mode==='preview')ensureNetwork();}}>{mode==='write'?'Write':'Preview'}</button>)}</div>
           <fieldset disabled={locked} className="notebook-page"><label className="notebook-note-title"><span className="sr-only">Title</span>{questionMode?<textarea aria-label="Research question" value={value.title} maxLength={300} rows={2} onChange={event=>edit({title:event.target.value.replaceAll('\n',' ')})} placeholder="What do you want to understand?" dir="auto"/>:<input aria-label="Note title" value={value.title} maxLength={300} onChange={event=>edit({title:event.target.value})} placeholder="Untitled note" dir="auto"/>}</label>
             <label className="notebook-note-body" hidden={editorMode!=='write'}><span className="sr-only">Thought (Markdown source)</span><textarea aria-label={questionMode?'Working answer and research notes':'Note body'} value={value.body} maxLength={20000} rows={10} onChange={event=>edit({body:event.target.value})} placeholder="Start writing. You can connect sources and ideas below." dir="auto"/></label>

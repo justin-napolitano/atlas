@@ -904,14 +904,14 @@ try {
   assert.equal(await evaluate('document.querySelector(".workspace-decisions button:nth-child(2)").getAttribute("aria-pressed")'),'true');
   await reveal('[data-record-note]');await evaluate('document.querySelector("[data-record-note]").focus()');await call('Input.insertText',{text:' Recoverable unfinished interpretation.'});
   await evaluate('document.querySelector(".workspace-notes .recoverable-draft .draft-actions button").click()');
-  await until(()=>recoveryCopies.size===1,'private recovery copy saved independently');
+  await until(()=>[...recoveryCopies.values()].some(row=>row.record_id==='synthetic:source'&&row.context_kind==='record_note'&&row.state==='active'&&row.body.includes('Recoverable unfinished')),'exact private recovery copy saved independently');
   assert.ok(!saved.get('synthetic:source').note.includes('Recoverable unfinished'));
   await reload();
   await until(()=>evaluate('!!document.querySelector("[data-record-note]")'),'record editor reopens after draft save');await reveal('[data-record-note]');
   assert.ok(!(await evaluate('document.querySelector("[data-record-note]").value')).includes('Recoverable unfinished'));
   await evaluate(`[...document.querySelector('.workspace-notes .recoverable-draft').querySelectorAll('button')].find(button=>button.textContent==='Find saved drafts').click()`);
-  await until(()=>evaluate('document.querySelector(".workspace-notes .recoverable-draft article")?.textContent.includes("Recoverable unfinished")'),'durable writing found after reload');
-  await evaluate(`[...document.querySelector('.workspace-notes .recoverable-draft').querySelectorAll('button')].find(button=>button.textContent==='Inspect & recover').click()`);
+  await until(()=>evaluate('[...document.querySelectorAll(".workspace-notes .recoverable-draft article")].some(row=>row.textContent.includes("Recoverable unfinished"))'),'durable writing found after reload');
+  await evaluate(`[...document.querySelectorAll('.workspace-notes .recoverable-draft article')].find(row=>row.textContent.includes('Recoverable unfinished')).querySelector('button').click()`);
   await until(()=>evaluate('!!document.querySelector(".workspace-notes .draft-preview")'),'recovery compares actual cloud note');
   await evaluate(`[...document.querySelector('.workspace-notes .draft-preview').querySelectorAll('button')].find(button=>button.textContent==='Recover into editor').click()`);
   await until(()=>evaluate('document.querySelector("[data-record-note]").value.includes("Recoverable unfinished")'),'draft restored into actual record editor');

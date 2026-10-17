@@ -176,6 +176,18 @@ try{
   await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'questions mobile width');
   assert.deepEqual(problems,[]);
+  await click('Sample notes');await click('New note');
+  await until(()=>evaluate('document.querySelector(".notebook-note-title input,.notebook-note-title textarea")?.value==="Unfinished independent note"'),'unfinished writing restored in session');
+  await until(()=>evaluate('[...window.__notebookTest.recoveryRows.values()].some(r=>r.state==="active"&&r.value.title==="Unfinished independent note")'),'automatic private recovery confirmed');
+  const confirmedCount=await evaluate('window.__notebookTest.entries.size');
+  await evaluate('window.__notebookTest.losePageMemory()');await until(()=>evaluate('!document.querySelector(".notebook-note-body textarea")'),'page memory lost');
+  await click('Unfinished work');await until(()=>evaluate('document.querySelector(".unfinished-writing").textContent.includes("Unfinished independent note")'),'server recovery survives page memory loss');
+  await evaluate(`[...document.querySelectorAll('.unfinished-writing article button')].find(b=>b.textContent==='Unfinished independent note').click()`);
+  await until(()=>evaluate('!!document.querySelector(".unfinished-writing aside")'),'recovery preview');
+  await click('Recover into editor');await until(()=>evaluate('document.querySelector(".notebook-note-body textarea")?.value==="A loose idea retained while researching."'),'recovery fills exact original writing');
+  assert.equal(await evaluate('window.__notebookTest.entries.size'),confirmedCount,'recovery does not save actual note');
+  assert.equal(await evaluate('Object.values(localStorage).some(v=>v.includes("A loose idea retained"))'),false);
+  await click('Save note');await until(()=>evaluate('window.__notebookTest.entries.size==='+String(confirmedCount+1)),'explicit save commits recovered thought once');
   console.log(JSON.stringify({notebookPassed:true,checks:['compiled owner notebook','live passage note backlink','anchored thought and explained connection','Unicode Markdown inert text','retained creation UUID and exact lost-response retry','source context readback','two-device correction comparison','CAS lost acknowledgement retry','paged revision history','withdrawal filter','wrong-project refusal','independent note without source','searchable explained connection saved','mobile list to editor','CommonMark and GFM preview','inert script and unsafe links','wiki link to saved note','saved backlinks','actual saved note graph','inline source keeps editor and route','organization filters before pagination','quote lost acknowledgement exact retry','citation returns to source without leaving note','mobile source overlay','complete source/work catalog','metadata-only source retained','source filter and direct intake','private question create and reopen','question draft distinct from unfinished note','curated question evidence remains distinct','dark390px','no private localStorage'],artifacts}));
 }finally{
   socket?.close();const closed=new Promise(resolve=>chrome.once('close',resolve));chrome.kill();await closed;await preview.close();
