@@ -17,10 +17,26 @@ from . import private_trash
 from . import reading_drafts
 from . import collection_link
 from . import research_search
+from . import quran_workspace
 
 
 class PostgreSQLStore:
     """Keep private queries and public projection reads separate."""
+
+    def quran_binding(self, **values):
+        with db.connect(self.dsn) as connection:return quran_workspace.binding(connection,**values)
+
+    def quran_existing(self, **values):
+        with db.connect(self.dsn) as connection:return quran_workspace.existing(connection,**values)
+
+    def quran_note(self, **values):
+        with db.connect(self.dsn) as connection:return quran_workspace.create_note(connection,**values)
+
+    def quran_place(self, project_id):
+        with db.connect(self.dsn) as connection:return quran_workspace.place(connection,project_id)
+
+    def save_quran_place(self, **values):
+        with db.connect(self.dsn) as connection:return quran_workspace.save_place(connection,**values)
 
     def research_search(self, project_id, query, limit):
         with db.connect(self.dsn) as connection:

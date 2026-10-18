@@ -255,6 +255,27 @@ class VersePilotImport(VerseOwnerInput):
     rationale: Annotated[str,Field(min_length=1,max_length=2000)]
 
 
+class QuranBinding(VerseOwnerInput):
+    project_id: Identifier
+    resource_key: Literal['tanzil-uthmani','itani-god']
+    chapter: Annotated[int,Field(ge=1,le=114)]
+    ayah_start: Annotated[int,Field(ge=1,le=286)]
+    ayah_end: Annotated[int,Field(ge=1,le=286)]
+
+
+class QuranNote(QuranBinding):
+    request_uuid: Annotated[str,Field(min_length=36,max_length=36)]
+    body: Annotated[str,Field(min_length=1,max_length=20000)]
+
+
+class QuranPlace(VerseOwnerInput):
+    project_id: Identifier
+    resource_key: Literal['tanzil-uthmani','itani-god']
+    chapter: Annotated[int,Field(ge=1,le=114)]
+    ayah: Annotated[int,Field(ge=1,le=286)]
+    expected_revision: Annotated[int,Field(ge=0)]
+
+
 class CollectionReadingLink(VerseOwnerInput):
     project_id: Identifier
     reading_id: Identifier
@@ -704,6 +725,27 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     @router.get("/quran/chapter")
     def quran_chapter(chapter: Annotated[int,Query(ge=1,le=114)], translation: Literal['itani-god'] = 'itani-god'):
         return quran_reader.chapter(chapter,translation)
+
+    @router.post('/quran/binding',status_code=201)
+    def quran_binding(value: QuranBinding,actor: str=Depends(owner)):
+        return store.quran_binding(actor=actor,**value.model_dump(exclude={'owner_confirmed'}))
+
+    @router.get('/quran/binding')
+    def quran_existing(project_id: Identifier,resource_key: Literal['tanzil-uthmani','itani-god'],
+        chapter: Annotated[int,Query(ge=1,le=114)],ayah_start: Annotated[int,Query(ge=1,le=286)],ayah_end: Annotated[int,Query(ge=1,le=286)]):
+        return store.quran_existing(project_id=project_id,resource_key=resource_key,chapter=chapter,ayah_start=ayah_start,ayah_end=ayah_end)
+
+    @router.post('/quran/notes',status_code=201)
+    def quran_note(value: QuranNote,actor: str=Depends(owner)):
+        return store.quran_note(actor=actor,**value.model_dump(exclude={'owner_confirmed'}))
+
+    @router.get('/quran/place')
+    def quran_place(project_id: Identifier):
+        return store.quran_place(project_id)
+
+    @router.put('/quran/place')
+    def quran_place_save(value: QuranPlace,actor: str=Depends(owner)):
+        return store.save_quran_place(actor=actor,**value.model_dump(exclude={'owner_confirmed'}))
 
     @router.post("/reading/link-collection",status_code=201)
     def link_collection_reading(value: CollectionReadingLink,actor: str = Depends(owner)):

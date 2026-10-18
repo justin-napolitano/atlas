@@ -1420,6 +1420,175 @@
         "title": "PublicationWithdrawalInput",
         "type": "object"
       },
+      "QuranBinding": {
+        "additionalProperties": false,
+        "properties": {
+          "ayah_end": {
+            "maximum": 286.0,
+            "minimum": 1.0,
+            "title": "Ayah End",
+            "type": "integer"
+          },
+          "ayah_start": {
+            "maximum": 286.0,
+            "minimum": 1.0,
+            "title": "Ayah Start",
+            "type": "integer"
+          },
+          "chapter": {
+            "maximum": 114.0,
+            "minimum": 1.0,
+            "title": "Chapter",
+            "type": "integer"
+          },
+          "owner_confirmed": {
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "resource_key": {
+            "enum": [
+              "tanzil-uthmani",
+              "itani-god"
+            ],
+            "title": "Resource Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "project_id",
+          "resource_key",
+          "chapter",
+          "ayah_start",
+          "ayah_end"
+        ],
+        "title": "QuranBinding",
+        "type": "object"
+      },
+      "QuranNote": {
+        "additionalProperties": false,
+        "properties": {
+          "ayah_end": {
+            "maximum": 286.0,
+            "minimum": 1.0,
+            "title": "Ayah End",
+            "type": "integer"
+          },
+          "ayah_start": {
+            "maximum": 286.0,
+            "minimum": 1.0,
+            "title": "Ayah Start",
+            "type": "integer"
+          },
+          "body": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "chapter": {
+            "maximum": 114.0,
+            "minimum": 1.0,
+            "title": "Chapter",
+            "type": "integer"
+          },
+          "owner_confirmed": {
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "request_uuid": {
+            "maxLength": 36,
+            "minLength": 36,
+            "title": "Request Uuid",
+            "type": "string"
+          },
+          "resource_key": {
+            "enum": [
+              "tanzil-uthmani",
+              "itani-god"
+            ],
+            "title": "Resource Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "project_id",
+          "resource_key",
+          "chapter",
+          "ayah_start",
+          "ayah_end",
+          "request_uuid",
+          "body"
+        ],
+        "title": "QuranNote",
+        "type": "object"
+      },
+      "QuranPlace": {
+        "additionalProperties": false,
+        "properties": {
+          "ayah": {
+            "maximum": 286.0,
+            "minimum": 1.0,
+            "title": "Ayah",
+            "type": "integer"
+          },
+          "chapter": {
+            "maximum": 114.0,
+            "minimum": 1.0,
+            "title": "Chapter",
+            "type": "integer"
+          },
+          "expected_revision": {
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "owner_confirmed": {
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "resource_key": {
+            "enum": [
+              "tanzil-uthmani",
+              "itani-god"
+            ],
+            "title": "Resource Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "project_id",
+          "resource_key",
+          "chapter",
+          "ayah",
+          "expected_revision"
+        ],
+        "title": "QuranPlace",
+        "type": "object"
+      },
       "RankCandidate": {
         "additionalProperties": false,
         "properties": {
@@ -4638,6 +4807,126 @@
         "summary": "Publication Withdraw"
       }
     },
+    "/v1/quran/binding": {
+      "get": {
+        "operationId": "quran_existing_v1_quran_binding_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "resource_key",
+            "required": true,
+            "schema": {
+              "enum": [
+                "tanzil-uthmani",
+                "itani-god"
+              ],
+              "title": "Resource Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "chapter",
+            "required": true,
+            "schema": {
+              "maximum": 114,
+              "minimum": 1,
+              "title": "Chapter",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ayah_start",
+            "required": true,
+            "schema": {
+              "maximum": 286,
+              "minimum": 1,
+              "title": "Ayah Start",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ayah_end",
+            "required": true,
+            "schema": {
+              "maximum": 286,
+              "minimum": 1,
+              "title": "Ayah End",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Quran Existing"
+      },
+      "post": {
+        "operationId": "quran_binding_v1_quran_binding_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuranBinding"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Quran Binding"
+      }
+    },
     "/v1/quran/catalog": {
       "get": {
         "operationId": "quran_catalog_v1_quran_catalog_get",
@@ -4702,6 +4991,116 @@
           }
         },
         "summary": "Quran Chapter"
+      }
+    },
+    "/v1/quran/notes": {
+      "post": {
+        "operationId": "quran_note_v1_quran_notes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuranNote"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Quran Note"
+      }
+    },
+    "/v1/quran/place": {
+      "get": {
+        "operationId": "quran_place_v1_quran_place_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Quran Place"
+      },
+      "put": {
+        "operationId": "quran_place_save_v1_quran_place_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuranPlace"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Quran Place Save"
       }
     },
     "/v1/rank": {
