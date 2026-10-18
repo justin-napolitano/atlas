@@ -71,7 +71,7 @@ function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLe
   </article>;
 }
 
-export default function LocationMarginNotes({api,record,document,textRoot,drafts,changed,composerRef,onOpenNotebook,navigate,onLocations,activeId=''}){
+export default function LocationMarginNotes({api,record,document,textRoot,drafts,changed,composerRef,onOpenNotebook,navigate,onLocations,activeId='',hideComposer=false}){
   const [network,setNetwork]=useState({items:[],truncated:true}),[linkError,setLinkError]=useState('');
   const [rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[error,setError]=useState(''),[loading,setLoading]=useState(true),[next,setNext]=useState(null);
   const root=useRef(null),position=useRef(null),alive=useRef(true),generation=useRef(0);
@@ -114,6 +114,6 @@ export default function LocationMarginNotes({api,record,document,textRoot,drafts
     {linkError&&<p role="alert">{linkError}</p>}
     {rows.filter(row=>row.id!==fresh?.id).sort((a,b)=>a.reading_position-b.reading_position).map(row=><MarginWriting key={row.id} {...shared} active={activeId===row.id} initial={row} onLeave={settle}/>)}
     {cursor&&<button onClick={()=>load(cursor)}>Earlier margin notes</button>}
-    <div className="location-margin-composer">{fresh?<MarginWriting key={fresh.id} {...shared} initial={fresh} onLeave={settle}/>:<textarea aria-label="Write in the margin" dir="auto" placeholder="Write a note…" rows={1} onFocus={()=>{position.current=readingPosition(textRoot.current);}} onChange={event=>start(event.target.value)}/>}</div>
+    {!hideComposer&&<div className="location-margin-composer">{fresh?<MarginWriting key={fresh.id} {...shared} initial={fresh} onLeave={settle}/>:<textarea aria-label="Write in the margin" dir="auto" placeholder="Write a note…" rows={1} onFocus={()=>{position.current=readingPosition(textRoot.current);}} onChange={event=>start(event.target.value)}/>}</div>}
   </section>;
 }
