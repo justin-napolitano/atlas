@@ -38,4 +38,4 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.setuptools.package-data]
-islam_research = ["migrations/*.sql", "policies/*.json", "resources/*.json"]
+islam_research = ["migrations/*.sql", "policies/*.json", "resources/*.json", "resources/*.txt"]

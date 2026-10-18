@@ -4638,6 +4638,72 @@
         "summary": "Publication Withdraw"
       }
     },
+    "/v1/quran/catalog": {
+      "get": {
+        "operationId": "quran_catalog_v1_quran_catalog_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Quran Catalog"
+      }
+    },
+    "/v1/quran/chapter": {
+      "get": {
+        "operationId": "quran_chapter_v1_quran_chapter_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "chapter",
+            "required": true,
+            "schema": {
+              "maximum": 114,
+              "minimum": 1,
+              "title": "Chapter",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "translation",
+            "required": false,
+            "schema": {
+              "const": "itani-god",
+              "default": "itani-god",
+              "title": "Translation",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Quran Chapter"
+      }
+    },
     "/v1/rank": {
       "post": {
         "operationId": "ranking_v1_rank_post",

@@ -26,6 +26,7 @@ from .graph_engine import rank, registered_policy
 from .quran_citations import PARSER_VERSION as QURAN_PARSER_VERSION, PROFILE_ID as QURAN_PROFILE_ID
 from .quran_resources import pilot_resource
 from .reader_collection import collection_resource
+from . import quran_reader
 
 logger = logging.getLogger("research.api")
 Identifier = Annotated[str, Field(min_length=1, max_length=500, pattern=r"^[^\x00-\x1f\x7f]+$")]
@@ -695,6 +696,14 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     @router.get("/reading/collection")
     def reading_collection():
         return collection_resource()
+
+    @router.get("/quran/catalog")
+    def quran_catalog():
+        return quran_reader.catalog()
+
+    @router.get("/quran/chapter")
+    def quran_chapter(chapter: Annotated[int,Query(ge=1,le=114)], translation: Literal['itani-god'] = 'itani-god'):
+        return quran_reader.chapter(chapter,translation)
 
     @router.post("/reading/link-collection",status_code=201)
     def link_collection_reading(value: CollectionReadingLink,actor: str = Depends(owner)):
