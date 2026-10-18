@@ -25,6 +25,7 @@ from .database import RevisionConflict
 from .graph_engine import rank, registered_policy
 from .quran_citations import PARSER_VERSION as QURAN_PARSER_VERSION, PROFILE_ID as QURAN_PROFILE_ID
 from .quran_resources import pilot_resource
+from .quran_reader import chapter_resource
 from .reader_collection import collection_resource
 
 logger = logging.getLogger("research.api")
@@ -252,6 +253,15 @@ class VersePilotImport(VerseOwnerInput):
     chapter: Annotated[int,Field(ge=1,le=114)]
     ayah: Annotated[int,Field(ge=1,le=286)]
     rationale: Annotated[str,Field(min_length=1,max_length=2000)]
+
+
+class QuranReaderAssociation(Input):
+    project_id: Identifier
+    chapter: Annotated[int,Field(ge=1,le=114)]
+    ayah: Annotated[int,Field(ge=1,le=286)]
+    resource_id: Identifier
+    text_sha256: Annotated[str,Field(pattern=r"^[a-f0-9]{64}$")]
+    translation_key: Literal["english_saheeh", "english_rwwad"] = "english_saheeh"
 
 
 class CollectionReadingLink(VerseOwnerInput):
@@ -939,6 +949,15 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     @router.get("/verses/pilot")
     def verse_pilot():
         return pilot_resource()
+
+    @router.get("/quran/reader")
+    def quran_reader(chapter: Annotated[int,Query(ge=1,le=114)],
+                     translation_key: Literal["english_saheeh", "english_rwwad"] = "english_saheeh"):
+        return chapter_resource(chapter, translation_key)
+
+    @router.post("/quran/reader-association",status_code=201)
+    def quran_reader_association(value: QuranReaderAssociation,actor: str = Depends(owner)):
+        return store.quran_reader_association(actor=actor,**value.model_dump())
 
     @router.post("/verses/import-pilot",status_code=201)
     def verse_import_pilot(value: VersePilotImport,actor: str = Depends(owner)):

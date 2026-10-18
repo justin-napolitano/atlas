@@ -1,0 +1,20 @@
+.quran-reader{color:var(--ink);min-width:0;padding:20px clamp(16px,3vw,40px) 56px}
+.quran-toolbar{display:flex;align-items:end;flex-wrap:wrap;gap:10px 16px;border-bottom:1px solid var(--rule);padding-bottom:14px}
+.quran-toolbar h2{font:600 25px/1.2 Georgia,serif;margin:0}.quran-toolbar p{margin:5px 0 0;color:var(--muted)}
+.quran-toolbar label,.quran-settings label{display:flex;align-items:center;gap:7px;font-size:13px}.quran-toolbar form{display:flex;align-items:end;gap:6px}
+.quran-toolbar input[type=number]{width:64px}.quran-toolbar select,.quran-toolbar input,.quran-settings select{background:var(--paper);color:var(--ink);border:1px solid var(--rule);padding:7px}
+.quran-settings{border-bottom:1px solid var(--rule);padding:12px 0;font-size:13px}.quran-settings summary{cursor:pointer}
+.quran-settings-grid{display:flex;flex-wrap:wrap;gap:12px 22px;margin-top:12px}.quran-settings p{line-height:1.5}
+.quran-source-notice{max-height:120px;overflow:auto;white-space:pre-wrap;font:11px/1.4 monospace;background:var(--paper);padding:8px}
+.quran-message{padding:10px 12px;border-left:3px solid var(--accent);background:var(--paper);line-height:1.5}
+.quran-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,38%);gap:clamp(14px,2vw,32px);align-items:start}
+.quran-layout:has(.quran-verses:last-child){display:block}.quran-verses{min-width:0;max-width:850px;margin:auto;width:100%}
+.quran-verses article{scroll-margin-top:18px;padding:26px 4px;border-bottom:1px solid var(--rule);line-height:1.7}.quran-verses article.current{border-left:3px solid var(--accent);padding-left:15px}
+.quran-verse-head,.quran-verse-actions,.quran-context header{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.quran-verse-head{justify-content:space-between;font-size:14px}
+.quran-arabic{font-family:"Amiri","Noto Naskh Arabic",serif;line-height:2.15;overflow-wrap:anywhere;margin:20px 0}.quran-english{font-family:Georgia,serif;line-height:1.75;max-width:72ch;margin:18px 0}
+.quran-verse-actions{margin:8px 0}.quran-verse-actions button{font-size:12px}.quran-verses details{font-size:13px;white-space:pre-wrap}
+.quran-context{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;border-left:1px solid var(--rule);padding:0 0 24px 16px;min-width:0}
+.quran-context header{position:sticky;top:0;background:var(--paper);padding:8px 0;z-index:2}.quran-context h3{margin:0 auto 0 0;font:600 17px Georgia,serif}
+.quran-retry{border:1px solid var(--accent);padding:10px;margin:12px 0}.quran-retry p{overflow-wrap:anywhere}.quran-retry button{margin-right:8px}
+.quran-context .source-reader{min-width:0}.quran-context .source-reader .reader-split{display:block}
+@media(max-width:900px){.quran-layout{display:block}.quran-context{position:relative;top:auto;max-height:none;border-left:0;border-top:1px solid var(--rule);padding:16px 0}}

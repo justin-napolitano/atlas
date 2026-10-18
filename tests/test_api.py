@@ -73,6 +73,9 @@ class MemoryBoundaryStore:
         return {**value,"revision":value["expected_revision"]+1}
     def verse_import_pilot(self, **value):
         return {**value,"record_id":"synthetic:resource","document_id":"synthetic:document","annotation_id":"synthetic:annotation"}
+    def quran_reader_association(self, **value):
+        return {**value,"record_id":"synthetic:quran-source","document_id":"synthetic:quran-document",
+                "review_effect":"none","publication_effect":"none"}
 
     def reading_desk(self,project_id):
             return None
@@ -121,6 +124,25 @@ class APIBoundaryTests(unittest.TestCase):
         public=TestClient(create_app(Settings("synthetic",mode="public"),store=MemoryBoundaryStore()))
         self.assertEqual(public.post("/v1/source-intakes",json=value).status_code,404)
         self.assertEqual(public.get("/v1/source-intakes/candidates").status_code,404)
+
+    def test_quran_reader_is_owner_only_and_association_never_promotes_review(self):
+        from unittest.mock import patch
+        value={"project_id":"synthetic","chapter":4,"ayah":59,"resource_id":"synthetic:resource",
+               "text_sha256":"a"*64,"translation_key":"english_saheeh"}
+        self.assertEqual(self.client.get("/v1/quran/reader",params={"chapter":4}).status_code,401)
+        self.assertEqual(self.client.post("/v1/quran/reader-association",json=value).status_code,401)
+        self.assertEqual(self.client.post("/v1/quran/reader-association",json=value,headers=self.headers(sub="other")).status_code,403)
+        with patch("islam_research.api.chapter_resource",return_value={"chapter":4,"ayah_count":176,"arabic":{"verses":[]}}):
+            self.assertEqual(self.client.get("/v1/quran/reader",params={"chapter":4},headers=self.headers()).status_code,200)
+        result=self.client.post("/v1/quran/reader-association",json=value,headers=self.headers())
+        self.assertEqual(result.status_code,201)
+        self.assertEqual(result.json()["actor"],OWNER)
+        self.assertEqual(result.json()["publication_effect"],"none")
+        for changed in ({"review_state":"reviewed"},{"actor":"forged"},{"text_sha256":"bad"},{"chapter":115}):
+            self.assertEqual(self.client.post("/v1/quran/reader-association",json={**value,**changed},headers=self.headers()).status_code,422)
+        public=TestClient(create_app(Settings("synthetic",mode="public"),store=MemoryBoundaryStore()))
+        self.assertEqual(public.get("/v1/quran/reader").status_code,404)
+        self.assertEqual(public.post("/v1/quran/reader-association",json=value).status_code,404)
 
     def test_recovery_drafts_are_owner_only_strict_private_and_csrf_protected(self):
         value={"draft_uuid":str(uuid.uuid4()),"project_id":"synthetic","record_id":"synthetic:source","context_kind":"record_note","base_revision":0,"body":"SYNTHETIC unfinished writing","expected_revision":0}
