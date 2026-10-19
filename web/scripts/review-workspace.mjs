@@ -93,7 +93,7 @@ async function reload() {
 async function revealPassageTools(){await evaluate(`{for(const details of document.querySelectorAll('.working-surface:not([hidden]) .reader-source-anchors,.working-surface:not([hidden]) .passage-research-tools'))if(!details.open)details.querySelector(':scope > summary').click();}`);}
 async function reveal(selector){await evaluate(`{const target=document.querySelector(${JSON.stringify(selector)});if(!target)throw new Error('Missing reveal target');const parents=[];for(let p=target.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS'&&!p.open)parents.unshift(p);parents.forEach(p=>p.querySelector(':scope > summary').click());}`);}
 async function click(text) {
-  if(['Add source','All research','Reading collection & context','Read the Sirry article','Start Qur’an pilot','Resume reading'].includes(text) && !await evaluate(`[...document.querySelectorAll('button')].some(button=>button.textContent===${JSON.stringify(text)})`)){await click('Sources');await until(()=>evaluate('!!document.querySelector(".atlas-reading-tools")'),'contextual reading tools');}
+  if(['Add source','All research','Reading collection & context','Read the Sirry article','Verse import tools','Resume reading'].includes(text) && !await evaluate(`[...document.querySelectorAll('button')].some(button=>button.textContent===${JSON.stringify(text)})`)){await click('Sources');await until(()=>evaluate('!!document.querySelector(".atlas-reading-tools")'),'contextual reading tools');}
   await evaluate(`{const aliases={'Back to my reading':'← Back to reading','Back to reading':'← Back to reading','Compare readings':'Compare'};const target=[...document.querySelectorAll('button')].find(button=>button.textContent===${JSON.stringify(text)}) || [...document.querySelectorAll('button')].find(button=>button.textContent===aliases[${JSON.stringify(text)}]);if(!target)throw new Error('Missing button '+${JSON.stringify(text)});const parents=[];for(let p=target.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS'&&!p.open)parents.unshift(p);parents.forEach(p=>p.querySelector(':scope > summary').click());target.click();}`); }
 async function fixture(event) {
   const url=new URL(event.request.url), path=url.pathname;
@@ -1014,11 +1014,11 @@ try {
   await evaluate('document.querySelector(".collection-reading-link form").requestSubmit()');
   await until(()=>evaluate('new URL(location.href).searchParams.get("annotation")==="synthetic:collection-annotation" && document.querySelector(".reader-text")?.textContent.includes("O ye who believe!")'),'confirmed named translation opens exact source');
   assert.equal(collectionRequests.length,2);assert.deepEqual(collectionRequests[0],collectionRequests[1]);
-  await click('Start Qur’an pilot');
+  await click('Verse import tools');
   await until(()=>evaluate('document.querySelectorAll(".pilot-arabic").length===2'),'translation linked to pilot');
   await evaluate(`document.querySelector('[data-pilot-ayah="59"] .pilot-related-load').click()`);
   await until(()=>evaluate(`document.querySelector('[data-pilot-ayah="59"] .pilot-related')?.textContent.includes('Rodwell')`),'verse reader shows actual named translation material');
-  await click('Back to reading');await click('Start Qur’an pilot');
+  await click('Back to reading');await click('Verse import tools');
 
   await until(()=>evaluate('document.querySelectorAll(".pilot-arabic").length===2'),'Arabic pilot reachable from workspace');
   assert.equal(await evaluate('new URL(location.href).searchParams.get("view")'),'pilot');
