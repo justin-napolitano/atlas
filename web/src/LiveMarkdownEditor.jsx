@@ -46,9 +46,11 @@ const LiveMarkdownEditor=forwardRef(function LiveMarkdownEditor({value,onChange,
       const source=state.doc.toString(),decorations=[];
       for(const block of markdownBlocks(source)){
         if(blockSelected(block,state.selection.ranges))continue;
-        // Reference definitions remain editable source; they are not empty widgets.
-        if(['definition','footnoteDefinition','html'].includes(block.type))continue;
-        decorations.push(Decoration.replace({widget:new Block(block),block:true}).range(block.from,block.to));
+        if(block.type==='html')continue;
+        // Definitions resolve in their referring blocks; reveal their source at
+        // the cursor, without repeating raw definitions during ordinary reading.
+        const widget=['definition','footnoteDefinition'].includes(block.type)?undefined:new Block(block);
+        decorations.push(Decoration.replace({widget,block:true}).range(block.from,block.renderTo));
       }
       return Decoration.set(decorations,true);
     }

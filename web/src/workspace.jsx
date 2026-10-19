@@ -255,7 +255,7 @@ function Workspace() {
   }
   const effectiveBrief=briefAnchor || (record?.project_id===project && record.id===selected?{record,...currentReadingAnchor(project,record.id,fromURL())}:null);
   const isReading=record && ['source','work','edition'].includes(record.kind);
-  return <main onClickCapture={()=>surfaces.current?.capture()} className={`shell owner-shell atlas-workspace${isReading&&!libraryView?' is-reading':''}${libraryView==='notebook'?' is-notebook':''}${libraryView ? ' has-library-view' : ''}${libraryOpen?' is-library-open':''}${sidebarHidden?' is-sidebar-collapsed':''}`}>
+  return <main onClickCapture={()=>surfaces.current?.capture()} className={`shell owner-shell atlas-workspace${isReading&&!libraryView?' is-reading':''}${libraryView==='notebook'?' is-notebook':''}${libraryView==='quran'?' is-quran':''}${libraryView ? ' has-library-view' : ''}${libraryOpen?' is-library-open':''}${sidebarHidden?' is-sidebar-collapsed':''}`}>
     <a className="skip-link" href="#workspace-view">Skip to workspace</a>
     <button ref={sidebarToggle} className="workspace-sidebar-toggle" aria-label="Show sidebar" aria-expanded={narrow?libraryOpen:!sidebarHidden&&!readingFocus} aria-controls="atlas-library" onClick={()=>{setSidebarHidden(false);setReadingFocus(false);setLibraryOpen(value=>!value);requestAnimationFrame(()=>document.querySelector('#atlas-library button')?.focus());}}>☰</button>
     {libraryOpen&&<button className="workspace-sidebar-scrim" aria-label="Close sidebar" onClick={closeSidebar}/>}
@@ -289,7 +289,7 @@ function Workspace() {
       <button type="submit" disabled={!project || searching}>{searching ? 'Loading…' : 'Search'}</button><button type="button" disabled={!project || searching} onClick={() => { setQuery(''); setScope('records'); setKind(''); loadRows(); }}>Browse all</button>
     </form></details></section>
         </div>
-        {workTabs.length>0&&<details className="workspace-recent" open><summary>Open work</summary>{workTabs.map(item=><button key={item.key} aria-current={item.key===workKey?'page':undefined} onClick={()=>chooseWork(item)}><span>{item.title}</span>{workStatuses[item.key]&&<small>{workStatuses[item.key]}</small>}</button>)}</details>}
+        {workTabs.length>0&&<details className="workspace-recent" open={protectedWork.size?true:undefined}><summary>Open work{protectedWork.size?` · ${protectedWork.size} pending`:""}</summary>{workTabs.map(item=><button key={item.key} aria-current={item.key===workKey?'page':undefined} onClick={()=>chooseWork(item)}><span>{item.title}</span>{workStatuses[item.key]&&<small>{workStatuses[item.key]}</small>}</button>)}</details>}
         <footer className="workspace-sidebar-footer"><button onClick={prepareResearch} disabled={!project}>Research tools</button><details><summary>Workspace</summary><button onClick={()=>setTheme(theme==='dark'?'light':'dark')}>{theme==='dark'?'Light mode':'Dark mode'}</button><a href={`/publish.html?${new URLSearchParams({project})}`}>Publish research</a><a href="/">Public research ↗</a></details>{localPreview&&<details className="workspace-storage-status"><summary>Local · this Mac</summary><p>Saves on this Mac only. Hosted PostgreSQL and owner sign-in are not connected in this review.</p></details>}<small>Private · publishing is explicit</small></footer>
       </aside>
       <section inert={libraryOpen&&narrow?'':undefined} ref={reader} id="workspace-view" tabIndex={-1} className="workspace-reader atlas-reading-workspace" aria-label={libraryView==='notebook'?'Your notebook':'Selected record and private notes'}>

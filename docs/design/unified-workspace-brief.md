@@ -1,6 +1,6 @@
 # Unified research workspace: implementation brief
 
-Status: owner-approved direction; implementation planned, not built by this document.
+Status: owner-approved direction; implementation proposed in PR #181. See [implementation and verification contracts](../features/unified-workspace.md). Owner usability acceptance and hosted-release verification remain separate.
 Decision date: 2026-10-18. This brief supersedes older frontend instructions that prescribe a global header, large working tabs, a nested notebook explorer, or permanent Write/Preview controls. Preserve their data contracts and useful capabilities; replace their presentation.
 
 Delivery tracking: [workspace reset #177](https://github.com/justin-napolitano/islam-research/issues/177), with ordered slices [shell and theme #178](https://github.com/justin-napolitano/islam-research/issues/178), [inline Markdown and safe autosave #179](https://github.com/justin-napolitano/islam-research/issues/179), then [reader/context #180](https://github.com/justin-napolitano/islam-research/issues/180). These refine the existing design umbrella #51 and product roadmap #84; they do not replace hosted-release or owner-session verification.

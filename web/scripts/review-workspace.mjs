@@ -413,6 +413,19 @@ try {
   const readingURL=await evaluate('location.href');releaseNoteSave();
   await until(()=>evaluate(`[...window.document.querySelectorAll('.working-surface[hidden] .notebook-editor-toolbar>span')].some(node=>node.textContent==='Saved · revision 1')`),'save completes in background notebook');
   assert.equal(await evaluate('location.href'),readingURL,'background notebook save cannot redirect the active source');
+  // Exercise the actual mobile drawer using pointer and keyboard events.
+  await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  const menuPoint=await evaluate('{const r=document.querySelector(".workspace-sidebar-toggle").getBoundingClientRect();({x:r.x+r.width/2,y:r.y+r.height/2})}');
+  await call('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...menuPoint});await call('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...menuPoint});
+  await until(()=>evaluate('document.querySelector(".atlas-workspace").classList.contains("is-library-open")'),'mobile drawer opens');
+  assert.equal(await evaluate('document.querySelector("#workspace-view").inert'),true);
+  await call('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',modifiers:1});await call('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',modifiers:1});
+  assert.equal(await evaluate('document.querySelector("#atlas-library").contains(document.activeElement)'),true,'drawer retains keyboard focus');
+  await call('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape'});await call('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape'});
+  await until(()=>evaluate('!document.querySelector(".atlas-workspace").classList.contains("is-library-open")'),'Escape closes drawer');
+  assert.equal(await evaluate('document.activeElement===document.querySelector(".workspace-sidebar-toggle")'),true);
+  assert.equal(await evaluate('document.querySelector("#workspace-view").inert'),false);
+  await call('Emulation.clearDeviceMetricsOverride');
   // Reproduce user-reported sizing failure in the full workspace CSS cascade.
   const originalSource=await evaluate('document.querySelector(".reader-text").textContent');
   assert.equal(await evaluate('getComputedStyle(document.querySelector(".reader-text")).fontSize'),'22px');
@@ -989,8 +1002,8 @@ try {
   await click('Back to my reading');
   await click('Notes');
   await click('Reading notes');
-  await until(()=>evaluate('document.querySelectorAll(".research-notebook .notebook-title").length>0'),'workspace notebook shows live passage notes');
-  await evaluate('document.querySelector(".research-notebook .notebook-title").click()');
+  await until(()=>evaluate('document.querySelectorAll(".workspace-document-navigation .notebook-title").length>0'),'workspace notebook shows live passage notes');
+  await evaluate('document.querySelector(".workspace-document-navigation .notebook-title").click()');
   await until(()=>evaluate('!!document.querySelector(".reader-text mark.is-selected")'),'notebook backlink opens saved passage');
   assert.equal(await evaluate('new URL(location.href).searchParams.get("view")'),'notebook');
   assert.ok(await evaluate('!!document.querySelector(".notebook-source-pane .reader-text mark.is-selected")'));

@@ -95,6 +95,9 @@ try{
  await tools();await click('Reading notes');await click('Original passage note');await until(()=>evaluate('!!document.querySelector(".notebook-source-pane .reader-text mark.is-selected")'),'exact original source beside note');
  assert.equal(await source(),before);assert.equal(await evaluate('location.href'),route);
  assert.ok(await evaluate(`!!document.querySelector('[aria-label="Resize note and source"]')`));
+ const widthBefore=await evaluate('document.querySelector(".notebook-source-pane").getBoundingClientRect().width');
+ await evaluate('document.querySelector(".notebook-context-divider").focus()');await call('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowLeft',code:'ArrowLeft'});await call('Input.dispatchKeyEvent',{type:'keyUp',key:'ArrowLeft',code:'ArrowLeft'});
+ assert.ok(await evaluate('document.querySelector(".notebook-source-pane").getBoundingClientRect().width')>widthBefore,'source pane resizes by keyboard');
  await evaluate('{const node=document.querySelector(".notebook-source-pane .reader-text mark");const range=document.createRange();range.selectNodeContents(node);getSelection().removeAllRanges();getSelection().addRange(range);document.dispatchEvent(new Event("selectionchange"));}');
  await evaluate('window.__notebookTest.loseQuote=true');await click('Quote in notebook');await until(()=>evaluate('document.body.textContent.includes("Quote response lost")'),'quote uncertain response');await click('Retry original quote insertion');await until(()=>evaluate('window.__notebookTest.editor().state.doc.toString().includes("research-passage:")'),'exact citation insertion');
  assert.equal(await evaluate('JSON.stringify(window.__notebookTest.quoteRequests[0])===JSON.stringify(window.__notebookTest.quoteRequests[1])'),true);assert.ok((await source()).includes('Still writing.'));

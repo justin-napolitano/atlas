@@ -16,7 +16,7 @@
 .workspace-sidebar-top button{font-size:24px;line-height:1;min-width:34px}
 .workspace-sidebar-search,.workspace-sidebar-new{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;color:var(--muted)!important}
 .workspace-sidebar-search kbd{font:11px system-ui}
-.atlas-projects{padding:22px 0 0;min-width:0}
+.atlas-projects{padding:22px 0 0;min-width:0;flex:1;min-height:0;overflow:auto}
 .atlas-projects-heading{display:flex;justify-content:space-between;align-items:center;gap:6px;color:var(--muted);margin-bottom:6px}
 .atlas-projects-heading h2{font:500 12px system-ui;margin:0}
 .atlas-projects-heading button{font-size:12px}
@@ -58,12 +58,12 @@
 .atlas-library .workspace-search label,.atlas-library .workspace-search input,.atlas-library .workspace-search select{min-width:0;max-width:100%}
 .atlas-library-empty,.atlas-library-error{padding:8px;font-size:12px;color:var(--muted)}
 .atlas-advanced-search{font-size:12px;color:var(--muted);padding:12px 8px}
-.workspace-recent{padding:20px 0 12px;font-size:12px;color:var(--muted)}
+.workspace-recent{padding:12px 0;font-size:12px;color:var(--muted);flex-shrink:0;max-height:22dvh;overflow:auto}
 .workspace-recent summary{cursor:pointer;padding:8px}
 .workspace-recent button{display:flex;gap:6px;justify-content:space-between;width:100%;text-align:start;font-size:12px}
 .workspace-recent button span{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .workspace-recent small{color:var(--accent);flex-shrink:0}
-.workspace-sidebar-footer{margin-top:auto;padding-top:24px;font-size:12px;color:var(--muted)}
+.workspace-sidebar-footer{flex-shrink:0;margin-top:0;padding-top:24px;font-size:12px;color:var(--muted)}
 .workspace-sidebar-footer>button,.workspace-sidebar-footer summary{padding:8px;cursor:pointer}
 .workspace-sidebar-footer details button,.workspace-sidebar-footer details a{display:block;padding:8px;font:12px system-ui;text-decoration:none}
 .workspace-sidebar-footer>small{display:block;padding:8px;font-size:11px}
@@ -139,7 +139,7 @@
 .notebook-context-divider{position:sticky;top:0;height:calc(100dvh - 80px);cursor:col-resize;border-inline-start:1px solid var(--rule);touch-action:none}
 .quran-sidebar-surahs{font:13px/1.5 system-ui;color:var(--muted)}
 .quran-sidebar-surahs summary{padding:8px;cursor:pointer}
-.quran-sidebar-surahs nav{display:grid;gap:2px;max-height:45dvh;overflow:auto}
+.quran-sidebar-surahs nav{display:grid;gap:2px}
 .quran-sidebar-surahs button{text-align:start;font-size:13px}
 .atlas-workspace .notebook-note-details label:has(input[type=checkbox]){display:flex;align-items:center;gap:10px}
 .atlas-workspace .notebook-note-details input[type=checkbox]{width:auto}
@@ -149,3 +149,7 @@
  .atlas-workspace .notebook-source-pane{position:fixed;inset:0;max-height:none;z-index:80;padding:22px;background:var(--paper);border:0;overflow:auto}
  .atlas-workspace .notebook-source-pane>header{top:-22px;background:var(--paper);z-index:5}
 }
+
+.atlas-library>.workspace-sidebar-top,.atlas-library>.workspace-sidebar-search,.atlas-library>.workspace-sidebar-new{flex-shrink:0}
+.is-quran .atlas-body>.atlas-reading-workspace{padding-top:0}
+@media(max-width:900px){.is-quran .quran-toolbar{padding-top:56px}}
