@@ -423,7 +423,7 @@ try {
   assert.equal(await evaluate('document.querySelector("#atlas-library").contains(document.activeElement)'),true,'drawer retains keyboard focus');
   await call('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape'});await call('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape'});
   await until(()=>evaluate('!document.querySelector(".atlas-workspace").classList.contains("is-library-open")'),'Escape closes drawer');
-  assert.equal(await evaluate('document.activeElement===document.querySelector(".workspace-sidebar-toggle")'),true);
+  await until(()=>evaluate('document.activeElement===document.querySelector(".workspace-sidebar-toggle")'),'drawer returns keyboard focus');
   assert.equal(await evaluate('document.querySelector("#workspace-view").inert'),false);
   await call('Emulation.clearDeviceMetricsOverride');
   // Reproduce user-reported sizing failure in the full workspace CSS cascade.
