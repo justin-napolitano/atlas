@@ -69,6 +69,16 @@ References checked during implementation: [machine access policy](https://www.gu
 
 ## Verification
 
-Validation is in progress. Use synthetic projects/writing for automation. Never
+Validation: 154 frontend unit tests pass, provider and authenticated HTTP boundary
+tests pass, production build passes, and PostgreSQL 17/18 contracts pass in CI.
+The dedicated browser check covers search/open without membership, atomic exact
+notes, lost-response retry, original highlights, reader remount/resume, inert text
+and 390 px reflow. The same check passed using the permitted Gutenberg #1497
+Republic text with synthetic writing. The assembled workspace on isolated port
+5184 also passed real catalog search, 131-section reading, local durable note and
+page-reload resume, highlight return and mobile overflow checks. The local JSON
+adapter is local-only evidence, not proof of hosted PostgreSQL deployment.
+
+Use synthetic projects/writing for automation. Never
 inspect or copy the owner's local-preview state. A separate loopback preview port
 must not restart or mutate the owner's ongoing Qur’an reading session on 5183.

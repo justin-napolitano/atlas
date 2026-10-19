@@ -46,3 +46,13 @@ Repository plan: [second-brain roadmap](https://github.com/justin-napolitano/isl
 ## Owner-approved workspace simplification
 
 Before expanding the catalog, integrate the [unified workspace design brief](design/unified-workspace-brief.md): one left navigation tree and one document surface, live Markdown editing, contextual source reading, and a consistent charcoal/ivory/red palette. Sequence the work as shell/navigation, document editing, then reader/context integration. This replaces the nested application presentation; it preserves the implemented research and persistence contracts. The brief includes exact acceptance flows. PR #181 implements these three slices on top of #176; see [implementation and verification contracts](features/unified-workspace.md). The owner reading session (#146), native Mac input-method review and hosted-release proof (#42) remain separate acceptance work.
+
+## Gutenberg delivery update (2026-10-19)
+
+The owner has selected #170 as the next delivery after the Qur’an reading loop.
+PR #191, stacked on #190, implements official OPDS search → supported UTF-8 book
+reading → exact and free margin notes → original-source return, with optional
+project saving and private versioned resume. See [behavior, limits, threat model
+and validation](features/gutenberg-direct-reading.md). It does not establish a
+hosted release, complete #168 cross-provider catalog work, or connect Open Library
+#169 / papers #166. Those remain subsequent slices.

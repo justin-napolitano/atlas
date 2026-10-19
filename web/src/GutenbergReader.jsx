@@ -7,10 +7,11 @@ import {gutenbergReaderAPI,gutenbergPlaceWriter,bookPlaceSession} from './gutenb
 import {readingPosition} from './readingPosition.js';
 import './gutenberg.css';
 
-export default function GutenbergReader({api,projectId,bookId,drafts,changed,noteEditor,onOpen,onOpenNotebook,onBack}){
+export default function GutenbergReader({api,projectId,bookId,drafts,changed,noteEditor,onOpen,onOpenNotebook,onBack,onTitle}){
   const [book,setBook]=useState(null),[section,setSection]=useState(0),[initialPosition,setInitialPosition]=useState(0),[doc,setDoc]=useState(null),[error,setError]=useState(''),[message,setMessage]=useState(''),[placeState,setPlaceState]=useState(null);
   const root=useRef(null),alive=useRef(true),queue=useRef(null),sectionRef=useRef(0),active=useContext(SurfaceActivity),activeRef=useRef(active);
   activeRef.current=active;sectionRef.current=section;
+  useEffect(()=>{if(book?.title)onTitle?.(book.title);},[book?.title]);
   const placeKey='gutenberg-place:'+JSON.stringify([projectId,bookId]);
   const notify=value=>{if(!value)return;if(value.sent||value.next||value.busy||value.error||value.current)drafts.current.set(placeKey,{...value,projectId,workspaceMode:'gutenberg',saving:value.busy});else drafts.current.delete(placeKey);changed();if(alive.current)setPlaceState({...value});};
   async function load(){
