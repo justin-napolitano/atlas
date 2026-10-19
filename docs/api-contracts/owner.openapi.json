@@ -1609,6 +1609,53 @@
         "title": "QuranPlace",
         "type": "object"
       },
+      "QuranProgress": {
+        "additionalProperties": false,
+        "properties": {
+          "ayah": {
+            "maximum": 286.0,
+            "minimum": 1.0,
+            "title": "Ayah",
+            "type": "integer"
+          },
+          "chapter": {
+            "maximum": 114.0,
+            "minimum": 1.0,
+            "title": "Chapter",
+            "type": "integer"
+          },
+          "expected_revision": {
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "is_read": {
+            "title": "Is Read",
+            "type": "boolean"
+          },
+          "owner_confirmed": {
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "project_id",
+          "chapter",
+          "ayah",
+          "is_read",
+          "expected_revision"
+        ],
+        "title": "QuranProgress",
+        "type": "object"
+      },
       "RankCandidate": {
         "additionalProperties": false,
         "properties": {
@@ -5308,6 +5355,80 @@
           }
         },
         "summary": "Quran Place Save"
+      }
+    },
+    "/v1/quran/progress": {
+      "get": {
+        "operationId": "quran_progress_v1_quran_progress_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Quran Progress"
+      },
+      "put": {
+        "operationId": "save_quran_progress_v1_quran_progress_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuranProgress"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Quran Progress"
       }
     },
     "/v1/quran/words": {

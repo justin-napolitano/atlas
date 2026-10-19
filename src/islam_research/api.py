@@ -277,6 +277,14 @@ class QuranPlace(VerseOwnerInput):
     expected_revision: Annotated[int,Field(ge=0)]
 
 
+class QuranProgress(VerseOwnerInput):
+    project_id: Identifier
+    chapter: Annotated[int,Field(ge=1,le=114)]
+    ayah: Annotated[int,Field(ge=1,le=286)]
+    is_read: bool
+    expected_revision: Annotated[int,Field(ge=0)]
+
+
 class CollectionReadingLink(VerseOwnerInput):
     project_id: Identifier
     reading_id: Identifier
@@ -739,6 +747,14 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         except Exception:
             # Do not relay provider response bodies or internal network errors.
             raise HTTPException(503,'Word translation is unavailable. Your reading and notes are unchanged.') from None
+
+    @router.get('/quran/progress')
+    def quran_progress(project_id: Identifier):
+        return {'project_id':project_id,'items':store.quran_progress(project_id)}
+
+    @router.put('/quran/progress')
+    def save_quran_progress(value: QuranProgress, actor: str=Depends(owner)):
+        return store.save_quran_progress(actor=actor,**value.model_dump(exclude={'owner_confirmed'}))
 
     @router.post('/quran/binding',status_code=201)
     def quran_binding(value: QuranBinding,actor: str=Depends(owner)):

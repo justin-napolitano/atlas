@@ -12,6 +12,7 @@ The research should understand traditions in context before evaluating them. “
 - `docs/merge-issue-reconciliation.md` — merged workspace scope, integration checks, backlog closures, and unfinished research/release gates.
 - `docs/reader-first-workspace.md` — the Reader A interface connected to saved readings, margin notes, comparison, notebook, search, and sourced agent briefs.
 - `docs/quran-first-reading.md` — current priority: continuous Qur’an reading, translation, commentary and durable notes; reusable reading patterns follow real texts.
+- `docs/features/quran-reading-progress.md` — private, reversible ayah read marks, surah/work completion and revision-safe saves, separate from reading place and scholarly review.
 - `docs/seamless-open-catalog.md` — planned unified open catalog, direct reading, and durable notes without a mandatory import step.
 - `docs/research-library-vision.md` — library, reader, commentary and portable notes as one product, with a versioned arXiv reading pilot planned.
 - `docs/features/document-first-workspace.md` — simplified reader controls, formatted notebook pages, direct editing, and automatic private writing saves.

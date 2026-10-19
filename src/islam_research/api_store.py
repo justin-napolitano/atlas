@@ -18,10 +18,17 @@ from . import reading_drafts
 from . import collection_link
 from . import research_search
 from . import quran_workspace
+from . import quran_progress
 
 
 class PostgreSQLStore:
     """Keep private queries and public projection reads separate."""
+
+    def quran_progress(self, project_id):
+        with db.connect(self.dsn) as connection:return quran_progress.listing(connection,project_id)
+
+    def save_quran_progress(self, **values):
+        with db.connect(self.dsn) as connection:return quran_progress.save(connection,**values)
 
     def quran_binding(self, **values):
         with db.connect(self.dsn) as connection:return quran_workspace.binding(connection,**values)

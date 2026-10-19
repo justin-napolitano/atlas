@@ -9,6 +9,7 @@ from psycopg import sql
 
 
 READ_TABLES = (
+    "quran_reading_progress", "quran_progress_revisions",
     "quran_places", "quran_note_contexts",
     "projects", "records", "record_revisions", "relation_types", "relations",
     "personal_states", "personal_state_revisions", "import_snapshots",
@@ -31,6 +32,7 @@ OWNER_FUNCTIONS = (
     "research.withdraw_publication(text,integer,text,text)",
 )
 INSERT_COLUMNS = {
+    "quran_reading_progress": "project_id chapter ayah is_read changed_by",
     "quran_note_contexts": "entry_id project_id resource_key note_scope chapter ayah_start ayah_end",
     "quran_places": "project_id resource_key chapter ayah changed_by",
     "notebook_entries": "id project_id creation_sha256 record_id document_id annotation_id reading_position thought_type title body links changed_by",
@@ -56,6 +58,7 @@ INSERT_COLUMNS = {
     "publication_previews": "id project_id record_ids relation_ids inputs payload payload_sha256 created_by",
 }
 UPDATE_COLUMNS = {
+    "quran_reading_progress": "is_read revision changed_by",
     "quran_places": "resource_key chapter ayah revision changed_by updated_at",
     "notebook_entries": "thought_type title body links state revision changed_by",
     "notebook_drafts": "value state revision changed_by",
