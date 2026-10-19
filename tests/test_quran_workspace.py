@@ -62,6 +62,32 @@ class QuranWorkspaceTests(unittest.TestCase):
             self.assertEqual(old['note']['body'],updated['body'])
             with self.assertRaises(self.db.RevisionConflict):reader.create_note(c,**self.values,request_uuid=request,body='Different creation',actor='owner')
 
+    def test_personal_progress_is_revisioned_reversible_and_project_private(self):
+        from islam_research import quran_progress as progress
+        values=dict(project_id=self.project,chapter=4,ayah=59,is_read=True,expected_revision=0,actor='owner')
+        with self.db.connect(self.owner_dsn) as c:
+            self.assertEqual(progress.listing(c,self.project),[])
+            first=progress.save(c,**values);self.assertTrue(first['is_read']);self.assertIsNotNone(first['read_at'])
+            self.assertEqual(progress.save(c,**values),first)
+            self.assertEqual(len(progress.listing(c,self.project)),1)
+            undone=progress.save(c,**{**values,'is_read':False,'expected_revision':1})
+            self.assertFalse(undone['is_read']);self.assertIsNone(undone['read_at'])
+            self.assertEqual(undone['revision'],2)
+            self.assertEqual(c.execute('SELECT count(*) AS n FROM research.quran_progress_revisions WHERE project_id=%s',(self.project,)).fetchone()['n'],2)
+            with self.assertRaises(self.db.RevisionConflict):progress.save(c,**values)
+            for invalid in ({'chapter':114,'ayah':7},{'chapter':0},{'is_read':1}):
+                with self.assertRaises(ValueError):progress.save(c,**{**values,**invalid})
+            other='quran-test:'+uuid.uuid4().hex;self.db.create_project(c,other,'Other synthetic project')
+            self.assertEqual(progress.listing(c,other),[])
+            progress.save(c,**{**values,'project_id':other})
+            self.assertFalse(progress.listing(c,self.project)[0]['is_read'])
+            self.assertTrue(progress.listing(c,other)[0]['is_read'])
+            with c.transaction():
+                with self.assertRaises(Exception):
+                    with c.transaction():c.execute('UPDATE research.quran_reading_progress SET project_id=%s WHERE project_id=%s',(other,self.project))
+        with self.db.connect(self.public_dsn) as c:
+            with self.assertRaises(Exception):c.execute('SELECT * FROM research.quran_reading_progress')
+
     def test_existing_pilot_wording_and_note_ids_are_reused(self):
         from islam_research import verse_store
         with self.db.connect(self.owner_dsn) as c:

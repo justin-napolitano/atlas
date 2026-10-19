@@ -25,6 +25,9 @@ class MemoryBoundaryStore:
     """Only a transport test adapter; database guarantees have separate real-PG tests."""
     def ready(self, mode):
         return True
+    def quran_progress(self, project_id):return []
+    def save_quran_progress(self,**value):
+        return {**value,'revision':value['expected_revision']+1,'read_at':'2026-10-19T00:00:00Z' if value['is_read'] else None}
     def save_reading_draft(self,**value):
         return {**value,"revision":1}
     def reading_draft(self,*args):return None
@@ -141,7 +144,7 @@ class APIBoundaryTests(unittest.TestCase):
 
     def test_quran_reader_resources_and_notes_keep_owner_boundary(self):
         public=TestClient(create_app(Settings('synthetic',mode='public'),store=MemoryBoundaryStore()))
-        for path in ('catalog','chapter','words','binding','notes','marks','place'):
+        for path in ('catalog','chapter','words','progress','binding','notes','marks','place'):
             self.assertEqual(self.client.get('/v1/quran/'+path).status_code,401)
             self.assertEqual(public.get('/v1/quran/'+path).status_code,404)
         catalog=self.client.get('/v1/quran/catalog',headers=self.headers()).json()
@@ -167,6 +170,20 @@ class APIBoundaryTests(unittest.TestCase):
         for patch in ({'actor':'forged'},{'chapter':True},{'owner_confirmed':False},{'resource_key':'https://example.invalid'},{'body':'x'*20001}):
             response=self.client.post('/v1/quran/notes',json={**payload,**patch},headers=self.headers())
             self.assertEqual(response.status_code,422)
+
+    def test_quran_progress_is_private_explicit_and_revision_bound(self):
+        route='/v1/quran/progress';value=dict(project_id='synthetic',chapter=4,ayah=59,is_read=True,expected_revision=0,owner_confirmed=True)
+        public=TestClient(create_app(Settings('synthetic',mode='public'),store=MemoryBoundaryStore()))
+        self.assertEqual(self.client.put(route,json=value).status_code,401)
+        self.assertEqual(public.put(route,json=value).status_code,404)
+        headers=self.headers();headers.pop('x-research-write')
+        self.assertEqual(self.client.put(route,json=value,headers=headers).status_code,403)
+        self.assertEqual(self.client.put(route,json=value,headers=self.headers(origin='https://wrong.example.invalid')).status_code,403)
+        self.assertEqual(self.client.get(route,params={'project_id':'synthetic'},headers=self.headers()).json(),{'project_id':'synthetic','items':[]})
+        response=self.client.put(route,json=value,headers=self.headers())
+        self.assertEqual(response.status_code,200);self.assertEqual(response.json()['actor'],OWNER)
+        for patch in ({'actor':'forged'},{'chapter':True},{'chapter':114,'ayah':7},{'owner_confirmed':False},{'is_read':1},{'is_read':'true'},{'expected_revision':-1},{'review_state':'reviewed'},{'resource_key':'itani-god'}):
+            self.assertEqual(self.client.put(route,json={**value,**patch},headers=self.headers()).status_code,422)
             self.assertNotIn('SYNTHETIC private Quran note',response.text)
 
     def test_write_requires_csrf_boundary_and_owner(self):

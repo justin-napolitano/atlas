@@ -754,6 +754,7 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
 
     @router.put('/quran/progress')
     def save_quran_progress(value: QuranProgress, actor: str=Depends(owner)):
+        quran_reader.reference(value.chapter,value.ayah)
         return store.save_quran_progress(actor=actor,**value.model_dump(exclude={'owner_confirmed'}))
 
     @router.post('/quran/binding',status_code=201)

@@ -41,8 +41,21 @@ try{
   await until(()=>evaluate('document.querySelectorAll("[data-ayah]").length===176'),'complete An-Nisa');
   assert.equal(await evaluate('document.querySelector(`[data-ayah="59"] .quran-translation`).textContent.length>30'),true);
   assert.equal(await evaluate('(()=>{const select=document.querySelector(".quran-toolbar button"),r=select.getBoundingClientRect();return !!document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest(".quran-toolbar")})()'),true);
+  await until(()=>evaluate('!document.querySelector(`[aria-label="Mark Q 4:59 read"]`).disabled'),'progress loaded');
+  assert.equal(await evaluate('window.__quranTest.progressRows.size'),0,'scrolling and resuming do not mark verses read');
+  await evaluate('window.__quranTest.loseProgress();document.querySelector(`[aria-label="Mark Q 4:59 read"]`).click()');
+  await until(()=>evaluate('!!document.querySelector(".quran-progress-error")'),'lost progress acknowledgement is explicit');
+  assert.equal(await evaluate('document.querySelector(".quran-progress-summary summary").textContent'),'0/6,236 read','unconfirmed read marks do not inflate completion');
+  await click('Retry read mark');
+  await until(()=>evaluate('document.querySelector(".quran-progress-summary summary").textContent==="1/6,236 read"'),'confirmed reading progress');
+  assert.equal(await evaluate('window.__quranTest.progressRows.size'),1);
+  await evaluate('document.querySelector(`[aria-label="Mark Q 4:59 unread"]`).click()');
+  await until(()=>evaluate('document.querySelector(".quran-progress-summary summary").textContent==="0/6,236 read"'),'read mark can be undone');
+  await evaluate('document.querySelector(`[aria-label="Mark Q 4:59 read"]`).click()');
+  await until(()=>evaluate('document.querySelector(".quran-progress-summary summary").textContent==="1/6,236 read"'),'read again without duplicate count');
   const before=await evaluate('getComputedStyle(document.querySelector(".quran-translation")).fontSize');
   await click('Larger');
+  await until(()=>evaluate('document.querySelector(".quran-progress-summary summary")?.textContent==="1/6,236 read"'),'confirmed progress survives component memory loss');
   assert.notEqual(await evaluate('getComputedStyle(document.querySelector(".quran-translation")).fontSize'),before);
 
   await evaluate('document.querySelector(".reading-appearance-panel").open=false');
@@ -145,8 +158,9 @@ try{
   await until(()=>evaluate('window.__quranTest.place()?.ayah===83'),'durable canonical resume');
   await evaluate('window.__quranTest.remount()');
   await until(()=>evaluate('document.querySelectorAll("[data-ayah]").length===176&&new URL(location.href).searchParams.get("ayah_start")==="83"'),'reading resumes after new component session');
+  await until(()=>evaluate('document.querySelector(".quran-progress-summary summary")?.textContent==="1/6,236 read"'),'confirmed progress survives component memory loss');
   assert.notEqual(await evaluate('getComputedStyle(document.querySelector(".quran-translation")).fontSize'),before);
   await click('Notes');await until(()=>evaluate('!!document.querySelector(".quran-notes-divider")'),'resized margin reopens');
   assert.equal(await evaluate('Math.round(Number(localStorage.getItem("research:quran-notes-width-v1")))'),await evaluate('Number(document.querySelector(".quran-notes-divider").getAttribute("aria-valuenow"))'));
-  assert.deepEqual(problems,[]);console.log(JSON.stringify({arabicEnglishWordMeaning:true,wordPopoverMobilePlacement:true,nearSelectionAction:true,autoFocusedQuote:true,exactCaptureRetry:true,borderlessEditor:true,keyboardAndPointerResize:true,compactZoomControls:true,surahAndWholeNotes:true,semanticResume:true,inlineHighlight:true,completeSurah:176,atomicNote:true,lostResponseRetry:true,newerTyping:true,markdown:true,resourceIsolation:true,mobileNoOverflow:true,artifacts}));
+  assert.deepEqual(problems,[]);console.log(JSON.stringify({explicitReadingProgress:true,progressRetryUndoAndReload:true,arabicEnglishWordMeaning:true,wordPopoverMobilePlacement:true,nearSelectionAction:true,autoFocusedQuote:true,exactCaptureRetry:true,borderlessEditor:true,keyboardAndPointerResize:true,compactZoomControls:true,surahAndWholeNotes:true,semanticResume:true,inlineHighlight:true,completeSurah:176,atomicNote:true,lostResponseRetry:true,newerTyping:true,markdown:true,resourceIsolation:true,mobileNoOverflow:true,artifacts}));
 }finally{socket?.close();chrome.kill('SIGTERM');await preview.httpServer.close();await new Promise(resolve=>{if(chrome.exitCode!==null)return resolve();chrome.once('exit',resolve);setTimeout(resolve,3000);});await rm(temporary,{recursive:true,force:true,maxRetries:5,retryDelay:200});}
