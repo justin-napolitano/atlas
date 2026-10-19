@@ -19,7 +19,7 @@ import './readerPresentation.css';
 import './readingAppearance.css';
 
 /** Edition-bound reading surface with saved inline marks and adjacent private notes. */
-export default function SourceReader({ record, api, drafts, changed, noteEditor, navigate, initialAnnotationId = '',initialDocumentId='',initialReadingPosition=null,focused=false,onFocusChange,onOpenVerse,onReadingPlace,onBookmark,initialMarginOpen,onQuote,onOpenNotebook }) {
+export default function SourceReader({ record, api, drafts, changed, noteEditor, navigate, initialAnnotationId = '',initialDocumentId='',initialReadingPosition=null,focused=false,onFocusChange,onOpenVerse,onReadingPlace,onBookmark,initialMarginOpen,onQuote,onOpenNotebook,catalogReading=false }) {
   const [appearance,setAppearance]=useState(()=>{try{return readReadingPreferences(window.localStorage);}catch{return normalizeReadingPreferences();}}),appearancePlace=useRef(null);
   const [snapshots,setSnapshots]=useState([]), [cursor,setCursor]=useState(null), [documentId,setDocumentId]=useState('');
   const [document,setDocument]=useState(null), [annotations,setAnnotations]=useState([]), [annotationCursor,setAnnotationCursor]=useState(null);
@@ -246,7 +246,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
             <p>{document.edition}</p><p>{document.locator}</p><p>{document.review_scope}</p>
             {document.representation_url && <a href={document.representation_url} target="_blank" rel="noopener noreferrer">Open original source ↗</a>}
             {document.source_notice && <div className="reader-source-notice"><h4>Source notice & attribution</h4><pre dir="auto">{document.source_notice}</pre></div>}
-            {importForm}
+            {!catalogReading && importForm}
           </details>
         </div>
         <aside ref={margin} id={marginId} hidden={!marginOpen} className="reader-margin" aria-label="Passage margin notes" onKeyDown={event=>{if(!event.defaultPrevented && event.key==='Escape' && window.matchMedia('(max-width: 900px)').matches){event.preventDefault();event.stopPropagation();setMarginOpen(false);textRoot.current?.closest('.source-reader')?.querySelector('.reader-margin-toggle')?.focus();}}}>

@@ -144,7 +144,7 @@ def sections(text):
     """Keep every Unicode code point; headings are navigation hints, not scholarly markup."""
     starts=[0]
     for match in re.finditer(r'(?m)^(?:CHAPTER|BOOK|PART|SECTION|LETTER)\s+[^\n]{1,100}$',text):
-        if match.start()>starts[-1]: starts.append(match.start())
+        if match.start()>starts[-1] and text[starts[-1]:match.start()].strip(): starts.append(match.start())
     starts.append(len(text))
     result=[]
     for a,b in zip(starts,starts[1:]):
