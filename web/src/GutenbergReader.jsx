@@ -15,7 +15,7 @@ export default function GutenbergReader({api,projectId,bookId,drafts,changed,not
   const placeKey='gutenberg-place:'+JSON.stringify([projectId,bookId]);
   const notify=value=>{if(!value)return;if(value.sent||value.next||value.busy||value.error||value.current)drafts.current.set(placeKey,{...value,projectId,workspaceMode:'gutenberg',saving:value.busy});else drafts.current.delete(placeKey);changed();if(alive.current)setPlaceState({...value});};
   async function load(){
-    setError('');
+    setError('');setDoc(null);
     try{
       const [value,place]=await Promise.all([api.request('catalog/gutenberg/book',{project_id:projectId,book_id:bookId}),api.request('catalog/gutenberg/place',{project_id:projectId,book_id:bookId}).catch(err=>{if(err.status===404)return null;throw err;})]);
       if(!alive.current)return;
@@ -35,7 +35,7 @@ export default function GutenbergReader({api,projectId,bookId,drafts,changed,not
     if(!book?.sections?.length)return;
     api.request('catalog/gutenberg/section',{project_id:projectId,book_id:bookId,version:book.version,section}).then(value=>{if(live)setDoc(value);}).catch(err=>{if(live)setError(err.message);});
     return()=>{live=false;};
-  },[book?.version,section,projectId,bookId]);
+  },[book,section,projectId,bookId]);
   const binding=useMemo(()=>book?.version?{project_id:projectId,book_id:bookId,version:book.version,section}:null,[projectId,bookId,book?.version,section]);
   const readerAPI=useMemo(()=>doc?gutenbergReaderAPI(api,binding,doc):null,[api,binding,doc]);
   const record=useMemo(()=>doc?{id:doc.source_record_id,project_id:projectId,kind:'source',title:book.title}:null,[doc,projectId,book?.title]);
@@ -58,7 +58,7 @@ export default function GutenbergReader({api,projectId,bookId,drafts,changed,not
     {book.availability!=='read'?<p>This edition has no supported public-domain UTF-8 text in this reader yet. <a href={book.source_url} target="_blank" rel="noopener noreferrer">See available formats on Gutenberg ↗</a></p>:<>
       <DocumentNavigation><div className="gutenberg-contents"><strong>{book.title}</strong><nav aria-label="Book contents">{book.sections.map(item=><button key={item.index} aria-current={section===item.index?'location':undefined} onClick={()=>move(item.index)}>{item.index+1}. {item.label}</button>)}</nav></div></DocumentNavigation>
       <nav className="gutenberg-section-nav" aria-label="Reading sections"><button disabled={!section} onClick={()=>move(section-1)}>← Previous</button><span>{section+1} / {book.sections.length} · {book.sections[section]?.label}</span><button disabled={section===book.sections.length-1} onClick={()=>move(section+1)}>Next →</button></nav>
-      {placeState?.error&&<div role="alert">Reading place not saved: {placeState.error} {placeState.current?<><button onClick={()=>{const kept=queue.current.keepRemote();setSection(kept.section);setInitialPosition(kept.position);}}>Use saved place</button><button onClick={()=>queue.current.replace()}>Keep my place</button></>:<button onClick={()=>queue.current.retry()}>Retry reading place</button>}</div>}
+      {placeState?.error&&<div role="alert">Reading place not saved: {placeState.error} {placeState.current?<><button onClick={()=>{queue.current.keepRemote();load();}}>Use saved place</button><button onClick={()=>queue.current.replace()}>Keep my place</button></>:<button onClick={()=>queue.current.retry()}>Retry reading place</button>}</div>}
       {doc?<SourceReader key={doc.id} record={record} api={readerAPI} drafts={drafts} changed={changed} noteEditor={noteEditor} navigate={onOpen} initialDocumentId={doc.id} initialReadingPosition={initialPosition} initialMarginOpen={false} onBookmark={()=>{}} onOpenNotebook={onOpenNotebook} catalogReading/>:<p role="status">Opening reading section…</p>}
       <small className="gutenberg-resume-status">{placeState?.busy?'Saving place…':placeState?.cloud&&!placeState.error?'Reading place saved':''}</small>
     </>}
