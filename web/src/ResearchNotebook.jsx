@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {newThought,notebookKey,notebookMetadata,saveThought,thoughtLabel,thoughtTypes,verifyThought} from './notebookClient.js';
 import './researchNotebook.css';
+import {DocumentNavigation} from './WorkspaceNavigation.jsx';
 import NotebookConnections from './NotebookConnections.jsx';
 import NotebookMarkdown from './NotebookMarkdown.jsx';
 import NotebookNetwork from './NotebookNetwork.jsx';
@@ -141,24 +142,18 @@ export default function ResearchNotebook({onOpenQuran,api,projectId,drafts,chang
   function openTrashed(row){if(row.target_kind==='entry')open({id:row.target_id,item_kind:'entry'});else openSource(row.record_id,projectId,row.annotation_id,row.document_id);}
   if(cloud?.trashed&&!draft)return <section className="research-notebook" aria-label="Trashed notebook thought"><h2>This writing is in Trash</h2><p>Its original identity, source links, and revision history remain. Restore it to read or edit it here.</p><TrashAction api={api} projectId={projectId} kind="entry" id={cloud.id} revision={cloud.revision} trashRevision={cloud.trash_revision} trashed onChanged={trashChanged}/><button onClick={()=>{setSelected(null);selection.current=null;setCloud(null);onEntryChange('','');}}>Back to notes</button></section>;
   return <section ref={notebookRoot} className={`research-notebook${sourceTarget&&!showGraph?' has-source-pane':''}${mobileEditor?' is-editing':''}`} aria-label={questionMode?'Research questions':'Research notebook'} onKeyDown={event=>{if((event.metaKey || event.ctrlKey)&&event.key.toLowerCase()==='s'){event.preventDefault();if(draft && !locked && !draft.current && value?.title.trim() && value?.body.trim())save();}}}>
-    <header className="notebook-heading"><h2>{questionMode?'Questions':'Notes'}</h2><div className="notebook-heading-actions"><button aria-pressed={showGraph} onClick={()=>{setShowGraph(value=>!value);ensureNetwork();}}>Note graph</button><button className="notebook-new" onClick={()=>start(null)}>{questionMode?'New question':'New note'}</button></div></header>
+
     {networkError && <p role="alert">{networkError} <button onClick={loadNetwork}>Retry note connections</button></p>}
     {showGraph && <><button onClick={()=>setShowGraph(false)}>← Back to notes</button>{networkLoading && <p role="status">Loading saved note connections…</p>}{network && <NotebookNetwork network={network} graph={graph} selected={selected} onOpen={id=>open({id,item_kind:'entry'})} onOpenPassage={id=>follow({kind:'annotation',id})}/>}</>}
-    <div className="notebook-with-source"><div className="notebook-layout" hidden={showGraph}>
-      <section className="notebook-index" aria-label="Notebook entries">
+    <DocumentNavigation>      <section className="notebook-index" aria-label="Notebook entries">
         <form className="notebook-filters notebook-search" role="search" aria-label="Search notebook" onSubmit={event=>{event.preventDefault();load();}}><label><span className="sr-only">Search notebook</span><input type="search" value={query} maxLength={300} onChange={event=>{setQuery(event.target.value);setFolderOpen(true);const folder=notebookRoot.current?.querySelector('.notebook-project-folder');if(folder)folder.open=true;}} placeholder="Find a note…"/></label></form>
-        <details className="notebook-project-folder" open><summary title={projectTitle || 'Notebook'}><NotebookIcon folder/><span className="notebook-file-title">{projectTitle || 'Notebook'}</span></summary>
-          <nav className="notebook-collections" aria-label="Notebook collections">{(questionMode?[['writing','My questions']]:[['writing','My writing'],['reading','Reading notes'],['all','Everything']]).map(([id,label])=><div className="notebook-folder" key={id}>
-            <button className="notebook-folder-toggle" aria-pressed={collection===id} aria-expanded={collection===id&&folderOpen} onClick={()=>{if(collection===id)setFolderOpen(!folderOpen);else chooseCollection(id);}}><span className="notebook-chevron" aria-hidden="true" data-expanded={collection===id&&folderOpen}/><NotebookIcon folder/>{label}</button>
-            {collection===id&&folderOpen&&<div className="notebook-folder-notes">
-              {!rows.length&&!loading&&<p className="notebook-index-empty">No matching entries.</p>}
-              {loading&&!rows.length&&<p className="notebook-index-empty" role="status">Loading…</p>}
-              {rows.map(row=><article key={`${row.item_kind}:${row.id}`} className={row.id===selected?'is-selected':''}><button className="notebook-title" title={`${row.title} · ${thoughtLabel(row.thought_type)}`} aria-current={row.id===selected?'page':undefined} onClick={()=>open(row)}><NotebookIcon/><span className="notebook-file-title">{row.title}</span></button></article>)}
-              {cursor&&<button disabled={loading} onClick={()=>load(cursor)}>More notes</button>}
-            </div>}
-          </div>)}</nav>
-        </details>
-        <details className="notebook-tools"><summary>Notebook tools</summary>
+        <div className="notebook-sidebar-items">
+          {loading&&!rows.length&&<p role="status">Loading…</p>}
+          {!loading&&!rows.length&&<p>No matching notes.</p>}
+          {rows.map(row=><button key={`${row.item_kind}:${row.id}`} className="notebook-title" title={row.title} aria-current={row.id===selected?'page':undefined} onClick={()=>open(row)}><NotebookIcon/><span className="notebook-file-title">{row.title}</span></button>)}
+          {cursor&&<button disabled={loading} onClick={()=>load(cursor)}>More notes</button>}
+        </div>
+        <details className="notebook-tools"><summary>Views & tools</summary><div className="notebook-collection-filters">{(questionMode?[['writing','My questions']]:[['writing','My writing'],['reading','Reading notes'],['all','Everything']]).map(([id,label])=><button key={id} aria-pressed={collection===id} onClick={()=>chooseCollection(id)}>{label}</button>)}</div><button aria-pressed={showGraph} onClick={()=>{setShowGraph(value=>!value);ensureNetwork();}}>Note graph</button>
           <WritingRecovery api={api} projectId={projectId} onRecover={recoverWriting}/>
           <PrivateTrash api={api} projectId={projectId} onOpen={openTrashed} onChanged={trashChanged}/>
           <form className="notebook-filters" onSubmit={event=>{event.preventDefault();load();}}><details><summary>Filter notes</summary><label>Thought type<select disabled={questionMode} value={kind} onChange={event=>setKind(event.target.value)}><option value="">All thoughts and reading notes</option>{(questionMode?['question']:[...thoughtTypes,'passage_note','record_note']).map(type=><option key={type} value={type}>{thoughtLabel(type)}</option>)}</select></label>
@@ -166,10 +161,12 @@ export default function ResearchNotebook({onOpenQuran,api,projectId,drafts,chang
         </details>
         {questionMode && <section className="notebook-research-questions"><h3>From the research graph</h3><p>Existing research questions retain their recorded review status.</p>{researchQuestionError && <p role="alert">{researchQuestionError}</p>}{researchQuestions.map(row=><article key={row.id}><small>{row.review_state || 'Review not stated'}</small><button className="notebook-title" onClick={()=>openSource(row.id,projectId)}>{row.title}</button><p>{row.summary}</p></article>)}{!researchQuestions.length&&!researchQuestionError&&<p>No graph questions loaded.</p>}{moreResearchQuestions&&<button onClick={moreResearchQuestions}>More graph questions</button>}</section>}
       </section>
+</DocumentNavigation>
+    <div className="notebook-with-source"><div className="notebook-layout" hidden={showGraph}>
       <section className="notebook-writing" aria-label="Notebook editor">
         <button className="notebook-mobile-back" onClick={()=>setMobileEditor(false)}>← All notes</button>
         <p className="notebook-message" role="status">{message}</p>
-        {!value && <div className="notebook-welcome"><p>{questionMode?'Choose a question or start a new one.':'Choose a note or start writing.'}</p><button className="notebook-new" onClick={()=>start(null)}>{questionMode?'Write your first question':'Write your first note'}</button>{anchor?.record_id && <button onClick={()=>start(anchor)}>New thought at this passage</button>}</div>}
+        {!value && <div className="notebook-welcome"><p>{questionMode?'Choose a question or start a new one.':'Choose a note or start writing.'}</p><button className="notebook-new" onClick={()=>start(null)}>{questionMode?'New question':'New note'}</button>{anchor?.record_id && <button onClick={()=>start(anchor)}>New thought at this passage</button>}</div>}
         {value && <>
           <div className="notebook-editor-toolbar"><span role="status">{draft?.current?'Compare revisions':draft?.saving?'Saving…':draft?.sent?'Save needs confirmation':draft?(!value.title.trim()?'Add a title to save':!value.body.trim()?'Start writing to save':draft.autoSave&&!draft.error&&value.thought_type!=='source_claim'&&value.state==='active'?'Saving shortly…':'Unsaved changes'):`Saved · revision ${cloud?.revision}`}</span><button className="notebook-save" disabled={!draft || draft.saving || !!draft.current || !!quoteDraft || !value.title.trim() || !value.body.trim()} onClick={()=>save()}>{saveLabel}</button></div>
           {draft&&(!draft.autoSave || ['error','conflict'].includes(recovery.status.phase))&&<RecoveryStatus {...recovery}/>}
