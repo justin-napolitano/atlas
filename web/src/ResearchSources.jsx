@@ -1,8 +1,10 @@
 import React,{useEffect,useRef,useState} from 'react';
 import './researchDestinations.css';
+import GutenbergSearch from './GutenbergSearch.jsx';
+import './gutenberg.css';
 
 const sourceKinds=['source','work','edition'];
-export default function ResearchSources({api,projectId,readings=[],onOpen,onAdd,onQuestion,onMoreReadings}){
+export default function ResearchSources({api,projectId,readings=[],onOpen,onAdd,onQuestion,onMoreReadings,onOpenGutenberg}){
   const [rows,setRows]=useState([]),[cursors,setCursors]=useState({}),[query,setQuery]=useState(''),[filter,setFilter]=useState('all'),[loading,setLoading]=useState(false),[error,setError]=useState('');
   const generation=useRef(0);
   async function load(append=false){const token=++generation.current;setLoading(true);setError('');
@@ -17,6 +19,7 @@ export default function ResearchSources({api,projectId,readings=[],onOpen,onAdd,
   const versions=id=>readings.filter(row=>row.record_id===id);
   const visible=rows.filter(row=>(row.title+' '+(row.summary || '')).toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())&&(filter==='all'||versions(row.id).length));
   return <section className="research-sources" aria-label="Source library"><header className="research-destination-heading"><div><span>Your references and readings</span><h2>Sources</h2><p>Keep the reference. Read the text. Follow a question.</p></div><button className="research-primary-action" onClick={onAdd}>Add source</button></header>
+    {onOpenGutenberg&&<GutenbergSearch api={api} onOpen={onOpenGutenberg}/>}
     <div className="research-source-controls"><label>Find a source<input value={query} maxLength={300} onChange={event=>setQuery(event.target.value)} placeholder="Title or description"/></label><div role="group" aria-label="Source view"><button aria-pressed={filter==='all'} onClick={()=>setFilter('all')}>All sources</button><button aria-pressed={filter==='text'} onClick={()=>setFilter('text')}>With saved text</button></div></div>
     <p role="status">{loading?'Loading your sources…':error || `${visible.length} sources shown`}{query.trim()?' · matching loaded titles and descriptions':''}</p>
     {!loading&&!rows.length&&!error&&<div className="research-destination-empty"><h3>Start your library.</h3><p>Add a reference now; bring in a permitted reading excerpt whenever you have one.</p><button onClick={onAdd}>Add your first source</button></div>}
