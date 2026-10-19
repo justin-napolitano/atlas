@@ -11,6 +11,22 @@ surahs out of 114. These are ayah counts, not estimates of time, pages or master
 Scrolling and opening verses never mark them read. The existing canonical resume
 location continues saving independently.
 
+Keyboard reading (#189): press **Space** or **Right Arrow** to mark the current
+ayah read and advance/focus the next one. The final ayah of a surah advances to the
+next surah; the final ayah of the Qur’an stays selected and announces the end.
+Already-read ayahs do not receive duplicate completion writes. Holding a key does
+not skip ahead. The pinned keyboard cursor prevents delayed scroll tracking from
+moving backwards near the bottom of a short surah; manual scrolling releases it.
+
+These shortcuts are active only in the visible reading surface. Inputs, Markdown
+editors, margin notes, source links/highlights, buttons, sliders, resize controls,
+navigation, dialogs, text selections, IME composition and modified keys keep their
+normal keyboard behavior. Read marks use the existing per-ayah save queues and
+count only after acknowledgement. A failed save remains visibly retryable after
+advancing. If progress has not loaded, the shortcut explains the unavailable
+progress instead of silently advancing without a mark. There is no new automatic
+completion on ordinary scrolling or mouse navigation.
+
 Progress belongs to a project and the canonical chapter/ayah, so Arabic and
 English reading share it. Notes and highlights remain tied to their exact source
 edition. A change of translation does not reset progress or move annotations.

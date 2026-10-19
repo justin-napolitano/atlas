@@ -17,6 +17,7 @@ import {DocumentNavigation} from './WorkspaceNavigation.jsx';
 import {marginWidth,marginWidthKey,defaultMarginWidth,selectionToolbarPosition} from './readerMarginGeometry.js';
 import QuranWordTranslation from './QuranWordTranslation.jsx';
 import useQuranProgress from './useQuranProgress.js';
+import {isReadingAdvanceKey,nextReadingAyah} from './quranReadingKeys.js';
 
 export default function QuranReader({api,projectId,initialReference,drafts,changed,onOpen,onOpenNotebook,onLocation,noteEditor}){
   const [marks,setMarks]=useState([]),[marksCursor,setMarksCursor]=useState(null),[marksError,setMarksError]=useState(''),[selection,setSelection]=useState(null),[activeMark,setActiveMark]=useState('');
@@ -24,6 +25,8 @@ export default function QuranReader({api,projectId,initialReference,drafts,chang
   const [preferredWidth,setPreferredWidth]=useState(()=>{try{return marginWidth(Number(localStorage.getItem(marginWidthKey))||defaultMarginWidth);}catch{return defaultMarginWidth;}}),[availableWidth,setAvailableWidth]=useState(1200);
   const layout=useRef(null),resizeAnchor=useRef(null),marginDrag=useRef(null),resizeAction=useRef(null);
   const selectionPanel=useRef(null),selectionRect=useRef(null);
+  const keyboardCursor=useRef(null),keyboardHandler=useRef(null);
+  const [keyboardReading,setKeyboardReading]=useState(false),[keyboardMessage,setKeyboardMessage]=useState('');
   const notesWidth=marginWidth(preferredWidth,availableWidth);
   const captureKey='quran-capture:'+projectId;const capture=drafts.current.get(captureKey);
   const [catalog,setCatalog]=useState(null),[chapter,setChapter]=useState(initialReference?.chapter||4),[ayah,setAyah]=useState(initialReference?.ayah_start||59);
@@ -54,11 +57,13 @@ export default function QuranReader({api,projectId,initialReference,drafts,chang
       if(token===generation.current){setData(value);resumed.current=false;}
     }).catch(e=>{if(token===generation.current)setError(e.message);});return()=>{generation.current++;};
   },[chapter,ready]);
-  useEffect(()=>{if(!data||resumed.current)return;resumed.current=true;requestAnimationFrame(()=>root.current?.querySelector(`[data-ayah="${ayah}"]`)?.scrollIntoView({block:'start'}));},[data]);
+  useEffect(()=>{if(!data||resumed.current)return;resumed.current=true;requestAnimationFrame(()=>{const verse=root.current?.querySelector(`[data-ayah="${ayah}"]`);verse?.scrollIntoView({block:'start'});if(keyboardCursor.current?.chapter===data.chapter)verse?.focus({preventScroll:true});});},[data]);
   const isVisible=()=>root.current&&!root.current.closest('[hidden]');
   useEffect(()=>{if(!data)return;const outer=root.current?.closest('.workspace-reader')||window;
     let timer;function track(){if(!isVisible()||notes)return;clearTimeout(timer);timer=setTimeout(()=>{
       const top=outer===window?0:outer.getBoundingClientRect().top;
+      const cursor=keyboardCursor.current,pinned=cursor?.chapter===chapter?root.current.querySelector(`[data-ayah="${cursor.ayah}"]`):null;
+      if(pinned&&pinned.getBoundingClientRect().bottom>top+stickyTop+toolbarHeight&&pinned.getBoundingClientRect().top<(outer===window?innerHeight:outer.getBoundingClientRect().bottom)){setAyah(cursor.ayah);return;}
       const verse=[...root.current.querySelectorAll('[data-ayah]')].find(el=>el.getBoundingClientRect().bottom>top+stickyTop+toolbarHeight+25);
       if(verse)setAyah(Number(verse.dataset.ayah));
     },180);}outer.addEventListener('scroll',track,{passive:true});return()=>{outer.removeEventListener('scroll',track);clearTimeout(timer);};
@@ -75,7 +80,26 @@ export default function QuranReader({api,projectId,initialReference,drafts,chang
     request.then(value=>{if(live){if(scope==='verse'){setBinding(value);active.current=value;}else{setBroadNotes(value.items);setBroadCursor(value.next_cursor);}}}).catch(e=>{if(live)setSideError(e.message);});return()=>{live=false;};
   },[notes,contextKey,refresh]);
   useLayoutEffect(()=>{textRoot.current=root.current?.querySelector(`[data-ayah="${ayah}"] [data-resource="${resource}"]`)||null;},[data,ayah,resource]);
-  function go(c,a){setActiveMark('');setSelection(null);if(c<1||c>114)return;const count=catalog?.chapters[c-1]?.ayah_count;if(!Number.isInteger(a)||a<1||a>count){setError('That ayah is outside this surah.');return;}setError('');if(c!==chapter)setData(null);setChapter(c);setAyah(a);setRangeEnd(null);if(c===chapter)root.current?.querySelector(`[data-ayah="${a}"]`)?.scrollIntoView({block:'start'});}
+  function go(c,a,{keyboard=false}={}){if(!keyboard)setKeyboardMessage('');setActiveMark('');setSelection(null);if(c<1||c>114)return;const count=catalog?.chapters[c-1]?.ayah_count;if(!Number.isInteger(a)||a<1||a>count){setError('That ayah is outside this surah.');return;}setError('');keyboardCursor.current={chapter:c,ayah:a};if(c!==chapter)setData(null);setChapter(c);setAyah(a);setRangeEnd(null);if(c===chapter){const verse=root.current?.querySelector(`[data-ayah="${a}"]`);verse?.scrollIntoView({block:'start'});if(keyboard)verse?.focus({preventScroll:true});}}
+  keyboardHandler.current=event=>{
+    if(!isVisible()||!isReadingAdvanceKey(event))return;
+    const target=event.target,outer=root.current.closest('.workspace-reader');
+    if(target!==document.body&&target!==document.documentElement&&target!==outer&&!root.current.contains(target))return;
+    if([...document.querySelectorAll('dialog[open],[role=dialog][aria-modal=true]')].some(dialog=>dialog.getClientRects().length)||!window.getSelection()?.isCollapsed)return;
+    event.preventDefault();if(event.repeat)return;
+    if(!progress?.loaded||progress.error){setKeyboardMessage('Reading progress is unavailable. Retry progress before marking the next ayah.');return;}
+    let current=keyboardCursor.current||{chapter,ayah};if(!data||data.chapter!==current.chapter)return;
+    if(!keyboardCursor.current){const top=(outer?.getBoundingClientRect().top||0)+stickyTop+toolbarHeight+25,bottom=outer?.getBoundingClientRect().bottom||innerHeight,currentElement=root.current.querySelector(`[data-ayah="${current.ayah}"]`),rect=currentElement?.getBoundingClientRect();
+      if(!rect||rect.bottom<=top||rect.top>=bottom){const visible=[...root.current.querySelectorAll('[data-ayah]')].find(el=>el.getBoundingClientRect().bottom>top);if(visible)current={chapter,ayah:Number(visible.dataset.ayah)};}}
+    keyboardCursor.current=current;progress.set(current.chapter,current.ayah,true);
+    const next=nextReadingAyah(current.chapter,current.ayah,catalog.chapters);setKeyboardReading(true);
+    if(!next){setKeyboardMessage('End of the Qur’an.');return;}
+    setKeyboardMessage('');keyboardCursor.current=next;go(next.chapter,next.ayah,{keyboard:true});
+  };
+  useEffect(()=>{const key=event=>{if(['ArrowDown','ArrowUp','PageDown','PageUp','Home','End'].includes(event.key)&&!event.target.closest?.('input,textarea,[contenteditable=true]'))keyboardCursor.current=null;keyboardHandler.current?.(event);};const pointer=()=>{keyboardCursor.current=null;};
+    document.addEventListener('keydown',key);window.addEventListener('wheel',pointer,{passive:true});window.addEventListener('touchstart',pointer,{passive:true});window.addEventListener('pointerdown',pointer,{passive:true});
+    return()=>{document.removeEventListener('keydown',key);window.removeEventListener('wheel',pointer);window.removeEventListener('touchstart',pointer);window.removeEventListener('pointerdown',pointer);};
+  },[]);
   function submit(e){e.preventDefault();const match=/^(\d{1,3})(?::(\d{1,3}))?$/.exec(jump.trim());if(!match){setError('Use a reference such as 4:59.');return;}go(Number(match[1]),Number(match[2]||1));}
   function resize(next){const el=root.current?.querySelector(`[data-ayah="${ayah}"]`),top=el?.getBoundingClientRect().top;setAppearance(next);writeReadingPreferences(localStorage,next);requestAnimationFrame(()=>{const parent=root.current?.closest('.workspace-reader');if(el&&parent&&top!=null)parent.scrollTop+=el.getBoundingClientRect().top-top;});}
   async function exactTools(){try{const bound=binding || await api.post('quran/binding',{project_id:projectId,...context,owner_confirmed:true});onOpen(bound.record_id,projectId,'',bound.document.id);}catch(e){setSideError(e.message);}}
@@ -124,7 +148,7 @@ export default function QuranReader({api,projectId,initialReference,drafts,chang
     const related=marks.filter(mark=>mark.resource_key===key&&mark.locator===`Q ${chapter}:${row.ayah}`).map(mark=>noteEditor?.entries.get(mark.id)?.server||mark),document={project_id:projectId,id:related[0]?.document_id,text_body:text.text,text_sha256:text.text_sha256};
     return readingMarks(document,related).runs.map(run=>run.highlight||run.underline?<mark key={run.start} className={`${run.underline?'quran-underlined ':''}${notes&&run.ids.includes(activeMark)?'quran-selected-mark':''}`} tabIndex={0} role="button" aria-label="Open passage note" onMouseDown={e=>e.preventDefault()} onClick={()=>openMark(run.ids,row.ayah,key)} onKeyDown={e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();openMark(run.ids,row.ayah,key);}}}>{run.text}</mark>:<React.Fragment key={run.start}>{run.text}</React.Fragment>);
   }
-  function openMark(ids,a,key){const id=ids[(ids.indexOf(activeMark)+1)%ids.length],row=marks.find(mark=>mark.id===id);if(row?.source_record_id&&noteEditor){noteEditor.adopt(row,row.source_record_id);noteEditor.open(id);}setActiveMark(id);setFocusRequest(n=>n+1);setAyah(a);setResource(key);setScope('verse');setRangeEnd(null);setNotes(true);}
+  function openMark(ids,a,key){keyboardCursor.current=null;setKeyboardMessage('');const id=ids[(ids.indexOf(activeMark)+1)%ids.length],row=marks.find(mark=>mark.id===id);if(row?.source_record_id&&noteEditor){noteEditor.adopt(row,row.source_record_id);noteEditor.open(id);}setActiveMark(id);setFocusRequest(n=>n+1);setAyah(a);setResource(key);setScope('verse');setRangeEnd(null);setNotes(true);}
   useLayoutEffect(()=>{const tabs=root.current?.closest('.workspace-reader')?.querySelector('.working-tabs'),bar=root.current?.querySelector('.quran-toolbar');if(!bar)return;
     const measure=()=>{setStickyTop(tabs?Math.max(0,tabs.getBoundingClientRect().height+(parseFloat(getComputedStyle(tabs).top)||0))+8:0);setToolbarHeight(bar.getBoundingClientRect().height);};measure();const observer=new ResizeObserver(measure);observer.observe(bar);if(tabs)observer.observe(tabs);return()=>observer.disconnect();
   },[ready]);
@@ -136,8 +160,9 @@ export default function QuranReader({api,projectId,initialReference,drafts,chang
       <form onSubmit={submit}><input aria-label="Go to verse" placeholder="4:59" value={jump} onChange={e=>setJump(e.target.value)}/><button>Go</button></form><ReadingAppearance value={appearance} onChange={resize} continuousOnly>
         <fieldset className="quran-translation-options"><legend>English translation</legend><span>Talal Itani · ClearQuran</span><small>Current translation</small><a href={`https://quran.com/${chapter}/${ayah}?translations=131`} target="_blank" rel="noreferrer">Dr. Mustafa Khattab · The Clear Quran ↗</a><small>Read on Quran.com. Not connected inside Atlas yet.</small></fieldset>
       </ReadingAppearance><button aria-pressed={notes} onClick={()=>setNotes(v=>!v)}>Notes</button>
-      {progress?.loaded&&<details className="quran-progress-summary"><summary aria-label="Reading progress">{progressCounts.total.toLocaleString()}/6,236 read</summary><div><label>Qur’an completion <progress max={6236} value={progressCounts.total}/></label><p>{(progressCounts.total/6236*100).toFixed(1)}% · {catalog.chapters.filter(row=>progress.counts(row.chapter).chapter===row.ayah_count).length}/114 surahs complete</p><small>Ayahs you mark read. Scrolling saves your place separately.</small></div></details>}
+      {progress?.loaded&&<details className="quran-progress-summary"><summary aria-label="Reading progress">{progressCounts.total.toLocaleString()}/6,236 read</summary><div><label>Qur’an completion <progress max={6236} value={progressCounts.total}/></label><p>{(progressCounts.total/6236*100).toFixed(1)}% · {catalog.chapters.filter(row=>progress.counts(row.chapter).chapter===row.ayah_count).length}/114 surahs complete</p><small>Space or Right Arrow marks the current ayah read and advances. Scrolling saves your place separately.</small></div></details>}
     </header>
+    {keyboardMessage&&<p className="quran-keyboard-status" role="status">{keyboardMessage}</p>}
     {progress?.error&&<p className="quran-progress-error" role="alert">{progress.error} <button onClick={()=>progress.load()}>Retry progress</button></p>}
     {progress?.failures().map(([key,queue])=><div key={key} className="quran-progress-error" role="alert">Read mark for Q {key} is not saved. <button onClick={()=>queue.retry()}>Retry read mark</button>{queue.status.phase==='conflict'&&<><span>Another device saved {queue.status.current?.is_read?'read':'unread'}.</span><button onClick={()=>{const [c,a]=key.split(':').map(Number);progress.resolve(c,a,'saved');}}>Use saved progress</button><button onClick={()=>{const [c,a]=key.split(':').map(Number);progress.resolve(c,a,'mine');}}>Keep my read mark</button></>}</div>)}
     <div className="quran-view-options"><button aria-pressed={arabic} disabled={arabic&&!english} onClick={()=>resize({...appearance,showArabic:!arabic})}>Arabic</button><button aria-pressed={english} disabled={english&&!arabic} onClick={()=>resize({...appearance,showEnglish:!english})}>English</button><details><summary>Arabic type</summary><label>Size <input aria-label="Arabic text size" type="range" min="24" max="64" value={arabicSize} onChange={e=>resize({...appearance,arabicSize:Number(e.target.value)})}/></label><label>Font <select aria-label="Arabic font" value={appearance.arabicFont} onChange={e=>resize({...appearance,arabicFont:e.target.value})}><option value="geeza">Geeza Pro / Tahoma</option><option value="serif">System serif</option><option value="sans">System sans</option></select></label></details><span>Talal Itani · ClearQuran</span></div>
@@ -151,8 +176,8 @@ export default function QuranReader({api,projectId,initialReference,drafts,chang
     <div ref={layout} className={'quran-layout'+(notes?' with-notes':'')} style={{'--quran-notes-width':notesWidth+'px'}}><main className="quran-text" translate="no" onMouseUp={inspectSelection} onKeyUp={inspectSelection} onClick={event=>{
       const text=event.target.closest('[data-resource]');if(!text||event.target.closest('mark')||!window.getSelection()?.isCollapsed)return;
       setAyah(Number(text.closest('[data-ayah]').dataset.ayah));setResource(text.dataset.resource);setScope('verse');setRangeEnd(null);setActiveMark('');
-    }} aria-label="Qur’an continuous reading">
-      {data&&<><h1>{data.label}</h1><p className="quran-surah-count">{data.verses.length} ayahs</p>{data.verses.map(row=><article key={row.reference.id} data-ayah={row.ayah} className={notes&&row.ayah===ayah?'is-current':''}>
+    }} aria-label="Qur’an continuous reading" aria-keyshortcuts="Space ArrowRight">
+      {data&&<><h1>{data.label}</h1><p className="quran-surah-count">{data.verses.length} ayahs</p>{data.verses.map(row=><article key={row.reference.id} data-ayah={row.ayah} tabIndex={-1} aria-label={row.reference.label} className={(notes||keyboardReading)&&row.ayah===ayah?'is-current':''}>
         <div className="quran-ayah-meta"><a className="quran-ayah-number" href={`?project=${encodeURIComponent(projectId)}&view=quran&chapter=${chapter}&ayah_start=${row.ayah}`} aria-label={'Notes for '+row.reference.label} onClick={e=>{e.preventDefault();if(e.shiftKey&&notes&&row.ayah>=ayah){setRangeEnd(row.ayah);}else{setAyah(row.ayah);setRangeEnd(null);}setScope('verse');setActiveMark('');setNotes(true);}}>{chapter}:{row.ayah}</a>
         <button className="quran-read-mark" disabled={!progress?.loaded||!!progress?.error} aria-pressed={!!progress?.desired(chapter,row.ayah)} aria-label={`Mark Q ${chapter}:${row.ayah} ${progress?.desired(chapter,row.ayah)?'unread':'read'}`} onClick={()=>progress.set(chapter,row.ayah,!progress.desired(chapter,row.ayah))}>{progress?.desired(chapter,row.ayah)?'Read ✓':'Mark read'}</button>{drafts.current.get(progress?.draftKey(chapter,row.ayah))?.saving&&<small className="quran-read-saving" role="status">Saving…</small>}</div>
         {arabic&&<p lang="ar" dir="rtl" className="quran-arabic" data-resource="tanzil-uthmani" data-text-sha={row.arabic.text_sha256}>{markedText(row,'arabic')}</p>}
