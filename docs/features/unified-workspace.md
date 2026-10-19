@@ -45,3 +45,31 @@ Selecting source wording presents “Note on selection” beside the actual sele
 The desktop notes divider supports pointer dragging, Left/Right, Home/End and double-click reset. Only its bounded pixel width is stored under `research:quran-notes-width-v1`. Resizing changes geometry rather than remounting the writer and keeps the visible reading position. Narrow viewports retain a bottom notes sheet.
 
 Margin textareas use a caret and contextual quote/mark cues without a rectangular focus box. Navigation, scope, resource and note actions retain compact UI typography independently of reading/notes zoom. Keyboard focus indicators remain on controls and the resize separator. The synthetic reader fixture now includes the full application typography cascade and checks selection-action proximity, actual pointer activation, immutable capture retry, automatic note focus, pointer/keyboard resizing with unfinished text, persisted geometry, borderless editing and control size at high zoom. Owner writing is never used as a test fixture.
+# Reading margin simplification (#183)
+
+The reader now uses the same lazy-loaded live Markdown editor as Notes for exact
+passage annotations, free-location notes, and ayah/surah/work notes. The active
+block reveals Markdown syntax while editing; leaving the editor formats all
+blocks. Markdown source remains unchanged and the existing note/annotation save,
+revision, conflict and recovery authorities remain in charge. Annotation and
+notebook length limits remain 10,000 and 20,000 UTF-16 code units respectively.
+Editor cursor/undo sessions are scoped to the workspace draft store and stable
+project/note identity, without adding browser persistence for private content.
+
+An exact-passage note opens directly into writing, with its quotation above it.
+There is no Done step. Autosave/status and conflict/retry remain visible; mark
+style, revision information, Trash and research tools live under Note options.
+Private recovery continues while its controls are collapsed and a recovery
+failure/conflict appears outside the disclosure.
+
+The margin's context is one compact location/language reference. Its disclosure
+retains scope, language, named resource/version, range instructions and passage
+tools. Selecting a phrase binds its exact source/version automatically. Clicking
+unselected Arabic or English text chooses that verse/resource for subsequent
+writing; it never relocates an existing note. Opening Notes after scrolling uses
+the tracked reading location. An open margin remains pinned until an explicit
+passage/context action, so scrolling cannot silently rebind unfinished writing.
+
+Validation for this slice is in progress; hosted sync, native IME input and owner
+reading-session acceptance remain separate from synthetic browser evidence.
+

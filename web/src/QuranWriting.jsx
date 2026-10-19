@@ -2,13 +2,13 @@ import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {RecoveryQueue,recoveryFingerprint} from './recoveryQueue.js';
 import {recoverySession,useWritingRecovery,notebookRecoveryPayload,verifyNotebookRecovery} from './useWritingRecovery.js';
 import {notebookKey,notebookMetadata} from './notebookClient.js';
-import NotebookMarkdown from './NotebookMarkdown.jsx';
+import MarginMarkdownEditor from './MarginMarkdownEditor.jsx';
 import {TrashAction} from './PrivateTrash.jsx';
 
 /** First text atomically creates its versioned reading and note. CAS serializes later typing. */
 export default function QuranWriting({api,projectId,context,drafts,changed,onSettled,initialNote=null}){
   const key='quran-write:'+JSON.stringify([projectId,context,initialNote?.id||'new']),store=drafts.current;
-  const [value,setValue]=useState(()=>store.get(key)?.body ?? initialNote?.body ?? ''),[editing,setEditing]=useState(!initialNote),[,redraw]=useState(0);
+  const [value,setValue]=useState(()=>store.get(key)?.body ?? initialNote?.body ?? ''),[,redraw]=useState(0);
   const live=useRef(true),field=useRef(null);
   const [identity]=useState(()=>store.get(key)?.identity || initialNote?.id?.slice('urn:research:notebook:'.length) || crypto.randomUUID());
   const queue=useMemo(()=>recoverySession(store,key+':'+identity,()=>{
@@ -37,15 +37,14 @@ export default function QuranWriting({api,projectId,context,drafts,changed,onSet
     if(live.current){redraw(n=>n+1);changed();}
   });return()=>{live.current=false;unsubscribe();};},[queue]);
   useEffect(()=>{const flush=()=>queue.flush();window.addEventListener('pagehide',flush);return()=>window.removeEventListener('pagehide',flush);},[queue]);
-  useEffect(()=>{if(field.current){field.current.style.height='auto';field.current.style.height=field.current.scrollHeight+'px';}},[value,editing]);
   function change(body){setValue(body);store.set(key,{body,identity,projectId,workspaceMode:'quran',saving:!!body.trim()});changed();if(body.trim())queue.enqueue({body});else queue.hold({body});}
-  async function settle(){setEditing(false);await queue.flush();if(queue.status.phase==='saved'&&queue.row?.body===store.get(key)?.body){
+  async function settle(){await queue.flush();if(queue.status.phase==='saved'&&queue.row?.body===store.get(key)?.body){
     recovery.queue.finish();store.delete(key);changed();onSettled(queue.row);
   }}
   const phase=queue.status.phase;
   return <article className="quran-writing" onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))settle();}}>
-    {editing?<textarea ref={field} aria-label={context.note_scope==='surah'?'Write a surah note':context.note_scope==='source'?'Write a Qur’an note':'Write a verse note'} placeholder="Write a note…" value={value} rows={3} onChange={e=>change(e.target.value)}/>:<div className="quran-note-preview" tabIndex={0} onClick={e=>{if(!e.target.closest('a'))setEditing(true);}} onKeyDown={e=>{if(e.key==='Enter')setEditing(true);}}><NotebookMarkdown body={value||'Write a note…'}/></div>}
-    {initialNote&&row&&<TrashAction api={api} projectId={projectId} kind="entry" id={row.id} revision={row.revision} trashRevision={row.trash_revision||0} trashed={!!row.trashed} disabled={!!held} onChanged={()=>onSettled(row)}/>}
+    <MarginMarkdownEditor ref={field} label={context.note_scope==='surah'?'Write a surah note':context.note_scope==='source'?'Write a Qur’an note':'Write a verse note'} placeholder="Write a note…" value={value} onChange={change} sessionStore={store} sessionKey={key}/>
+    {initialNote&&row&&<details className="margin-note-options"><summary>Note options</summary><TrashAction api={api} projectId={projectId} kind="entry" id={row.id} revision={row.revision} trashRevision={row.trash_revision||0} trashed={!!row.trashed} disabled={!!held} onChanged={()=>onSettled(row)}/></details>}
     {(value||held)&&<small role="status">{!value.trim()&&held?'Empty draft · not saved':phase==='saved'&&queue.row?.body===value?'Saved':phase==='saving'||phase==='waiting'?'Saving…':phase==='idle'?'':'Save not confirmed'}</small>}
     {['error','conflict'].includes(phase)&&<div role="alert"><p>{queue.status.error?.message}</p><button onClick={()=>queue.retry()}>Retry original save</button><pre>{queue.status.current?.body}</pre></div>}
   </article>;

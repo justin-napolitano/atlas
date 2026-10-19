@@ -16,14 +16,16 @@ const repaint=StateEffect.define();
  * Markdown stays the stored source. Rendering uses the existing safe renderer.
  * Save/retry/recovery and authorisation remain owned by the calling document.
  */
-const LiveMarkdownEditor=forwardRef(function LiveMarkdownEditor({value,onChange,disabled=false,label='Note body',sessionStore,sessionKey,notes=[],complete=true,onOpen,onOpenPassage,raw=false},ref){
+const LiveMarkdownEditor=forwardRef(function LiveMarkdownEditor({value,onChange,disabled=false,label='Note body',sessionStore,sessionKey,notes=[],complete=true,onOpen,onOpenPassage,raw=false,maxLength=20000,placeholder='Start writing…',onFocus,onBlur,onKeyDown},ref){
   const parent=useRef(null),view=useRef(null),options=useRef(null),editable=useRef(new Compartment()),external=useRef(false),previous=useRef(null);
-  options.current={onChange,notes,complete,onOpen,onOpenPassage,raw};
+  options.current={onChange,notes,complete,onOpen,onOpenPassage,raw,maxLength,onFocus,onBlur,onKeyDown};
   if(!sessions.has(sessionStore))sessions.set(sessionStore,new Map());
   const cache=sessions.get(sessionStore);
-  useImperativeHandle(ref,()=>({focus:()=>view.current?.focus(),insert(text){const current=view.current;if(!current)return;const {from,to}=current.state.selection.main;current.dispatch({changes:{from,to,insert:text},selection:{anchor:from+text.length}});current.focus();}}),[]);
+  useImperativeHandle(ref,()=>({focus:({end=false}={})=>{const current=view.current;if(!current)return;if(end)current.dispatch({selection:{anchor:current.state.doc.length}});current.focus();},insert(text){const current=view.current;if(!current)return;const {from,to}=current.state.selection.main;current.dispatch({changes:{from,to,insert:text},selection:{anchor:from+text.length}});current.focus();}}),[]);
   useLayoutEffect(()=>{
     const roots=new Set();
+    let focused=false;
+    function focusChanged(event,editor){focused=event.type==='focus';queueMicrotask(()=>{if(view.current===editor)editor.dispatch({effects:repaint.of(null)});});options.current[focused?'onFocus':'onBlur']?.(event);return false;}
     class Block extends WidgetType{
       constructor(block){super();this.block=block;this.notes=options.current.notes;this.complete=options.current.complete;}
       eq(other){return this.notes===other.notes&&this.complete===other.complete&&this.block.source===other.block.source&&this.block.from===other.block.from&&this.block.definitions===other.block.definitions;}
@@ -45,7 +47,7 @@ const LiveMarkdownEditor=forwardRef(function LiveMarkdownEditor({value,onChange,
       if(options.current.raw)return Decoration.none;
       const source=state.doc.toString(),decorations=[];
       for(const block of markdownBlocks(source)){
-        if(blockSelected(block,state.selection.ranges))continue;
+        if(focused&&blockSelected(block,state.selection.ranges))continue;
         if(block.type==='html')continue;
         // Definitions resolve in their referring blocks; reveal their source at
         // the cursor, without repeating raw definitions during ordinary reading.
@@ -58,7 +60,8 @@ const LiveMarkdownEditor=forwardRef(function LiveMarkdownEditor({value,onChange,
     const extensions=[history(),keymap.of([...defaultKeymap,...historyKeymap]),EditorView.lineWrapping,
       EditorView.contentAttributes.of({'aria-label':label,'aria-multiline':'true',dir:'auto',spellcheck:'true'}),
       editable.current.of([EditorView.editable.of(!disabled),EditorState.readOnly.of(disabled)]),
-      EditorState.transactionFilter.of(transaction=>transaction.newDoc.length>20000?[]:transaction),hint('Start writing…'),blocks,
+      EditorState.transactionFilter.of(transaction=>transaction.newDoc.length>options.current.maxLength?[]:transaction),hint(placeholder),blocks,
+      EditorView.domEventHandlers({focus:focusChanged,blur:focusChanged,keydown:event=>{options.current.onKeyDown?.(event);return event.defaultPrevented;}}),
       EditorView.updateListener.of(update=>{cache.set(sessionKey,update.state);if(update.docChanged&&!external.current)options.current.onChange(update.state.doc.toString());})];
     // A first successful create assigns the durable ID while the user is typing.
     // Carry its cursor and undo state from the provisional key into that ID.

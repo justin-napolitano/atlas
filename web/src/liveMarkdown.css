@@ -21,3 +21,8 @@
 .live-markdown-editor .live-markdown-block{padding-bottom:16px}
 .live-markdown-editor .live-markdown-block .notebook-markdown>:first-child{margin-top:0}
 .live-markdown-editor .live-markdown-block .notebook-markdown>:last-child{margin-bottom:0}
+.margin-markdown .live-markdown-editor{font:inherit;line-height:1.65;min-height:5em}
+.margin-markdown .live-markdown-editor .cm-content{min-height:5em;padding:8px 0}
+.margin-markdown .live-markdown-editor .notebook-markdown table{font-size:.85em}
+.margin-markdown .live-markdown-editor .cm-content:focus-visible{outline:none;box-shadow:none}
+.margin-markdown .live-markdown-editor .live-markdown-block{padding-bottom:.7em}

@@ -50,3 +50,21 @@
  .quran-reader .quran-notes button{min-height:40px}
 }
 .quran-text mark.quran-selected-mark{background:#c6374b33;border-bottom:2px solid var(--accent,#c6374b)}
+.quran-reader .quran-notes header{align-items:flex-start;gap:8px}
+.quran-reader .quran-notes .quran-note-context{margin:0;min-width:0;flex:1;font:500 13px/1.5 system-ui}
+.quran-note-context>summary{cursor:pointer;min-height:34px;display:flex;align-items:center;gap:8px;list-style:none}
+.quran-note-context>summary::-webkit-details-marker{display:none}
+.quran-note-context>summary::after{content:'⌄';color:var(--muted,#777)}
+.quran-note-context[open]>summary::after{content:'⌃'}
+.quran-note-context p{font:13px/1.5 system-ui;color:var(--muted,#777)}
+.quran-note-context small{display:block;font:12px/1.5 system-ui}
+.quran-reader .quran-notes .saved-passage-note{gap:8px;border-bottom:0}
+.quran-reader .quran-notes .saved-passage-note .reader-reopen{font:italic 1em/1.55 Georgia,serif}
+.quran-reader .quran-notes .margin-note-options{font:12px/1.5 system-ui;color:var(--muted,#777);margin:8px 0}
+.margin-note-options>summary{cursor:pointer;min-height:32px;align-content:center}
+.margin-note-options[open]{color:inherit}
+.margin-note-options label{margin:12px 0}
+.quran-reader .quran-notes .quran-writing{border-bottom:0}
+.quran-reader .quran-notes .recoverable-draft.is-compact{padding:0;border:0;margin:0;background:transparent}
+.quran-reader .quran-notes .recoverable-draft.is-compact>details{color:var(--muted,#777);font:12px/1.5 system-ui}
+.quran-reader .quran-notes .margin-markdown .live-markdown-editor{font:400 var(--notes-size,17px)/1.65 system-ui}
