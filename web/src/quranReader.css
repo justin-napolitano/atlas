@@ -13,3 +13,5 @@
 
 .quran-reader{--quran-bg:var(--paper,#fff)}.quran-reader[data-reading-theme=dark]{--quran-bg:#181818}.quran-reader[data-reading-theme=paper]{--quran-bg:#f7f2e8}.quran-reader[data-reading-theme=light]{--quran-bg:#fff}
 @media(max-width:900px){.quran-notes{position:fixed;inset:auto 0 0;z-index:20;box-sizing:border-box;max-height:55dvh;background:var(--quran-bg);box-shadow:0 -3px 18px #0002;padding:16px 22px;overscroll-behavior:contain}.quran-layout.with-notes .quran-text{padding-bottom:50dvh}.quran-toolbar button,.quran-toolbar input,.quran-toolbar select{min-height:44px}.quran-translation{font-size:var(--reading-size,22px)}}
+
+.quran-text mark{background:#bf324322;color:inherit;cursor:pointer;border-bottom:1px solid #c6374b;border-radius:2px}.quran-text mark.quran-underlined{background:transparent}.quran-selection-actions{position:sticky;top:70px;z-index:9;background:var(--quran-bg);padding:8px 0}.quran-selection-actions button{font:14px system-ui;padding:9px 14px;border:1px solid var(--quran-line);background:var(--quran-bg);color:inherit}

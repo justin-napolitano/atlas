@@ -44,7 +44,7 @@ export default function QuranWriting({api,projectId,context,drafts,changed,onSet
   }}
   const phase=queue.status.phase;
   return <article className="quran-writing" onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))settle();}}>
-    {editing?<textarea ref={field} aria-label="Write a verse note" placeholder="Write a note…" value={value} rows={3} onChange={e=>change(e.target.value)}/>:<div className="quran-note-preview" tabIndex={0} onClick={e=>{if(!e.target.closest('a'))setEditing(true);}} onKeyDown={e=>{if(e.key==='Enter')setEditing(true);}}><NotebookMarkdown body={value||'Write a note…'}/></div>}
+    {editing?<textarea ref={field} aria-label={context.note_scope==='surah'?'Write a surah note':context.note_scope==='source'?'Write a Qur’an note':'Write a verse note'} placeholder="Write a note…" value={value} rows={3} onChange={e=>change(e.target.value)}/>:<div className="quran-note-preview" tabIndex={0} onClick={e=>{if(!e.target.closest('a'))setEditing(true);}} onKeyDown={e=>{if(e.key==='Enter')setEditing(true);}}><NotebookMarkdown body={value||'Write a note…'}/></div>}
     {initialNote&&row&&<TrashAction api={api} projectId={projectId} kind="entry" id={row.id} revision={row.revision} trashRevision={row.trash_revision||0} trashed={!!row.trashed} disabled={!!held} onChanged={()=>onSettled(row)}/>}
     {value&&<small role="status">{phase==='saved'?'Saved':phase==='saving'||phase==='waiting'?'Saving…':phase==='idle'?'':'Save not confirmed'}</small>}
     {['error','conflict'].includes(phase)&&<div role="alert"><p>{queue.status.error?.message}</p><button onClick={()=>queue.retry()}>Retry original save</button><pre>{queue.status.current?.body}</pre></div>}

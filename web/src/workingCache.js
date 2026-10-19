@@ -9,6 +9,7 @@ export function workStatus(item,{drafts,records,passages}){
   const source=item.snapshot.selected,project=item.project,view=item.snapshot.libraryView;
   const pending=[];
   if(view==='quran'){
+    for(const value of passages.values())if(value.server.project_id===project&&value.status!=='saved')pending.push(value);
     for(const value of drafts.values())if(value.projectId===project && ['quran','location-margin'].includes(value.workspaceMode))pending.push(value);
   }else if(view==='notebook'||view==='questions'){
     for(const [key,value] of drafts)if(key.startsWith('notebook:')){
