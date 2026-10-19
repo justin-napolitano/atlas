@@ -73,6 +73,7 @@ try{
   await evaluate('document.querySelector(`[aria-label="Write a verse note"]`).blur()');
   await until(()=>evaluate('!!document.querySelector(".location-note-body strong")'),'saved Markdown note');
   assert.equal(await evaluate('document.querySelector(".quran-note-context").open'),false,'note context stays secondary');
+  await until(()=>evaluate('document.querySelector(".location-return")?.textContent==="Q 4:59 ↖"'),'existing free note displays its bound ayah instead of Near 0%');
   await click('Arabic notes');
   await until(()=>evaluate('document.querySelectorAll(".quran-notes [data-margin-note-id]").length===0'),'Arabic note context');
   await click('English notes');
@@ -107,6 +108,7 @@ try{
   await evaluate('document.querySelector(".saved-passage-note.is-active .cm-content").focus()');
   await call('Input.insertText',{text:' note.'});
   await until(()=>evaluate('[...window.__quranTest.annotations.values()][0]?.body==="A **phrase-specific** note."'),'exact passage note autosaves');
+  assert.equal(await evaluate('document.querySelector(".saved-passage-note.is-active .passage-location-label").textContent'),'Q 4:59 · Selected text');
   await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(result=>writeFile(join(artifacts,'quran-selected-note.png'),Buffer.from(result.data,'base64')));
   await evaluate('document.querySelector(".saved-passage-note.is-active .cm-content").focus()');
   await call('Input.insertText',{text:'\n\nA second block.'});
@@ -185,6 +187,21 @@ try{
   assert.equal(await evaluate('document.querySelector(`[aria-label="Write a verse note"]`).textContent'),'Keyboard draft ');
   assert.equal(await evaluate('new URL(location.href).searchParams.get("ayah_start")'),'59','writing keeps the current verse');
   assert.equal(await evaluate('window.__quranTest.progressRows.size'),readRowsBeforeInput,'writing never changes read marks');
+  await evaluate('document.querySelector(`[data-ayah="85"]`).scrollIntoView({block:"start"})');
+  await new Promise(resolve=>setTimeout(resolve,300));
+  assert.equal(await evaluate('new URL(location.href).searchParams.get("ayah_start")'),'59','scrolling never rebinds active writing');
+  await evaluate('document.activeElement.blur()');
+  await until(()=>evaluate('[...window.__quranTest.entries.values()].some(row=>row.body==="Keyboard draft ")'),'active note saved at original verse');
+  await evaluate('document.querySelector(`[data-ayah="85"]`).scrollIntoView({block:"start"});document.querySelector(".workspace-reader").dispatchEvent(new Event("scroll"))');
+  await until(()=>evaluate('document.querySelector(".quran-note-context summary")?.textContent.includes("Q 4:85")'),'idle notes follow visible ayah');
+  await until(()=>evaluate('!!document.querySelector(`[aria-label="Write a verse note"]`)'),'new visible-ayah composer');
+  await evaluate('document.querySelector(`[aria-label="Write a verse note"]`).focus()');
+  await call('Input.insertText',{text:'A note at the newly visible ayah.'});
+  await until(()=>evaluate('[...window.__quranTest.entries.values()].some(row=>row.body==="A note at the newly visible ayah."&&row.title==="Q 4:85")'),'new writing binds visible canonical verse');
+  await evaluate('document.activeElement.blur()');
+  await until(()=>evaluate('document.querySelector(".location-return")?.textContent==="Q 4:85 ↖"'),'saved canonical location label');
+  await evaluate('document.querySelector(".location-return").click()');
+  assert.equal(await evaluate('new URL(location.href).searchParams.get("ayah_start")'),'85','canonical location returns to its bound ayah');
   await evaluate('document.activeElement.blur();document.querySelector(`[aria-label="Close notes"]`).click()');
   await jumpTo('4:176');await press(' ','Space');
   await until(()=>evaluate('new URL(location.href).searchParams.get("chapter")==="5"&&new URL(location.href).searchParams.get("ayah_start")==="1"&&document.querySelectorAll("[data-ayah]").length===120'),'keyboard reading crosses a surah boundary');
@@ -194,5 +211,5 @@ try{
   await new Promise(resolve=>setTimeout(resolve,250));await press(' ','Space');
   assert.equal(await evaluate('new URL(location.href).searchParams.get("chapter")+":"+new URL(location.href).searchParams.get("ayah_start")'),'114:6');
   assert.equal(await evaluate('[...window.__quranTest.progressRows.values()].find(row=>row.chapter===114&&row.ayah===6).revision'),1,'repeated completion never duplicates the final read mark');
-  assert.deepEqual(problems,[]);console.log(JSON.stringify({spaceAndRightAdvance:true,editorAndSelectionKeySafety:true,surahBoundaryAndFinalAyah:true,explicitReadingProgress:true,progressRetryUndoAndReload:true,arabicEnglishWordMeaning:true,wordPopoverMobilePlacement:true,nearSelectionAction:true,autoFocusedQuote:true,exactCaptureRetry:true,borderlessEditor:true,keyboardAndPointerResize:true,compactZoomControls:true,surahAndWholeNotes:true,semanticResume:true,inlineHighlight:true,completeSurah:176,atomicNote:true,lostResponseRetry:true,newerTyping:true,markdown:true,resourceIsolation:true,mobileNoOverflow:true,artifacts}));
+  assert.deepEqual(problems,[]);console.log(JSON.stringify({canonicalNoteLabels:true,idleNotesFollowReading:true,activeWritingStaysPinned:true,spaceAndRightAdvance:true,editorAndSelectionKeySafety:true,surahBoundaryAndFinalAyah:true,explicitReadingProgress:true,progressRetryUndoAndReload:true,arabicEnglishWordMeaning:true,wordPopoverMobilePlacement:true,nearSelectionAction:true,autoFocusedQuote:true,exactCaptureRetry:true,borderlessEditor:true,keyboardAndPointerResize:true,compactZoomControls:true,surahAndWholeNotes:true,semanticResume:true,inlineHighlight:true,completeSurah:176,atomicNote:true,lostResponseRetry:true,newerTyping:true,markdown:true,resourceIsolation:true,mobileNoOverflow:true,artifacts}));
 }finally{socket?.close();chrome.kill('SIGTERM');await preview.httpServer.close();await new Promise(resolve=>{if(chrome.exitCode!==null)return resolve();chrome.once('exit',resolve);setTimeout(resolve,3000);});await rm(temporary,{recursive:true,force:true,maxRetries:5,retryDelay:200});}

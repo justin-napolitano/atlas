@@ -11,7 +11,7 @@ import {recoverPassageWriting} from './recoverIntoEditor.js';
 
 const statuses={saved:'Saved to your workspace',unsaved:'Unsaved changes',saving:'Saving…',conflict:'Changed on another device',error:'Save failed. Your draft is still here.'};
 /** A revisioned margin note; source selection and note identity remain immutable. */
-export default function SavedPassageNote({ row,sourceId,document,editor,reopen,api,drafts,changed,navigate,onOpenVerse,active=false,onTrashChange=()=>{},compact=false,autoSave=false,focusRequest=0,hidden=false }) {
+export default function SavedPassageNote({ row,sourceId,document,editor,reopen,api,drafts,changed,navigate,onOpenVerse,active=false,onTrashChange=()=>{},compact=false,autoSave=false,focusRequest=0,hidden=false,locationLabel='' }) {
   const entry=editor.adopt(row,sourceId), value=entry.server;
   const [trash,setTrash]=useState(null);
   const input=useRef(null);
@@ -22,6 +22,7 @@ export default function SavedPassageNote({ row,sourceId,document,editor,reopen,a
   const action=<TrashAction api={api} projectId={value.project_id} kind="annotation" id={value.id} revision={value.revision} trashRevision={trash?.revision ?? row.trash_revision ?? 0} trashed={trash?trash.state==='trashed':row.trashed} disabled={entry.status!=='saved'} onChanged={result=>{setTrash(result);onTrashChange(result);}}/>;
   if(trash?trash.state==='trashed':row.trashed)return <article hidden={hidden} className="saved-passage-note"><p>Margin writing moved to Trash. Its exact source anchor is retained.</p>{action}</article>;
   if(compact)return <article hidden={hidden} className={`saved-passage-note${active?' is-active':''}`} data-annotation-id={value.id} aria-label={active?'Selected passage note':'Passage note'}>
+    {locationLabel&&<small className="passage-location-label">{locationLabel} · Selected text</small>}
     <a className="reader-reopen" dir="auto" href={`?${new URLSearchParams({project:value.project_id,record:sourceId,document:value.document_id,annotation:value.id})}`} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();reopen(value);}}}>{value.exact}</a>
     <div className="passage-note-edit"><MarginMarkdownEditor ref={input} autoFocus={active&&entry.open&&!hidden} label="My saved passage note" placeholder="Write about this passage…" value={entry.body} maxLength={10000} sessionStore={drafts.current} sessionKey={'passage:'+value.project_id+':'+value.id}
       onFocus={()=>{if(!entry.open)editor.open(value.id);}} onChange={body=>editor.edit(value.id,body)} onBlur={()=>{if(entry.status==='unsaved')editor.save(value.id);}}
