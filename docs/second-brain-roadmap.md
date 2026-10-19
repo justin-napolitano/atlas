@@ -56,3 +56,25 @@ project saving and private versioned resume. See [behavior, limits, threat model
 and validation](features/gutenberg-direct-reading.md). It does not establish a
 hosted release, complete #168 cross-provider catalog work, or connect Open Library
 #169 / papers #166. Those remain subsequent slices.
+
+## Next product slice: personal library and book notebooks (plan only)
+
+The owner selected a compact library list with small optional covers, Continue
+reading, direct title → reader and Notes count → book notebook. Catalog discovery
+moves behind Find books. This is one shared library across projects; it cannot
+be delivered by cloning project-scoped records. [Design/examples](design/library-shelf-brief.md),
+[interaction/data/acceptance contracts](features/library-shelf-contract.md), and
+[proposed shared-identity ADR](adr/0004-shared-personal-library.md) are written before build.
+
+Epic #194 orders the work: #101 minimum shared-identity/legacy migration/API gate →
+#195 shelf/navigation → #196 discovery/Open/Save → #95 per-book notebook integration
+→ #197 cross-flow validation and #146 owner acceptance. #101/#95 are reused, not
+duplicated or declared complete. #140 project home later consumes project-filtered
+library data; it must not introduce another library dashboard.
+
+This is the selected next product plan following Gutenberg #191 and note-location
+#193. Their code is separate from this documentation pass. Hosted owner sign-in,
+two-machine verification/backups and explicit public read-only publication remain
+#31/#33/#42; this plan neither merges outstanding PRs nor completes release gates.
+Open Library #169, papers #166, arbitrary folders #139, full Obsidian sync #40 and
+graph redesign remain separate scopes. No app/schema/API builds in this planning pass.
