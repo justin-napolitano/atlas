@@ -26,7 +26,7 @@ from .graph_engine import rank, registered_policy
 from .quran_citations import PARSER_VERSION as QURAN_PARSER_VERSION, PROFILE_ID as QURAN_PROFILE_ID
 from .quran_resources import pilot_resource
 from .reader_collection import collection_resource
-from . import quran_reader, quran_words
+from . import quran_reader, quran_words, gutenberg
 
 logger = logging.getLogger("research.api")
 Identifier = Annotated[str, Field(min_length=1, max_length=500, pattern=r"^[^\x00-\x1f\x7f]+$")]
@@ -341,6 +341,28 @@ class NotebookUpdate(NotebookMetadata):
     project_id: Identifier
     expected_revision: Annotated[int,Field(ge=1)]
     state: Literal["active","withdrawn"] = "active"
+
+
+class GutenbergBinding(Input):
+    project_id: Identifier
+    book_id: Annotated[int, Field(ge=1,le=999999,strict=True)]
+    version: Annotated[str,Field(pattern=r'^[a-f0-9]{64}$')]
+    section: Annotated[int,Field(ge=0,le=1000,strict=True)]
+
+
+class GutenbergPlace(GutenbergBinding):
+    position: Annotated[int,Field(ge=0,le=12000,strict=True)] = 0
+    expected_revision: Annotated[int,Field(ge=0,strict=True)]
+
+
+class GutenbergAnnotation(Input):
+    binding: GutenbergBinding
+    annotation: ReadingCaptureInput
+
+
+class GutenbergNote(Input):
+    binding: GutenbergBinding
+    note: NotebookCreate
 
 
 class NotebookDraftValue(Input):
@@ -666,6 +688,44 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         return subject
 
     router = APIRouter(prefix="/v1", dependencies=[Depends(owner)])
+
+    @router.get('/catalog/gutenberg/search')
+    def gutenberg_search(q: Annotated[str,Query(min_length=1,max_length=200)],page: Annotated[int,Query(ge=1,le=100)]=1):
+        try:return gutenberg.search(q,page)
+        except gutenberg.Unavailable:raise HTTPException(503,'Gutenberg search is unavailable. Your library and notes are unchanged.') from None
+
+    @router.get('/catalog/gutenberg/book')
+    def gutenberg_book(project_id: Identifier,book_id: Annotated[int,Query(ge=1,le=999999)],
+        version: Annotated[str,Query(max_length=64,pattern=r'^(?:[a-f0-9]{64})?$')]=''):
+        try:return store.gutenberg_book(project_id,book_id,version)
+        except gutenberg.Unavailable:raise HTTPException(503,'This book is unavailable or its text format is not supported yet. Try the provider link or retry later.') from None
+
+    @router.get('/catalog/gutenberg/section')
+    def gutenberg_section(project_id: Identifier,book_id: Annotated[int,Query(ge=1,le=999999)],
+        version: Annotated[str,Query(pattern=r'^[a-f0-9]{64}$')],section: Annotated[int,Query(ge=0,le=1000)]):
+        return store.gutenberg_section(project_id,book_id,version,section)
+
+    @router.post('/catalog/gutenberg/binding',status_code=201)
+    def gutenberg_binding(value:GutenbergBinding,actor:str=Depends(owner)):
+        return store.gutenberg_binding(actor=actor,**value.model_dump())
+
+    @router.post('/catalog/gutenberg/annotations',status_code=201)
+    def gutenberg_annotation(value:GutenbergAnnotation,actor:str=Depends(owner)):
+        return store.gutenberg_write(binding=value.binding.model_dump(),fields=value.annotation.model_dump(),action='annotation',actor=actor)
+
+    @router.post('/catalog/gutenberg/notes',status_code=201)
+    def gutenberg_note(value:GutenbergNote,actor:str=Depends(owner)):
+        return store.gutenberg_write(binding=value.binding.model_dump(),fields=value.note.model_dump(),action='notebook',actor=actor)
+
+    @router.get('/catalog/gutenberg/place')
+    def gutenberg_place(project_id:Identifier,book_id:Annotated[int,Query(ge=1,le=999999)]):
+        row=store.gutenberg_place(project_id,book_id)
+        if row is None:raise HTTPException(404,'No saved place for this book')
+        return row
+
+    @router.put('/catalog/gutenberg/place')
+    def save_gutenberg_place(value:GutenbergPlace,actor:str=Depends(owner)):
+        return store.save_gutenberg_place(actor=actor,**value.model_dump())
 
     @router.get("/me")
     def me():

@@ -78,6 +78,127 @@
         "title": "FeatureInput",
         "type": "object"
       },
+      "GutenbergAnnotation": {
+        "additionalProperties": false,
+        "properties": {
+          "annotation": {
+            "$ref": "#/components/schemas/ReadingCaptureInput"
+          },
+          "binding": {
+            "$ref": "#/components/schemas/GutenbergBinding"
+          }
+        },
+        "required": [
+          "binding",
+          "annotation"
+        ],
+        "title": "GutenbergAnnotation",
+        "type": "object"
+      },
+      "GutenbergBinding": {
+        "additionalProperties": false,
+        "properties": {
+          "book_id": {
+            "maximum": 999999.0,
+            "minimum": 1.0,
+            "title": "Book Id",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "section": {
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Section",
+            "type": "integer"
+          },
+          "version": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "book_id",
+          "version",
+          "section"
+        ],
+        "title": "GutenbergBinding",
+        "type": "object"
+      },
+      "GutenbergNote": {
+        "additionalProperties": false,
+        "properties": {
+          "binding": {
+            "$ref": "#/components/schemas/GutenbergBinding"
+          },
+          "note": {
+            "$ref": "#/components/schemas/NotebookCreate"
+          }
+        },
+        "required": [
+          "binding",
+          "note"
+        ],
+        "title": "GutenbergNote",
+        "type": "object"
+      },
+      "GutenbergPlace": {
+        "additionalProperties": false,
+        "properties": {
+          "book_id": {
+            "maximum": 999999.0,
+            "minimum": 1.0,
+            "title": "Book Id",
+            "type": "integer"
+          },
+          "expected_revision": {
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "position": {
+            "default": 0,
+            "maximum": 12000.0,
+            "minimum": 0.0,
+            "title": "Position",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "section": {
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Section",
+            "type": "integer"
+          },
+          "version": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "book_id",
+          "version",
+          "section",
+          "expected_revision"
+        ],
+        "title": "GutenbergPlace",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2973,6 +3094,385 @@
           }
         },
         "summary": "Ready"
+      }
+    },
+    "/v1/catalog/gutenberg/annotations": {
+      "post": {
+        "operationId": "gutenberg_annotation_v1_catalog_gutenberg_annotations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GutenbergAnnotation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Gutenberg Annotation"
+      }
+    },
+    "/v1/catalog/gutenberg/binding": {
+      "post": {
+        "operationId": "gutenberg_binding_v1_catalog_gutenberg_binding_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GutenbergBinding"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Gutenberg Binding"
+      }
+    },
+    "/v1/catalog/gutenberg/book": {
+      "get": {
+        "operationId": "gutenberg_book_v1_catalog_gutenberg_book_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "maximum": 999999,
+              "minimum": 1,
+              "title": "Book Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 64,
+              "pattern": "^(?:[a-f0-9]{64})?$",
+              "title": "Version",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Gutenberg Book"
+      }
+    },
+    "/v1/catalog/gutenberg/notes": {
+      "post": {
+        "operationId": "gutenberg_note_v1_catalog_gutenberg_notes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GutenbergNote"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Gutenberg Note"
+      }
+    },
+    "/v1/catalog/gutenberg/place": {
+      "get": {
+        "operationId": "gutenberg_place_v1_catalog_gutenberg_place_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "maximum": 999999,
+              "minimum": 1,
+              "title": "Book Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Gutenberg Place"
+      },
+      "put": {
+        "operationId": "save_gutenberg_place_v1_catalog_gutenberg_place_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GutenbergPlace"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Gutenberg Place"
+      }
+    },
+    "/v1/catalog/gutenberg/search": {
+      "get": {
+        "operationId": "gutenberg_search_v1_catalog_gutenberg_search_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Gutenberg Search"
+      }
+    },
+    "/v1/catalog/gutenberg/section": {
+      "get": {
+        "operationId": "gutenberg_section_v1_catalog_gutenberg_section_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "maximum": 999999,
+              "minimum": 1,
+              "title": "Book Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": true,
+            "schema": {
+              "pattern": "^[a-f0-9]{64}$",
+              "title": "Version",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "section",
+            "required": true,
+            "schema": {
+              "maximum": 1000,
+              "minimum": 0,
+              "title": "Section",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Gutenberg Section"
       }
     },
     "/v1/evidence-path": {

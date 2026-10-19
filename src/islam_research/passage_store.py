@@ -16,7 +16,7 @@ def get_document(connection, project_id, document_id):
         WHERE d.project_id=%s AND d.id=%s AND r.deleted_at IS NULL""",(project_id,document_id)).fetchone()
 
 
-def create_document(connection, *, project_id, source_record_id, edition, locator, representation_url, text, actor, source_notice=""):
+def create_document(connection, *, project_id, source_record_id, edition, locator, representation_url, text, actor, source_notice="", document_id=None):
     snapshot = normalize_excerpt(text)
     for value,name,limit in [(edition,"edition",1000),(locator,"locator",2000),(actor,"actor",500)]:
         db._text(value,name,limit)
@@ -40,7 +40,7 @@ def create_document(connection, *, project_id, source_record_id, edition, locato
             (id,project_id,source_record_id,edition,locator,representation_url,text_body,input_sha256,text_sha256,normalization,content_key,changed_by,source_notice)
             VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             ON CONFLICT(project_id,content_key) DO NOTHING RETURNING *""",
-            ("urn:research:document:"+str(uuid.uuid4()),project_id,source_record_id,edition,locator,representation_url,
+            (document_id or "urn:research:document:"+str(uuid.uuid4()),project_id,source_record_id,edition,locator,representation_url,
              snapshot["text"],snapshot["input_sha256"],snapshot["text_sha256"],snapshot["normalization"],key,actor,source_notice)).fetchone()
         if row is None:
             row = connection.execute("SELECT * FROM research.reading_documents WHERE project_id=%s AND content_key=%s",(project_id,key)).fetchone()
