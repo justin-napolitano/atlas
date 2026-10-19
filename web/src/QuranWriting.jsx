@@ -38,7 +38,7 @@ export default function QuranWriting({api,projectId,context,drafts,changed,onSet
   });return()=>{live.current=false;unsubscribe();};},[queue]);
   useEffect(()=>{const flush=()=>queue.flush();window.addEventListener('pagehide',flush);return()=>window.removeEventListener('pagehide',flush);},[queue]);
   useEffect(()=>{if(field.current){field.current.style.height='auto';field.current.style.height=field.current.scrollHeight+'px';}},[value,editing]);
-  function change(body){setValue(body);store.set(key,{body,identity,projectId,workspaceMode:'quran',saving:true});changed();if(body.trim())queue.enqueue({body});}
+  function change(body){setValue(body);store.set(key,{body,identity,projectId,workspaceMode:'quran',saving:!!body.trim()});changed();if(body.trim())queue.enqueue({body});else queue.hold({body});}
   async function settle(){setEditing(false);await queue.flush();if(queue.status.phase==='saved'&&queue.row?.body===store.get(key)?.body){
     recovery.queue.finish();store.delete(key);changed();onSettled(queue.row);
   }}
@@ -46,7 +46,7 @@ export default function QuranWriting({api,projectId,context,drafts,changed,onSet
   return <article className="quran-writing" onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))settle();}}>
     {editing?<textarea ref={field} aria-label={context.note_scope==='surah'?'Write a surah note':context.note_scope==='source'?'Write a Qur’an note':'Write a verse note'} placeholder="Write a note…" value={value} rows={3} onChange={e=>change(e.target.value)}/>:<div className="quran-note-preview" tabIndex={0} onClick={e=>{if(!e.target.closest('a'))setEditing(true);}} onKeyDown={e=>{if(e.key==='Enter')setEditing(true);}}><NotebookMarkdown body={value||'Write a note…'}/></div>}
     {initialNote&&row&&<TrashAction api={api} projectId={projectId} kind="entry" id={row.id} revision={row.revision} trashRevision={row.trash_revision||0} trashed={!!row.trashed} disabled={!!held} onChanged={()=>onSettled(row)}/>}
-    {value&&<small role="status">{phase==='saved'?'Saved':phase==='saving'||phase==='waiting'?'Saving…':phase==='idle'?'':'Save not confirmed'}</small>}
+    {(value||held)&&<small role="status">{!value.trim()&&held?'Empty draft · not saved':phase==='saved'&&queue.row?.body===value?'Saved':phase==='saving'||phase==='waiting'?'Saving…':phase==='idle'?'':'Save not confirmed'}</small>}
     {['error','conflict'].includes(phase)&&<div role="alert"><p>{queue.status.error?.message}</p><button onClick={()=>queue.retry()}>Retry original save</button><pre>{queue.status.current?.body}</pre></div>}
   </article>;
 }

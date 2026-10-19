@@ -32,3 +32,12 @@ test('continuous editing has a bounded autosave delay',async t=>{
   for(let n=0;n<5;n++){t.mock.timers.tick(5);queue.enqueue({body:String(Date.now())});}
   await Promise.resolve();await queue.flush();assert.equal(firstWrite,25);assert.ok(queue.revision>=1);
 });
+
+test('holding an empty draft cancels a queued body and never labels an older acknowledgement saved',async()=>{
+ const writes=[];let release;
+ const q=new RecoveryQueue({identity:'empty-fixture',delay:60000,maxDelay:60000,write:sent=>{writes.push(sent);return new Promise(resolve=>{release=()=>resolve({revision:sent.expected_revision+1});});}});
+ q.enqueue({body:'queued'});q.hold({body:''});await q.flush();assert.equal(writes.length,0);assert.equal(q.status.phase,'paused');
+ q.enqueue({body:'in flight'});const saving=q.flush();q.hold({body:''});release();await saving;
+ assert.equal(writes.length,1);assert.equal(q.status.phase,'paused');assert.equal(q.latest.body,'');assert.equal(q.revision,1);
+ q.enqueue({body:'new writing'});const next=q.flush();assert.equal(writes[1].expected_revision,1);release();await next;assert.equal(q.status.phase,'saved');
+});

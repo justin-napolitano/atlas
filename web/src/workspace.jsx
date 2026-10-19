@@ -33,9 +33,11 @@ import ResearchBrief from './ResearchBrief.jsx';
 import {verifyReadingPlace} from './readingPlace.js';
 import './atlasWorkspace.css';
 import {WorkspaceNavigation} from './WorkspaceNavigation.jsx';
+import {useModalFocus} from './useModalFocus.js';
 import {currentReadingAnchor,notebookAnchorForProject} from './readingNavigation.js';
 
 const api = workspaceAPI();
+const localPreview=document.querySelector('meta[name="research-storage-mode"]')?.content==='local-preview';
 const fromURL = () => Object.fromEntries(new URLSearchParams(location.search));
 const property = (record, key) => (record.attributes?.rdf_properties?.[key] || []).map(value => {
   const literal = value.match(/^"(?:[^"\\]|\\.)*"/);
@@ -71,7 +73,10 @@ function Workspace() {
   const [readingFocus,setReadingFocus]=useState(false);
   const [libraryOpen,setLibraryOpen]=useState(false);
   const [sidebarHidden,setSidebarHidden]=useState(false),[navigationHost,setNavigationHost]=useState(null);
-  const sidebarToggle=useRef(null);
+  const sidebarToggle=useRef(null),sidebar=useRef(null);
+  const [narrow,setNarrow]=useState(()=>matchMedia('(max-width:900px)').matches);
+  useEffect(()=>{const media=matchMedia('(max-width:900px)'),change=()=>setNarrow(media.matches);media.addEventListener('change',change);return()=>media.removeEventListener('change',change);},[]);
+  useModalFocus(sidebar,narrow&&libraryOpen);
   const closeSidebar=()=>{setLibraryOpen(false);requestAnimationFrame(()=>sidebarToggle.current?.focus());};
   const [libraryMode,setLibraryMode]=useState('readings');
   const [libraryRows,setLibraryRows]=useState([]),[libraryCursor,setLibraryCursor]=useState(null),[libraryError,setLibraryError]=useState(''),[libraryLoading,setLibraryLoading]=useState(false);
@@ -252,15 +257,15 @@ function Workspace() {
   const isReading=record && ['source','work','edition'].includes(record.kind);
   return <main onClickCapture={()=>surfaces.current?.capture()} className={`shell owner-shell atlas-workspace${isReading&&!libraryView?' is-reading':''}${libraryView==='notebook'?' is-notebook':''}${libraryView ? ' has-library-view' : ''}${libraryOpen?' is-library-open':''}${sidebarHidden?' is-sidebar-collapsed':''}`}>
     <a className="skip-link" href="#workspace-view">Skip to workspace</a>
-    <button ref={sidebarToggle} className="workspace-sidebar-toggle" aria-label="Show sidebar" aria-expanded={libraryOpen || !sidebarHidden} aria-controls="atlas-library" onClick={()=>{setSidebarHidden(false);setLibraryOpen(value=>!value);requestAnimationFrame(()=>document.querySelector('#atlas-library button')?.focus());}}>☰</button>
+    <button ref={sidebarToggle} className="workspace-sidebar-toggle" aria-label="Show sidebar" aria-expanded={narrow?libraryOpen:!sidebarHidden&&!readingFocus} aria-controls="atlas-library" onClick={()=>{setSidebarHidden(false);setReadingFocus(false);setLibraryOpen(value=>!value);requestAnimationFrame(()=>document.querySelector('#atlas-library button')?.focus());}}>☰</button>
     {libraryOpen&&<button className="workspace-sidebar-scrim" aria-label="Close sidebar" onClick={closeSidebar}/>}
 
     {error && <div role="alert" className="workspace-alert"><p>{error}</p><button onClick={() => location.reload()}>Reconnect workspace</button><small>Export unsaved notes before reloading.</small></div>}
     <ResizablePanes storageKey="research:unified-sidebar-width-v1" className={`owner-panes atlas-body${readingFocus?' reading-focus':''}`} unit="px" minWidth={200} maxWidth={320} defaultWidth={240} label="Resize library and reading workspace">
-      <aside id="atlas-library" className="atlas-library workspace-results" aria-label="Research library" onKeyDown={event=>{if(event.key==='Escape'){event.preventDefault();closeSidebar();}}}>
+      <aside ref={sidebar} id="atlas-library" className="atlas-library workspace-results" aria-label="Research library" onClick={event=>{if(matchMedia('(max-width:900px)').matches&&event.target.closest('[data-document-open]'))closeSidebar();}} onKeyDown={event=>{if(event.key==='Escape'){event.preventDefault();closeSidebar();}}}>
         <div className="workspace-sidebar-top"><span className="workspace-wordmark">Atlas</span><button aria-label="Hide sidebar" onClick={()=>{setSidebarHidden(true);closeSidebar();}}>‹</button></div>
         <button className="workspace-sidebar-search" onClick={()=>showLibrary('search')} disabled={!project}>Search <kbd>⌘ K</kbd></button>
-        <button className="workspace-sidebar-new" onClick={()=>createWorkspaceItem(libraryView==='questions'?'question':'note')} disabled={!project}>＋ {libraryView==='questions'?'New question':'New note'}</button>
+        <button className="workspace-sidebar-new" onClick={()=>createWorkspaceItem(libraryView==='questions'?'question':'note')} disabled={!project}>{libraryView==='questions'?'New question':'New note'}</button>
         <ProjectDirectories api={api} projects={projects} current={project} onOpen={openProject} onCreated={row=>{setProjects(items=>[...items.filter(item=>item.id!==row.id),row]);openProject(row.id);}}><nav className="atlas-primary-nav" aria-label="Research workspace"><button aria-current={libraryView==='sources'||!libraryView?'page':undefined} onClick={()=>showLibrary('sources')}>Sources</button><button aria-current={libraryView==='questions'?'page':undefined} onClick={()=>openWorkspace('questions')}>Questions</button><button aria-current={libraryView==='notebook'?'page':undefined} onClick={()=>openWorkspace('notebook')}>Notes</button><button aria-current={libraryView==='quran'?'page':undefined} onClick={()=>openWorkspace('quran')}>Qur’an</button></nav><div ref={setNavigationHost} className="workspace-document-navigation"/></ProjectDirectories>
         <div hidden={!!libraryView&&libraryView!=='records'} className="atlas-content-library"><div className="atlas-library-tabs" role="group" aria-label="Library contents"><button aria-pressed={libraryMode==='readings'} onClick={()=>setLibraryMode('readings')}>Readings</button><button aria-pressed={libraryMode==='records'} onClick={()=>setLibraryMode('records')}>All research</button></div>
         <section className="atlas-saved-readings" aria-label="Saved readings" hidden={libraryMode!=='readings'}>
@@ -285,9 +290,9 @@ function Workspace() {
     </form></details></section>
         </div>
         {workTabs.length>0&&<details className="workspace-recent" open><summary>Open work</summary>{workTabs.map(item=><button key={item.key} aria-current={item.key===workKey?'page':undefined} onClick={()=>chooseWork(item)}><span>{item.title}</span>{workStatuses[item.key]&&<small>{workStatuses[item.key]}</small>}</button>)}</details>}
-        <footer className="workspace-sidebar-footer"><button onClick={prepareResearch} disabled={!project}>Research tools</button><details><summary>Workspace</summary><button onClick={()=>setTheme(theme==='dark'?'light':'dark')}>{theme==='dark'?'Light mode':'Dark mode'}</button><a href={`/publish.html?${new URLSearchParams({project})}`}>Publish research</a><a href="/">Public research ↗</a></details><small>Private · publishing is explicit</small></footer>
+        <footer className="workspace-sidebar-footer"><button onClick={prepareResearch} disabled={!project}>Research tools</button><details><summary>Workspace</summary><button onClick={()=>setTheme(theme==='dark'?'light':'dark')}>{theme==='dark'?'Light mode':'Dark mode'}</button><a href={`/publish.html?${new URLSearchParams({project})}`}>Publish research</a><a href="/">Public research ↗</a></details>{localPreview&&<details className="workspace-storage-status"><summary>Local · this Mac</summary><p>Saves on this Mac only. Hosted PostgreSQL and owner sign-in are not connected in this review.</p></details>}<small>Private · publishing is explicit</small></footer>
       </aside>
-      <section ref={reader} id="workspace-view" tabIndex={-1} className="workspace-reader atlas-reading-workspace" aria-label={libraryView==='notebook'?'Your notebook':'Selected record and private notes'}>
+      <section inert={libraryOpen&&narrow?'':undefined} ref={reader} id="workspace-view" tabIndex={-1} className="workspace-reader atlas-reading-workspace" aria-label={libraryView==='notebook'?'Your notebook':'Selected record and private notes'}>
         <div hidden={libraryView!=='search'}>{project && <ResearchSearch key={project} api={api} projectId={project} onOpen={open} onOpenNotebook={openNotebookEntry} onClose={closeLibrary}/>}</div>
         <WorkspaceNavigation.Provider value={navigationHost}>
         <WorkingSurfaces ref={surfaces} activeKey={workKey} ready={workReady} protectedKeys={protectedWork} transientKey={project+':'+libraryView} openKeys={workTabs.map(item=>item.key)}>

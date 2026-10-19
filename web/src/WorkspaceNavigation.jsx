@@ -7,5 +7,5 @@ export const WorkspaceNavigation=createContext(null);
 /** Keep each cached document's navigation in the single shell, only while active. */
 export function DocumentNavigation({children}){
   const host=useContext(WorkspaceNavigation),active=useContext(SurfaceActivity);
-  return host ? active ? createPortal(children,host) : null : children;
+  return host&&active ? createPortal(children,host) : null;
 }

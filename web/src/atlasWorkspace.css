@@ -129,3 +129,23 @@
  .atlas-workspace .notebook-page .notebook-note-title input,.atlas-workspace .notebook-page .notebook-note-title textarea{font-size:26px}
 }
 @media(prefers-reduced-motion:reduce){.atlas-workspace *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+/* Context is an adjacent document, with a quiet resize boundary. */
+.atlas-workspace .has-source-pane .notebook-with-source{display:grid;grid-template-columns:minmax(0,1fr) 7px minmax(0,var(--context-width,46%));gap:16px;align-items:start}
+.atlas-workspace .has-source-pane .notebook-layout{min-width:0;max-height:none;overflow:visible}
+.atlas-workspace .notebook-source-pane{position:sticky;top:0;max-height:calc(100dvh - 60px);background:var(--paper);border:0;padding:0 0 0 10px;min-width:0;overflow:auto}
+.atlas-workspace .notebook-source-pane>header{font-size:12px;gap:6px;margin-bottom:12px}
+.atlas-workspace .notebook-source-pane>header span{display:none}
+.atlas-workspace .notebook-source-pane>h3{font:600 20px/1.4 system-ui;letter-spacing:0}
+.notebook-context-divider{position:sticky;top:0;height:calc(100dvh - 80px);cursor:col-resize;border-inline-start:1px solid var(--rule);touch-action:none}
+.quran-sidebar-surahs{font:13px/1.5 system-ui;color:var(--muted)}
+.quran-sidebar-surahs summary{padding:8px;cursor:pointer}
+.quran-sidebar-surahs nav{display:grid;gap:2px;max-height:45dvh;overflow:auto}
+.quran-sidebar-surahs button{text-align:start;font-size:13px}
+.atlas-workspace .notebook-note-details label:has(input[type=checkbox]){display:flex;align-items:center;gap:10px}
+.atlas-workspace .notebook-note-details input[type=checkbox]{width:auto}
+@media(max-width:900px){
+ .atlas-workspace .has-source-pane .notebook-with-source{display:block}
+ .notebook-context-divider{display:none}
+ .atlas-workspace .notebook-source-pane{position:fixed;inset:0;max-height:none;z-index:80;padding:22px;background:var(--paper);border:0;overflow:auto}
+ .atlas-workspace .notebook-source-pane>header{top:-22px;background:var(--paper);z-index:5}
+}

@@ -40,7 +40,7 @@ try{
   await call('Runtime.enable');await call('Page.enable');await call('Page.navigate',{url:origin+'/scripts/fixtures/quran-harness.html?view=quran&project=synthetic'});
   await until(()=>evaluate('document.querySelectorAll("[data-ayah]").length===176'),'complete An-Nisa');
   assert.equal(await evaluate('document.querySelector(`[data-ayah="59"] .quran-translation`).textContent.length>30'),true);
-  assert.equal(await evaluate('(()=>{const select=document.querySelector(".quran-toolbar select"),r=select.getBoundingClientRect();return !!document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest(".quran-toolbar")})()'),true);
+  assert.equal(await evaluate('(()=>{const select=document.querySelector(".quran-toolbar button"),r=select.getBoundingClientRect();return !!document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest(".quran-toolbar")})()'),true);
   const before=await evaluate('getComputedStyle(document.querySelector(".quran-translation")).fontSize');
   await click('Larger');
   assert.notEqual(await evaluate('getComputedStyle(document.querySelector(".quran-translation")).fontSize'),before);
