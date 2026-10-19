@@ -26,7 +26,7 @@ from .graph_engine import rank, registered_policy
 from .quran_citations import PARSER_VERSION as QURAN_PARSER_VERSION, PROFILE_ID as QURAN_PROFILE_ID
 from .quran_resources import pilot_resource
 from .reader_collection import collection_resource
-from . import quran_reader
+from . import quran_reader, quran_words
 
 logger = logging.getLogger("research.api")
 Identifier = Annotated[str, Field(min_length=1, max_length=500, pattern=r"^[^\x00-\x1f\x7f]+$")]
@@ -726,6 +726,19 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     @router.get("/quran/chapter")
     def quran_chapter(chapter: Annotated[int,Query(ge=1,le=114)], translation: Literal['itani-god'] = 'itani-god'):
         return quran_reader.chapter(chapter,translation)
+
+    @router.get('/quran/words')
+    def quran_word_glosses(chapter: Annotated[int,Query(ge=1,le=114)], ayah: Annotated[int,Query(ge=1,le=286)]):
+        try:
+            # Keep invalid references distinct from an unavailable external source.
+            quran_reader.representation('tanzil-uthmani',chapter,ayah,ayah)
+        except ValueError:
+            raise HTTPException(422,'Choose an existing ayah.') from None
+        try:
+            return quran_words.lookup(chapter,ayah)
+        except Exception:
+            # Do not relay provider response bodies or internal network errors.
+            raise HTTPException(503,'Word translation is unavailable. Your reading and notes are unchanged.') from None
 
     @router.post('/quran/binding',status_code=201)
     def quran_binding(value: QuranBinding,actor: str=Depends(owner)):
