@@ -69,7 +69,7 @@ References checked during implementation: [machine access policy](https://www.gu
 
 ## Verification
 
-Validation: 154 frontend unit tests pass, provider and authenticated HTTP boundary
+Validation: 156 frontend unit tests pass, provider and authenticated HTTP boundary
 tests pass, production build passes, and PostgreSQL 17/18 contracts pass in CI.
 The dedicated browser check covers search/open without membership, atomic exact
 notes, lost-response retry, original highlights, reader remount/resume, inert text
