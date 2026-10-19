@@ -11,7 +11,7 @@ import react from '@vitejs/plugin-react';
 const root=fileURLToPath(new URL('..',import.meta.url)),temporary=await mkdtemp(join(tmpdir(),'research-notebook-browser-'));
 const artifacts=process.env.RESEARCH_BROWSER_ARTIFACT_DIR || await mkdtemp(join(tmpdir(),'research-quran-review-'));
 await mkdir(artifacts,{recursive:true});
-const fixture=execFileSync('python3',['-c',"import json; from islam_research.quran_reader import catalog,chapter; print(json.dumps(dict(catalog=catalog(),chapters={str(c):chapter(c) for c in (1,4,114)})))"],{cwd:join(root,'..'),env:{...process.env,PYTHONPATH:'src'},maxBuffer:4*1024*1024}).toString();
+const fixture=execFileSync('python3',['-c',"import json; from islam_research.quran_reader import catalog,chapter; print(json.dumps(dict(catalog=catalog(),chapters={str(c):chapter(c) for c in (1,4,5,114)})))"],{cwd:join(root,'..'),env:{...process.env,PYTHONPATH:'src'},maxBuffer:4*1024*1024}).toString();
 await build({define:{__QURAN_TEST_DATA__:fixture},root,configFile:false,plugins:[react()],logLevel:'warn',build:{outDir:join(temporary,'dist'),emptyOutDir:true,
   rollupOptions:{input:join(root,'scripts/fixtures/quran-harness.html')}}});
 const preview=await startPreview({root,configFile:false,logLevel:'silent',build:{outDir:join(temporary,'dist')},preview:{host:'127.0.0.1',port:0,strictPort:true}});
@@ -162,5 +162,37 @@ try{
   assert.notEqual(await evaluate('getComputedStyle(document.querySelector(".quran-translation")).fontSize'),before);
   await click('Notes');await until(()=>evaluate('!!document.querySelector(".quran-notes-divider")'),'resized margin reopens');
   assert.equal(await evaluate('Math.round(Number(localStorage.getItem("research:quran-notes-width-v1")))'),await evaluate('Number(document.querySelector(".quran-notes-divider").getAttribute("aria-valuenow"))'));
-  assert.deepEqual(problems,[]);console.log(JSON.stringify({explicitReadingProgress:true,progressRetryUndoAndReload:true,arabicEnglishWordMeaning:true,wordPopoverMobilePlacement:true,nearSelectionAction:true,autoFocusedQuote:true,exactCaptureRetry:true,borderlessEditor:true,keyboardAndPointerResize:true,compactZoomControls:true,surahAndWholeNotes:true,semanticResume:true,inlineHighlight:true,completeSurah:176,atomicNote:true,lostResponseRetry:true,newerTyping:true,markdown:true,resourceIsolation:true,mobileNoOverflow:true,artifacts}));
+  async function press(key,code,repeat=false){await call('Input.dispatchKeyEvent',{type:'keyDown',key,code,...(key===' '?{text:' '}:{}),autoRepeat:repeat});await call('Input.dispatchKeyEvent',{type:'keyUp',key,code});}
+  async function jumpTo(reference){await evaluate('document.querySelector(`[aria-label="Go to verse"]`).focus();document.querySelector(`[aria-label="Go to verse"]`).select()');await call('Input.insertText',{text:reference});await evaluate('document.querySelector(".quran-toolbar form").requestSubmit();document.activeElement.blur();getSelection().removeAllRanges()');const [c,a]=reference.split(':');await until(()=>evaluate(`new URL(location.href).searchParams.get('chapter')==='${c}'&&new URL(location.href).searchParams.get('ayah_start')==='${a}'&&!!document.querySelector('[data-ayah="${a}"] .quran-translation')`),'jump to '+reference);}
+  await evaluate('document.querySelector(`[aria-label="Close notes"]`).click();document.activeElement.blur();getSelection().removeAllRanges()');
+  await press(' ','Space');
+  await until(()=>evaluate('new URL(location.href).searchParams.get("ayah_start")==="84"&&[...window.__quranTest.progressRows.values()].some(row=>row.chapter===4&&row.ayah===83&&row.is_read)'),'Space marks current verse read and advances');
+  assert.equal(await evaluate('document.activeElement.dataset.ayah'),'84','keyboard reading focuses the next ayah');
+  await press(' ','Space',true);assert.equal(await evaluate('new URL(location.href).searchParams.get("ayah_start")'),'84','holding Space never races through ayahs');
+  await press('ArrowRight','ArrowRight');
+  await until(()=>evaluate('new URL(location.href).searchParams.get("ayah_start")==="85"&&[...window.__quranTest.progressRows.values()].some(row=>row.ayah===84&&row.is_read)'),'Right Arrow marks and advances');
+  await evaluate('{const node=document.querySelector(`[data-ayah="85"] .quran-translation`),range=document.createRange();range.setStart(node.firstChild,0);range.setEnd(node.firstChild,2);getSelection().removeAllRanges();getSelection().addRange(range);}');
+  await press('ArrowRight','ArrowRight');
+  assert.equal(await evaluate('new URL(location.href).searchParams.get("ayah_start")'),'85','text selection keeps native arrow behavior');
+  assert.equal(await evaluate('[...window.__quranTest.progressRows.values()].some(row=>row.chapter===4&&row.ayah===85)'),false,'selected text is never marked read by an arrow');
+  await evaluate('getSelection().removeAllRanges()');
+  const readRowsBeforeInput=await evaluate('window.__quranTest.progressRows.size');
+  await evaluate('document.querySelector(`[aria-label="Go to verse"]`).focus()');await press('ArrowRight','ArrowRight');await press(' ','Space');
+  assert.equal(await evaluate('window.__quranTest.progressRows.size'),readRowsBeforeInput,'input keyboard use never marks verses');
+  await jumpTo('4:59');await evaluate('document.querySelector(`[data-ayah="59"] .quran-ayah-number`).click()');
+  await until(()=>evaluate('!!document.querySelector(`[aria-label="Write a verse note"]`)'),'note editor for shortcut exclusion');
+  await evaluate('document.querySelector(`[aria-label="Write a verse note"]`).focus()');await call('Input.insertText',{text:'Keyboard draft'});await press(' ','Space');await press('ArrowRight','ArrowRight');
+  assert.equal(await evaluate('document.querySelector(`[aria-label="Write a verse note"]`).textContent'),'Keyboard draft ');
+  assert.equal(await evaluate('new URL(location.href).searchParams.get("ayah_start")'),'59','writing keeps the current verse');
+  assert.equal(await evaluate('window.__quranTest.progressRows.size'),readRowsBeforeInput,'writing never changes read marks');
+  await evaluate('document.activeElement.blur();document.querySelector(`[aria-label="Close notes"]`).click()');
+  await jumpTo('4:176');await press(' ','Space');
+  await until(()=>evaluate('new URL(location.href).searchParams.get("chapter")==="5"&&new URL(location.href).searchParams.get("ayah_start")==="1"&&document.querySelectorAll("[data-ayah]").length===120'),'keyboard reading crosses a surah boundary');
+  assert.equal(await evaluate('[...window.__quranTest.progressRows.values()].some(row=>row.chapter===4&&row.ayah===176&&row.is_read)'),true);
+  await jumpTo('114:6');await press('ArrowRight','ArrowRight');
+  await until(()=>evaluate('document.querySelector(".quran-keyboard-status")?.textContent==="End of the Qur’an."&&[...window.__quranTest.progressRows.values()].some(row=>row.chapter===114&&row.ayah===6&&row.is_read)'),'last ayah is saved without wrapping');
+  await new Promise(resolve=>setTimeout(resolve,250));await press(' ','Space');
+  assert.equal(await evaluate('new URL(location.href).searchParams.get("chapter")+":"+new URL(location.href).searchParams.get("ayah_start")'),'114:6');
+  assert.equal(await evaluate('[...window.__quranTest.progressRows.values()].find(row=>row.chapter===114&&row.ayah===6).revision'),1,'repeated completion never duplicates the final read mark');
+  assert.deepEqual(problems,[]);console.log(JSON.stringify({spaceAndRightAdvance:true,editorAndSelectionKeySafety:true,surahBoundaryAndFinalAyah:true,explicitReadingProgress:true,progressRetryUndoAndReload:true,arabicEnglishWordMeaning:true,wordPopoverMobilePlacement:true,nearSelectionAction:true,autoFocusedQuote:true,exactCaptureRetry:true,borderlessEditor:true,keyboardAndPointerResize:true,compactZoomControls:true,surahAndWholeNotes:true,semanticResume:true,inlineHighlight:true,completeSurah:176,atomicNote:true,lostResponseRetry:true,newerTyping:true,markdown:true,resourceIsolation:true,mobileNoOverflow:true,artifacts}));
 }finally{socket?.close();chrome.kill('SIGTERM');await preview.httpServer.close();await new Promise(resolve=>{if(chrome.exitCode!==null)return resolve();chrome.once('exit',resolve);setTimeout(resolve,3000);});await rm(temporary,{recursive:true,force:true,maxRetries:5,retryDelay:200});}
