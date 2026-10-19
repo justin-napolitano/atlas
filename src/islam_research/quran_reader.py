@@ -3,6 +3,7 @@
 No runtime fetching, provider credentials, scholarly promotion, or implicit repair.
 """
 from functools import lru_cache
+from copy import deepcopy
 from hashlib import sha256
 from importlib.resources import files
 import re
@@ -61,7 +62,7 @@ def _load(key):
 
 
 def catalog():
-    return dict(profile_id=PROFILE_ID,names_metadata=NAMES_METADATA, chapters=[dict(chapter=c,ayah_count=n,label=NAMES.get(c,f'Surah {c}')) for c,n in enumerate(AYAH_COUNTS,1)],
+    return dict(profile_id=PROFILE_ID,names_metadata=deepcopy(NAMES_METADATA), chapters=[dict(chapter=c,ayah_count=n,label=NAMES.get(c,f'Surah {c}')) for c,n in enumerate(AYAH_COUNTS,1)],
         resources=[dict(_load(k)[1]) for k in RESOURCES], unavailable=[
             dict(key='khattab',label='Mustafa Khattab · The Clear Quran',reason='Provider access and reuse authorization not configured.'),
             dict(key='saheeh',label='Saheeh International',reason='Provider access and reuse authorization not configured.')])

@@ -1,6 +1,8 @@
 import React,{useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {PassageNoteEditor} from '../../src/passageNoteEditor.js';
+import {WorkingTabs} from '../../src/WorkingSurfaces.jsx';
+import '../../src/workingTabs.css';
 import QuranReader from '../../src/QuranReader.jsx';
 import '../../src/style.css';
 import '../../src/readerPresentation.css';
@@ -27,6 +29,7 @@ const api={async request(path,query={},body){const value=body||query;requests.pu
   if(path==='reading/annotation'){const row=annotations.get(value.annotation_id);if(body){const updated={...row,body:body.body,mark_style:body.mark_style,revision:row.revision+1};annotations.set(row.id,updated);return clone(updated);}return {annotation:clone(row),anchor:{anchored:true,start:row.start_pos,end:row.end_pos},web_annotation:{id:row.id,type:'Annotation'}};}
   if(path==='notebook/items')return {items:[...entries.values()].filter(r=>r.document_id===value.document_id&&!r.trashed),next_cursor:null};
   if(path==='notebook/network')return {project_id:value.project_id,items:[...entries.values()],truncated:false};
+  if(path==='reading/draft')return {...body,id:'urn:research:draft:'+body.draft_uuid,revision:body.expected_revision+1};
   if(path==='notebook/draft'){const id='urn:research:writing-draft:'+body.draft_uuid,row={...body,id,revision:body.expected_revision+1};recovery.set(id,row);return clone(row);}
   if(path==='notebook/entry'){
     const row=entries.get(value.entry_id);if(!body)return clone(row);
@@ -46,6 +49,6 @@ const api={async request(path,query={},body){const value=body||query;requests.pu
   }throw new Error('Unexpected fixture write: '+path);
 }};
 function Harness(){const drafts=useRef(new Map()),editor=useRef(null),[generation,setGeneration]=useState(0),[,render]=useState(0);if(!editor.current)editor.current=new PassageNoteEditor(api,()=>render(n=>n+1));window.__quranTest={annotations,entries,documents,bindings,requests,recovery,place:()=>place,lost:()=>lost=true,release:()=>held?.(),remount:()=>{drafts.current=new Map();setGeneration(n=>n+1);},drafts};
-  return <div className="workspace-reader" style={{height:'100vh',overflow:'auto',padding:'20px 36px',boxSizing:'border-box'}}><QuranReader key={generation} api={api} projectId="synthetic" noteEditor={editor.current} drafts={drafts} changed={()=>render(n=>n+1)} onOpen={(...args)=>window.__opened=args} onOpenNotebook={row=>window.__notebook=row}/></div>;
+  return <div className="workspace-reader" style={{height:'100vh',overflow:'auto',padding:'20px 36px',boxSizing:'border-box'}}><WorkingTabs items={[{key:'quran',kind:'Reading',title:'Qur’an'}]} activeKey="quran" statuses={{}} onChoose={()=>{}} onClose={()=>{}}/><QuranReader key={generation} api={api} projectId="synthetic" noteEditor={editor.current} drafts={drafts} changed={()=>render(n=>n+1)} onOpen={(...args)=>window.__opened=args} onOpenNotebook={row=>window.__notebook=row}/></div>;
 }
 createRoot(document.getElementById('root')).render(<Harness/>);

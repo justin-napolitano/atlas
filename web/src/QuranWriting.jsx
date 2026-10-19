@@ -28,7 +28,7 @@ export default function QuranWriting({api,projectId,context,drafts,changed,onSet
   }),[store,key]);
   if(initialNote&&!store.has(key)&&!queue.busy&&!queue.sent&&queue.revision<initialNote.revision){queue.row=initialNote;queue.revision=initialNote.revision;}
   const held=store.get(key),row=queue.row;
-  const recovery=useWritingRecovery({api,store,sessionKey:key+':'+(row?.revision||0),path:'notebook/draft',enabled:!!held,
+  const recovery=useWritingRecovery({api,store,sessionKey:key+':'+(row?.revision||0),path:'notebook/draft',enabled:!!held&&(!row||row.body!==value),
     payload:held?notebookRecoveryPayload(projectId,row?.id||null,{base:row||null,value:row?{...row,body:value}:{request_uuid:identity,record_id:null,document_id:null,annotation_id:null,thought_type:'note',title:`Qur’an · ${context.resource_key} · ${context.note_scope} · ${context.chapter}:${context.ayah_start}–${context.ayah_end}`,body:value,links:[],state:'active'}}):null,verify:verifyNotebookRecovery});
   useEffect(()=>()=>{if(queue.row&&queue.row.revision>(row?.revision||0))recovery.queue.finish();},[recovery.queue]);
   useEffect(()=>{live.current=true;const unsubscribe=queue.subscribe(status=>{

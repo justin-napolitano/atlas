@@ -67,8 +67,9 @@ def notes(connection,*,project_id,resource_key,chapter,note_scope,cursor='',limi
     rows=connection.execute("""SELECT n.id FROM research.quran_note_contexts q JOIN research.notebook_entries n
         ON n.project_id=q.project_id AND n.id=q.entry_id JOIN research.records r ON r.project_id=n.project_id AND r.id=n.record_id
         WHERE q.project_id=%s AND q.resource_key=%s AND q.note_scope=%s AND (q.chapter=%s OR q.note_scope='source')
+        AND r.attributes->>'resource_id'=%s
         AND n.state='active' AND r.deleted_at IS NULL AND n.id>%s AND NOT EXISTS(SELECT 1 FROM research.note_trash t
-        WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed') ORDER BY n.id LIMIT %s""",(project_id,resource_key,note_scope,chapter,cursor,limit))
+        WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed') ORDER BY n.id LIMIT %s""",(project_id,resource_key,note_scope,chapter,quran_reader._load(resource_key)[1]['resource_id'],cursor,limit))
     return [notebook.get(connection,project_id,row['id']) for row in rows]
 
 
