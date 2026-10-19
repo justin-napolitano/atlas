@@ -81,3 +81,25 @@ browser suite passes with live annotation editing, navigation retention and
 explicit conflict resolution. Hosted sync, native IME input and owner
 reading-session acceptance remain separate from this synthetic evidence.
 
+
+## Semantic note locations (#192)
+
+Qur’an free margin notes show the canonical reference from their bound immutable
+reading (for example Q 4:85), rather than a percentage inside that verse. Exact
+highlight notes show the same bound reference alongside the selected wording.
+Generic plain-text location notes show the paragraph containing their stored
+Unicode position. Existing offsets, note IDs, edition hashes and quotations are
+unchanged; this is not an automatic reanchor or a new source interpretation.
+
+An idle ayah margin follows the visible reading location on scroll. Exact
+selected-note context, surah/work notes, and actively focused writing stay pinned;
+scrolling must never rebind an unfinished note. The canonical location action
+returns to the bound ayah, and generic notes retain their position-based return.
+
+Validation: 153 frontend tests and production build pass. The Qur’an browser
+suite verifies canonical labels for existing free notes and exact highlights,
+idle scroll from Q 4:59 to Q 4:85, focused writing remaining at Q 4:59, new writing
+bound to Q 4:85, location return, existing lost-response retries, keyboard reading,
+resource isolation and mobile layout. The generic margin-writing browser suite
+also passes autosave, reload, newer typing, conflict retention, Trash/Undo,
+appearance controls and mobile reflow. No backend/schema or stored-note changes.

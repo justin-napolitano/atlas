@@ -7,8 +7,9 @@ import {readingPosition,revealReadingPosition} from './readingPosition.js';
 import {useSurfaceResume} from './surfaceActivity.js';
 import MarginMarkdownEditor from './MarginMarkdownEditor.jsx';
 import {TrashAction} from './PrivateTrash.jsx';
+import {noteLocationLabel} from './noteLocation.js';
 
-function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLeave,onOpenNotebook,markdown,active=false}){
+function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLeave,onOpenNotebook,markdown,active=false,locationLabel='',onReturn}){
   const id=initial.id,key=notebookKey(record.project_id,id),store=drafts.current;
   const [editing,setEditing]=useState(!initial.revision || store.has(key));
   const [,render]=useState(0),alive=useRef(true),input=useRef(null),left=useRef(false),promoted=useRef(false);
@@ -49,7 +50,7 @@ function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLe
   const trashAction=<TrashAction api={api} projectId={record.project_id} kind="entry" id={id} revision={saved?.revision || 1} trashRevision={saved?.trash_revision || initial.trash_revision || 0} trashed={!!saved?.trashed} disabled={!!draft} onChanged={result=>{setEditing(false);writer.row={...saved,trashed:result.state==='trashed',trash_revision:result.revision};notify();onLeave?.(writer.row);}}/>;
   if(saved?.trashed)return <article className="location-margin-note"><small>Moved to Trash. Your note and reading location are retained.</small>{trashAction}</article>;
   return <article className={`location-margin-note${active?' is-active':''}${editing?' is-writing':''}`} data-margin-note-id={id} onBlur={blur}>
-    <div className="location-margin-meta"><button className="location-return" onClick={()=>revealReadingPosition(textRoot.current,value.reading_position)}>Near {Math.round(value.reading_position/Math.max(1,Array.from(document.text_body).length)*100)}% ↖</button>
+    <div className="location-margin-meta"><button className="location-return" onClick={()=>onReturn ? onReturn() : revealReadingPosition(textRoot.current,value.reading_position)}>{noteLocationLabel(document,value.reading_position,locationLabel)} ↖</button>
       <small role="status">{failed?'Not saved':draft?['saving','waiting'].includes(phase)?'Saving…':value.body.trim()?'Unsaved':'Write something to save':saved?'Saved':'Private note'}</small></div>
     <div className="location-note-body"><MarginMarkdownEditor ref={input} autoFocus={!initial.revision||active} label="Margin thought" placeholder="Write in the margin…" value={value.body} onChange={edit} sessionStore={store} sessionKey={key} {...markdown}
       onFocus={()=>{left.current=false;setEditing(true);}} onKeyDown={event=>{if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();writer.flush();}}}/></div>
@@ -60,7 +61,7 @@ function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLe
   </article>;
 }
 
-export default function LocationMarginNotes({api,record,document,textRoot,drafts,changed,composerRef,onOpenNotebook,navigate,onLocations,activeId='',hideComposer=false}){
+export default function LocationMarginNotes({api,record,document,textRoot,drafts,changed,composerRef,onOpenNotebook,navigate,onLocations,activeId='',hideComposer=false,locationLabel='',onReturn}){
   const [network,setNetwork]=useState({items:[],truncated:true}),[linkError,setLinkError]=useState('');
   const [rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[error,setError]=useState(''),[loading,setLoading]=useState(true),[next,setNext]=useState(null);
   const root=useRef(null),position=useRef(null),alive=useRef(true),generation=useRef(0);
@@ -96,7 +97,7 @@ export default function LocationMarginNotes({api,record,document,textRoot,drafts
     setFresh({...value,id});setNext(id);changed();}
   useEffect(()=>{if(next){const field=root.current?.querySelector('.location-margin-composer textarea');field?.focus();field?.setSelectionRange(field.value.length,field.value.length);setNext(null);}},[next]);
   function settle(row){if(!alive.current)return;setRows(old=>[row,...old.filter(r=>r.id!==row.id)]);if(fresh?.id===row.id){setFresh(null);position.current=null;}}
-  const shared={api,record,document,textRoot,drafts,changed,onOpenNotebook,markdown:{notes:[...new Map([...network.items,...rows].map(n=>[n.id,n])).values()],complete:!network.truncated,onOpen:onOpenNotebook?id=>onOpenNotebook({id}):undefined,onOpenPassage:navigate?openPassage:undefined}};
+  const shared={api,record,document,textRoot,drafts,changed,onOpenNotebook,locationLabel,onReturn,markdown:{notes:[...new Map([...network.items,...rows].map(n=>[n.id,n])).values()],complete:!network.truncated,onOpen:onOpenNotebook?id=>onOpenNotebook({id}):undefined,onOpenPassage:navigate?openPassage:undefined}};
   return <section ref={root} className="location-margin-notes" aria-label="Free margin writing">
 
     {loading&&<small role="status">Opening margin notes…</small>}{error&&<p role="alert">{error} <button onClick={()=>load()}>Retry loading</button></p>}
