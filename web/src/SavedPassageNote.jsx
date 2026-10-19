@@ -1,4 +1,4 @@
-import React,{useEffect,useState} from 'react';
+import React,{useEffect,useLayoutEffect,useRef,useState} from 'react';
 import NotebookMarkdown from './NotebookMarkdown.jsx';
 import {TrashAction} from './PrivateTrash.jsx';
 import {finishReadingRecovery} from './useWritingRecovery.js';
@@ -10,22 +10,26 @@ import {recoverPassageWriting} from './recoverIntoEditor.js';
 
 const statuses={saved:'Saved to your workspace',unsaved:'Unsaved changes',saving:'Saving…',conflict:'Changed on another device',error:'Save failed. Your draft is still here.'};
 /** A revisioned margin note; source selection and note identity remain immutable. */
-export default function SavedPassageNote({ row,sourceId,document,editor,reopen,api,drafts,changed,navigate,onOpenVerse,active=false,onTrashChange=()=>{},compact=false,autoSave=false }) {
+export default function SavedPassageNote({ row,sourceId,document,editor,reopen,api,drafts,changed,navigate,onOpenVerse,active=false,onTrashChange=()=>{},compact=false,autoSave=false,focusRequest=0,hidden=false }) {
   const entry=editor.adopt(row,sourceId), value=entry.server;
   const [trash,setTrash]=useState(null);
+  const input=useRef(null);
+  useLayoutEffect(()=>{if(input.current){input.current.style.height='auto';input.current.style.height=input.current.scrollHeight+'px';}},[entry.body,entry.open]);
+  useEffect(()=>{if(compact&&active&&entry.open)input.current?.focus({preventScroll:true});},[compact,active,entry.open,focusRequest]);
   useEffect(()=>{if(!autoSave||entry.status!=='unsaved'||entry.pending)return;const timer=setTimeout(()=>editor.save(value.id),800);return()=>clearTimeout(timer);},[autoSave,entry.status,entry.body,entry.markStyle,entry.pending]);
   const markControl=<label>Passage mark<select value={entry.markStyle} onChange={event=>editor.editStyle(value.id,event.target.value)}><option value="highlight">Highlight</option><option value="underline">Underline</option><option value="none">Margin note only</option></select></label>;
 
   const action=<TrashAction api={api} projectId={value.project_id} kind="annotation" id={value.id} revision={value.revision} trashRevision={trash?.revision ?? row.trash_revision ?? 0} trashed={trash?trash.state==='trashed':row.trashed} disabled={entry.status!=='saved'} onChanged={result=>{setTrash(result);onTrashChange(result);}}/>;
-  if(trash?trash.state==='trashed':row.trashed)return <article className="saved-passage-note"><p>Margin writing moved to Trash. Its exact source anchor is retained.</p>{action}</article>;
-  return <article className={`saved-passage-note${active ? ' is-active' : ''}`} data-annotation-id={value.id} tabIndex={-1} aria-label={active ? 'Selected passage note' : 'Passage note'}>
+  if(trash?trash.state==='trashed':row.trashed)return <article hidden={hidden} className="saved-passage-note"><p>Margin writing moved to Trash. Its exact source anchor is retained.</p>{action}</article>;
+  return <article hidden={hidden} className={`saved-passage-note${active ? ' is-active' : ''}`} data-annotation-id={value.id} tabIndex={-1} aria-label={active ? 'Selected passage note' : 'Passage note'}>
+    {compact&&active&&<small className="passage-quote-label">Note on selected text</small>}
     <a className="reader-reopen" dir="auto" href={`?${new URLSearchParams({project:value.project_id,record:sourceId,document:value.document_id,annotation:value.id})}`} onClick={event=>{
       if(event.button===0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {event.preventDefault();reopen(value);}
     }}>{value.exact}</a>
     {compact?<details className="passage-metadata"><summary>Passage details</summary><small>{(value.mark_style || 'highlight')==='none' ? 'Margin note' : value.mark_style==='underline' ? 'Underlined' : 'Highlighted'} · {value.capture_kind.replaceAll('_',' ')} · captured, unreviewed · revision {value.revision}</small></details>:<small>{(value.mark_style || 'highlight')==='none' ? 'Margin note' : value.mark_style==='underline' ? 'Underlined' : 'Highlighted'} · {value.capture_kind.replaceAll('_',' ')} · captured, unreviewed · revision {value.revision}</small>}
     {entry.open ? <div className="passage-note-edit">
       {compact?<details><summary>Mark style</summary>{markControl}</details>:markControl}
-      <label><span className={compact?'quran-visually-hidden':undefined}>My saved passage note</span><textarea placeholder={compact?'Write about this passage…':undefined} value={entry.body} rows={4} maxLength={10000}
+      <label><span className={compact?'quran-visually-hidden':undefined}>My saved passage note</span><textarea ref={input} dir="auto" placeholder={compact?'Write about this passage…':undefined} value={entry.body} rows={4} maxLength={10000}
         onChange={event=>editor.edit(value.id,event.target.value)}
         onKeyDown={event=>{if((event.metaKey||event.ctrlKey) && event.key==='Enter') {event.preventDefault();editor.save(value.id);}}} /></label>
       <p role="status">{compact&&entry.status==='saved'?'Saved':statuses[entry.status]}</p>

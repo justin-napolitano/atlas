@@ -22,3 +22,31 @@
 
 .quran-selection-actions{top:calc(var(--quran-sticky-top,0px) + var(--quran-toolbar-height,64px))}.quran-text article{scroll-margin-top:calc(var(--quran-sticky-top,0px) + var(--quran-toolbar-height,64px) + 20px)}.quran-notes{top:calc(var(--quran-sticky-top,0px) + var(--quran-toolbar-height,64px) + 16px)}@media(max-width:900px){.quran-notes{top:auto}}
 .quran-text{font-family:var(--reading-font);font-size:var(--reading-size,22px)}.quran-reader .quran-notes h2{font:600 18px/1.4 system-ui;margin:0}
+
+/* A writing margin has its own geometry; reading zoom never scales its controls. */
+.quran-layout.with-notes{grid-template-columns:minmax(0,1fr) 8px minmax(0,var(--quran-notes-width,360px));gap:16px}
+.quran-notes-divider{position:sticky;top:calc(var(--quran-sticky-top,0px) + var(--quran-toolbar-height,64px) + 16px);height:calc(100dvh - var(--quran-toolbar-height,64px) - 48px);cursor:col-resize;touch-action:none;border-inline-start:1px solid var(--quran-line)}
+.quran-notes-divider:hover,.quran-notes-divider:focus-visible{border-inline-start-color:var(--accent,#b82240)}
+.quran-reader .quran-notes{border-left:0;padding:12px 0 20px 8px;max-height:calc(100dvh - var(--quran-sticky-top,0px) - var(--quran-toolbar-height,64px) - 32px)}
+.quran-reader .quran-notes button{font:400 13px/1.4 system-ui,sans-serif;min-height:34px;padding:6px 8px;white-space:normal;overflow-wrap:normal}
+.quran-reader .quran-note-scope,.quran-reader .quran-note-resource{gap:6px;flex-wrap:wrap;margin:12px 0}
+.quran-reader .quran-notes button[aria-pressed=true]{background:transparent;color:var(--accent,#b82240);text-decoration:underline;text-underline-offset:5px}
+.quran-reader .quran-note-resource button+button{margin-left:0}
+.quran-reader .quran-notes .location-note-actions{display:flex;flex-wrap:wrap;gap:8px}
+.quran-reader .quran-notes .location-note-actions button{font-size:12px;padding:4px 0}
+.quran-reader .quran-notes textarea,.quran-reader .quran-notes textarea:hover,.quran-reader .quran-notes textarea:focus,.quran-reader .quran-notes textarea:focus-visible{outline:none;border:0;box-shadow:none;border-radius:0;background:transparent;resize:none;padding:8px 0}
+.quran-reader .quran-notes textarea{caret-color:var(--accent,#b82240)}
+.quran-reader .quran-notes .passage-note-edit textarea{overflow:hidden;min-height:90px}
+.quran-reader .quran-notes .passage-quote-label{font:12px/1.5 system-ui;color:var(--muted,#777)}
+.quran-reader .saved-passage-note[hidden],.quran-reader .quran-notes [hidden]{display:none!important}
+.quran-reader .quran-notes .quran-all-notes{color:var(--muted,#777);font-size:12px;padding-inline:0}
+.quran-reader .quran-selection-actions{position:fixed;top:auto;z-index:90;display:flex;align-items:center;gap:4px;flex-wrap:wrap;width:max-content;height:max-content;max-width:calc(100vw - 24px);padding:4px;background:var(--quran-bg);border:1px solid var(--quran-line);border-radius:6px;box-shadow:0 3px 16px #0002}
+.quran-reader .quran-selection-actions button{font:500 13px/1.4 system-ui;min-height:36px;border:0;padding:6px 10px;white-space:nowrap}
+.quran-reader .quran-selection-actions [role=alert]{font:12px/1.5 system-ui;max-width:30ch;padding:8px}
+@media(max-width:900px){
+ .quran-layout.with-notes{grid-template-columns:minmax(0,1fr)}
+ .quran-notes-divider{display:none}
+ .quran-reader .quran-notes{padding:16px 22px;max-height:55dvh;border-top:1px solid var(--quran-line)}
+ .quran-reader .quran-notes button{min-height:40px}
+}
+.quran-text mark.quran-selected-mark{background:#c6374b33;border-bottom:2px solid var(--accent,#c6374b)}
