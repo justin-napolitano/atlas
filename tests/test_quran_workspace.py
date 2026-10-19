@@ -62,6 +62,18 @@ class QuranWorkspaceTests(unittest.TestCase):
             self.assertEqual(old['note']['body'],updated['body'])
             with self.assertRaises(self.db.RevisionConflict):reader.create_note(c,**self.values,request_uuid=request,body='Different creation',actor='owner')
 
+    def test_existing_pilot_wording_and_note_ids_are_reused(self):
+        from islam_research import verse_store
+        with self.db.connect(self.owner_dsn) as c:
+            old=verse_store.import_pilot(c,request_uuid=str(uuid.uuid4()),project_id=self.project,chapter=4,ayah=59,rationale='Synthetic legacy reader test',actor='owner')
+            bound=reader.binding(c,**{**self.values,'resource_key':'tanzil-uthmani'},actor='owner')
+            self.assertEqual(bound['record_id'],old['record_id'])
+            self.assertEqual(bound['document']['id'],old['document_id'])
+            self.assertEqual(reader.existing(c,**{**self.values,'resource_key':'tanzil-uthmani'})['document']['id'],old['document_id'])
+            marks=reader.marks(c,project_id=self.project,chapter=4)
+            self.assertEqual([m['id'] for m in marks],[old['annotation_id']])
+            self.assertEqual(marks[0]['resource_key'],'tanzil-uthmani')
+
     def test_failed_first_note_rolls_back_binding(self):
         with self.db.connect(self.owner_dsn) as c:
             with self.assertRaises(ValueError):reader.create_note(c,**self.values,request_uuid=str(uuid.uuid4()),body='',actor='owner')

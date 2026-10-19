@@ -7,6 +7,10 @@ from islam_research.quran_citations import AYAH_COUNTS
 class QuranReaderTests(unittest.TestCase):
     def test_real_pinned_complete_corpus_and_reference_identity(self):
         self.assertEqual(sum(AYAH_COUNTS),6236)
+        from islam_research.quran_resources import pilot_resource
+        pilot=pilot_resource();arabic=reader._load('tanzil-uthmani')[1]
+        self.assertEqual(arabic['resource_id'],pilot['resource_id'])
+        self.assertEqual(arabic['source_notice'],pilot['source_notice'])
         for key in reader.RESOURCES:
             verses,resource=reader._load(key)
             self.assertEqual(len(verses),6236)

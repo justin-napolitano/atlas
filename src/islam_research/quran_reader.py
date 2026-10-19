@@ -13,7 +13,7 @@ from .quran_citations import AYAH_COUNTS, PROFILE_ID, reference
 
 RESOURCES = {
     'tanzil-uthmani': dict(filename='quran-uthmani-1.1.txt', sha256='bf4f57b968d03f4131c070b1e285da9be0e0a108a21c910e872801ca273312c8',
-        label='Tanzil Uthmani · Version 1.1', language='ar', version='1.1',
+        label='Tanzil Uthmani digital text, Version 1.1', language='ar', version='1.1',
         source_url='https://tanzil.net/pub/download/index.php?quranType=uthmani&outType=txt-2&agree=true',
         attribution='Tanzil Project', attribution_url='https://tanzil.net/', license_url='https://tanzil.net/docs/text_license',
         license='CC BY 3.0; verbatim text only', accessed_on='2026-10-18'),
@@ -48,7 +48,7 @@ def parse(raw, expected_digest):
     expected = [(c,a) for c,n in enumerate(AYAH_COUNTS,1) for a in range(1,n+1)]
     if list(verses) != expected or any(not t.strip() or '\x00' in t for t in verses.values()):
         raise ValueError('Incomplete or mismatched Qur’an resource')
-    return verses, '\n'.join(notice)
+    return verses, '\n'.join(notice)+'\n'
 
 
 @lru_cache(maxsize=2)
@@ -56,7 +56,7 @@ def _load(key):
     if key not in RESOURCES: raise ValueError('Translation/resource is unavailable; no substitution was made')
     metadata=RESOURCES[key]
     verses,notice=parse(files('islam_research').joinpath('resources/'+metadata['filename']).read_bytes(),metadata['sha256'])
-    return verses, {**metadata, 'key':key, 'resource_id':'urn:research:quran-resource:'+key+':'+metadata['sha256'],
+    return verses, {**metadata, 'key':key, 'resource_id':'urn:research:quran-resource:'+('tanzil-uthmani-1.1' if key=='tanzil-uthmani' else key)+':'+metadata['sha256'],
         'profile_id':PROFILE_ID, 'source_notice':notice,
         'review_limit':'Identified provider text, not an independent scholarly review or commentary.', 'coverage':'114 surahs; 6236 numbered ayahs'}
 

@@ -7,7 +7,7 @@ from .quran_citations import reference, PROFILE_ID
 def existing(connection,*,project_id,resource_key,chapter,ayah_start,ayah_end,note_scope="verse"):
     value=_representation(resource_key,chapter,ayah_start,ayah_end,note_scope)
     resource=value['resource']
-    source_id='urn:research:source:'+str(uuid.uuid5(uuid.NAMESPACE_URL,project_id+'\nquran-reader\n'+resource['resource_id']))
+    source_id='urn:research:source:'+str(uuid.uuid5(uuid.NAMESPACE_URL,project_id+'\n'+resource['resource_id']))
     if note_scope!='verse':return dict(project_id=project_id,record_id=source_id,resource_id=resource['resource_id'],resource_key=resource_key,reference=value['reference'],document=None) if connection.execute('SELECT id FROM research.records WHERE project_id=%s AND id=%s AND deleted_at IS NULL',(project_id,source_id)).fetchone() else None
     document=connection.execute('''SELECT d.* FROM research.reading_documents d JOIN research.records r
         ON r.project_id=d.project_id AND r.id=d.source_record_id WHERE d.project_id=%s AND d.source_record_id=%s
@@ -20,19 +20,19 @@ def existing(connection,*,project_id,resource_key,chapter,ayah_start,ayah_end,no
 def binding(connection,*,project_id,resource_key,chapter,ayah_start,ayah_end,actor,note_scope="verse"):
     value=_representation(resource_key,chapter,ayah_start,ayah_end,note_scope)
     resource=value['resource']
-    source_id='urn:research:source:'+str(uuid.uuid5(uuid.NAMESPACE_URL,project_id+'\nquran-reader\n'+resource['resource_id']))
+    source_id='urn:research:source:'+str(uuid.uuid5(uuid.NAMESPACE_URL,project_id+'\n'+resource['resource_id']))
     with connection.transaction():
         connection.execute('SELECT pg_advisory_xact_lock(184514,hashtext(%s))',(source_id,))
         attributes=dict(quran_resource=resource['key'],resource_id=resource['resource_id'],source_sha256=resource['sha256'],license_url=resource['license_url'])
         connection.execute('''INSERT INTO research.records(id,project_id,kind,title,attributes,changed_by)
             VALUES(%s,%s,'source',%s,%s,%s) ON CONFLICT(id) DO NOTHING''',(source_id,project_id,resource['label'],db.Jsonb(attributes),actor))
         source=connection.execute('SELECT * FROM research.records WHERE project_id=%s AND id=%s AND deleted_at IS NULL',(project_id,source_id)).fetchone()
-        if not source or source['kind']!='source' or any(source['attributes'].get(k)!=v for k,v in attributes.items()):
+        if not source or source['kind']!='source' or any(source['attributes'].get(k)!=attributes[k] for k in ('resource_id','source_sha256')):
             raise ValueError('This resource binding requires reconciliation')
         if note_scope!='verse':return dict(project_id=project_id,record_id=source_id,resource_id=resource['resource_id'],resource_key=resource_key,reference=value['reference'],document=None)
-        document=passage_store.create_document(connection,project_id=project_id,source_record_id=source_id,edition=resource['label']+' · '+resource['version'],
+        document=passage_store.create_document(connection,project_id=project_id,source_record_id=source_id,edition=resource['label'] if resource_key=='tanzil-uthmani' else resource['label']+' · '+resource['version'],
             locator=value['reference']['label'],representation_url=resource['source_url'],text=value['text'],actor=actor,
-            source_notice=resource['attribution']+'\n'+resource['license_url']+'\n'+resource['source_notice'])
+            source_notice=('Source: Tanzil Project — https://tanzil.net/\n'+resource['source_notice']) if resource_key=='tanzil-uthmani' else resource['attribution']+'\n'+resource['license_url']+'\n'+resource['source_notice'])
         return dict(project_id=project_id,record_id=source_id,resource_id=resource['resource_id'],resource_key=resource_key,reference=value['reference'],document=document)
 
 
@@ -94,10 +94,10 @@ def save_place(connection,*,project_id,resource_key,chapter,ayah,expected_revisi
 
 def marks(connection,*,project_id,chapter,cursor='',limit=101):
     reference(chapter,1)
-    return connection.execute("""SELECT a.*,d.source_record_id,r.attributes->>'quran_resource' AS resource_key,d.locator
+    return connection.execute("""SELECT a.*,d.source_record_id,CASE WHEN r.attributes->>'resource_id'=%s THEN 'tanzil-uthmani' ELSE r.attributes->>'quran_resource' END AS resource_key,d.locator
         FROM research.reading_annotations a JOIN research.reading_documents d ON d.project_id=a.project_id AND d.id=a.document_id
         JOIN research.records r ON r.project_id=d.project_id AND r.id=d.source_record_id
         WHERE a.project_id=%s AND a.id>%s AND d.locator ~ %s AND r.deleted_at IS NULL
         AND r.attributes->>'resource_id'=ANY(%s)
         AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed')
-        ORDER BY a.id LIMIT %s""",(project_id,cursor,'^Q '+str(chapter)+':[0-9]+$',[quran_reader._load(k)[1]['resource_id'] for k in quran_reader.RESOURCES],limit)).fetchall()
+        ORDER BY a.id LIMIT %s""",(quran_reader._load('tanzil-uthmani')[1]['resource_id'],project_id,cursor,'^Q '+str(chapter)+':[0-9]+$',[quran_reader._load(k)[1]['resource_id'] for k in quran_reader.RESOURCES],limit)).fetchall()
