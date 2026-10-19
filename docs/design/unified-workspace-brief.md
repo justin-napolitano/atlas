@@ -3,6 +3,8 @@
 Status: owner-approved direction; implementation planned, not built by this document.
 Decision date: 2026-10-18. This brief supersedes older frontend instructions that prescribe a global header, large working tabs, a nested notebook explorer, or permanent Write/Preview controls. Preserve their data contracts and useful capabilities; replace their presentation.
 
+Delivery tracking: [workspace reset #177](https://github.com/justin-napolitano/islam-research/issues/177), with ordered slices [shell and theme #178](https://github.com/justin-napolitano/islam-research/issues/178), [inline Markdown and safe autosave #179](https://github.com/justin-napolitano/islam-research/issues/179), then [reader/context #180](https://github.com/justin-napolitano/islam-research/issues/180). These refine the existing design umbrella #51 and product roadmap #84; they do not replace hosted-release or owner-session verification.
+
 ## Product and outcome
 
 A personal academic second brain with three equally real activities: reading sources, writing connected Markdown notes, and developing research questions. Qur’an reading is the first complete reading flow. Sources, annotations, citations, commentary, concepts, research links and personal writing remain connected. Other disciplines and catalogs follow later.
