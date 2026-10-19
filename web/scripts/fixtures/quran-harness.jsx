@@ -23,6 +23,11 @@ async function bind(value){const key=contextKey(value);if(bindings.has(key))retu
 const api={async request(path,query={},body){const value=body||query;requests.push({path,value:clone(value)});
   if(path==='quran/catalog')return clone(resources.catalog);
   if(path==='quran/chapter')return clone(resources.chapters[value.chapter]);
+  if(path==='quran/words'){
+    const text=resources.chapters[value.chapter].verses[value.ayah-1].arabic;
+    return {chapter:Number(value.chapter),ayah:Number(value.ayah),resource_key:'tanzil-uthmani',text_sha256:text.text_sha256,
+      words:[...text.text.matchAll(/\S+/gu)].filter(match=>/\p{L}/u.test(match[0])).map((match,i)=>({position:i+1,start:Array.from(text.text.slice(0,match.index)).length,end:Array.from(text.text.slice(0,match.index+match[0].length)).length,arabic:match[0],translation:'Synthetic meaning '+(i+1)}))};
+  }
   if(path==='quran/place'){if(!body)return clone(place);if((place?.revision||0)!==value.expected_revision)throw Object.assign(new Error('Changed place'),{status:409,current:clone(place)});place={...value,revision:value.expected_revision+1};return clone(place);}
   if(path==='quran/binding')return clone(bindings.get(contextKey(value))||null);
   if(path==='quran/notes')return {items:[...entries.values()].filter(row=>row.quran_context?.note_scope===value.note_scope&&row.quran_context?.resource_key===value.resource_key),next_cursor:null};

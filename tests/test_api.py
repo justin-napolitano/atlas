@@ -141,7 +141,7 @@ class APIBoundaryTests(unittest.TestCase):
 
     def test_quran_reader_resources_and_notes_keep_owner_boundary(self):
         public=TestClient(create_app(Settings('synthetic',mode='public'),store=MemoryBoundaryStore()))
-        for path in ('catalog','chapter','binding','notes','marks','place'):
+        for path in ('catalog','chapter','words','binding','notes','marks','place'):
             self.assertEqual(self.client.get('/v1/quran/'+path).status_code,401)
             self.assertEqual(public.get('/v1/quran/'+path).status_code,404)
         catalog=self.client.get('/v1/quran/catalog',headers=self.headers()).json()
@@ -149,6 +149,15 @@ class APIBoundaryTests(unittest.TestCase):
         chapter=self.client.get('/v1/quran/chapter',params={'chapter':4},headers=self.headers()).json()
         self.assertEqual(len(chapter['verses']),176)
         self.assertEqual(self.client.get('/v1/quran/chapter',params={'chapter':4,'translation':'khattab'},headers=self.headers()).status_code,422)
+        from unittest.mock import patch
+        with patch('islam_research.quran_words.lookup',return_value={'chapter':4,'ayah':59,'words':[]}) as lookup:
+            response=self.client.get('/v1/quran/words',params={'chapter':4,'ayah':59},headers=self.headers())
+            self.assertEqual(response.status_code,200);lookup.assert_called_once_with(4,59)
+            self.assertEqual(self.client.get('/v1/quran/words',params={'chapter':114,'ayah':7},headers=self.headers()).status_code,422)
+            self.assertEqual(lookup.call_count,1)
+        with patch('islam_research.quran_words.lookup',side_effect=RuntimeError('SYNTHETIC internal provider body')):
+            response=self.client.get('/v1/quran/words',params={'chapter':4,'ayah':59},headers=self.headers())
+            self.assertEqual(response.status_code,503);self.assertNotIn('SYNTHETIC internal',response.text)
         payload=dict(project_id='synthetic',resource_key='itani-god',chapter=4,ayah_start=59,ayah_end=59,request_uuid=str(uuid.uuid4()),body='SYNTHETIC private Quran note',owner_confirmed=True)
         self.assertEqual(self.client.post('/v1/quran/notes',json=payload).status_code,401)
         self.assertEqual(public.post('/v1/quran/notes',json=payload).status_code,404)

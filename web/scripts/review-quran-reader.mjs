@@ -90,7 +90,7 @@ try{
   await call('Input.dispatchMouseEvent',{type:'mouseMoved',...handle});
   await call('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',buttons:1,clickCount:1,...handle});await call('Input.dispatchMouseEvent',{type:'mouseMoved',buttons:1,x:handle.x+80,y:handle.y});await call('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,x:handle.x+80,y:handle.y});
   await until(()=>evaluate('document.querySelector(".quran-notes").getBoundingClientRect().width<'+wider),'pointer drag resizes the margin');
-  assert.equal(await evaluate('document.querySelector(".saved-passage-note.is-active .cm-content").textContent'),'A phrase-specific','formatted writing survives pointer resize');
+  await until(()=>evaluate('document.querySelector(".saved-passage-note.is-active .cm-content").textContent==="A phrase-specific"'),'formatted writing survives pointer resize');
   await evaluate('document.querySelector(".saved-passage-note.is-active .cm-content").focus()');
   await call('Input.insertText',{text:' note.'});
   await until(()=>evaluate('[...window.__quranTest.annotations.values()][0]?.body==="A **phrase-specific** note."'),'exact passage note autosaves');
@@ -106,6 +106,15 @@ try{
   await evaluate('getSelection().removeAllRanges();document.querySelector(`[data-ayah="59"] .quran-arabic`).click()');
   await until(()=>evaluate('document.querySelector(".quran-note-context summary").textContent.includes("Arabic")'),'clicking Arabic infers its note context');
   assert.equal(await evaluate('document.querySelectorAll(".quran-arabic mark").length'),0);
+  await evaluate('{document.querySelector(`[data-ayah="59"] .quran-arabic`).scrollIntoView({block:"center"});const node=document.querySelector(`[data-ayah="59"] .quran-arabic`);const range=document.createRange();range.setStart(node.firstChild,0);range.setEnd(node.firstChild,node.firstChild.textContent.indexOf(" "));const picked=getSelection();picked.removeAllRanges();picked.addRange(range);node.dispatchEvent(new MouseEvent("mouseup",{bubbles:true}));}');
+  await until(()=>evaluate('document.querySelector(".quran-word-translation dd")?.textContent==="Synthetic meaning 1"'),'Arabic selection shows aligned English meaning');
+  assert.equal(await evaluate('document.querySelector(".quran-word-translation dt").textContent'),await evaluate('getSelection().toString()'));
+  assert.equal(await evaluate('document.querySelectorAll(".quran-selection-buttons button").length'),2,'annotation action stays available beside translation');
+  await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(result=>writeFile(join(artifacts,'quran-word-translation.png'),Buffer.from(result.data,'base64')));
+  await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  await until(()=>evaluate('(()=>{const r=document.querySelector(".quran-selection-actions").getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;})()'),'Arabic word popover fits mobile viewport');
+  await evaluate('document.querySelector(`[aria-label="Dismiss selection actions"]`).click()');
+  await call('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
   await click('English notes');
   await click('Surah');
   await until(()=>evaluate('!!document.querySelector(`[aria-label="Write a surah note"]`)'),'surah note composer');
@@ -139,5 +148,5 @@ try{
   assert.notEqual(await evaluate('getComputedStyle(document.querySelector(".quran-translation")).fontSize'),before);
   await click('Notes');await until(()=>evaluate('!!document.querySelector(".quran-notes-divider")'),'resized margin reopens');
   assert.equal(await evaluate('Math.round(Number(localStorage.getItem("research:quran-notes-width-v1")))'),await evaluate('Number(document.querySelector(".quran-notes-divider").getAttribute("aria-valuenow"))'));
-  assert.deepEqual(problems,[]);console.log(JSON.stringify({nearSelectionAction:true,autoFocusedQuote:true,exactCaptureRetry:true,borderlessEditor:true,keyboardAndPointerResize:true,compactZoomControls:true,surahAndWholeNotes:true,semanticResume:true,inlineHighlight:true,completeSurah:176,atomicNote:true,lostResponseRetry:true,newerTyping:true,markdown:true,resourceIsolation:true,mobileNoOverflow:true,artifacts}));
+  assert.deepEqual(problems,[]);console.log(JSON.stringify({arabicEnglishWordMeaning:true,wordPopoverMobilePlacement:true,nearSelectionAction:true,autoFocusedQuote:true,exactCaptureRetry:true,borderlessEditor:true,keyboardAndPointerResize:true,compactZoomControls:true,surahAndWholeNotes:true,semanticResume:true,inlineHighlight:true,completeSurah:176,atomicNote:true,lostResponseRetry:true,newerTyping:true,markdown:true,resourceIsolation:true,mobileNoOverflow:true,artifacts}));
 }finally{socket?.close();chrome.kill('SIGTERM');await preview.httpServer.close();await new Promise(resolve=>{if(chrome.exitCode!==null)return resolve();chrome.once('exit',resolve);setTimeout(resolve,3000);});await rm(temporary,{recursive:true,force:true,maxRetries:5,retryDelay:200});}
