@@ -256,6 +256,7 @@ class VersePilotImport(VerseOwnerInput):
 
 
 class QuranBinding(VerseOwnerInput):
+    note_scope: Literal['verse','surah','source'] = 'verse'
     project_id: Identifier
     resource_key: Literal['tanzil-uthmani','itani-god']
     chapter: Annotated[int,Field(ge=1,le=114)]
@@ -732,12 +733,17 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
 
     @router.get('/quran/binding')
     def quran_existing(project_id: Identifier,resource_key: Literal['tanzil-uthmani','itani-god'],
-        chapter: Annotated[int,Query(ge=1,le=114)],ayah_start: Annotated[int,Query(ge=1,le=286)],ayah_end: Annotated[int,Query(ge=1,le=286)]):
-        return store.quran_existing(project_id=project_id,resource_key=resource_key,chapter=chapter,ayah_start=ayah_start,ayah_end=ayah_end)
+        chapter: Annotated[int,Query(ge=1,le=114)],ayah_start: Annotated[int,Query(ge=1,le=286)],ayah_end: Annotated[int,Query(ge=1,le=286)],note_scope: Literal['verse','surah','source'] = 'verse'):
+        return store.quran_existing(project_id=project_id,resource_key=resource_key,chapter=chapter,ayah_start=ayah_start,ayah_end=ayah_end,note_scope=note_scope)
 
     @router.post('/quran/notes',status_code=201)
     def quran_note(value: QuranNote,actor: str=Depends(owner)):
         return store.quran_note(actor=actor,**value.model_dump(exclude={'owner_confirmed'}))
+
+    @router.get('/quran/notes')
+    def quran_notes(project_id: Identifier,resource_key: Literal['tanzil-uthmani','itani-god'],chapter: Annotated[int,Query(ge=1,le=114)],note_scope: Literal['surah','source'],cursor: Annotated[str,Query(max_length=500)]='',limit: Annotated[int,Query(ge=1,le=25)]=25):
+        items=store.quran_notes(project_id=project_id,resource_key=resource_key,chapter=chapter,note_scope=note_scope,cursor=cursor,limit=limit+1)
+        return {'items':items[:limit],'next_cursor':items[limit-1]['id'] if len(items)>limit else None}
 
     @router.get('/quran/place')
     def quran_place(project_id: Identifier):

@@ -32,6 +32,9 @@ class PostgreSQLStore:
     def quran_note(self, **values):
         with db.connect(self.dsn) as connection:return quran_workspace.create_note(connection,**values)
 
+    def quran_notes(self, **values):
+        with db.connect(self.dsn) as connection:return quran_workspace.notes(connection,**values)
+
     def quran_place(self, project_id):
         with db.connect(self.dsn) as connection:return quran_workspace.place(connection,project_id)
 

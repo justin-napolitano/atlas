@@ -1441,6 +1441,16 @@
             "title": "Chapter",
             "type": "integer"
           },
+          "note_scope": {
+            "default": "verse",
+            "enum": [
+              "verse",
+              "surah",
+              "source"
+            ],
+            "title": "Note Scope",
+            "type": "string"
+          },
           "owner_confirmed": {
             "title": "Owner Confirmed",
             "type": "boolean"
@@ -1498,6 +1508,16 @@
             "minimum": 1.0,
             "title": "Chapter",
             "type": "integer"
+          },
+          "note_scope": {
+            "default": "verse",
+            "enum": [
+              "verse",
+              "surah",
+              "source"
+            ],
+            "title": "Note Scope",
+            "type": "string"
           },
           "owner_confirmed": {
             "title": "Owner Confirmed",
@@ -4868,6 +4888,21 @@
               "title": "Ayah End",
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "note_scope",
+            "required": false,
+            "schema": {
+              "default": "verse",
+              "enum": [
+                "verse",
+                "surah",
+                "source"
+              ],
+              "title": "Note Scope",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4994,6 +5029,104 @@
       }
     },
     "/v1/quran/notes": {
+      "get": {
+        "operationId": "quran_notes_v1_quran_notes_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "resource_key",
+            "required": true,
+            "schema": {
+              "enum": [
+                "tanzil-uthmani",
+                "itani-god"
+              ],
+              "title": "Resource Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "chapter",
+            "required": true,
+            "schema": {
+              "maximum": 114,
+              "minimum": 1,
+              "title": "Chapter",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "note_scope",
+            "required": true,
+            "schema": {
+              "enum": [
+                "surah",
+                "source"
+              ],
+              "title": "Note Scope",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 500,
+              "title": "Cursor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 25,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Quran Notes"
+      },
       "post": {
         "operationId": "quran_note_v1_quran_notes_post",
         "requestBody": {

@@ -64,6 +64,18 @@ class QuranWorkspaceTests(unittest.TestCase):
             with self.assertRaises(ValueError):reader.create_note(c,**self.values,request_uuid=str(uuid.uuid4()),body='',actor='owner')
             self.assertIsNone(reader.existing(c,**self.values))
 
+    def test_surah_and_whole_source_are_not_fabricated_passages(self):
+        with self.db.connect(self.owner_dsn) as c:
+            for scope in ('surah','source'):
+                result=reader.create_note(c,**self.values,note_scope=scope,request_uuid=str(uuid.uuid4()),body='A personal whole-context note',actor='owner')
+                self.assertIsNone(result['note']['document_id'])
+                self.assertIsNone(result['note']['annotation_id'])
+                self.assertIsNone(result['note']['reading_position'])
+                self.assertEqual(result['note']['quran_context']['note_scope'],scope)
+                self.assertEqual(len(reader.notes(c,project_id=self.project,resource_key='itani-god',chapter=4,note_scope=scope)),1)
+                self.assertEqual(len(reader.notes(c,project_id=self.project,resource_key='tanzil-uthmani',chapter=4,note_scope=scope)),0)
+            self.assertEqual(c.execute('SELECT count(*) AS n FROM research.reading_documents WHERE project_id=%s',(self.project,)).fetchone()['n'],0)
+
     def test_ranges_bounds_and_private_resume_conflict(self):
         with self.db.connect(self.owner_dsn) as c:
             bound=reader.binding(c,**{**self.values,'ayah_end':60},actor='owner')
