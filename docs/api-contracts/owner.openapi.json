@@ -5310,6 +5310,56 @@
         "summary": "Quran Place Save"
       }
     },
+    "/v1/quran/words": {
+      "get": {
+        "operationId": "quran_word_glosses_v1_quran_words_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "chapter",
+            "required": true,
+            "schema": {
+              "maximum": 114,
+              "minimum": 1,
+              "title": "Chapter",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ayah",
+            "required": true,
+            "schema": {
+              "maximum": 286,
+              "minimum": 1,
+              "title": "Ayah",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Quran Word Glosses"
+      }
+    },
     "/v1/rank": {
       "post": {
         "operationId": "ranking_v1_rank_post",

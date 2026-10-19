@@ -64,7 +64,9 @@ export default function ResearchNotebook({onOpenQuran,api,projectId,drafts,chang
     if(drafts.current.has(at)){setMessage('Your unfinished new thought is retained. Save it before starting another.');return;}
     const initial=newThought(useAnchor || {});if(questionMode)initial.thought_type='question';
     remember({value:initial,base:null,sent:null,saving:false,error:'',current:null},at);
-    requestAnimationFrame(()=>notebookRoot.current?.querySelector('.notebook-note-title input,.notebook-note-title textarea')?.focus());
+    requestAnimationFrame(()=>{const root=notebookRoot.current,field=root?.querySelector('.notebook-note-title input,.notebook-note-title textarea');
+      // A delayed first-frame focus must not steal ongoing title/body input.
+      if(field&&!field.value&&!(root.contains(document.activeElement)&&document.activeElement.matches('input,textarea,[contenteditable=true]')))field.focus();});
   }
   const consumedCompose=useRef('');
   useEffect(()=>{if(composeRequest&&consumedCompose.current!==composeRequest){consumedCompose.current=composeRequest;start(anchor);onComposeConsumed();}},[composeRequest]);
