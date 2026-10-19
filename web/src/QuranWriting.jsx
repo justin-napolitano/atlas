@@ -1,7 +1,7 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
-import {RecoveryQueue,recoveryFingerprint} from './recoveryQueue.js';
+import {RecoveryQueue} from './recoveryQueue.js';
 import {recoverySession,useWritingRecovery,notebookRecoveryPayload,verifyNotebookRecovery} from './useWritingRecovery.js';
-import {notebookKey,notebookMetadata} from './notebookClient.js';
+import {notebookMetadata} from './notebookClient.js';
 import MarginMarkdownEditor from './MarginMarkdownEditor.jsx';
 import {TrashAction} from './PrivateTrash.jsx';
 

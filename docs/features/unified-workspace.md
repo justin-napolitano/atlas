@@ -70,6 +70,14 @@ writing; it never relocates an existing note. Opening Notes after scrolling uses
 the tracked reading location. An open margin remains pinned until an explicit
 passage/context action, so scrolling cannot silently rebind unfinished writing.
 
-Validation for this slice is in progress; hosted sync, native IME input and owner
-reading-session acceptance remain separate from synthetic browser evidence.
+Validation: 144 frontend unit tests pass. The reader browser suite verifies live
+Markdown without Done, automatic quote focus, inferred Arabic context, hidden
+secondary context controls, exact capture retry, newer in-flight writing,
+keyboard/pointer resize with editor identity retained, range/surah/work notes,
+canonical resume and 390 px reflow. The free-margin browser suite verifies GFM,
+safe rendering, first-character focus, autosave/reload, newer typing, conflicts,
+Trash/restore and appearance controls. The full workspace/publication/public-site
+browser suite passes with live annotation editing, navigation retention and
+explicit conflict resolution. Hosted sync, native IME input and owner
+reading-session acceptance remain separate from this synthetic evidence.
 

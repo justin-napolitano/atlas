@@ -519,17 +519,17 @@ try {
 
   await until(()=>evaluate('!!document.querySelector(".passage-note-open")'),'saved passage edit button');
   await evaluate('document.querySelector(".passage-note-open").click()');
-  await until(()=>evaluate('!!document.querySelector(".passage-note-edit textarea")'),'saved passage editor');
-  await evaluate('document.querySelector(".passage-note-edit textarea").focus()');
+  await until(()=>evaluate('!!document.querySelector(".passage-note-edit .cm-content")'),'saved passage editor');
+  await evaluate('document.querySelector(".passage-note-edit .cm-content").focus()');
   await call('Input.insertText',{text:' Edited on this machine.'});
   await evaluate('document.querySelectorAll(".workspace-row")[0].click()');
   await until(()=>evaluate('document.querySelector(".workspace-record-heading")?.textContent.includes("Synthetic question")'),'leave existing passage edit');
   await evaluate('document.querySelectorAll(".workspace-row")[1].click()');
-  await until(()=>evaluate('document.querySelector(".passage-note-edit textarea")?.value.includes("Edited on this machine")'),'existing passage draft retained');
+  await until(()=>evaluate('document.querySelector(".passage-note-edit .cm-content")?.textContent.includes("Edited on this machine")'),'existing passage draft retained');
   captures[0]={...captures[0],body:'Cloud passage edit from another machine',revision:2};
   await evaluate('document.querySelector(".passage-note-save").click()');
   await until(()=>evaluate('document.querySelector(".passage-note-conflict pre")?.textContent.includes("Cloud passage edit")'),'passage conflict comparison');
-  assert.match(await evaluate('document.querySelector(".passage-note-edit textarea").value'),/Edited on this machine/);
+  assert.match(await evaluate('document.querySelector(".passage-note-edit .cm-content").textContent'),/Edited on this machine/);
   await evaluate('document.querySelectorAll(".passage-note-conflict button")[1].click()');
   await until(()=>evaluate('document.querySelector(".passage-note-edit [role=status]")?.textContent.includes("Saved to your workspace")'),'explicit passage draft resolution');
   assert.equal(captures[0].revision,3);assert.match(captures[0].body,/Edited on this machine/);assert.equal(captures[0].exact,'tafsīr');
