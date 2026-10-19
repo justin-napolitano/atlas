@@ -6,10 +6,11 @@ import '../../src/workingTabs.css';
 import QuranReader from '../../src/QuranReader.jsx';
 import '../../src/style.css';
 import '../../src/readerPresentation.css';
+import '../../src/atlasWorkspace.css';
 const resources=__QURAN_TEST_DATA__;
 const annotations=new Map();
 const entries=new Map(),documents=new Map(),bindings=new Map(),recovery=new Map(),requests=[];
-let place=null,lost=false,held=null;
+let place=null,lost=false,held=null,loseHighlight=false;
 const clone=value=>structuredClone(value),hash=async text=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))].map(n=>n.toString(16).padStart(2,'0')).join('');
 const contextKey=value=>JSON.stringify([value.project_id,value.resource_key,Number(value.chapter),Number(value.ayah_start),Number(value.ayah_end),value.note_scope||'verse']);
 async function bind(value){const key=contextKey(value);if(bindings.has(key))return bindings.get(key);
@@ -39,7 +40,7 @@ const api={async request(path,query={},body){const value=body||query;requests.pu
   if(path==='verses/materials')return {items:[],next_cursor:null};
   throw new Error('Unexpected fixture request: '+path);
 },async post(path,value){requests.push({path,value:clone(value)});
-  if(path==='reading/annotations'){const doc=documents.get(value.document_id),context=[...bindings.values()].find(b=>b.document?.id===doc.id);const id='urn:research:annotation:'+value.annotation_uuid,row=annotations.get(id)||{...value,id,revision:1,start_pos:value.start,end_pos:value.end,source_record_id:doc.source_record_id,locator:doc.locator,resource_key:context.resource_key,prefix:'',suffix:''};annotations.set(id,row);return clone(row);}
+  if(path==='reading/annotations'){const doc=documents.get(value.document_id),context=[...bindings.values()].find(b=>b.document?.id===doc.id);const id='urn:research:annotation:'+value.annotation_uuid,row=annotations.get(id)||{...value,id,revision:1,start_pos:value.start,end_pos:value.end,source_record_id:doc.source_record_id,locator:doc.locator,resource_key:context.resource_key,prefix:'',suffix:''};annotations.set(id,row);if(loseHighlight){loseHighlight=false;throw new Error('Synthetic lost highlight acknowledgement');}return clone(row);}
   if(path==='quran/binding')return clone(await bind(value));
   if(path==='quran/notes'){
     const binding=await bind(value),id='urn:research:notebook:'+value.request_uuid;
@@ -48,7 +49,7 @@ const api={async request(path,query={},body){const value=body||query;requests.pu
     return clone({binding,note});
   }throw new Error('Unexpected fixture write: '+path);
 }};
-function Harness(){const drafts=useRef(new Map()),editor=useRef(null),[generation,setGeneration]=useState(0),[,render]=useState(0);if(!editor.current)editor.current=new PassageNoteEditor(api,()=>render(n=>n+1));window.__quranTest={annotations,entries,documents,bindings,requests,recovery,place:()=>place,lost:()=>lost=true,release:()=>held?.(),remount:()=>{drafts.current=new Map();setGeneration(n=>n+1);},drafts};
-  return <div className="workspace-reader" style={{height:'100vh',overflow:'auto',padding:'20px 36px',boxSizing:'border-box'}}><WorkingTabs items={[{key:'quran',kind:'Reading',title:'Qur’an'}]} activeKey="quran" statuses={{}} onChoose={()=>{}} onClose={()=>{}}/><QuranReader key={generation} api={api} projectId="synthetic" noteEditor={editor.current} drafts={drafts} changed={()=>render(n=>n+1)} onOpen={(...args)=>window.__opened=args} onOpenNotebook={row=>window.__notebook=row}/></div>;
+function Harness(){const drafts=useRef(new Map()),editor=useRef(null),[generation,setGeneration]=useState(0),[,render]=useState(0);if(!editor.current)editor.current=new PassageNoteEditor(api,()=>render(n=>n+1));window.__quranTest={loseHighlight:()=>loseHighlight=true,annotations,entries,documents,bindings,requests,recovery,place:()=>place,lost:()=>lost=true,release:()=>held?.(),remount:()=>{drafts.current=new Map();setGeneration(n=>n+1);},drafts};
+  return <div className="workspace-reader atlas-workspace" style={{height:'100vh',overflow:'auto',padding:'20px 36px',boxSizing:'border-box'}}><WorkingTabs items={[{key:'quran',kind:'Reading',title:'Qur’an'}]} activeKey="quran" statuses={{}} onChoose={()=>{}} onClose={()=>{}}/><QuranReader key={generation} api={api} projectId="synthetic" noteEditor={editor.current} drafts={drafts} changed={()=>render(n=>n+1)} onOpen={(...args)=>window.__opened=args} onOpenNotebook={row=>window.__notebook=row}/></div>;
 }
 createRoot(document.getElementById('root')).render(<Harness/>);

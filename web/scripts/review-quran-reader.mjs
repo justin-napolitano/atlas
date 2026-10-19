@@ -9,7 +9,7 @@ import {build,preview as startPreview} from 'vite';
 import react from '@vitejs/plugin-react';
 
 const root=fileURLToPath(new URL('..',import.meta.url)),temporary=await mkdtemp(join(tmpdir(),'research-notebook-browser-'));
-const artifacts=process.env.RESEARCH_BROWSER_ARTIFACT_DIR || temporary;
+const artifacts=process.env.RESEARCH_BROWSER_ARTIFACT_DIR || await mkdtemp(join(tmpdir(),'research-quran-review-'));
 await mkdir(artifacts,{recursive:true});
 const fixture=execFileSync('python3',['-c',"import json; from islam_research.quran_reader import catalog,chapter; print(json.dumps(dict(catalog=catalog(),chapters={str(c):chapter(c) for c in (1,4,114)})))"],{cwd:join(root,'..'),env:{...process.env,PYTHONPATH:'src'},maxBuffer:4*1024*1024}).toString();
 await build({define:{__QURAN_TEST_DATA__:fixture},root,configFile:false,plugins:[react()],logLevel:'warn',build:{outDir:join(temporary,'dist'),emptyOutDir:true,
@@ -44,6 +44,7 @@ try{
   const before=await evaluate('getComputedStyle(document.querySelector(".quran-translation")).fontSize');
   await click('Larger');
   assert.notEqual(await evaluate('getComputedStyle(document.querySelector(".quran-translation")).fontSize'),before);
+
   await evaluate('document.querySelector(".reading-appearance-panel").open=false');
   await evaluate('document.querySelector(`[data-ayah="59"] .quran-ayah-number`).click()');
   await until(()=>evaluate('!!document.querySelector(`[aria-label="Write a verse note"]`)'),'note without import');
@@ -64,15 +65,41 @@ try{
   await until(()=>evaluate('document.querySelectorAll(".quran-notes [data-margin-note-id]").length===1'),'original translation note remains');
   await evaluate('document.querySelector(`[data-ayah="59"] .quran-ayah-number`).click();const node=document.querySelector(`[data-ayah="59"] .quran-translation`);const range=document.createRange();range.setStart(node.firstChild,0);range.setEnd(node.firstChild,18);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);node.dispatchEvent(new MouseEvent("mouseup",{bubbles:true}))');
   await until(()=>evaluate('!!document.querySelector(".quran-selection-actions button")'),'selection action');
-  await click('Highlight & note');
+  const actionPoint=await evaluate('(()=>{const button=document.querySelector(".quran-selection-actions button"),r=button.getBoundingClientRect(),picked=getSelection().getRangeAt(0).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,near:Math.abs(r.top-picked.bottom)<70,visible:!!document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest(".quran-selection-actions")};})()');
+  assert.equal(actionPoint.near,true,'action appears beside the selected words');assert.equal(actionPoint.visible,true,'action is actually clickable');
+  await evaluate('window.__quranTest.loseHighlight()');
+  await call('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,x:actionPoint.x,y:actionPoint.y});await call('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,x:actionPoint.x,y:actionPoint.y});
+  await until(()=>evaluate('document.querySelector(".quran-selection-actions")?.textContent.includes("Synthetic lost highlight acknowledgement")'),'uncertain exact capture');
+  await click('Retry selected note');
   await until(()=>evaluate('window.__quranTest.annotations.size===1&&!!document.querySelector(".quran-text mark")'),'persisted inline highlight');
-  await evaluate('document.querySelector(".quran-text mark").click()');
-  await until(()=>evaluate('!!document.querySelector(".saved-passage-note.is-active")'),'highlight opens exact note');
-  await evaluate('document.querySelector(".saved-passage-note .passage-note-edit>label textarea").focus()');
-  await call('Input.insertText',{text:'A **phrase-specific** note.'});
+  assert.equal(await evaluate('JSON.stringify(window.__quranTest.requests.filter(r=>r.path==="reading/annotations")[0].value)===JSON.stringify(window.__quranTest.requests.filter(r=>r.path==="reading/annotations")[1].value)'),true,'capture retry keeps exact UUID and payload');
+  await until(()=>evaluate('document.activeElement===document.querySelector(".saved-passage-note.is-active .passage-note-edit>label textarea")'),'selected phrase note receives focus automatically');
+  assert.equal(await evaluate('document.querySelector(".saved-passage-note.is-active .reader-reopen").textContent'),await evaluate('[...window.__quranTest.annotations.values()][0].exact'));
+  assert.equal(await evaluate('document.querySelector(".quran-notes .quran-writing textarea").getClientRects().length'),0,'generic ayah composer cannot be confused with phrase note');
+  assert.equal(await evaluate('getComputedStyle(document.activeElement).outlineStyle'),'none','note editor is borderless while focused');
+  await call('Input.insertText',{text:'A **phrase-specific**'});
+  await evaluate('document.querySelector(".saved-passage-note.is-active textarea").dataset.testIdentity="retained"');
+  const widthBefore=await evaluate('document.querySelector(".quran-notes").getBoundingClientRect().width');
+  await evaluate('document.querySelector(".quran-notes-divider").focus()');await call('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowLeft',code:'ArrowLeft'});await call('Input.dispatchKeyEvent',{type:'keyUp',key:'ArrowLeft',code:'ArrowLeft'});
+  assert.ok(await evaluate('document.querySelector(".quran-notes").getBoundingClientRect().width')>widthBefore,'keyboard widens margin');
+  assert.equal(await evaluate('document.querySelector(".saved-passage-note.is-active textarea").dataset.testIdentity'),'retained','resizing preserves the editor');
+  const handle=await evaluate('(()=>{const r=document.querySelector(".quran-notes-divider").getBoundingClientRect();return {x:r.x+r.width/2,y:Math.max(180,Math.min(innerHeight-40,r.y+30))};})()');
+  const wider=await evaluate('document.querySelector(".quran-notes").getBoundingClientRect().width');
+  assert.equal(await evaluate(`!!document.elementFromPoint(${handle.x},${handle.y})?.closest('.quran-notes-divider')`),true,'resize handle is visibly reachable');
+  await call('Input.dispatchMouseEvent',{type:'mouseMoved',...handle});
+  await call('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',buttons:1,clickCount:1,...handle});await call('Input.dispatchMouseEvent',{type:'mouseMoved',buttons:1,x:handle.x+80,y:handle.y});await call('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,x:handle.x+80,y:handle.y});
+  await until(()=>evaluate('document.querySelector(".quran-notes").getBoundingClientRect().width<'+wider),'pointer drag resizes the margin');
+  assert.equal(await evaluate('document.querySelector(".saved-passage-note.is-active textarea").value'),'A **phrase-specific**','pending writing survives pointer resize');
+  await evaluate('document.querySelector(".saved-passage-note.is-active textarea").focus()');
+  await call('Input.insertText',{text:' note.'});
   await until(()=>evaluate('[...window.__quranTest.annotations.values()][0]?.body==="A **phrase-specific** note."'),'exact passage note autosaves');
+  await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(result=>writeFile(join(artifacts,'quran-selected-note.png'),Buffer.from(result.data,'base64')));
   await click('Done');
   await until(()=>evaluate('!!document.querySelector(".saved-passage-note .notebook-markdown strong")'),'exact passage Markdown preview');
+  await evaluate('document.querySelector(".quran-text mark").click()');
+  await until(()=>evaluate('document.activeElement===document.querySelector(".saved-passage-note.is-active textarea")'),'existing highlight reopens its note for writing');
+  assert.equal(await evaluate('document.activeElement.value'),'A **phrase-specific** note.');
+  await click('Done');
   await click('Arabic notes');
   assert.equal(await evaluate('document.querySelectorAll(".quran-arabic mark").length'),0);
   await click('English notes');
@@ -89,6 +116,10 @@ try{
   await until(()=>evaluate('[...window.__quranTest.entries.values()].some(n=>n.quran_context.note_scope==="source"&&n.body==="A thought about the whole work."&&n.document_id===null)'),'whole source note scope');
   await evaluate('document.querySelector(`[aria-label="Write a Qur’an note"]`).blur()');
   await click('Ayah');
+  await evaluate('document.querySelector(".reading-appearance-panel").open=true');
+  for(const [name,value] of [['Notes text size','26'],['Reading zoom','180']])await evaluate(`{const input=document.querySelector('[aria-label="${name}"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event("input",{bubbles:true}));input.dispatchEvent(new Event("change",{bubbles:true}));}`);
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".quran-note-scope button")).fontSize'),'13px','reading zoom does not enlarge controls');
+  await evaluate('document.querySelector(".reading-appearance-panel").open=false');
   await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth+2'),true);
   await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(result=>writeFile(join(artifacts,'quran-mobile.png'),Buffer.from(result.data,'base64')));
@@ -102,5 +133,7 @@ try{
   await evaluate('window.__quranTest.remount()');
   await until(()=>evaluate('document.querySelectorAll("[data-ayah]").length===176&&new URL(location.href).searchParams.get("ayah_start")==="83"'),'reading resumes after new component session');
   assert.notEqual(await evaluate('getComputedStyle(document.querySelector(".quran-translation")).fontSize'),before);
-  assert.deepEqual(problems,[]);console.log(JSON.stringify({surahAndWholeNotes:true,semanticResume:true,inlineHighlight:true,completeSurah:176,atomicNote:true,lostResponseRetry:true,newerTyping:true,markdown:true,resourceIsolation:true,mobileNoOverflow:true,artifacts}));
+  await click('Notes');await until(()=>evaluate('!!document.querySelector(".quran-notes-divider")'),'resized margin reopens');
+  assert.equal(await evaluate('Math.round(Number(localStorage.getItem("research:quran-notes-width-v1")))'),await evaluate('Number(document.querySelector(".quran-notes-divider").getAttribute("aria-valuenow"))'));
+  assert.deepEqual(problems,[]);console.log(JSON.stringify({nearSelectionAction:true,autoFocusedQuote:true,exactCaptureRetry:true,borderlessEditor:true,keyboardAndPointerResize:true,compactZoomControls:true,surahAndWholeNotes:true,semanticResume:true,inlineHighlight:true,completeSurah:176,atomicNote:true,lostResponseRetry:true,newerTyping:true,markdown:true,resourceIsolation:true,mobileNoOverflow:true,artifacts}));
 }finally{socket?.close();chrome.kill('SIGTERM');await preview.httpServer.close();await new Promise(resolve=>{if(chrome.exitCode!==null)return resolve();chrome.once('exit',resolve);setTimeout(resolve,3000);});await rm(temporary,{recursive:true,force:true,maxRetries:5,retryDelay:200});}

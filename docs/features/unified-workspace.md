@@ -37,3 +37,11 @@ Use synthetic fixtures for automated browser checks. Never inspect or export `re
 Do not rebuild `web/dist` while a preview-based regression run uses it: deleting/replacing hashed assets during a test reload produces misleading failures. Fixture builds use separate temporary output directories.
 
 No backend schema, authentication, publication or deployment changes are part of this reset. New editor dependencies and the rendering boundary require dependency/security review before merge; installation-time npm audit reported no vulnerabilities. Existing CI remains enabled. Owner usability acceptance remains #146; hosted multi-device, backups and release proof remain #42. This change does not close those milestones or implement arbitrary project folders (#139).
+
+## Selected-phrase margin refinement (#182)
+
+Selecting source wording presents “Note on selection” beside the actual selection (Alt+N also activates it). That single action saves the immutable exact capture, opens the corresponding resource/ayah and focuses the phrase note with the quote visible. Generic ayah writing is hidden while working on a selected phrase; “All ayah notes” returns to broader writing. Clicking a saved highlight reopens that exact note. Capture UUID, resource hash and Unicode positions retain the existing retry/verification contract.
+
+The desktop notes divider supports pointer dragging, Left/Right, Home/End and double-click reset. Only its bounded pixel width is stored under `research:quran-notes-width-v1`. Resizing changes geometry rather than remounting the writer and keeps the visible reading position. Narrow viewports retain a bottom notes sheet.
+
+Margin textareas use a caret and contextual quote/mark cues without a rectangular focus box. Navigation, scope, resource and note actions retain compact UI typography independently of reading/notes zoom. Keyboard focus indicators remain on controls and the resize separator. The synthetic reader fixture now includes the full application typography cascade and checks selection-action proximity, actual pointer activation, immutable capture retry, automatic note focus, pointer/keyboard resizing with unfinished text, persisted geometry, borderless editing and control size at high zoom. Owner writing is never used as a test fixture.
