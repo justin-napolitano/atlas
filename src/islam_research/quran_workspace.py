@@ -89,3 +89,14 @@ def save_place(connection,*,project_id,resource_key,chapter,ayah,expected_revisi
             VALUES(%s,%s,%s,%s,%s) ON CONFLICT(project_id) DO UPDATE SET resource_key=EXCLUDED.resource_key,chapter=EXCLUDED.chapter,
             ayah=EXCLUDED.ayah,changed_by=EXCLUDED.changed_by,revision=research.quran_places.revision+1,updated_at=clock_timestamp()''',(project_id,resource_key,chapter,ayah,actor))
         return place(connection,project_id)
+
+
+def marks(connection,*,project_id,chapter,cursor='',limit=101):
+    reference(chapter,1)
+    return connection.execute("""SELECT a.*,d.source_record_id,r.attributes->>'quran_resource' AS resource_key,d.locator
+        FROM research.reading_annotations a JOIN research.reading_documents d ON d.project_id=a.project_id AND d.id=a.document_id
+        JOIN research.records r ON r.project_id=d.project_id AND r.id=d.source_record_id
+        WHERE a.project_id=%s AND a.id>%s AND d.locator ~ %s AND r.deleted_at IS NULL
+        AND r.attributes->>'resource_id'=ANY(%s)
+        AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed')
+        ORDER BY a.id LIMIT %s""",(project_id,cursor,'^Q '+str(chapter)+':[0-9]+$',[quran_reader._load(k)[1]['resource_id'] for k in quran_reader.RESOURCES],limit)).fetchall()

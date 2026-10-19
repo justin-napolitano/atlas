@@ -53,6 +53,9 @@ class QuranWorkspaceTests(unittest.TestCase):
             quote=bound['document']['text_body'][:10]
             passage=passage_store.create_annotation(c,annotation_uuid=str(uuid.uuid4()),project_id=self.project,document_id=bound['document']['id'],text_sha256=bound['document']['text_sha256'],start=0,end=10,exact=quote,capture_kind='comment',body='Exact note',actor='owner')
             self.assertEqual(passage['document_id'],bound['document']['id'])
+            marks=reader.marks(c,project_id=self.project,chapter=4)
+            self.assertEqual([m['id'] for m in marks],[passage['id']])
+            self.assertEqual(marks[0]['resource_key'],'itani-god')
             note=first['note']
             updated=notebook.update(c,project_id=self.project,entry_id=note['id'],expected_revision=1,thought_type='note',title=note['title'],body='A later thought',links=[],state='active',actor='owner')
             old=reader.create_note(c,**self.values,request_uuid=request,body='**My thought**, not evidence.',actor='owner')

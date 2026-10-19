@@ -6,6 +6,7 @@ from functools import lru_cache
 from hashlib import sha256
 from importlib.resources import files
 import re
+import json
 
 from .quran_citations import AYAH_COUNTS, PROFILE_ID, reference
 
@@ -21,7 +22,10 @@ RESOURCES = {
         attribution='Translation by Talal Itani, ClearQuran.com', attribution_url='https://clearquran.com/',
         license_url='https://blog.clearquran.com/download', license='CC BY-ND 4.0 with publisher’s formatting permissions; wording unchanged', accessed_on='2026-10-18'),
 }
-NAMES = {1:'Al-Fatihah', 2:'Al-Baqarah', 3:'Ali Imran', 4:'An-Nisa'}
+_NAMES_RAW=files('islam_research').joinpath('resources/quran-surah-names-v1.json').read_bytes()
+if sha256(_NAMES_RAW).hexdigest()!='ddc72fb44895b544382127797145d1d4bf7da1ef1e815595f1f6d18a3e18215b':raise ValueError('Surah metadata changed; review its source before updating the pin')
+NAMES_METADATA=json.loads(_NAMES_RAW)
+NAMES={r['chapter']:r['label'] for r in NAMES_METADATA['chapters']}
 
 
 def parse(raw, expected_digest):
@@ -57,7 +61,7 @@ def _load(key):
 
 
 def catalog():
-    return dict(profile_id=PROFILE_ID, chapters=[dict(chapter=c,ayah_count=n,label=NAMES.get(c,f'Surah {c}')) for c,n in enumerate(AYAH_COUNTS,1)],
+    return dict(profile_id=PROFILE_ID,names_metadata=NAMES_METADATA, chapters=[dict(chapter=c,ayah_count=n,label=NAMES.get(c,f'Surah {c}')) for c,n in enumerate(AYAH_COUNTS,1)],
         resources=[dict(_load(k)[1]) for k in RESOURCES], unavailable=[
             dict(key='khattab',label='Mustafa Khattab · The Clear Quran',reason='Provider access and reuse authorization not configured.'),
             dict(key='saheeh',label='Saheeh International',reason='Provider access and reuse authorization not configured.')])

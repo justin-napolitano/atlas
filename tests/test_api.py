@@ -139,6 +139,27 @@ class APIBoundaryTests(unittest.TestCase):
             self.assertEqual(public.get('/v1/reading/'+path).status_code,404)
         self.assertEqual(public.put(route,json=value).status_code,404)
 
+    def test_quran_reader_resources_and_notes_keep_owner_boundary(self):
+        public=TestClient(create_app(Settings('synthetic',mode='public'),store=MemoryBoundaryStore()))
+        for path in ('catalog','chapter','binding','notes','marks','place'):
+            self.assertEqual(self.client.get('/v1/quran/'+path).status_code,401)
+            self.assertEqual(public.get('/v1/quran/'+path).status_code,404)
+        catalog=self.client.get('/v1/quran/catalog',headers=self.headers()).json()
+        self.assertEqual(len(catalog['chapters']),114)
+        chapter=self.client.get('/v1/quran/chapter',params={'chapter':4},headers=self.headers()).json()
+        self.assertEqual(len(chapter['verses']),176)
+        self.assertEqual(self.client.get('/v1/quran/chapter',params={'chapter':4,'translation':'khattab'},headers=self.headers()).status_code,422)
+        payload=dict(project_id='synthetic',resource_key='itani-god',chapter=4,ayah_start=59,ayah_end=59,request_uuid=str(uuid.uuid4()),body='SYNTHETIC private Quran note',owner_confirmed=True)
+        self.assertEqual(self.client.post('/v1/quran/notes',json=payload).status_code,401)
+        self.assertEqual(public.post('/v1/quran/notes',json=payload).status_code,404)
+        headers=self.headers();headers.pop('x-research-write')
+        self.assertEqual(self.client.post('/v1/quran/notes',json=payload,headers=headers).status_code,403)
+        self.assertEqual(self.client.post('/v1/quran/notes',json=payload,headers=self.headers(origin='https://wrong.example.invalid')).status_code,403)
+        for patch in ({'actor':'forged'},{'chapter':True},{'owner_confirmed':False},{'resource_key':'https://example.invalid'},{'body':'x'*20001}):
+            response=self.client.post('/v1/quran/notes',json={**payload,**patch},headers=self.headers())
+            self.assertEqual(response.status_code,422)
+            self.assertNotIn('SYNTHETIC private Quran note',response.text)
+
     def test_write_requires_csrf_boundary_and_owner(self):
         payload = {"record_id": "synthetic", "project_id": "synthetic", "note": "Synthetic private note"}
         self.assertEqual(self.client.put("/v1/personal-states", json=payload).status_code, 401)

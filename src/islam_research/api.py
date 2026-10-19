@@ -740,6 +740,11 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     def quran_note(value: QuranNote,actor: str=Depends(owner)):
         return store.quran_note(actor=actor,**value.model_dump(exclude={'owner_confirmed'}))
 
+    @router.get('/quran/marks')
+    def quran_marks(project_id: Identifier,chapter: Annotated[int,Query(ge=1,le=114)],cursor: Annotated[str,Query(max_length=500)]='',limit: Annotated[int,Query(ge=1,le=100)]=100):
+        items=store.quran_marks(project_id=project_id,chapter=chapter,cursor=cursor,limit=limit+1)
+        return {'items':items[:limit],'next_cursor':items[limit-1]['id'] if len(items)>limit else None}
+
     @router.get('/quran/notes')
     def quran_notes(project_id: Identifier,resource_key: Literal['tanzil-uthmani','itani-god'],chapter: Annotated[int,Query(ge=1,le=114)],note_scope: Literal['surah','source'],cursor: Annotated[str,Query(max_length=500)]='',limit: Annotated[int,Query(ge=1,le=25)]=25):
         items=store.quran_notes(project_id=project_id,resource_key=resource_key,chapter=chapter,note_scope=note_scope,cursor=cursor,limit=limit+1)
