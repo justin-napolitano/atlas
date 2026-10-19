@@ -76,7 +76,7 @@ export default function ResearchNotebook({onOpenQuran,api,projectId,drafts,chang
       if(mounted.current && token===generation.current && selection.current===row.id && activeProject.current===projectId){setCloud(result);onEntryChange(result.id,result.title);}}
     catch(error){if(mounted.current && token===generation.current)setMessage(error.message);}
   }
-  function edit(patch){const next=draft || {value:notebookMetadata(cloud),base:cloud,sent:null,saving:false,error:'',current:null};remember({...next,autoSave:Object.keys(patch).every(key=>['title','body'].includes(key)),value:{...next.value,...patch}});if(patch.title!==undefined)onEntryChange(selected || '',patch.title);}
+  function edit(patch){const next=drafts.current.get(key) || draft || {value:notebookMetadata(cloud),base:cloud,sent:null,saving:false,error:'',current:null};remember({...next,autoSave:Object.keys(patch).every(key=>['title','body'].includes(key)),value:{...next.value,...patch}});if(patch.title!==undefined)onEntryChange(selected || '',patch.title);}
   async function save(automatic=false){if(!draft || busy.current || draft.current || quoteDraft)return;busy.current=true;const at=key,id=selected;
     const row=await saveThought({api,projectId,id,draft:{...draft,autoSaving:automatic},update:next=>{
       const latest=drafts.current.get(at);
