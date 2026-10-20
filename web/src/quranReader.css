@@ -96,3 +96,7 @@
 .quran-progress-error button{font:13px/1.5 system-ui;background:transparent;color:inherit;border:1px solid var(--quran-line);padding:6px}
 .quran-sidebar-surahs nav button{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .quran-sidebar-surahs nav button small{font:10px/1.4 system-ui;color:var(--muted,#777);white-space:nowrap}
+.quran-keyboard-status{font:13px/1.5 system-ui;color:var(--muted,#777)}
+.quran-reader .quran-text article:focus-visible{outline:none;border-inline-start:2px solid var(--accent,#b82240)}
+
+.quran-notes .passage-location-label{display:block;font:12px/1.5 system-ui;color:var(--muted,#aaa6a0);margin-bottom:8px}
