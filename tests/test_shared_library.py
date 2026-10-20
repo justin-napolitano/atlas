@@ -114,7 +114,7 @@ class SharedLibraryTests(unittest.TestCase):
             item=library.get(c,self.item)
             self.assertEqual(item['title'],'Corrected source title')
             self.assertEqual(item['identity_title'],'Synthetic research book')
-            listing=library.listing(c,retained=False)
+            listing=library.listing(c,project_id=self.project,retained=False)
             self.assertEqual(next(row for row in listing if row['id']==self.item)['title'],'Corrected source title')
 
     def test_changed_snapshot_and_newer_notebook_edit_keep_original_identity(self):
