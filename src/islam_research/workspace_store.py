@@ -114,3 +114,42 @@ def save_draft(connection,**fields):
 
 def drafts(connection,*,cursor='',limit=30):
     return connection.execute("SELECT * FROM research.notebook_drafts WHERE workspace_id='owner' AND state='active' AND id>%s ORDER BY id LIMIT %s",(cursor,limit)).fetchall()
+
+
+def sources(connection,*,q='',cursor='',limit=30):
+    db._text(q,'query',300,empty=True);db._text(cursor,'cursor',500,empty=True)
+    if type(limit) is not int or not 1<=limit<=50:raise ValueError('Invalid source page')
+    rows=connection.execute("""SELECT id,project_id,kind,title,summary,attributes,revision,updated_at
+      FROM research.records WHERE workspace_id='owner' AND kind IN ('source','work','edition')
+      AND deleted_at IS NULL AND review_state<>'withdrawn' AND id>%s
+      AND strpos(lower(title||' '||summary),lower(%s))>0 ORDER BY id LIMIT %s""",(cursor,q,limit+1)).fetchall()
+    return dict(items=rows[:limit],next_cursor=rows[limit-1]['id'] if len(rows)>limit else None)
+
+
+def source(connection,*,record_id):
+    row=db.get_record(connection,record_id)
+    if not row or row['kind'] not in {'source','work','edition'} or row['deleted_at'] or row['review_state']=='withdrawn':return None
+    from . import passage_store,shared_library
+    return dict(record=row,documents=passage_store.documents(connection,row['project_id'],record_id,cursor='',limit=50),
+      library=shared_library.source_identity(connection,row['project_id'],record_id))
+
+
+def intake_candidates(connection,*,source_url='',identifier=''):
+    from . import source_intake
+    return dict(items=source_intake.candidates(connection,None,source_url,identifier))
+
+
+def intake(connection,**fields):
+    from . import source_intake,shared_library
+    origin=None
+    if fields.get('existing_source_record_id'):
+        current=source(connection,record_id=fields['existing_source_record_id'])
+        if not current:raise ValueError('Source unavailable')
+        origin=current['record']['project_id']
+    with connection.transaction():
+        result=source_intake.create(connection,project_id=origin,owner_confirmed=True,**fields)
+        row=db.get_record(connection,result['record_id'])
+        if not result['replayed']:
+            shared_library.index_source(connection,request_uuid=fields['intake_uuid'],project_id=origin,
+              source_record_id=row['id'],expected_source_revision=row['revision'],actor=fields['actor'])
+        return result

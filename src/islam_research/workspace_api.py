@@ -72,6 +72,45 @@ class Draft(Write):
     state:Literal['active','discarded']='active'
 
 
+class SourceIntakeExcerpt(Input):
+    edition: Annotated[str, Field(min_length=1,max_length=1000)]
+    locator: Annotated[str, Field(min_length=1,max_length=2000)]
+    representation_url: Annotated[str, Field(max_length=2000)] = ""
+    text: Annotated[str, Field(min_length=1,max_length=12000)]
+
+
+class Intake(Write):
+    intake_uuid: Annotated[str, Field(pattern=r"^[a-fA-F0-9-]{36}$")]
+    title: Annotated[str, Field(min_length=1,max_length=2000)]
+    creators: Annotated[str, Field(max_length=2000)] = ""
+    publication: Annotated[str, Field(max_length=2000)] = ""
+    publication_date: Annotated[str, Field(max_length=200)] = ""
+    language: Annotated[str, Field(max_length=200)] = ""
+    accessed_on: Annotated[str, Field(max_length=10)] = ""
+    intake_context: Annotated[str, Field(max_length=2000)] = ""
+    edition: Annotated[str, Field(min_length=1,max_length=1000)]
+    identifier: Annotated[str, Field(max_length=2000)] = ""
+    source_url: Annotated[str, Field(max_length=2000)] = ""
+    source_role: Literal["primary_text","translation","commentary","scholarship","reference","undetermined"] = "undetermined"
+    access_status: Literal["unknown","open","subscription","owned_copy","unavailable"] = "unknown"
+    rights_status: Literal["unknown","metadata_only","permitted_excerpt","public_domain","open_license"] = "metadata_only"
+    rights_basis: Annotated[str, Field(max_length=2000)] = ""
+    coverage_scope: Literal["metadata_only","abstract","selected_passage","full_work_read"] = "metadata_only"
+    rationale: Annotated[str, Field(min_length=1,max_length=2000)]
+    distinct_source_rationale: Annotated[str, Field(max_length=2000)] = ""
+    existing_source_record_id: ID | None = None
+    excerpt: SourceIntakeExcerpt | None = None
+    owner_confirmed: Literal[True]
+
+    @field_validator("owner_confirmed",mode="before")
+    @classmethod
+    def literal_owner_confirmation(cls, value):
+        if value is not True:
+            raise ValueError("Explicit owner confirmation is required")
+        return value
+
+
+
 def register_workspace(router,store,owner):
     def write(operation,value,actor):
         fields=value.model_dump();fields.pop('owner_confirmed')
@@ -115,3 +154,20 @@ def register_workspace(router,store,owner):
 
     @router.put('/workspace/draft')
     def save_draft(value:Draft,actor:str=Depends(owner)):return write('save_draft',value,actor)
+
+    @router.get('/workspace/sources')
+    def sources(q:Annotated[str,Query(max_length=300)]='',cursor:Annotated[str,Query(max_length=500)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):
+        return store.workspace_operation('sources',q=q,cursor=cursor,limit=limit)
+
+    @router.get('/workspace/source')
+    def source(record_id:ID):
+        row=store.workspace_operation('source',record_id=record_id)
+        if row is None:raise HTTPException(404,'Source unavailable')
+        return row
+
+    @router.get('/workspace/intake/candidates')
+    def candidates(source_url:Annotated[str,Query(max_length=2000)]='',identifier:Annotated[str,Query(max_length=2000)]=''):
+        return store.workspace_operation('intake_candidates',source_url=source_url,identifier=identifier)
+
+    @router.post('/workspace/intake',status_code=201)
+    def intake(value:Intake,actor:str=Depends(owner)):return write('intake',value,actor)

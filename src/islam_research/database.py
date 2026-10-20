@@ -110,7 +110,7 @@ def save_record(connection: psycopg.Connection, *, record_id: str, project_id: s
         else:
             result = connection.execute("""UPDATE research.records SET
                 title=%s,summary=%s,attributes=%s,changed_by=%s,revision=revision+1
-                WHERE id=%s AND project_id=%s AND kind=%s AND revision=%s
+                WHERE id=%s AND project_id IS NOT DISTINCT FROM %s AND kind=%s AND revision=%s
                 AND (origin <> 'canonical_rdf' OR EXISTS (
                     SELECT 1 FROM research.projects p WHERE p.id=project_id AND p.graph_authority='hosted'))
                 RETURNING *""", (title, summary, Jsonb(attributes), actor, record_id,
