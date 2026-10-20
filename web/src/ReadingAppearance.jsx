@@ -1,11 +1,12 @@
 import React,{useId} from 'react';
 import {readingDefaults,readingFonts} from './readingPreferences.js';
-export default function ReadingAppearance({value,onChange,continuousOnly=false}){
+export default function ReadingAppearance({value,onChange,continuousOnly=false,children}){
   const id=useId(),pick=(key,next)=>onChange({...value,[key]:next});
   return <div className="reading-appearance" aria-label="Reading appearance">
     <details className="reading-appearance-panel" onKeyDown={event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();event.currentTarget.open=false;event.currentTarget.querySelector('summary').focus();}}}>
       <summary><span>Appearance</span></summary>
       <div className="reading-options" id={id}>
+        {children}
         <div className="reading-size-controls" role="group" aria-label="Source text size">
           <button aria-label="Decrease source text size" disabled={value.size<=14} onClick={()=>pick('size',value.size-2)}>Smaller</button>
           <output aria-label="Source font size">{Math.round(value.size*value.zoom/100)}px</output>

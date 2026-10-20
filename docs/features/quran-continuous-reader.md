@@ -2,7 +2,7 @@
 
 ## Source access evidence — 2026-10-18
 
-The official Tanzil Uthmani 1.1 text and official Talal Itani ClearQuran God edition (publisher update 2026-10-09) were actually downloaded and validated against all 6,236 numbered ayahs. Their original bytes, embedded notices and SHA-256 pins ship in package resources. No runtime provider calls, scraping, API credentials or automated text updates occur. A changed pin, missing or duplicate verse fails closed.
+The official Tanzil Uthmani 1.1 text and official Talal Itani ClearQuran God edition (publisher update 2026-10-09) were actually downloaded and validated against all 6,236 numbered ayahs. Their original bytes, embedded notices and SHA-256 pins ship in package resources. These two complete representations do not require runtime provider calls or credentials and do not update automatically. A changed pin, missing or duplicate verse fails closed. The optional [Arabic selection word-gloss layer](quran-word-translation.md) separately makes bounded, attributed on-demand requests; it never changes these source texts.
 
 - Tanzil: https://tanzil.net/docs/text_license — CC BY 3.0 with verbatim-copy conditions. Source notice is retained in the original file and reader attribution.
 - Talal Itani: https://blog.clearquran.com/download — CC BY-ND 4.0; publisher expressly permits format conversion and selected verses with unchanged words and attribution. Plain text: https://d.clearquran.com/text/clearquran-god-edition.txt . Wrapped paragraphs are retained inside their numbered verse; no HTML or footnotes are injected.
