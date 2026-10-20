@@ -9,7 +9,7 @@ export class WorkspaceError extends Error {
 
 export function workspaceAPI(fetcher = globalThis.fetch) {
   async function request(path, params = {}, value, method = 'PUT') {
-    const response = await fetcher(`/v1/${path}?${new URLSearchParams(params)}`, {
+    const response = await fetcher(`/v1/${path}?${new URLSearchParams(Object.entries(params).filter(([,value])=>value!=null))}`, {
       credentials: 'same-origin', headers: { Accept: 'application/json', ...(value ? { 'Content-Type': 'application/json', 'X-Research-Write': '1' } : {}) },
       ...(value ? { method, body: JSON.stringify(value) } : {}),
     });

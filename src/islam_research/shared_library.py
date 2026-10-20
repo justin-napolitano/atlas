@@ -33,7 +33,7 @@ WITH source_scope AS (
  ON d.project_id IS NOT DISTINCT FROM a.project_id AND d.id=a.document_id JOIN source_scope s
  ON s.project_id IS NOT DISTINCT FROM d.project_id AND s.source_record_id=d.source_record_id
  WHERE length(btrim(a.body))>0
- AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id
+ AND NOT EXISTS(SELECT 1 FROM research.workspace_annotation_trash w WHERE w.annotation_id=a.id AND w.state='trashed') AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id
   AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed')
  UNION ALL
  SELECT 'record:'||p.record_id,'record_note',p.record_id,p.project_id,p.record_id,

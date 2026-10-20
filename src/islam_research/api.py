@@ -83,7 +83,7 @@ class RecordInput(Input):
 
 class PersonalInput(Input):
     record_id: Identifier
-    project_id: Identifier
+    project_id: Identifier | None = None
     reading: Literal["unread", "reading", "read"] = "unread"
     decision: Literal["unreviewed", "relevant", "not_relevant", "read_later"] = "unreviewed"
     note: Annotated[str, Field(max_length=10000)] = ""
@@ -106,7 +106,7 @@ class RankInput(Input):
 
 
 class ReadingDocumentInput(Input):
-    project_id: Identifier
+    project_id: Identifier | None = None
     source_record_id: Identifier
     edition: Annotated[str, Field(min_length=1,max_length=1000)]
     locator: Annotated[str, Field(min_length=1,max_length=2000)]
@@ -117,7 +117,7 @@ class ReadingDocumentInput(Input):
 
 class ReadingCaptureInput(Input):
     annotation_uuid: Annotated[str, Field(pattern=r"^[a-fA-F0-9-]{36}$")]
-    project_id: Identifier
+    project_id: Identifier | None = None
     document_id: Identifier
     text_sha256: Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
     start: Annotated[int, Field(ge=0,le=12000)]
@@ -169,7 +169,7 @@ class SourceIntakeInput(Input):
 
 class ReadingAnnotationUpdate(Input):
     annotation_id: Identifier
-    project_id: Identifier
+    project_id: Identifier | None = None
     body: Annotated[str, Field(max_length=10000)]
     expected_revision: Annotated[int, Field(ge=1)]
     mark_style: Literal["highlight","underline","none"] | None = None
@@ -177,7 +177,7 @@ class ReadingAnnotationUpdate(Input):
 
 class ReadingDraftInput(Input):
     draft_uuid: Annotated[str,Field(pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")]
-    project_id: Identifier
+    project_id: Identifier | None = None
     record_id: Identifier
     context_kind: Literal["record_note","capture","annotation"]
     document_id: Identifier | None = None
@@ -195,7 +195,7 @@ class ReadingDraftInput(Input):
 
 
 class ReadingDeskInput(Input):
-    project_id: Identifier
+    project_id: Identifier | None = None
     record_id: Identifier
     document_id: Identifier | None = None
     annotation_id: Identifier | None = None
@@ -258,7 +258,7 @@ class VersePilotImport(VerseOwnerInput):
 
 class QuranBinding(VerseOwnerInput):
     note_scope: Literal['verse','surah','source'] = 'verse'
-    project_id: Identifier
+    project_id: Identifier | None = None
     resource_key: Literal['tanzil-uthmani','itani-god']
     chapter: Annotated[int,Field(ge=1,le=114)]
     ayah_start: Annotated[int,Field(ge=1,le=286)]
@@ -271,7 +271,7 @@ class QuranNote(QuranBinding):
 
 
 class QuranPlace(VerseOwnerInput):
-    project_id: Identifier
+    project_id: Identifier | None = None
     resource_key: Literal['tanzil-uthmani','itani-god']
     chapter: Annotated[int,Field(ge=1,le=114)]
     ayah: Annotated[int,Field(ge=1,le=286)]
@@ -279,7 +279,7 @@ class QuranPlace(VerseOwnerInput):
 
 
 class QuranProgress(VerseOwnerInput):
-    project_id: Identifier
+    project_id: Identifier | None = None
     chapter: Annotated[int,Field(ge=1,le=114)]
     ayah: Annotated[int,Field(ge=1,le=286)]
     is_read: bool
@@ -337,7 +337,7 @@ class NotebookMetadata(VerseOwnerInput):
 
 class NotebookCreate(NotebookMetadata):
     request_uuid: Annotated[str,Field(min_length=36,max_length=36)]
-    project_id: Identifier
+    project_id: Identifier | None = None
     record_id: Identifier | None = None
     document_id: Identifier | None = None
     annotation_id: Identifier | None = None
@@ -346,13 +346,13 @@ class NotebookCreate(NotebookMetadata):
 
 class NotebookUpdate(NotebookMetadata):
     entry_id: Identifier
-    project_id: Identifier
+    project_id: Identifier | None = None
     expected_revision: Annotated[int,Field(ge=1)]
     state: Literal["active","withdrawn"] = "active"
 
 
 class GutenbergBinding(Input):
-    project_id: Identifier
+    project_id: Identifier | None = None
     book_id: Annotated[int, Field(ge=1,le=999999,strict=True)]
     version: Annotated[str,Field(pattern=r'^[a-f0-9]{64}$')]
     section: Annotated[int,Field(ge=0,le=1000,strict=True)]
@@ -405,7 +405,7 @@ class NotebookDraftValue(Input):
 
 class NotebookDraftInput(Input):
     draft_uuid: Annotated[str,Field(pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")]
-    project_id: Identifier
+    project_id: Identifier | None = None
     entry_id: Identifier | None = None
     request_uuid: Annotated[str,Field(min_length=36,max_length=36)] | None = None
     record_id: Identifier | None = None
@@ -419,7 +419,7 @@ class NotebookDraftInput(Input):
 
 
 class PrivateTrashInput(Input):
-    project_id: Identifier
+    project_id: Identifier | None = None
     target_kind: Literal["entry","annotation"]
     target_id: Identifier
     target_revision: Annotated[int,Field(ge=1)]
@@ -791,13 +791,13 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         except gutenberg.Unavailable:raise HTTPException(503,'Gutenberg search is unavailable. Your library and notes are unchanged.') from None
 
     @router.get('/catalog/gutenberg/book')
-    def gutenberg_book(project_id: Identifier,book_id: Annotated[int,Query(ge=1,le=999999)],
+    def gutenberg_book(*, project_id: Identifier | None = None,book_id: Annotated[int,Query(ge=1,le=999999)],
         version: Annotated[str,Query(max_length=64,pattern=r'^(?:[a-f0-9]{64})?$')]=''):
         try:return store.gutenberg_book(project_id,book_id,version)
         except gutenberg.Unavailable:raise HTTPException(503,'This book is unavailable or its text format is not supported yet. Try the provider link or retry later.') from None
 
     @router.get('/catalog/gutenberg/section')
-    def gutenberg_section(project_id: Identifier,book_id: Annotated[int,Query(ge=1,le=999999)],
+    def gutenberg_section(*, project_id: Identifier | None = None,book_id: Annotated[int,Query(ge=1,le=999999)],
         version: Annotated[str,Query(pattern=r'^[a-f0-9]{64}$')],section: Annotated[int,Query(ge=0,le=1000)]):
         return store.gutenberg_section(project_id,book_id,version,section)
 
@@ -814,7 +814,7 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         return store.gutenberg_write(binding=value.binding.model_dump(),fields=value.note.model_dump(),action='notebook',actor=actor)
 
     @router.get('/catalog/gutenberg/place')
-    def gutenberg_place(project_id:Identifier,book_id:Annotated[int,Query(ge=1,le=999999)]):
+    def gutenberg_place(*, project_id: Identifier | None = None,book_id:Annotated[int,Query(ge=1,le=999999)]):
         row=store.gutenberg_place(project_id,book_id)
         if row is None:raise HTTPException(404,'No saved place for this book')
         return row
@@ -834,12 +834,12 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         return store.research_search(project_id,q,limit)
 
     @router.get("/reading/library")
-    def reading_library(project_id: Identifier, cursor: Annotated[str,Query(max_length=500)] = "",
+    def reading_library(*, project_id: Identifier | None = None, cursor: Annotated[str,Query(max_length=500)] = "",
         limit: Annotated[int,Query(ge=1,le=50)] = 30):
         return store.reading_library(project_id,cursor,limit)
 
     @router.get("/reading/draft")
-    def reading_draft(project_id: Identifier,draft_id: Identifier):
+    def reading_draft(*, project_id: Identifier | None = None,draft_id: Identifier):
         value=store.reading_draft(project_id,draft_id)
         if value is None: raise HTTPException(404,"Draft not found in this project")
         return value
@@ -849,21 +849,21 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         return store.save_reading_draft(actor=actor,**value.model_dump())
 
     @router.get("/reading/drafts")
-    def reading_drafts(project_id: Identifier,record_id: Identifier | None = None,document_id: Identifier | None = None,
+    def reading_drafts(*, project_id: Identifier | None = None,record_id: Identifier | None = None,document_id: Identifier | None = None,
         annotation_id: Identifier | None = None,context_kind: Literal["record_note","capture","annotation"] | None = None,
         state: Literal["active","discarded"] = "active",cursor: Annotated[str,Query(max_length=500)] = "",limit: Annotated[int,Query(ge=1,le=25)] = 25):
         rows=store.reading_drafts(project_id=project_id,record_id=record_id,document_id=document_id,annotation_id=annotation_id,context_kind=context_kind,state=state,cursor=cursor,limit=limit+1)
         return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
 
     @router.get("/reading/draft-history")
-    def reading_draft_history(project_id: Identifier,draft_id: Identifier,before_revision: Annotated[int,Query(ge=1)] | None = None,
+    def reading_draft_history(*, project_id: Identifier | None = None,draft_id: Identifier,before_revision: Annotated[int,Query(ge=1)] | None = None,
         limit: Annotated[int,Query(ge=1,le=25)] = 25):
         rows=store.reading_draft_history(project_id,draft_id,before_revision,limit+1)
         if rows is None: raise HTTPException(404,"Draft history not found in this project")
         return {"items":rows[:limit],"next_before_revision":rows[limit-1]["revision"] if len(rows)>limit else None}
 
     @router.get("/reading/desk")
-    def reading_desk(project_id: Identifier):
+    def reading_desk(*, project_id: Identifier | None = None):
         value=store.reading_desk(project_id)
         if value is None: raise HTTPException(404,"No active reading place saved for this project")
         return value
@@ -873,7 +873,7 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         return store.save_reading_desk(actor=actor,**value.model_dump())
 
     @router.get("/reading/desk-history")
-    def reading_desk_history(project_id: Identifier,before_revision: Annotated[int,Query(ge=1)] | None = None,
+    def reading_desk_history(*, project_id: Identifier | None = None,before_revision: Annotated[int,Query(ge=1)] | None = None,
         limit: Annotated[int,Query(ge=1,le=25)] = 25):
         rows=store.reading_desk_history(project_id,before_revision,limit+1)
         if rows is None: raise HTTPException(404,"No active reading place saved for this project")
@@ -905,7 +905,7 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
             raise HTTPException(503,'Word translation is unavailable. Your reading and notes are unchanged.') from None
 
     @router.get('/quran/progress')
-    def quran_progress(project_id: Identifier):
+    def quran_progress(*, project_id: Identifier | None = None):
         return {'project_id':project_id,'items':store.quran_progress(project_id)}
 
     @router.put('/quran/progress')
@@ -918,7 +918,7 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         return store.quran_binding(actor=actor,**value.model_dump(exclude={'owner_confirmed'}))
 
     @router.get('/quran/binding')
-    def quran_existing(project_id: Identifier,resource_key: Literal['tanzil-uthmani','itani-god'],
+    def quran_existing(*, project_id: Identifier | None = None,resource_key: Literal['tanzil-uthmani','itani-god'],
         chapter: Annotated[int,Query(ge=1,le=114)],ayah_start: Annotated[int,Query(ge=1,le=286)],ayah_end: Annotated[int,Query(ge=1,le=286)],note_scope: Literal['verse','surah','source'] = 'verse'):
         return store.quran_existing(project_id=project_id,resource_key=resource_key,chapter=chapter,ayah_start=ayah_start,ayah_end=ayah_end,note_scope=note_scope)
 
@@ -927,17 +927,17 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         return store.quran_note(actor=actor,**value.model_dump(exclude={'owner_confirmed'}))
 
     @router.get('/quran/marks')
-    def quran_marks(project_id: Identifier,chapter: Annotated[int,Query(ge=1,le=114)],cursor: Annotated[str,Query(max_length=500)]='',limit: Annotated[int,Query(ge=1,le=100)]=100):
+    def quran_marks(*, project_id: Identifier | None = None,chapter: Annotated[int,Query(ge=1,le=114)],cursor: Annotated[str,Query(max_length=500)]='',limit: Annotated[int,Query(ge=1,le=100)]=100):
         items=store.quran_marks(project_id=project_id,chapter=chapter,cursor=cursor,limit=limit+1)
         return {'items':items[:limit],'next_cursor':items[limit-1]['id'] if len(items)>limit else None}
 
     @router.get('/quran/notes')
-    def quran_notes(project_id: Identifier,resource_key: Literal['tanzil-uthmani','itani-god'],chapter: Annotated[int,Query(ge=1,le=114)],note_scope: Literal['surah','source'],cursor: Annotated[str,Query(max_length=500)]='',limit: Annotated[int,Query(ge=1,le=25)]=25):
+    def quran_notes(*, project_id: Identifier | None = None,resource_key: Literal['tanzil-uthmani','itani-god'],chapter: Annotated[int,Query(ge=1,le=114)],note_scope: Literal['surah','source'],cursor: Annotated[str,Query(max_length=500)]='',limit: Annotated[int,Query(ge=1,le=25)]=25):
         items=store.quran_notes(project_id=project_id,resource_key=resource_key,chapter=chapter,note_scope=note_scope,cursor=cursor,limit=limit+1)
         return {'items':items[:limit],'next_cursor':items[limit-1]['id'] if len(items)>limit else None}
 
     @router.get('/quran/place')
-    def quran_place(project_id: Identifier):
+    def quran_place(*, project_id: Identifier | None = None):
         return store.quran_place(project_id)
 
     @router.put('/quran/place')
@@ -955,7 +955,7 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         if value is None: raise HTTPException(404,"Record not found in this project")
         return value
     @router.get("/notebook/items")
-    def notebook_items(project_id: Identifier,document_id: Identifier | None = None,location_only: bool = False,q: Annotated[str,Query(max_length=300)] = "",
+    def notebook_items(*, project_id: Identifier | None = None,document_id: Identifier | None = None,location_only: bool = False,q: Annotated[str,Query(max_length=300)] = "",
         item_scope: Literal["all","writing","reading"] = "all",
         thought_type: Literal["","note","question","source_claim","interpretation","objection","passage_note","record_note"] = "",
         state: Literal["active","withdrawn"] = "active",cursor: Annotated[str,Query(max_length=1100)] = "",
@@ -964,18 +964,18 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         return {"items":rows[:limit],"next_cursor":rows[limit-1]["cursor"] if len(rows)>limit else None}
 
     @router.get("/notebook/network")
-    def notebook_network(project_id: Identifier,limit: Annotated[int,Query(ge=1,le=200)]=200):
+    def notebook_network(*, project_id: Identifier | None = None,limit: Annotated[int,Query(ge=1,le=200)]=200):
         rows=store.notebook_network(project_id,limit+1)
         return {"project_id":project_id,"items":rows[:limit],"truncated":len(rows)>limit}
 
     @router.get("/notebook/entry")
-    def notebook_entry(project_id: Identifier,entry_id: Identifier):
+    def notebook_entry(*, project_id: Identifier | None = None,entry_id: Identifier):
         row=store.notebook_entry(project_id,entry_id)
         if row is None:raise HTTPException(404,"Notebook thought not found in this project")
         return row
 
     @router.get("/notebook/drafts")
-    def notebook_drafts(project_id: Identifier,cursor: Annotated[str,Query(max_length=500)]="",
+    def notebook_drafts(*, project_id: Identifier | None = None,cursor: Annotated[str,Query(max_length=500)]="",
         limit: Annotated[int,Query(ge=1,le=25)]=25):
         rows=store.notebook_drafts(project_id,cursor,limit+1)
         return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
@@ -990,7 +990,7 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         return store.change_private_trash(actor=actor,**value.model_dump())
 
     @router.get("/notebook/draft")
-    def notebook_draft(project_id: Identifier,draft_id: Identifier):
+    def notebook_draft(*, project_id: Identifier | None = None,draft_id: Identifier):
         row=store.notebook_draft(project_id,draft_id)
         if row is None:raise HTTPException(404,"Writing recovery not found in this project")
         return row
@@ -1010,7 +1010,7 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         return store.notebook_update(actor=actor,**fields)
 
     @router.get("/notebook/history")
-    def notebook_history(project_id: Identifier,entry_id: Identifier,before_revision: Annotated[int,Query(ge=1)] | None = None,
+    def notebook_history(*, project_id: Identifier | None = None,entry_id: Identifier,before_revision: Annotated[int,Query(ge=1)] | None = None,
         limit: Annotated[int,Query(ge=1,le=25)] = 25):
         rows=store.notebook_history(project_id=project_id,entry_id=entry_id,before_revision=before_revision,limit=limit+1)
         if rows is None:raise HTTPException(404,"Notebook thought not found in this project")
@@ -1109,7 +1109,7 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         return app.openapi()
 
     @router.get("/reading/documents")
-    def reading_documents(project_id: Identifier, source_record_id: Identifier,
+    def reading_documents(*, project_id: Identifier | None = None, source_record_id: Identifier,
                           cursor: Annotated[str, Query(max_length=500)] = "",limit: Annotated[int, Query(ge=1,le=50)] = 25):
         rows = store.reading_documents(project_id,source_record_id,cursor,limit+1)
         return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
@@ -1137,14 +1137,14 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         return store.create_reading_document(actor=actor,**value.model_dump())
 
     @router.get("/reading/document")
-    def reading_document(project_id: Identifier, document_id: Identifier):
+    def reading_document(*, project_id: Identifier | None = None, document_id: Identifier):
         value = store.reading_document(project_id,document_id)
         if value is None:
             raise HTTPException(404,"Reading snapshot not found")
         return value
 
     @router.get("/reading/annotations")
-    def reading_annotations(project_id: Identifier, document_id: Identifier,
+    def reading_annotations(*, project_id: Identifier | None = None, document_id: Identifier,
                             cursor: Annotated[str, Query(max_length=500)] = "",limit: Annotated[int, Query(ge=1,le=100)] = 50):
         rows = store.reading_annotations(project_id,document_id,cursor,limit+1)
         return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
@@ -1154,7 +1154,7 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         return store.create_reading_annotation(actor=actor,**value.model_dump())
 
     @router.get("/reading/annotation")
-    def reading_annotation(project_id: Identifier, annotation_id: Identifier):
+    def reading_annotation(*, project_id: Identifier | None = None, annotation_id: Identifier):
         value = store.reading_annotation(project_id,annotation_id)
         if value is None:
             raise HTTPException(404,"Reading annotation not found")

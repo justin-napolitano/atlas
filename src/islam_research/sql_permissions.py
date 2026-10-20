@@ -9,6 +9,7 @@ from psycopg import sql
 
 
 READ_TABLES = (
+    "workspace_reading_desks", "workspace_reading_desk_revisions", "workspace_quran_places", "workspace_quran_reading_progress", "workspace_quran_progress_revisions", "workspace_gutenberg_places", "workspace_annotation_trash", "workspace_annotation_trash_history",
     "owner_workspaces", "workspace_note_trash", "workspace_note_trash_history",
     "library_works", "library_editions", "library_representations", "library_items",
     "library_source_bindings", "library_document_bindings", "library_project_items", "library_requests", "library_events",
@@ -38,6 +39,11 @@ OWNER_FUNCTIONS = (
     "research.withdraw_publication(text,integer,text,text)",
 )
 INSERT_COLUMNS = {
+    "workspace_reading_desks": "workspace_id record_id document_id annotation_id start_pos end_pos changed_by",
+    "workspace_quran_places": "workspace_id resource_key chapter ayah changed_by",
+    "workspace_quran_reading_progress": "workspace_id chapter ayah is_read changed_by",
+    "workspace_gutenberg_places": "workspace_id book_id version section position changed_by",
+    "workspace_annotation_trash": "annotation_id target_revision state changed_by",
     "workspace_note_trash": "entry_id target_revision state changed_by",
     "library_project_items": "item_id project_id state changed_by",
     "library_requests": "request_uuid input_sha256 result changed_by",
@@ -69,6 +75,11 @@ INSERT_COLUMNS = {
     "publication_previews": "id project_id record_ids relation_ids inputs payload payload_sha256 created_by",
 }
 UPDATE_COLUMNS = {
+    "workspace_reading_desks": "record_id document_id annotation_id start_pos end_pos changed_by revision",
+    "workspace_quran_places": "resource_key chapter ayah revision changed_by updated_at",
+    "workspace_quran_reading_progress": "is_read revision changed_by",
+    "workspace_gutenberg_places": "version section position revision changed_by updated_at",
+    "workspace_annotation_trash": "target_revision state revision changed_by",
     "workspace_note_trash": "target_revision state revision changed_by",
     "library_items": "preferred_edition_id on_shelf reading_status revision changed_by",
     "library_project_items": "state revision changed_by",
