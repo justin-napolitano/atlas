@@ -7,7 +7,7 @@ import {gutenbergReaderAPI,gutenbergPlaceWriter,bookPlaceSession} from './gutenb
 import {readingPosition} from './readingPosition.js';
 import './gutenberg.css';
 
-export default function GutenbergReader({api,projectId,bookId,drafts,changed,noteEditor,onOpen,onOpenNotebook,onBack,onTitle}){
+export default function GutenbergReader({api,projectId,bookId,version='',drafts,changed,noteEditor,onOpen,onOpenNotebook,onBack,onTitle}){
   const [book,setBook]=useState(null),[section,setSection]=useState(0),[initialPosition,setInitialPosition]=useState(0),[doc,setDoc]=useState(null),[error,setError]=useState(''),[message,setMessage]=useState(''),[placeState,setPlaceState]=useState(null);
   const root=useRef(null),alive=useRef(true),queue=useRef(null),sectionRef=useRef(0),active=useContext(SurfaceActivity),activeRef=useRef(active);
   activeRef.current=active;sectionRef.current=section;
@@ -17,7 +17,7 @@ export default function GutenbergReader({api,projectId,bookId,drafts,changed,not
   async function load(){
     setError('');setDoc(null);
     try{
-      const [value,place]=await Promise.all([api.request('catalog/gutenberg/book',{project_id:projectId,book_id:bookId}),api.request('catalog/gutenberg/place',{project_id:projectId,book_id:bookId}).catch(err=>{if(err.status===404)return null;throw err;})]);
+      const [value,place]=await Promise.all([api.request('catalog/gutenberg/book',{project_id:projectId,book_id:bookId,...(version?{version}:{})}),api.request('catalog/gutenberg/place',{project_id:projectId,book_id:bookId}).catch(err=>{if(err.status===404)return null;throw err;})]);
       if(!alive.current)return;
       if(value.book_id!==bookId)throw new Error('The catalog returned another book.');
       setBook(value);
