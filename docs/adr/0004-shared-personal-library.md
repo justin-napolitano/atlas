@@ -1,6 +1,6 @@
 # ADR 0004: shared personal library with project associations
 
-- Status: proposed architecture for owner-approved library direction; not implemented.
+- Status: broader architecture proposed; minimum identity/API implementation candidate in PR #199. Shelf, native catalog retention and shared notebook integration remain unimplemented.
 - Date: 2026-10-19.
 - Delivery authority: existing identity issue #101; notebook issue #95; catalog #168.
 - Scope: one authenticated owner, private library and authoring, explicit public
