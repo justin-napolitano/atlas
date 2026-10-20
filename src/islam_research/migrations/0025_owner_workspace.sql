@@ -138,3 +138,16 @@ END $$;
 CREATE TRIGGER workspace_native_trash_guard BEFORE UPDATE ON research.notebook_entries FOR EACH ROW EXECUTE FUNCTION research.guard_native_trashed_note();
 REVOKE ALL ON research.owner_workspaces,research.workspace_note_trash,research.workspace_note_trash_history FROM PUBLIC;
 REVOKE ALL ON FUNCTION research.guard_workspace_origin(),research.prepare_workspace_trash(),research.log_workspace_trash(),research.guard_native_trashed_note() FROM PUBLIC;
+
+-- Workspace metadata is not an authored publication input; preserve prior seals.
+CREATE OR REPLACE FUNCTION research.publication_inputs(project_key text, records text[], relations text[]) RETURNS jsonb
+LANGUAGE sql STABLE SET search_path=pg_catalog,research AS $$
+    SELECT jsonb_build_object(
+        'project',(SELECT to_jsonb(p) FROM research.projects p WHERE p.id=project_key),
+        'canonical_snapshot_sha256',COALESCE((SELECT jsonb_agg(i.sha256 ORDER BY i.sha256)
+            FROM research.import_snapshots i WHERE i.project_id=project_key AND i.format='turtle'),'[]'::jsonb),
+        'records',COALESCE((SELECT jsonb_agg(to_jsonb(r)-'workspace_id' ORDER BY r.id) FROM research.records r
+            WHERE r.project_id=project_key AND r.id=ANY(records) AND r.deleted_at IS NULL),'[]'::jsonb),
+        'relations',COALESCE((SELECT jsonb_agg(to_jsonb(e) ORDER BY e.id) FROM research.relations e
+            WHERE e.project_id=project_key AND e.id=ANY(relations)),'[]'::jsonb))
+$$;

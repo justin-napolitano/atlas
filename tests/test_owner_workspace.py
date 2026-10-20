@@ -68,3 +68,88 @@ class TitleTests(unittest.TestCase):
         text='\n## An idea العربية 😀\n\nBody';self.assertEqual(workspace.derived_title(text),'An idea العربية 😀')
         self.assertEqual(workspace.derived_title(' \n'),'Untitled note')
         self.assertEqual(len(workspace.derived_title('x'*400)),300)
+
+@unittest.skipUnless(os.environ.get('RESEARCH_TEST_DATABASE_URL'),'Requires isolated PostgreSQL migration owner')
+class WorkspaceMigrationTests(unittest.TestCase):
+    def test_zero_project_capture_and_legacy_cutover_rollback_preserve_publication_inputs(self):
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        import shutil
+        from unittest.mock import patch
+        from psycopg import sql
+        from psycopg.conninfo import make_conninfo
+        from islam_research.workspace_rollback import rollback,MIGRATION
+        admin_dsn=os.environ['RESEARCH_TEST_DATABASE_URL'];actual=Path(__file__).parents[1]/'src/islam_research/migrations'
+        for legacy in (False,True):
+            name='workspace_rehearsal_'+uuid.uuid4().hex
+            with db.connect(admin_dsn) as admin:
+                admin.autocommit=True;admin.execute(sql.SQL('CREATE DATABASE {}').format(sql.Identifier(name)))
+            try:
+                with TemporaryDirectory() as temp:
+                    root=Path(temp);(root/'migrations').mkdir()
+                    for path in actual.glob('*.sql'):
+                        if path.name<MIGRATION:shutil.copyfile(path,root/'migrations'/path.name)
+                    with db.connect(make_conninfo(admin_dsn,dbname=name)) as c:
+                        with patch('islam_research.database.files',return_value=root):db.migrate(c)
+                        if legacy:
+                            project='synthetic:legacy';source='synthetic:legacy-source';entry='synthetic:legacy-entry'
+                            db.create_project(c,project,'Legacy grouping')
+                            db.save_record(c,project_id=project,record_id=source,kind='source',title='Original source',actor='synthetic')
+                            c.execute("INSERT INTO research.notebook_entries(id,project_id,creation_sha256,thought_type,title,body,changed_by) VALUES(%s,%s,%s,'note','Original title','Exact Markdown العربية 😀','synthetic')",(entry,project,'b'*64))
+                            before=c.execute('SELECT to_jsonb(n) AS row FROM research.notebook_entries n WHERE id=%s',(entry,)).fetchone()['row']
+                            history_before=c.execute('SELECT snapshot FROM research.notebook_revisions WHERE entry_id=%s',(entry,)).fetchone()['snapshot']
+                            pub=c.execute('SELECT research.publication_inputs(%s,%s,%s) AS value',(project,[source],[])).fetchone()['value']
+                        shutil.copyfile(actual/MIGRATION,root/'migrations'/MIGRATION)
+                        with patch('islam_research.database.files',return_value=root):self.assertEqual(db.migrate(c),[MIGRATION])
+                        if not legacy:
+                            first=workspace.create_note(c,request_uuid=str(uuid.uuid4()),body='A truly project-free idea.',actor='synthetic')
+                            self.assertIsNone(first['project_id'])
+                            self.assertEqual(c.execute('SELECT count(*) AS n FROM research.projects').fetchone()['n'],0)
+                            with self.assertRaises(ValueError):rollback(c,apply=True)
+                        else:
+                            after=workspace.note(c,entry)
+                            self.assertEqual({key:after[key] for key in before},before)
+                            self.assertEqual(c.execute('SELECT snapshot FROM research.notebook_revisions WHERE entry_id=%s',(entry,)).fetchone()['snapshot'],history_before)
+                            self.assertEqual(c.execute('SELECT research.publication_inputs(%s,%s,%s) AS value',(project,[source],[])).fetchone()['value'],pub)
+                            self.assertTrue(rollback(c,apply=True)['applied'])
+                            self.assertEqual(c.execute('SELECT to_jsonb(n) AS row FROM research.notebook_entries n WHERE id=%s',(entry,)).fetchone()['row'],before)
+                            self.assertEqual(c.execute('SELECT research.publication_inputs(%s,%s,%s) AS value',(project,[source],[])).fetchone()['value'],pub)
+                            with patch('islam_research.database.files',return_value=root):self.assertEqual(db.migrate(c),[MIGRATION])
+                            self.assertEqual(workspace.note(c,entry)['body'],before['body'])
+            finally:
+                with db.connect(admin_dsn) as admin:
+                    admin.autocommit=True;admin.execute(sql.SQL('DROP DATABASE {} WITH (FORCE)').format(sql.Identifier(name)))
+
+@unittest.skipUnless(os.environ.get('RESEARCH_TEST_DATABASE_URL'),'Requires isolated PostgreSQL roles')
+class WorkspacePrivilegeTests(unittest.TestCase):
+    def test_owner_can_author_without_project_but_cannot_reassign_workspace_or_rewrite_history(self):
+        from psycopg import sql
+        from psycopg.conninfo import make_conninfo
+        from islam_research.sql_permissions import configure
+        dsn=os.environ['RESEARCH_TEST_DATABASE_URL'];owner='workspace_owner_'+uuid.uuid4().hex;public='workspace_public_'+uuid.uuid4().hex
+        with db.connect(dsn) as admin:
+            db.migrate(admin)
+            for role in (owner,public):admin.execute(sql.SQL('CREATE ROLE {} LOGIN').format(sql.Identifier(role)))
+            admin.commit();configure(admin,owner,public,apply=True)
+        try:
+            with db.connect(make_conninfo(dsn,user=owner)) as c:
+                first=workspace.create_note(c,request_uuid=str(uuid.uuid4()),body='Private global note under runtime privileges.',actor='synthetic')
+                self.assertIsNone(first['project_id'])
+                c.commit()
+                for statement in ['INSERT INTO research.owner_workspaces(id) VALUES (\'another\')',
+                   'UPDATE research.notebook_entries SET workspace_id=workspace_id',
+                   'UPDATE research.notebook_entries SET project_id=project_id',
+                   'DELETE FROM research.notebook_revisions']:
+                    with self.assertRaises(Exception):
+                        with c.transaction():c.execute(statement)
+                row=workspace.update_note(c,entry_id=first['id'],expected_revision=1,body='Updated through the same authority.',actor='synthetic')
+                self.assertEqual(row['revision'],2)
+                workspace.trash(c,entry_id=first['id'],target_revision=2,expected_revision=0,state='trashed',actor='synthetic')
+            with db.connect(make_conninfo(dsn,user=public)) as c:
+                with self.assertRaises(Exception):
+                    with c.transaction():c.execute('SELECT body FROM research.notebook_entries')
+        finally:
+            with db.connect(dsn) as admin:
+                for role in (owner,public):
+                    admin.execute(sql.SQL('DROP OWNED BY {}').format(sql.Identifier(role)))
+                    admin.execute(sql.SQL('DROP ROLE {}').format(sql.Identifier(role)))

@@ -75,3 +75,17 @@ rejection tests establish database/HTTP boundaries. Hosted proof stays #42.
    existing autosave/recovery/editor/reader behavior and no project requirement.
 4. End-to-end migration/recovery/privacy/keyboard/mobile/zoom verification, issue
    reconciliation and one isolated local review. No claim of hosted acceptance.
+
+## Foundation rollback operator boundary
+
+`scripts/rollback_owner_workspace.py` checks eligibility by default; `--apply` is
+migration-owner only, with `RESEARCH_MIGRATION_DATABASE_URL` injected externally.
+Quiesce the new runtime and restore the matching prior binary/grants as part of a
+rollback. The tool requires 0025 to be exact/latest and refuses native project-free
+objects, native tombstones or incompatible note metadata. It does not erase activity
+or use CASCADE. Later migration layers require their own restore/rollback plan.
+
+Legacy sealed publication inputs explicitly omit the added workspace ownership field,
+so unchanged source content retains its original preview fingerprint. Actual content,
+revision and publication choices still participate in the existing seal validation.
+No public global-note projection is created by this foundation.
