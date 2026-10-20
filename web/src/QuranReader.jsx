@@ -20,7 +20,7 @@ import SaveReadingToLibrary from './SaveReadingToLibrary.jsx';
 import useQuranProgress from './useQuranProgress.js';
 import {isReadingAdvanceKey,nextReadingAyah} from './quranReadingKeys.js';
 
-export default function QuranReader({api,projectId,initialReference,drafts,changed,onOpen,onOpenNotebook,onLocation,noteEditor}){
+export default function QuranReader({api,projectId,initialReference,drafts,changed,onOpen,onOpenNotebook,onLocation,noteEditor,startAtBeginning=false}){
   const [marks,setMarks]=useState([]),[marksCursor,setMarksCursor]=useState(null),[marksError,setMarksError]=useState(''),[selection,setSelection]=useState(null),[activeMark,setActiveMark]=useState('');
   const [selectionPosition,setSelectionPosition]=useState(null),[focusRequest,setFocusRequest]=useState(0);
   const [preferredWidth,setPreferredWidth]=useState(()=>{try{return marginWidth(Number(localStorage.getItem(marginWidthKey))||defaultMarginWidth);}catch{return defaultMarginWidth;}}),[availableWidth,setAvailableWidth]=useState(1200);
@@ -30,7 +30,7 @@ export default function QuranReader({api,projectId,initialReference,drafts,chang
   const [keyboardReading,setKeyboardReading]=useState(false),[keyboardMessage,setKeyboardMessage]=useState('');
   const notesWidth=marginWidth(preferredWidth,availableWidth);
   const captureKey='quran-capture:'+projectId;const capture=drafts.current.get(captureKey);
-  const [catalog,setCatalog]=useState(null),[chapter,setChapter]=useState(initialReference?.chapter||4),[ayah,setAyah]=useState(initialReference?.ayah_start||59);
+  const [catalog,setCatalog]=useState(null),[chapter,setChapter]=useState(initialReference?.chapter||(startAtBeginning?1:4)),[ayah,setAyah]=useState(initialReference?.ayah_start||(startAtBeginning?1:59));
   const [data,setData]=useState(null),[error,setError]=useState(''),[ready,setReady]=useState(false),[jump,setJump]=useState(''),[placeStatus,setPlaceStatus]=useState({phase:'idle'}),[stickyTop,setStickyTop]=useState(0),[toolbarHeight,setToolbarHeight]=useState(64);
   const [notes,setNotes]=useState(!!initialReference?.note_scope),[binding,setBinding]=useState(null),[sideError,setSideError]=useState(''),[refresh,setRefresh]=useState(0),[composer,setComposer]=useState(0),[scope,setScope]=useState(initialReference?.note_scope||'verse'),[rangeEnd,setRangeEnd]=useState(initialReference?.ayah_end>initialReference?.ayah_start?initialReference.ayah_end:null),[broadNotes,setBroadNotes]=useState([]),[broadCursor,setBroadCursor]=useState(null);
   const [appearance,setAppearance]=useState(()=>{try{return readReadingPreferences(localStorage);}catch{return readReadingPreferences({getItem:()=>null});}});
