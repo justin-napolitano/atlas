@@ -1,6 +1,8 @@
 # Library shelf and book notebook contracts
 
-Status: planned, not implemented. Owner direction: 2026-10-19. Implementation must
+Status: product contract; shelf/navigation implementation candidate in PR #200.
+Primary book notebook #95 and native catalog/first-note retention #196 remain next.
+See [delivered behavior and limits](library-shelf.md). Owner direction: 2026-10-19. Implementation must
 follow the [design brief](../design/library-shelf-brief.md) and resolve the
 [shared-library ADR proposal](../adr/0004-shared-personal-library.md) under #101.
 Tracking: epic #194; #101 identity, #195 shelf, #196 discovery, #95 notebook,
