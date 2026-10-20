@@ -18,15 +18,15 @@ export function applySourcePreset(base,preset) {
 
 /** Confirm source/snapshot identity before navigating away from a saved draft. */
 export async function verifySourceIntake(api,result,sent) {
-  if(result?.project_id!==sent.project_id || typeof result.record_id!=='string' || !result.record_id ||
+  if((sent.project_id!=null && result?.project_id!==sent.project_id) || typeof result.record_id!=='string' || !result.record_id ||
     (sent.existing_source_record_id && result.record_id!==sent.existing_source_record_id)) throw new Error('The saved source identity could not be confirmed.');
   const record=await api.request('record',{record_id:result.record_id});
-  if(record.id!==result.record_id || record.project_id!==sent.project_id || !['source','work','edition'].includes(record.kind) || record.deleted_at)
+  if(record.id!==result.record_id || (sent.project_id!=null && record.project_id!==sent.project_id) || !['source','work','edition'].includes(record.kind) || record.deleted_at)
     throw new Error('The saved source does not belong to this project.');
   if(sent.excerpt) {
     if(typeof result.document_id!=='string' || !result.document_id)throw new Error('The excerpt save could not be confirmed.');
     const doc=await api.request('reading/document',{project_id:sent.project_id,document_id:result.document_id});
-    if(doc.id!==result.document_id || doc.project_id!==sent.project_id || doc.source_record_id!==result.record_id ||
+    if(doc.id!==result.document_id || doc.project_id!==record.project_id || doc.source_record_id!==result.record_id ||
       doc.edition!==sent.excerpt.edition || doc.locator!==sent.excerpt.locator || doc.representation_url!==sent.excerpt.representation_url ||
       doc.text_body!==sent.excerpt.text.replaceAll('\r\n','\n').replaceAll('\r','\n')) throw new Error('The saved excerpt did not match the submitted edition, location, and wording.');
   } else if(result.document_id!==null)throw new Error('Unexpected excerpt in a metadata-only save.');

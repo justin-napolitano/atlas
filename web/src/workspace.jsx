@@ -1,3 +1,4 @@
+import ConnectedWorkspace from './ConnectedWorkspace.jsx';
 import React, { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import ResizablePanes from './ResizablePanes.jsx';
@@ -356,4 +357,4 @@ function Workspace() {
   </main>;
 }
 
-createRoot(document.getElementById('root')).render(<Workspace />);
+createRoot(document.getElementById('root')).render(new URLSearchParams(location.search).get('legacy')==='1'?<Workspace />:<ConnectedWorkspace />);
