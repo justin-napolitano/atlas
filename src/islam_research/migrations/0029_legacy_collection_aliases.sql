@@ -6,7 +6,7 @@ CREATE TABLE research.workspace_legacy_collections (
 );
 INSERT INTO research.workspace_collections(id,title,creation_sha256,changed_by)
  SELECT 'urn:research:collection:legacy:'||encode(sha256(convert_to(p.id,'UTF8')),'hex'),
- left(p.title,300),encode(sha256(convert_to(jsonb_build_array(p.id,p.title)::text,'UTF8')),'hex'),'legacy-collection-migration-v1'
+ CASE WHEN length(btrim(p.title))=0 THEN 'Untitled collection' ELSE left(p.title,300) END,encode(sha256(convert_to(jsonb_build_array(p.id,p.title)::text,'UTF8')),'hex'),'legacy-collection-migration-v1'
  FROM research.projects p;
 INSERT INTO research.workspace_legacy_collections(project_id,collection_id)
  SELECT p.id,'urn:research:collection:legacy:'||encode(sha256(convert_to(p.id,'UTF8')),'hex') FROM research.projects p;
