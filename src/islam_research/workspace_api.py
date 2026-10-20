@@ -180,3 +180,9 @@ def register_workspace(router,store,owner):
 
     @router.get('/workspace/continue')
     def continuing(limit:Annotated[int,Query(ge=1,le=20)]=12):return store.workspace_operation('continuing',limit=limit)
+
+    @router.get('/workspace/questions')
+    def questions(q:Annotated[str,Query(max_length=300)]='',cursor:Annotated[str,Query(max_length=1000)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):return store.workspace_operation('questions',q=q,cursor=cursor,limit=limit)
+
+    @router.get('/workspace/view/results')
+    def view_results(view_id:ID,cursor:Annotated[str,Query(max_length=1200)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):return store.workspace_operation('view_results',view_id=view_id,cursor=cursor,limit=limit)

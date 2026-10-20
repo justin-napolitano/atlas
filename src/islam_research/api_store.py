@@ -28,7 +28,7 @@ class PostgreSQLStore:
 
     def workspace_operation(self,operation,**values):
         from . import workspace_store
-        operations={name:getattr(workspace_store,name) for name in ('note','notes','create_note','update_note','history','trash','draft','drafts','save_draft','sources','source','intake_candidates','intake','search','continuing')}
+        operations={name:getattr(workspace_store,name) for name in ('note','notes','create_note','update_note','history','trash','draft','drafts','save_draft','sources','source','intake_candidates','intake','search','continuing','questions','view_results')}
         if operation not in operations:raise ValueError('Unknown workspace operation')
         with db.connect(self.dsn) as c:return operations[operation](c,**values)
 

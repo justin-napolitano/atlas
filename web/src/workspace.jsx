@@ -217,7 +217,7 @@ function Workspace() {
     const existing=workTabs.find(item=>item.key===JSON.stringify([nextProject,'record',id]));
     if(existing && !annotationId && !documentId){chooseWork(existing);return;}
     if(annotationId || documentId){const key=JSON.stringify([nextProject,id]);setReadingRequests(items=>({...items,[key]:(items[key] || 0)+1}));setCurrentReadingPlace(null);}
-    const url = new URL(location.href); url.search = new URLSearchParams({ project: nextProject, ...(id ? { record: id } : {}), ...(annotationId ? { annotation: annotationId } : {}),...(documentId ? {document:documentId} : {}),...(Number.isInteger(readingPosition)&&readingPosition>=0?{position:String(readingPosition)}:{}) });
+    const url = new URL(location.href); url.search = new URLSearchParams({ legacy:'1', project: nextProject, ...(id ? { record: id } : {}), ...(annotationId ? { annotation: annotationId } : {}),...(documentId ? {document:documentId} : {}),...(Number.isInteger(readingPosition)&&readingPosition>=0?{position:String(readingPosition)}:{}) });
     history.pushState(null, '', url);setLibraryOpen(false);setNotebookEntryId('');setBriefAnchor(null);setNotebookAnchor(null); setLibraryView('');setSelected(id); setProject(nextProject); setSelectedAnnotation(annotationId);setSelectedDocument(documentId);setSelectedReadingPosition(readingPosition);
   }
   function openProject(id){open('',id);setLibraryView('sources');const url=new URL(location.href);url.searchParams.set('view','sources');history.replaceState(null,'',url);}
@@ -232,7 +232,7 @@ function Workspace() {
   function openShelfTarget(target){
     if(target.reader==='document'){open(target.record_id,target.project_id,'',target.document_id,target.position);return;}
     surfaces.current?.capture();setLibraryOpen(false);setReadingFocus(false);setProject(target.project_id);
-    const params={project:target.project_id};
+    const params={legacy:'1',project:target.project_id};
     if(target.reader==='quran'){
       const ref={chapter:target.chapter,ayah_start:target.ayah,ayah_end:target.ayah,resource_key:target.resource_key};
       setVerseReference(ref);setLibraryView('quran');Object.assign(params,{view:'quran',...ref});

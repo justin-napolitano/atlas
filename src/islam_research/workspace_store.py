@@ -191,3 +191,27 @@ def continuing(connection,*,limit=12):
       FROM research.workspace_reading_desks p JOIN research.records r ON r.id=p.record_id LEFT JOIN research.reading_documents d ON d.id=p.document_id WHERE r.deleted_at IS NULL AND r.review_state<>'withdrawn'
       ORDER BY updated_at DESC LIMIT %s""",(limit,)).fetchall()
     return dict(reading=reading,documents=documents,notes=notes(connection,limit=limit)['items'],drafts=drafts(connection,limit=limit))
+
+
+def questions(connection,*,q='',cursor='',limit=30):
+    db._text(q,'question query',300,empty=True);db._text(cursor,'question cursor',1000,empty=True)
+    if type(limit) is not int or not 1<=limit<=50:raise ValueError('Invalid question page')
+    rows=connection.execute("""WITH questions AS (
+      SELECT n.id,n.project_id,n.title,n.body,'entry'::text AS item_kind,n.thought_type,n.revision,n.updated_at
+      FROM research.notebook_entries n WHERE n.thought_type='question' AND n.state='active'
+       AND NOT EXISTS(SELECT 1 FROM research.workspace_note_trash t WHERE t.entry_id=n.id AND t.state='trashed')
+       AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed')
+      UNION ALL SELECT id,project_id,title,summary,'record','question',revision,updated_at FROM research.records
+       WHERE kind='question' AND deleted_at IS NULL AND review_state<>'withdrawn'
+    ) SELECT * FROM questions WHERE item_kind||':'||id>%s AND strpos(lower(title||' '||body),lower(%s))>0 ORDER BY item_kind||':'||id LIMIT %s""",(cursor,q,limit+1)).fetchall()
+    return dict(items=rows[:limit],next_cursor=rows[limit-1]['item_kind']+':'+rows[limit-1]['id'] if len(rows)>limit else None)
+
+
+def view_results(connection,*,view_id,cursor='',limit=30):
+    from .workspace_graph import query_definition
+    view=connection.execute("SELECT * FROM research.workspace_saved_views WHERE id=%s AND state='active'",(view_id,)).fetchone()
+    if not view:raise ValueError('Saved view unavailable')
+    query=query_definition(view['query'])
+    if query['scope']=='notes':page=notes(connection,q=query.get('q',''),thought_type=query.get('thought_type',''),cursor=cursor,limit=limit)
+    else:page=sources(connection,q=query.get('q',''),cursor=cursor,limit=limit)
+    return dict(view=view,**page)
