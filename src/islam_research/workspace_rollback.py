@@ -43,6 +43,7 @@ def rollback(connection,*,apply=False):
         start=pub.index('CREATE FUNCTION research.publication_inputs(');end=pub.index('CREATE FUNCTION research.publication_head(',start)
         connection.execute(pub[start:end].replace('CREATE FUNCTION','CREATE OR REPLACE FUNCTION',1))
         connection.execute('DROP INDEX research.workspace_documents_content')
+        connection.execute('DROP INDEX research.workspace_notes_text')
         connection.execute('DROP TABLE research.owner_workspaces')
         connection.execute('DELETE FROM research.schema_migrations WHERE name=%s',(MIGRATION,))
         return result
