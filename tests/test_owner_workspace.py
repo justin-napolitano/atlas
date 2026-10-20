@@ -107,7 +107,7 @@ class WorkspaceMigrationTests(unittest.TestCase):
                             self.assertEqual(c.execute('SELECT count(*) AS n FROM research.projects').fetchone()['n'],0)
                             with self.assertRaises(ValueError):rollback(c,apply=True)
                         else:
-                            after=workspace.note(c,entry)
+                            after=c.execute('SELECT to_jsonb(n) AS row FROM research.notebook_entries n WHERE id=%s',(entry,)).fetchone()['row']
                             self.assertEqual({key:after[key] for key in before},before)
                             self.assertEqual(c.execute('SELECT snapshot FROM research.notebook_revisions WHERE entry_id=%s',(entry,)).fetchone()['snapshot'],history_before)
                             self.assertEqual(c.execute('SELECT research.publication_inputs(%s,%s,%s) AS value',(project,[source],[])).fetchone()['value'],pub)
