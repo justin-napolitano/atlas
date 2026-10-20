@@ -282,11 +282,18 @@
             "type": "integer"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           },
           "section": {
             "maximum": 1000.0,
@@ -301,7 +308,6 @@
           }
         },
         "required": [
-          "project_id",
           "book_id",
           "version",
           "section"
@@ -348,11 +354,18 @@
             "type": "integer"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           },
           "section": {
             "maximum": 1000.0,
@@ -367,7 +380,6 @@
           }
         },
         "required": [
-          "project_id",
           "book_id",
           "version",
           "section",
@@ -387,6 +399,180 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Intake": {
+        "additionalProperties": false,
+        "properties": {
+          "access_status": {
+            "default": "unknown",
+            "enum": [
+              "unknown",
+              "open",
+              "subscription",
+              "owned_copy",
+              "unavailable"
+            ],
+            "title": "Access Status",
+            "type": "string"
+          },
+          "accessed_on": {
+            "default": "",
+            "maxLength": 10,
+            "title": "Accessed On",
+            "type": "string"
+          },
+          "coverage_scope": {
+            "default": "metadata_only",
+            "enum": [
+              "metadata_only",
+              "abstract",
+              "selected_passage",
+              "full_work_read"
+            ],
+            "title": "Coverage Scope",
+            "type": "string"
+          },
+          "creators": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Creators",
+            "type": "string"
+          },
+          "distinct_source_rationale": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Distinct Source Rationale",
+            "type": "string"
+          },
+          "edition": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Edition",
+            "type": "string"
+          },
+          "excerpt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceIntakeExcerpt"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "existing_source_record_id": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Existing Source Record Id"
+          },
+          "identifier": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Identifier",
+            "type": "string"
+          },
+          "intake_context": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Intake Context",
+            "type": "string"
+          },
+          "intake_uuid": {
+            "pattern": "^[a-fA-F0-9-]{36}$",
+            "title": "Intake Uuid",
+            "type": "string"
+          },
+          "language": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Language",
+            "type": "string"
+          },
+          "owner_confirmed": {
+            "const": true,
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "publication": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Publication",
+            "type": "string"
+          },
+          "publication_date": {
+            "default": "",
+            "maxLength": 200,
+            "title": "Publication Date",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "rights_basis": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Rights Basis",
+            "type": "string"
+          },
+          "rights_status": {
+            "default": "metadata_only",
+            "enum": [
+              "unknown",
+              "metadata_only",
+              "permitted_excerpt",
+              "public_domain",
+              "open_license"
+            ],
+            "title": "Rights Status",
+            "type": "string"
+          },
+          "source_role": {
+            "default": "undetermined",
+            "enum": [
+              "primary_text",
+              "translation",
+              "commentary",
+              "scholarship",
+              "reference",
+              "undetermined"
+            ],
+            "title": "Source Role",
+            "type": "string"
+          },
+          "source_url": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Source Url",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "intake_uuid",
+          "title",
+          "edition",
+          "rationale"
+        ],
+        "title": "Intake",
         "type": "object"
       },
       "LexiconCaptureInput": {
@@ -1451,11 +1637,18 @@
             "type": "boolean"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           },
           "reading_position": {
             "anyOf": [
@@ -1513,8 +1706,7 @@
           "owner_confirmed",
           "title",
           "body",
-          "request_uuid",
-          "project_id"
+          "request_uuid"
         ],
         "title": "NotebookCreate",
         "type": "object"
@@ -1580,11 +1772,18 @@
             "type": "integer"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           },
           "reading_position": {
             "anyOf": [
@@ -1641,7 +1840,6 @@
         },
         "required": [
           "draft_uuid",
-          "project_id",
           "base_revision",
           "expected_revision",
           "value"
@@ -1765,11 +1963,18 @@
             "type": "boolean"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           },
           "state": {
             "default": "active",
@@ -1804,7 +2009,6 @@
           "title",
           "body",
           "entry_id",
-          "project_id",
           "expected_revision"
         ],
         "title": "NotebookUpdate",
@@ -1837,11 +2041,18 @@
             "type": "string"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           },
           "reading": {
             "default": "unread",
@@ -1862,8 +2073,7 @@
           }
         },
         "required": [
-          "record_id",
-          "project_id"
+          "record_id"
         ],
         "title": "PersonalInput",
         "type": "object"
@@ -1877,11 +2087,18 @@
             "type": "integer"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           },
           "state": {
             "enum": [
@@ -1913,7 +2130,6 @@
           }
         },
         "required": [
-          "project_id",
           "target_kind",
           "target_id",
           "target_revision",
@@ -2153,11 +2369,18 @@
             "type": "boolean"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           },
           "resource_key": {
             "enum": [
@@ -2170,7 +2393,6 @@
         },
         "required": [
           "owner_confirmed",
-          "project_id",
           "resource_key",
           "chapter",
           "ayah_start",
@@ -2221,11 +2443,18 @@
             "type": "boolean"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           },
           "request_uuid": {
             "maxLength": 36,
@@ -2244,7 +2473,6 @@
         },
         "required": [
           "owner_confirmed",
-          "project_id",
           "resource_key",
           "chapter",
           "ayah_start",
@@ -2280,11 +2508,18 @@
             "type": "boolean"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           },
           "resource_key": {
             "enum": [
@@ -2297,7 +2532,6 @@
         },
         "required": [
           "owner_confirmed",
-          "project_id",
           "resource_key",
           "chapter",
           "ayah",
@@ -2335,16 +2569,22 @@
             "type": "boolean"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           }
         },
         "required": [
           "owner_confirmed",
-          "project_id",
           "chapter",
           "ayah",
           "is_read",
@@ -2496,16 +2736,22 @@
             "title": "Mark Style"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           }
         },
         "required": [
           "annotation_id",
-          "project_id",
           "body",
           "expected_revision"
         ],
@@ -2566,11 +2812,18 @@
             "type": "string"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           },
           "start": {
             "maximum": 12000.0,
@@ -2586,7 +2839,6 @@
         },
         "required": [
           "annotation_uuid",
-          "project_id",
           "document_id",
           "text_sha256",
           "start",
@@ -2646,11 +2898,18 @@
             "type": "integer"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           },
           "record_id": {
             "maxLength": 500,
@@ -2674,7 +2933,6 @@
           }
         },
         "required": [
-          "project_id",
           "record_id",
           "expected_revision"
         ],
@@ -2697,11 +2955,18 @@
             "type": "string"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           },
           "representation_url": {
             "default": "",
@@ -2730,7 +2995,6 @@
           }
         },
         "required": [
-          "project_id",
           "source_record_id",
           "edition",
           "locator",
@@ -2845,11 +3109,18 @@
             "type": "string"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           },
           "record_id": {
             "maxLength": 500,
@@ -2895,7 +3166,6 @@
         },
         "required": [
           "draft_uuid",
-          "project_id",
           "record_id",
           "context_kind",
           "base_revision",
@@ -3849,13 +4119,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -3948,13 +4225,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -4084,13 +4368,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -5842,13 +6133,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -5928,13 +6226,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -6027,13 +6332,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -6113,13 +6425,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -6194,13 +6513,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -6346,13 +6672,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -6833,13 +7166,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -7034,13 +7374,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -7108,13 +7455,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -7242,13 +7596,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           }
         ],
@@ -7316,13 +7677,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           }
         ],
@@ -7565,13 +7933,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -7651,13 +8026,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -7776,13 +8158,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           }
         ],
@@ -7850,13 +8239,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -7919,13 +8315,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -7971,13 +8374,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -8080,13 +8490,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -8166,13 +8583,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -8247,13 +8671,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -8402,13 +8833,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -9879,6 +10317,92 @@
         "summary": "Drafts"
       }
     },
+    "/v1/workspace/intake": {
+      "post": {
+        "operationId": "intake_v1_workspace_intake_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Intake"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Intake"
+      }
+    },
+    "/v1/workspace/intake/candidates": {
+      "get": {
+        "operationId": "candidates_v1_workspace_intake_candidates_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "source_url",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 2000,
+              "title": "Source Url",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "identifier",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 2000,
+              "title": "Identifier",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Candidates"
+      }
+    },
     "/v1/workspace/note": {
       "get": {
         "operationId": "note_v1_workspace_note_get",
@@ -10182,6 +10706,108 @@
           }
         },
         "summary": "Create"
+      }
+    },
+    "/v1/workspace/source": {
+      "get": {
+        "operationId": "source_v1_workspace_source_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Source"
+      }
+    },
+    "/v1/workspace/sources": {
+      "get": {
+        "operationId": "sources_v1_workspace_sources_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 300,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 500,
+              "title": "Cursor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sources"
       }
     },
     "/v1/writing/trash": {

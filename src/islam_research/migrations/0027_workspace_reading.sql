@@ -159,7 +159,7 @@ BEGIN
     ELSIF NEW.revision <> 1 THEN
         RAISE EXCEPTION 'first revision must be one' USING ERRCODE = '23514';
     END IF;
-    IF NOT EXISTS(SELECT 1 FROM research.records r WHERE r.id=NEW.record_id AND r.project_id IS NOT DISTINCT FROM NEW.project_id AND r.deleted_at IS NULL) THEN RAISE EXCEPTION 'personal state source unavailable' USING ERRCODE='23514'; END IF;
+    IF NOT EXISTS(SELECT 1 FROM research.records r WHERE r.id=NEW.record_id AND r.project_id IS NOT DISTINCT FROM NEW.project_id AND r.deleted_at IS NULL) THEN RAISE EXCEPTION 'personal state source unavailable' USING ERRCODE='23503'; END IF;
     NEW.updated_at := clock_timestamp();
     RETURN NEW;
 END $$;
