@@ -12,13 +12,13 @@ def identifier(value):
 
 
 def get(connection, project_id, draft_id):
-    return connection.execute('SELECT * FROM research.notebook_drafts WHERE project_id=%s AND id=%s',
+    return connection.execute('SELECT * FROM research.notebook_drafts WHERE project_id IS NOT DISTINCT FROM %s AND id=%s',
                               (project_id, draft_id)).fetchone()
 
 
 def listing(connection, project_id, cursor='', limit=26):
     return connection.execute('''SELECT * FROM research.notebook_drafts
-        WHERE project_id=%s AND state='active' AND id>%s ORDER BY id LIMIT %s''',
+        WHERE project_id IS NOT DISTINCT FROM %s AND state='active' AND id>%s ORDER BY id LIMIT %s''',
         (project_id, cursor, limit)).fetchall()
 
 
@@ -41,7 +41,7 @@ def save(connection, *, draft_uuid, project_id, entry_id, request_uuid, record_i
             if base_revision < 1 or request_uuid is not None:
                 raise ValueError('Saved thoughts need a historical baseline, not a creation identity')
             historical = connection.execute('''SELECT snapshot FROM research.notebook_revisions
-                WHERE project_id=%s AND entry_id=%s AND revision=%s''', (project_id, entry_id, base_revision)).fetchone()
+                WHERE project_id IS NOT DISTINCT FROM %s AND entry_id=%s AND revision=%s''', (project_id, entry_id, base_revision)).fetchone()
             if not historical:
                 raise ValueError('Notebook baseline is unavailable in this project')
             baseline = historical['snapshot']
@@ -71,7 +71,7 @@ def save(connection, *, draft_uuid, project_id, entry_id, request_uuid, record_i
                  base_revision, db.Jsonb(baseline), db.Jsonb(clean), state, actor)).fetchone()
         else:
             row = connection.execute('''UPDATE research.notebook_drafts SET value=%s,state=%s,
-                changed_by=%s,revision=revision+1 WHERE project_id=%s AND id=%s AND revision=%s RETURNING id''',
+                changed_by=%s,revision=revision+1 WHERE project_id IS NOT DISTINCT FROM %s AND id=%s AND revision=%s RETURNING id''',
                 (db.Jsonb(clean), state, actor, project_id, draft_id, expected_revision)).fetchone()
         current = get(connection, project_id, draft_id)
         if row or (current and current['revision'] == expected_revision + 1 and current['value'] == clean

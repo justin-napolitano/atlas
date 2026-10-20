@@ -12,8 +12,8 @@ from .passages import anchor, normalize_excerpt, resolve_anchor, web_annotation
 
 def get_document(connection, project_id, document_id):
     return connection.execute("""SELECT d.* FROM research.reading_documents d
-        JOIN research.records r ON r.project_id=d.project_id AND r.id=d.source_record_id
-        WHERE d.project_id=%s AND d.id=%s AND r.deleted_at IS NULL""",(project_id,document_id)).fetchone()
+        JOIN research.records r ON r.project_id IS NOT DISTINCT FROM d.project_id AND r.id=d.source_record_id
+        WHERE (%s::text IS NULL OR d.project_id=%s) AND d.id=%s AND r.deleted_at IS NULL""",(project_id,project_id,document_id)).fetchone()
 
 
 def create_document(connection, *, project_id, source_record_id, edition, locator, representation_url, text, actor, source_notice="", document_id=None):
@@ -59,8 +59,8 @@ def documents(connection, project_id, source_record_id, cursor, limit):
 
 
 def annotation(connection, project_id, annotation_id):
-    row = connection.execute("SELECT * FROM research.reading_annotations WHERE project_id=%s AND id=%s",
-                             (project_id,annotation_id)).fetchone()
+    row = connection.execute("SELECT * FROM research.reading_annotations WHERE (%s::text IS NULL OR project_id=%s) AND id=%s",
+                             (project_id,project_id,annotation_id)).fetchone()
     if row is None:
         return None
     document = get_document(connection,project_id,row["document_id"])

@@ -9,7 +9,7 @@ import uuid
 
 from . import database as db, passage_store
 
-TYPES = {'note','question','source_claim','interpretation','objection'}
+TYPES = {'note','question','source_claim','interpretation','objection','decision','principle'}
 
 
 def _optional(value,name):
@@ -33,13 +33,13 @@ def metadata(thought_type,title,body,links,state):
 
 def get(connection,project_id,entry_id):
     return connection.execute('''SELECT n.*,r.title AS source_title,r.deleted_at IS NULL AS source_active,
-        EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed') AS trashed,
-        coalesce((SELECT t.revision FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id),0) AS trash_revision,
+        (EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed') OR EXISTS(SELECT 1 FROM research.workspace_note_trash t WHERE t.entry_id=n.id AND t.state='trashed')) AS trashed,
+        coalesce((SELECT t.revision FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id),(SELECT t.revision FROM research.workspace_note_trash t WHERE t.entry_id=n.id),0) AS trash_revision,
         d.edition,d.locator,d.text_sha256,a.exact AS selected_quote,a.start_pos,a.end_pos,to_jsonb(q) AS quran_context
-        FROM research.notebook_entries n LEFT JOIN research.quran_note_contexts q ON q.project_id=n.project_id AND q.entry_id=n.id LEFT JOIN research.records r ON r.project_id=n.project_id AND r.id=n.record_id
-        LEFT JOIN research.reading_documents d ON d.project_id=n.project_id AND d.id=n.document_id
-        LEFT JOIN research.reading_annotations a ON a.project_id=n.project_id AND a.id=n.annotation_id
-        WHERE n.project_id=%s AND n.id=%s''',(project_id,entry_id)).fetchone()
+        FROM research.notebook_entries n LEFT JOIN research.quran_note_contexts q ON q.project_id=n.project_id AND q.entry_id=n.id LEFT JOIN research.records r ON (n.project_id IS NULL OR r.project_id=n.project_id) AND r.id=n.record_id
+        LEFT JOIN research.reading_documents d ON (n.project_id IS NULL OR d.project_id=n.project_id) AND d.id=n.document_id
+        LEFT JOIN research.reading_annotations a ON (n.project_id IS NULL OR a.project_id=n.project_id) AND a.id=n.annotation_id
+        WHERE (%s::text IS NULL OR n.project_id=%s) AND n.id=%s''',(project_id,project_id,entry_id)).fetchone()
 
 
 def network(connection,project_id,limit):
@@ -58,7 +58,7 @@ def network(connection,project_id,limit):
 
 
 def _targets(connection,project_id,record_id,document_id,annotation_id,links):
-    if record_id and not connection.execute('SELECT id FROM research.records WHERE project_id=%s AND id=%s AND deleted_at IS NULL',(project_id,record_id)).fetchone():
+    if record_id and not connection.execute('SELECT id FROM research.records WHERE (%s::text IS NULL OR project_id=%s) AND id=%s AND deleted_at IS NULL',(project_id,project_id,record_id)).fetchone():
         raise ValueError('Notebook source is unavailable in this project')
     if document_id:
         document=passage_store.get_document(connection,project_id,document_id)
@@ -72,7 +72,7 @@ def _targets(connection,project_id,record_id,document_id,annotation_id,links):
             row=get(connection,project_id,link['id']);found=row and row['state']=='active'
         elif link['kind']=='annotation':
             row=passage_store.annotation(connection,project_id,link['id']);found=row and row['anchor']['anchored']
-        else:found=connection.execute('SELECT id FROM research.records WHERE project_id=%s AND id=%s AND deleted_at IS NULL',(project_id,link['id'])).fetchone()
+        else:found=connection.execute('SELECT id FROM research.records WHERE (%s::text IS NULL OR project_id=%s) AND id=%s AND deleted_at IS NULL',(project_id,project_id,link['id'])).fetchone()
         if not found:raise ValueError('Notebook connection target is unavailable in this project')
 
 
@@ -86,11 +86,12 @@ def position_anchor(connection,project_id,record_id,document_id,annotation_id,re
         raise ValueError('Reading position is outside its original document')
 
 
-def create(connection,*,request_uuid,project_id,thought_type,title,body,links,actor,record_id=None,document_id=None,annotation_id=None,reading_position=None):
+def create(connection,*,request_uuid,project_id,thought_type,title,body,links,actor,record_id=None,document_id=None,annotation_id=None,reading_position=None,title_mode='manual'):
     try:
         identifier=uuid.UUID(request_uuid)
         if identifier.version!=4 or str(identifier)!=request_uuid: raise ValueError()
     except (ValueError,TypeError,AttributeError): raise ValueError('Supply a new canonical UUID4 request identity') from None
+    if title_mode not in {'automatic','manual'}:raise ValueError('Invalid title mode')
     entry_id='urn:research:notebook:'+str(identifier)
     values=metadata(thought_type,title,body,links,'active');db._text(actor,'actor',500)
     record_id=_optional(record_id,'record id');document_id=_optional(document_id,'document id');annotation_id=_optional(annotation_id,'annotation id')
@@ -98,6 +99,7 @@ def create(connection,*,request_uuid,project_id,thought_type,title,body,links,ac
         raise ValueError('A source claim needs its exact saved passage; document/annotation anchors need their source')
     payload=dict(**values,project_id=project_id,record_id=record_id,document_id=document_id,annotation_id=annotation_id,actor=actor)
     if reading_position is not None:payload['reading_position']=reading_position
+    if title_mode=='automatic':payload['title_mode']=title_mode
     fingerprint=hashlib.sha256(json.dumps(payload,sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()
     with connection.transaction():
         existing=get(connection,project_id,entry_id)
@@ -107,16 +109,22 @@ def create(connection,*,request_uuid,project_id,thought_type,title,body,links,ac
         position_anchor(connection,project_id,record_id,document_id,annotation_id,reading_position)
         _targets(connection,project_id,record_id,document_id,annotation_id,values['links'])
         row=connection.execute('''INSERT INTO research.notebook_entries(id,project_id,creation_sha256,record_id,document_id,annotation_id,reading_position,
-            thought_type,title,body,links,changed_by) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            thought_type,title,body,links,changed_by,title_mode) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             ON CONFLICT(id) DO NOTHING RETURNING id''',
-            (entry_id,project_id,fingerprint,record_id,document_id,annotation_id,reading_position,thought_type,values['title'],values['body'],db.Jsonb(values['links']),actor)).fetchone()
+            (entry_id,project_id,fingerprint,record_id,document_id,annotation_id,reading_position,thought_type,values['title'],values['body'],db.Jsonb(values['links']),actor,title_mode)).fetchone()
         current=get(connection,project_id,entry_id)
         if current is None or current['creation_sha256']!=fingerprint: raise db.RevisionConflict(None)
         return dict(id=entry_id,project_id=project_id,revision=current['revision'],replayed=row is None)
 
 
-def update(connection,*,project_id,entry_id,expected_revision,thought_type,title,body,links,state,actor):
+def update(connection,*,project_id,entry_id,expected_revision,thought_type,title,body,links,state,actor,title_mode=None):
     values=metadata(thought_type,title,body,links,state);db._text(actor,'actor',500)
+    if title_mode is not None:
+        if title_mode not in {'automatic','manual'}:raise ValueError('Invalid title mode')
+        values['title_mode']=title_mode
+    if project_id is None:
+        original=get(connection,None,entry_id)
+        if original:project_id=original['project_id']
     if type(expected_revision) is not int or expected_revision<1: raise ValueError('Supply the last confirmed notebook revision')
     with connection.transaction():
         from .private_trash import assert_active
@@ -129,8 +137,8 @@ def update(connection,*,project_id,entry_id,expected_revision,thought_type,title
         if thought_type=='source_claim' and not previous['annotation_id']:raise ValueError('A source claim needs an exact saved passage')
         _targets(connection,project_id,previous['record_id'],previous['document_id'],previous['annotation_id'],values['links'])
         row=connection.execute('''UPDATE research.notebook_entries SET thought_type=%s,title=%s,body=%s,links=%s,state=%s,
-            changed_by=%s,revision=revision+1 WHERE project_id=%s AND id=%s AND revision=%s RETURNING id''',
-            (thought_type,values['title'],values['body'],db.Jsonb(values['links']),state,actor,project_id,entry_id,expected_revision)).fetchone()
+            changed_by=%s,title_mode=coalesce(%s,title_mode),revision=revision+1 WHERE project_id IS NOT DISTINCT FROM %s AND id=%s AND revision=%s RETURNING id''',
+            (thought_type,values['title'],values['body'],db.Jsonb(values['links']),state,actor,title_mode,project_id,entry_id,expected_revision)).fetchone()
         current=get(connection,project_id,entry_id)
         if row: return current
         if current and current['revision']==expected_revision+1 and current['changed_by']==actor and all(current[k]==v for k,v in values.items()): return current
@@ -151,10 +159,10 @@ def items(connection,project_id,q,thought_type,state,cursor,limit,item_scope="al
     return connection.execute('''WITH thoughts AS (
         SELECT 'entry' AS item_kind,n.id,n.project_id,n.thought_type,n.title,n.body,n.state,n.revision,n.updated_at,
             n.record_id,n.document_id,n.annotation_id,n.reading_position,r.title AS source_title,d.edition,d.locator,a.exact AS selected_quote,
-            n.links,coalesce((SELECT t.revision FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id),0) AS trash_revision,'entry:'||n.id AS item_key FROM research.notebook_entries n
-        LEFT JOIN research.records r ON r.project_id=n.project_id AND r.id=n.record_id
-        LEFT JOIN research.reading_documents d ON d.project_id=n.project_id AND d.id=n.document_id
-        LEFT JOIN research.reading_annotations a ON a.project_id=n.project_id AND a.id=n.annotation_id WHERE n.project_id=%s AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed')
+            n.links,coalesce((SELECT t.revision FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id),(SELECT t.revision FROM research.workspace_note_trash t WHERE t.entry_id=n.id),0) AS trash_revision,'entry:'||n.id AS item_key FROM research.notebook_entries n
+        LEFT JOIN research.records r ON (n.project_id IS NULL OR r.project_id=n.project_id) AND r.id=n.record_id
+        LEFT JOIN research.reading_documents d ON (n.project_id IS NULL OR d.project_id=n.project_id) AND d.id=n.document_id
+        LEFT JOIN research.reading_annotations a ON (n.project_id IS NULL OR a.project_id=n.project_id) AND a.id=n.annotation_id WHERE n.project_id=%s AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed')
         UNION ALL
         SELECT 'passage_note',a.id,a.project_id,'passage_note',r.title,a.body,'active',a.revision,a.updated_at,
             r.id,d.id,a.id,NULL::integer,r.title,d.edition,d.locator,a.exact,'[]'::jsonb,0,'passage_note:'||a.id

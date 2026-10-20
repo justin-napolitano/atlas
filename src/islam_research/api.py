@@ -1343,5 +1343,7 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     def publication_withdraw(value: PublicationWithdrawalInput,actor: str = Depends(owner)):
         return store.publication_withdraw(actor=actor,**value.model_dump())
 
+    from .workspace_api import register_workspace
+    register_workspace(router,store,owner)
     app.include_router(router)
     return app

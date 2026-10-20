@@ -177,16 +177,18 @@ class SharedLibraryMigrationTests(unittest.TestCase):
                 root=Path(temp);(root/'migrations').mkdir()
                 actual=Path(__file__).parents[1]/'src/islam_research/migrations'
                 for path in actual.glob('*.sql'):
-                    if path.name!=MIGRATION:shutil.copyfile(path,root/'migrations'/path.name)
+                    if path.name<MIGRATION:shutil.copyfile(path,root/'migrations'/path.name)
                 with db.connect(dsn) as c:
                     with patch('islam_research.database.files',return_value=root):db.migrate(c)
                     project,source,_=synthetic_source(db,c)
                     doc=passage_store.create_document(c,project_id=project,source_record_id=source,edition='Original é translation',locator='Chapter 1',representation_url='',text='😀 Exact é text.',actor='synthetic')
-                    note=notebook.create(c,request_uuid=str(uuid.uuid4()),project_id=project,record_id=source,document_id=doc['id'],reading_position=0,thought_type='note',title='Synthetic original',body='**Original** Markdown العربية',links=[],actor='synthetic')
+                    note={'id':'synthetic:legacy-note:'+uuid.uuid4().hex}
+                    c.execute("INSERT INTO research.notebook_entries(id,project_id,creation_sha256,record_id,document_id,reading_position,thought_type,title,body,changed_by) VALUES(%s,%s,%s,%s,%s,0,'note','Synthetic original','**Original** Markdown العربية','synthetic')",(note['id'],project,'a'*64,source,doc['id']))
                     db.save_personal_state(c,project_id=project,record_id=source,reading='read',note='Legacy private note',actor='synthetic')
                     tables=('records','record_revisions','reading_documents','notebook_entries','notebook_revisions','personal_states','personal_state_revisions')
                     before={t:c.execute(sql.SQL('SELECT to_jsonb(r) AS row FROM research.{} r ORDER BY to_jsonb(r)::text').format(sql.Identifier(t))).fetchall() for t in tables}
-                    self.assertEqual(db.migrate(c),[MIGRATION])
+                    shutil.copyfile(actual/MIGRATION,root/'migrations'/MIGRATION)
+                    with patch('islam_research.database.files',return_value=root):self.assertEqual(db.migrate(c),[MIGRATION])
                     alias=library.source_identity(c,project,source);item=library.get(c,alias['item_id'])
                     self.assertFalse(item['on_shelf']);self.assertEqual(item['reading_status'],'needs_review')
                     self.assertIsNone(item['preferred_edition_id'])
@@ -194,11 +196,12 @@ class SharedLibraryMigrationTests(unittest.TestCase):
                     self.assertEqual(library.resolve(c,item_id=item['id'],document_id=doc['id'])['text_sha256'],doc['text_sha256'])
                     self.assertEqual(rollback(c,apply=True)['applied'],True)
                     for t in tables:self.assertEqual(c.execute(sql.SQL('SELECT to_jsonb(r) AS row FROM research.{} r ORDER BY to_jsonb(r)::text').format(sql.Identifier(t))).fetchall(),before[t])
-                    self.assertEqual(db.migrate(c),[MIGRATION])
+                    shutil.copyfile(actual/MIGRATION,root/'migrations'/MIGRATION)
+                    with patch('islam_research.database.files',return_value=root):self.assertEqual(db.migrate(c),[MIGRATION])
                     self.assertEqual(library.source_identity(c,project,source)['item_id'],item['id'])
                     library.update_item(c,item_id=item['id'],expected_revision=1,on_shelf=True,reading_status='want_to_read',preferred_edition_id=None,actor='synthetic')
                     with self.assertRaises(ValueError):rollback(c,apply=True)
-                    self.assertEqual(notebook.get(c,project,note['id'])['body'],'**Original** Markdown العربية')
+                    self.assertEqual(c.execute('SELECT body FROM research.notebook_entries WHERE id=%s',(note['id'],)).fetchone()['body'],'**Original** Markdown العربية')
         finally:
             with db.connect(admin_dsn) as admin:
                 admin.autocommit=True;admin.execute(sql.SQL('DROP DATABASE {} WITH (FORCE)').format(sql.Identifier(name)))

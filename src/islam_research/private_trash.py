@@ -9,7 +9,7 @@ def target(connection, project_id, kind, target_id):
     if kind not in TARGETS:
         raise ValueError('Only notebook thoughts and margin writing can be trashed')
     table, column = TARGETS[kind]
-    return connection.execute(sql.SQL('SELECT * FROM research.{} WHERE project_id=%s AND {}=%s FOR UPDATE').format(
+    return connection.execute(sql.SQL('SELECT * FROM research.{} WHERE project_id IS NOT DISTINCT FROM %s AND {}=%s FOR UPDATE').format(
         sql.Identifier(table), sql.Identifier(column)), (project_id, target_id)).fetchone()
 
 
@@ -22,6 +22,9 @@ def assert_active(connection, project_id, kind, target_id):
     # All edit/trash/restore paths lock the same target first, closing the race
     # where a late editor could update an item concurrently with trashing it.
     target(connection, project_id, kind, target_id)
+    if project_id is None and kind=='entry':
+        current=connection.execute("SELECT state FROM research.workspace_note_trash WHERE entry_id=%s",(target_id,)).fetchone()
+        if current and current['state']=='trashed':raise ValueError('Restore this writing before editing')
     current = get(connection, project_id, kind, target_id)
     if current and current['state'] == 'trashed':
         raise ValueError('This writing is in Trash. Restore it before editing.')
