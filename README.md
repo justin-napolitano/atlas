@@ -135,3 +135,5 @@ The [linked reading workflow](docs/linked-reading-workflow.md) follows saved pas
 
 The [private research notebook](docs/research-notebook.md) collects running thoughts and live passage/record notes with exact source anchors, explained connections and revision history.
 [Recoverable private writing drafts](docs/recoverable-writing-drafts.md) preserve explicitly saved unfinished record/passage notes across sessions, with exact source anchors, historical baselines, conflict comparison and recoverable discard. Recovery fills the editor; it does not automatically commit notes or publish content.
+
+The [shared library identity foundation](docs/features/shared-library-identities.md) adds owner-only book identities and cross-project references while preserving existing notes and source links. Shelf and discovery UI remain subsequent work.

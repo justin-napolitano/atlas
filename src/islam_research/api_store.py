@@ -20,10 +20,41 @@ from . import research_search
 from . import quran_workspace
 from . import quran_progress
 from . import gutenberg, gutenberg_store
+from . import shared_library
 
 
 class PostgreSQLStore:
     """Keep private queries and public projection reads separate."""
+
+    def library_items(self,**values):
+        with db.connect(self.dsn) as c:return shared_library.listing(c,**values)
+
+    def library_item(self,item_id,project_id=''):
+        with db.connect(self.dsn) as c:return shared_library.get(c,item_id,project_id)
+
+    def library_source(self,project_id,source_record_id):
+        with db.connect(self.dsn) as c:return shared_library.source_identity(c,project_id,source_record_id)
+
+    def library_index_source(self,**values):
+        with db.connect(self.dsn) as c:return shared_library.index_source(c,**values)
+
+    def library_update_item(self,**values):
+        with db.connect(self.dsn) as c:return shared_library.update_item(c,**values)
+
+    def library_membership(self,**values):
+        with db.connect(self.dsn) as c:return shared_library.membership(c,**values)
+
+    def library_editions(self,**values):
+        with db.connect(self.dsn) as c:return shared_library.editions(c,**values)
+
+    def library_documents(self,**values):
+        with db.connect(self.dsn) as c:return shared_library.documents(c,**values)
+
+    def library_resolve(self,**values):
+        with db.connect(self.dsn) as c:return shared_library.resolve(c,**values)
+
+    def library_notes(self,**values):
+        with db.connect(self.dsn) as c:return shared_library.notes(c,**values)
 
     def gutenberg_book(self, project_id, book_id, version='', refresh=False):
         with db.connect(self.dsn) as c:
