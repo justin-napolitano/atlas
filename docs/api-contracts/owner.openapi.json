@@ -1529,11 +1529,18 @@
             "type": "boolean"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           },
           "request_uuid": {
             "maxLength": 36,
@@ -1552,7 +1559,6 @@
         "required": [
           "owner_confirmed",
           "request_uuid",
-          "project_id",
           "source_record_id",
           "expected_source_revision"
         ],
@@ -2074,7 +2080,9 @@
               "question",
               "source_claim",
               "interpretation",
-              "objection"
+              "objection",
+              "decision",
+              "principle"
             ],
             "title": "Thought Type",
             "type": "string"
@@ -2264,7 +2272,9 @@
               "question",
               "source_claim",
               "interpretation",
-              "objection"
+              "objection",
+              "decision",
+              "principle"
             ],
             "title": "Thought Type",
             "type": "string"
@@ -2376,7 +2386,9 @@
               "question",
               "source_claim",
               "interpretation",
-              "objection"
+              "objection",
+              "decision",
+              "principle"
             ],
             "title": "Thought Type",
             "type": "string"
@@ -6642,13 +6654,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {

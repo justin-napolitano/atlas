@@ -175,7 +175,12 @@ def search(connection,*,q,limit=20):
     writing=notes(connection,q=q,limit=limit)
     records=connection.execute("""SELECT id,project_id,kind,title,summary,revision FROM research.records
       WHERE deleted_at IS NULL AND review_state<>'withdrawn' AND strpos(lower(title||' '||summary),lower(%s))>0 ORDER BY id LIMIT %s""",(q,limit+1)).fetchall()
-    return dict(items=[dict(kind='entry',id=row['id'],title=row['title'],revision=row['revision'],origin_project_id=row['project_id'],thought_type=row['thought_type']) for row in writing['items']]+[dict(kind='record',id=row['id'],title=row['title'],revision=row['revision'],origin_project_id=row['project_id'],record_kind=row['kind']) for row in records[:limit]],truncated=bool(writing['next_cursor'] or len(records)>limit),coverage='Literal current note and record text. No embeddings or external search.')
+    annotations=connection.execute("""SELECT a.id,a.project_id,a.document_id,a.exact,a.revision,d.locator,d.edition,d.source_record_id
+      FROM research.reading_annotations a JOIN research.reading_documents d ON d.id=a.document_id JOIN research.records r ON r.id=d.source_record_id
+      WHERE r.deleted_at IS NULL AND r.review_state<>'withdrawn' AND strpos(lower(a.exact||' '||a.body),lower(%s))>0
+       AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed')
+       AND NOT EXISTS(SELECT 1 FROM research.workspace_annotation_trash t WHERE t.annotation_id=a.id AND t.state='trashed') ORDER BY a.id LIMIT %s""",(q,limit+1)).fetchall()
+    return dict(items=[dict(kind='entry',id=row['id'],title=row['title'],revision=row['revision'],origin_project_id=row['project_id'],thought_type=row['thought_type']) for row in writing['items']]+[dict(kind='record',id=row['id'],title=row['title'],revision=row['revision'],origin_project_id=row['project_id'],record_kind=row['kind']) for row in records[:limit]]+[dict(kind='annotation',id=row['id'],title=row['exact'],revision=row['revision'],origin_project_id=row['project_id'],document_id=row['document_id'],source_record_id=row['source_record_id'],locator=row['locator'],edition=row['edition']) for row in annotations[:limit]],truncated=bool(writing['next_cursor'] or len(records)>limit or len(annotations)>limit),coverage='Literal current notes, records and exact passage annotations. No embeddings or external search.')
 
 
 def continuing(connection,*,limit=12):

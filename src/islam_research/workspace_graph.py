@@ -139,13 +139,44 @@ def reflections(c,*,entry_id,cursor='',limit=30):
     rows=c.execute('SELECT * FROM research.workspace_reflections WHERE entry_id=%s AND id>%s ORDER BY id LIMIT %s',(entry_id,cursor,limit+1)).fetchall()
     return dict(items=rows[:limit],next_cursor=rows[limit-1]['id'] if len(rows)>limit else None)
 
+def object_edges(c,kind,id,limit):
+    rows=c.execute("SELECT * FROM research.workspace_connections WHERE state<>'withdrawn' AND ((from_kind=%s AND from_id=%s) OR (to_kind=%s AND to_id=%s)) ORDER BY id LIMIT %s",(kind,id,kind,id,limit+1)).fetchall()
+    def edge(key,left,right,relation,rationale,provenance):
+        return dict(id=key,from_kind=left[0],from_id=left[1],to_kind=right[0],to_id=right[1],relation=relation,rationale=rationale,provenance=provenance,state='existing_reference',evidence_annotation_id=None,read_only=True)
+    def note_edges(note):
+        result=[];origin=('entry',note['id']);provenance=dict(authority='notebook_entries',revision=note['revision'])
+        for link in note['links']:
+            result.append(edge('notebook-link:'+note['id']+':'+link['kind']+':'+link['id'],origin,(link['kind'],link['id']),'linked_to',link['rationale'],provenance))
+        if note['annotation_id']:result.append(edge('note-annotation:'+note['id'],origin,('annotation',note['annotation_id']),'annotates','Original exact passage anchor.',provenance))
+        if note['record_id']:result.append(edge('note-source:'+note['id'],origin,('record',note['record_id']),'comments_on','Original source context; no support claim is inferred.',provenance))
+        return result
+    if kind=='entry':
+        row=workspace.note(c,id)
+        if row:rows.extend(note_edges(row))
+    if kind=='record':
+        old=c.execute("SELECT * FROM research.relations WHERE (from_id=%s OR to_id=%s) AND review_state<>'withdrawn' ORDER BY id LIMIT %s",(id,id,limit+1)).fetchall()
+        for row in old:
+            provenance=row['provenance'];rationale=provenance.get('basis') or provenance.get('rationale') or 'Original curated relation; inspect its source provenance.'
+            rows.append(edge('record-relation:'+row['id'],('record',row['from_id']),('record',row['to_id']),row['predicate'].rsplit('/',1)[-1],str(rationale),dict(authority='research.relations',project_id=row['project_id'],original=provenance,review_state=row['review_state'])))
+    linked=c.execute("""SELECT id FROM research.notebook_entries WHERE state='active' AND
+      (links @> %s OR (%s='record' AND record_id=%s) OR (%s='annotation' AND annotation_id=%s)) ORDER BY id LIMIT %s""",(db.Jsonb([dict(kind=kind,id=id)]),kind,id,kind,id,limit+1)).fetchall()
+    for row in linked:
+        note=workspace.note(c,row['id'])
+        if note and not note['trashed']:rows.extend(e for e in note_edges(note) if (e['from_kind'],e['from_id'])==(kind,id) or (e['to_kind'],e['to_id'])==(kind,id))
+    if kind=='annotation':
+        row=passage_store.annotation(c,None,id)
+        if row:
+            mark=row['annotation'];doc=passage_store.get_document(c,None,mark['document_id'])
+            rows.append(edge('annotation-source:'+id,('annotation',id),('record',doc['source_record_id']),'located_in',doc['edition']+' · '+doc['locator'],dict(authority='reading_annotations',document_id=doc['id'],text_sha256=doc['text_sha256'],start=mark['start_pos'],end=mark['end_pos'])))
+    return rows
+
 def neighborhood(c,*,kind,id,depth=1,limit=40):
     if type(depth) is not int or not 1<=depth<=2 or type(limit) is not int or not 1<=limit<=100:raise ValueError('Choose a bounded neighborhood')
     root=require_target(c,kind,id);nodes={(kind,id):root};edges={};front=[(kind,id)];truncated=False
     for _ in range(depth):
         following=[]
         for k,i in front:
-            rows=c.execute("SELECT * FROM research.workspace_connections WHERE state<>'withdrawn' AND ((from_kind=%s AND from_id=%s) OR (to_kind=%s AND to_id=%s)) ORDER BY id LIMIT %s",(k,i,k,i,limit+1)).fetchall()
+            rows=object_edges(c,k,i,limit)
             if len(rows)>limit:truncated=True
             for row in rows[:limit]:
                 key=(row['to_kind'],row['to_id']) if (row['from_kind'],row['from_id'])==(k,i) else (row['from_kind'],row['from_id'])
@@ -156,4 +187,4 @@ def neighborhood(c,*,kind,id,depth=1,limit=40):
                 if len(edges)>=limit:truncated=True;continue
                 edges[row['id']]=row
         front=following
-    return dict(root=root,nodes=list(nodes.values()),edges=list(edges.values()),truncated=truncated,coverage='Explicit private connections only; no inferred similarity or scholarly consensus.')
+    return dict(root=root,nodes=list(nodes.values()),edges=list(edges.values()),truncated=truncated,coverage='Explicit private connections and original note/source/curated references; no inferred similarity or scholarly consensus.')

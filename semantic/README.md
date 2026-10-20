@@ -42,3 +42,28 @@ Validation verifies hashes, upstream JSON Schema, unique names, table/field bind
 For an upstream upgrade: select an immutable revision, retain its original notices, inspect breaking changes, update the manifest/model adapter, and run negative compatibility tests before accepting the new contract. Do not edit the vendored schema to make our model pass. The later main-branch flat document format is deliberately rejected by this pinned adapter until explicitly migrated.
 
 See #34 for interoperability, #36/#55 for ranking/extraction, #37 for runtime graph traversal, #38 for authenticated model discovery, and #50 for editorial interpretation/review.
+
+
+## Connected owner workspace (2026-10-19)
+
+The current model includes owner-global core identities and optional collections,
+saved views, explicit connections, investigations and immutable reflection reasons.
+`workspace_id` is ownership. `project_id` is nullable, immutable historical origin;
+existing composite relationships remain compatibility descriptions. Additional
+`workspace_document_source` and `workspace_annotation_document` joins use globally
+unique IDs, including new null-origin material. Polymorphic connection/membership
+references require the declared target kind together with the ID; title equality is
+never an identity join or evidence relation.
+
+The `COMMON` extension records bounded registered owner operations: literal application
+state search, Continue and a 1–2 hop neighborhood. The runtime combines explicit private
+connections with original note/source/curated references, retaining their provenance.
+It does not execute model SQL. New academic relations are tentative until explicitly
+accepted with attribution and a located source annotation. Existing curated RDF remains
+its own editorial authority. Search is literal and current-revision based; embeddings,
+learned ranking and large graph analytics remain deferred definitions.
+
+Historical projects are mapped once to optional collections by migration 0029, with an
+explicit immutable alias table. Their content IDs/bodies/origins are unchanged. Subsequent
+collection membership or naming edits do not change historical project records, grant
+access, publish material or copy notes. A zero-project workspace receives no collection.
