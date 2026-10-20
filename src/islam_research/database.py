@@ -143,7 +143,7 @@ def save_personal_state(connection: psycopg.Connection, *, record_id: str, proje
             row = connection.execute("""UPDATE research.personal_states SET
                 reading=%s,read_at=CASE WHEN %s='read' THEN COALESCE(read_at,clock_timestamp()) END,
                 decision=%s,note=%s,changed_by=%s,revision=revision+1
-                WHERE record_id=%s AND project_id=%s AND revision=%s RETURNING *""",
+                WHERE record_id=%s AND project_id IS NOT DISTINCT FROM %s AND revision=%s RETURNING *""",
                 (reading, reading, decision, note, actor, record_id, project_id, expected_revision)).fetchone()
         if row is None:
             current = connection.execute("SELECT * FROM research.personal_states WHERE record_id=%s",

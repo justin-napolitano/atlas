@@ -39,7 +39,7 @@ def get(connection,project_id,entry_id):
         FROM research.notebook_entries n LEFT JOIN research.quran_note_contexts q ON q.project_id=n.project_id AND q.entry_id=n.id LEFT JOIN research.records r ON (n.project_id IS NULL OR r.project_id=n.project_id) AND r.id=n.record_id
         LEFT JOIN research.reading_documents d ON (n.project_id IS NULL OR d.project_id=n.project_id) AND d.id=n.document_id
         LEFT JOIN research.reading_annotations a ON (n.project_id IS NULL OR a.project_id=n.project_id) AND a.id=n.annotation_id
-        WHERE (%s::text IS NULL OR n.project_id=%s) AND n.id=%s''',(project_id,project_id,entry_id)).fetchone()
+        WHERE (%s::text IS NULL OR n.project_id IS NOT DISTINCT FROM %s) AND n.id=%s''',(project_id,project_id,entry_id)).fetchone()
 
 
 def network(connection,project_id,limit):
@@ -147,7 +147,7 @@ def update(connection,*,project_id,entry_id,expected_revision,thought_type,title
 
 def history(connection,project_id,entry_id,before_revision,limit):
     if get(connection,project_id,entry_id) is None:return None
-    return connection.execute('''SELECT revision,snapshot FROM research.notebook_revisions WHERE project_id=%s AND entry_id=%s
+    return connection.execute('''SELECT revision,snapshot FROM research.notebook_revisions WHERE project_id IS NOT DISTINCT FROM %s AND entry_id=%s
         AND (%s::integer IS NULL OR revision<%s) ORDER BY revision DESC LIMIT %s''',(project_id,entry_id,before_revision,before_revision,limit)).fetchall()
 
 
@@ -162,18 +162,18 @@ def items(connection,project_id,q,thought_type,state,cursor,limit,item_scope="al
             n.links,coalesce((SELECT t.revision FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id),(SELECT t.revision FROM research.workspace_note_trash t WHERE t.entry_id=n.id),0) AS trash_revision,'entry:'||n.id AS item_key FROM research.notebook_entries n
         LEFT JOIN research.records r ON (n.project_id IS NULL OR r.project_id=n.project_id) AND r.id=n.record_id
         LEFT JOIN research.reading_documents d ON (n.project_id IS NULL OR d.project_id=n.project_id) AND d.id=n.document_id
-        LEFT JOIN research.reading_annotations a ON (n.project_id IS NULL OR a.project_id=n.project_id) AND a.id=n.annotation_id WHERE n.project_id=%s AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed')
+        LEFT JOIN research.reading_annotations a ON (n.project_id IS NULL OR a.project_id=n.project_id) AND a.id=n.annotation_id WHERE n.project_id IS NOT DISTINCT FROM %s AND NOT EXISTS(SELECT 1 FROM research.workspace_note_trash w WHERE w.entry_id=n.id AND w.state='trashed') AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed')
         UNION ALL
         SELECT 'passage_note',a.id,a.project_id,'passage_note',r.title,a.body,'active',a.revision,a.updated_at,
             r.id,d.id,a.id,NULL::integer,r.title,d.edition,d.locator,a.exact,'[]'::jsonb,0,'passage_note:'||a.id
-        FROM research.reading_annotations a JOIN research.reading_documents d ON d.project_id=a.project_id AND d.id=a.document_id
-        JOIN research.records r ON r.project_id=d.project_id AND r.id=d.source_record_id
-        WHERE a.project_id=%s AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed') AND btrim(a.body)<>'' AND r.deleted_at IS NULL
+        FROM research.reading_annotations a JOIN research.reading_documents d ON d.project_id IS NOT DISTINCT FROM a.project_id AND d.id=a.document_id
+        JOIN research.records r ON r.project_id IS NOT DISTINCT FROM d.project_id AND r.id=d.source_record_id
+        WHERE a.project_id IS NOT DISTINCT FROM %s AND NOT EXISTS(SELECT 1 FROM research.workspace_annotation_trash w WHERE w.annotation_id=a.id AND w.state='trashed') AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed') AND btrim(a.body)<>'' AND r.deleted_at IS NULL
         UNION ALL
         SELECT 'record_note',p.record_id,p.project_id,'record_note',r.title,p.note,'active',p.revision,p.updated_at,
             r.id,NULL::text,NULL::text,NULL::integer,r.title,NULL::text,NULL::text,NULL::text,'[]'::jsonb,0,'record_note:'||r.id
-        FROM research.personal_states p JOIN research.records r ON r.project_id=p.project_id AND r.id=p.record_id
-        WHERE p.project_id=%s AND btrim(p.note)<>'' AND r.deleted_at IS NULL), ordered AS (
+        FROM research.personal_states p JOIN research.records r ON r.project_id IS NOT DISTINCT FROM p.project_id AND r.id=p.record_id
+        WHERE p.project_id IS NOT DISTINCT FROM %s AND btrim(p.note)<>'' AND r.deleted_at IS NULL), ordered AS (
         SELECT thoughts.*,to_char(updated_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US')||':'||item_key AS cursor FROM thoughts)
         SELECT * FROM ordered WHERE (%s::text IS NULL OR document_id=%s) AND (NOT %s OR reading_position IS NOT NULL) AND (%s='all' OR (%s='writing' AND item_kind='entry') OR (%s='reading' AND item_kind<>'entry')) AND state=%s AND (%s='' OR thought_type=%s) AND (%s='' OR cursor<%s)
         AND (%s='' OR to_tsvector('simple',title||' '||body||' '||coalesce(selected_quote,'')) @@ plainto_tsquery('simple',%s))

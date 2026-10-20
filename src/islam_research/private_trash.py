@@ -14,6 +14,9 @@ def target(connection, project_id, kind, target_id):
 
 
 def get(connection, project_id, kind, target_id):
+    if project_id is None:
+        table,column=('workspace_note_trash','entry_id') if kind=='entry' else ('workspace_annotation_trash','annotation_id')
+        return connection.execute(sql.SQL('SELECT *,NULL::text AS project_id FROM research.{} WHERE {}=%s').format(sql.Identifier(table),sql.Identifier(column)),(target_id,)).fetchone()
     return connection.execute('SELECT * FROM research.note_trash WHERE project_id=%s AND target_kind=%s AND target_id=%s',
                               (project_id, kind, target_id)).fetchone()
 
@@ -45,6 +48,13 @@ def change(connection, *, project_id, target_kind, target_id, target_revision, e
             return current
         if (current['revision'] if current else 0) != expected_revision:
             raise db.RevisionConflict(current)
+        if project_id is None:
+            if target_kind=='entry':
+                from .workspace_store import trash
+                return trash(connection,entry_id=target_id,target_revision=target_revision,expected_revision=expected_revision,state=state,actor=actor)
+            if current:
+                return connection.execute('UPDATE research.workspace_annotation_trash SET state=%s,target_revision=%s,changed_by=%s,revision=revision+1 WHERE annotation_id=%s RETURNING *',(state,target_revision,actor,target_id)).fetchone()
+            return connection.execute('INSERT INTO research.workspace_annotation_trash(annotation_id,target_revision,state,changed_by) VALUES(%s,%s,%s,%s) RETURNING *',(target_id,target_revision,state,actor)).fetchone()
         if current:
             return connection.execute('''UPDATE research.note_trash SET state=%s,target_revision=%s,
                 changed_by=%s,revision=revision+1 WHERE project_id=%s AND target_kind=%s AND target_id=%s RETURNING *''',

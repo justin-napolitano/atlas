@@ -25,6 +25,7 @@ def snapshot(connection, book_id, version=''):
 
 
 def place(connection, project_id, book_id):
+    if project_id is None:return connection.execute("SELECT *,NULL::text AS project_id FROM research.workspace_gutenberg_places WHERE workspace_id='owner' AND book_id=%s",(book_id,)).fetchone()
     return connection.execute('SELECT * FROM research.gutenberg_places WHERE project_id=%s AND book_id=%s',
                               (project_id,book_id)).fetchone()
 
@@ -32,7 +33,7 @@ def place(connection, project_id, book_id):
 def representation(value, project_id, section):
     if type(section) is not int or not 0<=section<len(value['sections']): raise ValueError('Unknown reading section')
     chunk=value['sections'][section]
-    base=project_id+'\n'+f"gutenberg:{value['book_id']}"
+    base=(project_id or 'workspace:owner')+'\n'+f"gutenberg:{value['book_id']}"
     source_id='urn:research:source:'+str(uuid.uuid5(uuid.NAMESPACE_URL,base))
     document_id='urn:research:document:'+str(uuid.uuid5(uuid.NAMESPACE_URL,base+'\n'+value['version']+'\n'+str(section)))
     # A concise provenance notice; the complete source header/license stays with the retained book.
@@ -79,13 +80,16 @@ def save_place(connection, *, project_id, book_id, version, section, position, e
         desired=dict(version=version,section=section,position=position)
         if old and old['revision']==expected_revision+1 and all(old[k]==v for k,v in desired.items()): return old
         if (old['revision'] if old else 0)!=expected_revision: raise db.RevisionConflict(old)
+        table='workspace_gutenberg_places' if project_id is None else 'gutenberg_places'
+        column='workspace_id' if project_id is None else 'project_id'
+        key=project_id or 'owner'
         if old:
-            connection.execute('''UPDATE research.gutenberg_places SET version=%s,section=%s,position=%s,
-                revision=revision+1,changed_by=%s,updated_at=clock_timestamp() WHERE project_id=%s AND book_id=%s''',
-                (version,section,position,actor,project_id,book_id))
+            connection.execute(f'''UPDATE research.{table} SET version=%s,section=%s,position=%s,
+                revision=revision+1,changed_by=%s,updated_at=clock_timestamp() WHERE {column}=%s AND book_id=%s''',
+                (version,section,position,actor,key,book_id))
         else:
-            connection.execute('''INSERT INTO research.gutenberg_places(project_id,book_id,version,section,position,changed_by)
-                VALUES(%s,%s,%s,%s,%s,%s)''',(project_id,book_id,version,section,position,actor))
+            connection.execute(f'''INSERT INTO research.{table}({column},book_id,version,section,position,changed_by)
+                VALUES(%s,%s,%s,%s,%s,%s)''',(key,book_id,version,section,position,actor))
         from .library_shelf import mark_reading
         mark_reading(connection,source_id=target['source_record_id'],edition=target['edition'],representation_url=target['representation_url'],actor=actor)
         return place(connection,project_id,book_id)

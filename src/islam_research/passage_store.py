@@ -98,13 +98,16 @@ def create_annotation(connection, *, annotation_uuid, project_id, document_id, t
             if any(row[k] != v for k,v in {"project_id":project_id,"document_id":document_id,"start_pos":start,"end_pos":end,
                 "exact":exact,"text_sha256":text_sha256,"capture_kind":capture_kind,"body":body,"changed_by":actor,"mark_style":mark_style}.items()):
                 raise db.RevisionConflict(row)
+        if project_id is None:
+            from .workspace_store import retain_source
+            retain_source(connection,document['source_record_id'],actor)
         return row
 
 
 def annotations(connection, project_id, document_id, cursor, limit):
     if get_document(connection,project_id,document_id) is None:
         return []
-    return connection.execute("SELECT a.*,coalesce((SELECT t.revision FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id),0) AS trash_revision FROM research.reading_annotations a WHERE project_id IS NOT DISTINCT FROM %s AND document_id=%s AND id>%s AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed') ORDER BY id LIMIT %s",
+    return connection.execute("SELECT a.*,coalesce((SELECT t.revision FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id),0) AS trash_revision FROM research.reading_annotations a WHERE project_id IS NOT DISTINCT FROM %s AND document_id=%s AND id>%s AND NOT EXISTS(SELECT 1 FROM research.workspace_annotation_trash w WHERE w.annotation_id=a.id AND w.state='trashed') AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed') ORDER BY id LIMIT %s",
                               (project_id,document_id,cursor,limit)).fetchall()
 
 

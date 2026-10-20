@@ -7,10 +7,10 @@ from .quran_citations import reference, PROFILE_ID
 def existing(connection,*,project_id,resource_key,chapter,ayah_start,ayah_end,note_scope="verse"):
     value=_representation(resource_key,chapter,ayah_start,ayah_end,note_scope)
     resource=value['resource']
-    source_id='urn:research:source:'+str(uuid.uuid5(uuid.NAMESPACE_URL,project_id+'\n'+resource['resource_id']))
-    if note_scope!='verse':return dict(project_id=project_id,record_id=source_id,resource_id=resource['resource_id'],resource_key=resource_key,reference=value['reference'],document=None) if connection.execute('SELECT id FROM research.records WHERE project_id=%s AND id=%s AND deleted_at IS NULL',(project_id,source_id)).fetchone() else None
+    source_id='urn:research:source:'+str(uuid.uuid5(uuid.NAMESPACE_URL,(project_id or 'workspace:owner')+'\n'+resource['resource_id']))
+    if note_scope!='verse':return dict(project_id=project_id,record_id=source_id,resource_id=resource['resource_id'],resource_key=resource_key,reference=value['reference'],document=None) if connection.execute('SELECT id FROM research.records WHERE project_id IS NOT DISTINCT FROM %s AND id=%s AND deleted_at IS NULL',(project_id,source_id)).fetchone() else None
     document=connection.execute('''SELECT d.* FROM research.reading_documents d JOIN research.records r
-        ON r.project_id=d.project_id AND r.id=d.source_record_id WHERE d.project_id=%s AND d.source_record_id=%s
+        ON r.project_id IS NOT DISTINCT FROM d.project_id AND r.id=d.source_record_id WHERE d.project_id IS NOT DISTINCT FROM %s AND d.source_record_id=%s
         AND d.locator=%s AND d.text_sha256=%s AND r.deleted_at IS NULL ORDER BY d.id LIMIT 1''',
         (project_id,source_id,value['reference']['label'],value['text_sha256'])).fetchone()
     if document is None:return None
@@ -20,13 +20,13 @@ def existing(connection,*,project_id,resource_key,chapter,ayah_start,ayah_end,no
 def binding(connection,*,project_id,resource_key,chapter,ayah_start,ayah_end,actor,note_scope="verse"):
     value=_representation(resource_key,chapter,ayah_start,ayah_end,note_scope)
     resource=value['resource']
-    source_id='urn:research:source:'+str(uuid.uuid5(uuid.NAMESPACE_URL,project_id+'\n'+resource['resource_id']))
+    source_id='urn:research:source:'+str(uuid.uuid5(uuid.NAMESPACE_URL,(project_id or 'workspace:owner')+'\n'+resource['resource_id']))
     with connection.transaction():
         connection.execute('SELECT pg_advisory_xact_lock(184514,hashtext(%s))',(source_id,))
         attributes=dict(quran_resource=resource['key'],resource_id=resource['resource_id'],source_sha256=resource['sha256'],license_url=resource['license_url'])
         connection.execute('''INSERT INTO research.records(id,project_id,kind,title,attributes,changed_by)
             VALUES(%s,%s,'source',%s,%s,%s) ON CONFLICT(id) DO NOTHING''',(source_id,project_id,resource['label'],db.Jsonb(attributes),actor))
-        source=connection.execute('SELECT * FROM research.records WHERE project_id=%s AND id=%s AND deleted_at IS NULL',(project_id,source_id)).fetchone()
+        source=connection.execute('SELECT * FROM research.records WHERE project_id IS NOT DISTINCT FROM %s AND id=%s AND deleted_at IS NULL',(project_id,source_id)).fetchone()
         if not source or source['kind']!='source' or any(source['attributes'].get(k)!=attributes[k] for k in ('resource_id','source_sha256')):
             raise ValueError('This resource binding requires reconciliation')
         if note_scope!='verse':return dict(project_id=project_id,record_id=source_id,resource_id=resource['resource_id'],resource_key=resource_key,reference=value['reference'],document=None)
@@ -57,6 +57,9 @@ def create_note(connection,*,project_id,resource_key,chapter,ayah_start,ayah_end
         connection.execute("INSERT INTO research.quran_note_contexts(entry_id,project_id,resource_key,note_scope,chapter,ayah_start,ayah_end) VALUES(%s,%s,%s,%s,%s,%s,%s) ON CONFLICT(entry_id) DO NOTHING",(result['id'],*context.values()))
         previous=connection.execute('SELECT * FROM research.quran_note_contexts WHERE entry_id=%s',(result['id'],)).fetchone()
         if any(previous[k]!=v for k,v in context.items()):raise db.RevisionConflict(None)
+        if project_id is None:
+            from .workspace_store import retain_source
+            retain_source(connection,bound['record_id'],actor)
         return dict(binding=bound,note=notebook.get(connection,project_id,result['id']))
 
 
@@ -65,33 +68,38 @@ def notes(connection,*,project_id,resource_key,chapter,note_scope,cursor='',limi
     reference(chapter,1)
     if resource_key not in quran_reader.RESOURCES:raise ValueError('Unavailable resource')
     rows=connection.execute("""SELECT n.id FROM research.quran_note_contexts q JOIN research.notebook_entries n
-        ON n.project_id=q.project_id AND n.id=q.entry_id JOIN research.records r ON r.project_id=n.project_id AND r.id=n.record_id
-        WHERE q.project_id=%s AND q.resource_key=%s AND q.note_scope=%s AND (q.chapter=%s OR q.note_scope='source')
+        ON n.project_id IS NOT DISTINCT FROM q.project_id AND n.id=q.entry_id JOIN research.records r ON r.project_id IS NOT DISTINCT FROM n.project_id AND r.id=n.record_id
+        WHERE q.project_id IS NOT DISTINCT FROM %s AND q.resource_key=%s AND q.note_scope=%s AND (q.chapter=%s OR q.note_scope='source')
         AND r.attributes->>'resource_id'=%s
-        AND n.state='active' AND r.deleted_at IS NULL AND n.id>%s AND NOT EXISTS(SELECT 1 FROM research.note_trash t
+        AND NOT EXISTS(SELECT 1 FROM research.workspace_note_trash t WHERE t.entry_id=n.id AND t.state='trashed') AND n.state='active' AND r.deleted_at IS NULL AND n.id>%s AND NOT EXISTS(SELECT 1 FROM research.note_trash t
         WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed') ORDER BY n.id LIMIT %s""",(project_id,resource_key,note_scope,chapter,quran_reader._load(resource_key)[1]['resource_id'],cursor,limit))
     return [notebook.get(connection,project_id,row['id']) for row in rows]
 
 
 def place(connection,project_id):
-    return connection.execute('SELECT * FROM research.quran_places WHERE project_id=%s',(project_id,)).fetchone()
+    if project_id is None:
+        row=connection.execute("SELECT *,NULL::text AS project_id FROM research.workspace_quran_places WHERE workspace_id='owner'").fetchone()
+        return row
+    return connection.execute('SELECT * FROM research.quran_places WHERE project_id IS NOT DISTINCT FROM %s',(project_id,)).fetchone()
 
 
 def save_place(connection,*,project_id,resource_key,chapter,ayah,expected_revision,actor):
     reference(chapter,ayah)
     if resource_key not in quran_reader.RESOURCES:raise ValueError('Unavailable resource')
     with connection.transaction():
-        connection.execute('SELECT pg_advisory_xact_lock(184514,hashtext(%s))',('quran-place:'+project_id,))
+        connection.execute('SELECT pg_advisory_xact_lock(184514,hashtext(%s))',('quran-place:'+(project_id or 'workspace:owner'),))
         old=place(connection,project_id)
         values=dict(resource_key=resource_key,chapter=chapter,ayah=ayah,changed_by=actor)
         if old and old['revision']==expected_revision+1 and all(old[k]==v for k,v in values.items()):return old
         if (old['revision'] if old else 0)!=expected_revision:raise db.RevisionConflict(old)
-        connection.execute('''INSERT INTO research.quran_places(project_id,resource_key,chapter,ayah,changed_by)
-            VALUES(%s,%s,%s,%s,%s) ON CONFLICT(project_id) DO UPDATE SET resource_key=EXCLUDED.resource_key,chapter=EXCLUDED.chapter,
-            ayah=EXCLUDED.ayah,changed_by=EXCLUDED.changed_by,revision=research.quran_places.revision+1,updated_at=clock_timestamp()''',(project_id,resource_key,chapter,ayah,actor))
+        table='workspace_quran_places' if project_id is None else 'quran_places'
+        column='workspace_id' if project_id is None else 'project_id'
+        connection.execute(f'''INSERT INTO research.{table}({column},resource_key,chapter,ayah,changed_by)
+            VALUES(%s,%s,%s,%s,%s) ON CONFLICT({column}) DO UPDATE SET resource_key=EXCLUDED.resource_key,chapter=EXCLUDED.chapter,
+            ayah=EXCLUDED.ayah,changed_by=EXCLUDED.changed_by,revision=research.{table}.revision+1,updated_at=clock_timestamp()''',(project_id or 'owner',resource_key,chapter,ayah,actor))
         from .library_shelf import mark_reading
         _,resource=quran_reader._load(resource_key)
-        source_id='urn:research:source:'+str(uuid.uuid5(uuid.NAMESPACE_URL,project_id+'\n'+resource['resource_id']))
+        source_id='urn:research:source:'+str(uuid.uuid5(uuid.NAMESPACE_URL,(project_id or 'workspace:owner')+'\n'+resource['resource_id']))
         mark_reading(connection,source_id=source_id,edition=resource['label'] if resource_key=='tanzil-uthmani' else resource['label']+' · '+resource['version'],representation_url=resource['source_url'],actor=actor)
         return place(connection,project_id)
 
@@ -99,9 +107,9 @@ def save_place(connection,*,project_id,resource_key,chapter,ayah,expected_revisi
 def marks(connection,*,project_id,chapter,cursor='',limit=101):
     reference(chapter,1)
     return connection.execute("""SELECT a.*,d.source_record_id,CASE WHEN r.attributes->>'resource_id'=%s THEN 'tanzil-uthmani' ELSE r.attributes->>'quran_resource' END AS resource_key,d.locator
-        FROM research.reading_annotations a JOIN research.reading_documents d ON d.project_id=a.project_id AND d.id=a.document_id
-        JOIN research.records r ON r.project_id=d.project_id AND r.id=d.source_record_id
-        WHERE a.project_id=%s AND a.id>%s AND d.locator ~ %s AND r.deleted_at IS NULL
+        FROM research.reading_annotations a JOIN research.reading_documents d ON d.project_id IS NOT DISTINCT FROM a.project_id AND d.id=a.document_id
+        JOIN research.records r ON r.project_id IS NOT DISTINCT FROM d.project_id AND r.id=d.source_record_id
+        WHERE a.project_id IS NOT DISTINCT FROM %s AND a.id>%s AND d.locator ~ %s AND r.deleted_at IS NULL
         AND r.attributes->>'resource_id'=ANY(%s)
-        AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed')
+        AND NOT EXISTS(SELECT 1 FROM research.workspace_annotation_trash w WHERE w.annotation_id=a.id AND w.state='trashed') AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed')
         ORDER BY a.id LIMIT %s""",(quran_reader._load('tanzil-uthmani')[1]['resource_id'],project_id,cursor,'^Q '+str(chapter)+':[0-9]+$',[quran_reader._load(k)[1]['resource_id'] for k in quran_reader.RESOURCES],limit)).fetchall()
