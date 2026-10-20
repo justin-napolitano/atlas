@@ -30,6 +30,7 @@ def create_note(connection,*,request_uuid,body,actor,title='',thought_type='note
         result=notebook.create(connection,request_uuid=request_uuid,project_id=origin,body=body,actor=actor,
           title=title if mode=='manual' else derived_title(body),title_mode=mode,thought_type=thought_type,links=links or [],
           record_id=record_id,document_id=document_id,annotation_id=annotation_id,reading_position=reading_position)
+        if record_id and origin is None:retain_source(connection,record_id,actor)
         return note(connection,result['id'])
 
 
@@ -152,4 +153,17 @@ def intake(connection,**fields):
         if not result['replayed']:
             shared_library.index_source(connection,request_uuid=fields['intake_uuid'],project_id=origin,
               source_record_id=row['id'],expected_source_revision=row['revision'],actor=fields['actor'])
+        retain_source(connection,result['record_id'],fields['actor'])
         return result
+
+
+def retain_source(connection,record_id,actor):
+    # Only a first native retention is automatic after deliberate intake/writing.
+    # Explicit removal (a later revision) is never undone by another note.
+    source=db.get_record(connection,record_id)
+    if source['project_id'] is not None:return
+    from . import shared_library
+    item_id=connection.execute('SELECT research.index_library_source(%s) AS id',(record_id,)).fetchone()['id']
+    item=connection.execute('SELECT * FROM research.library_items WHERE id=%s FOR UPDATE',(item_id,)).fetchone()
+    if item['revision']==1 and not item['on_shelf']:
+        shared_library.update_item(connection,item_id=item_id,expected_revision=1,on_shelf=True,reading_status='reading',preferred_edition_id=None,actor=actor)
