@@ -3,7 +3,7 @@
 .source-reader[data-reading-theme=paper] { --paper:#f5efe1; --ink:#29251f; --muted:#625a4d; --rule:#d8cdb9; --accent:#9c2335; --accent-wash:#ede0d7; --atlas-sidebar:#ece4d5; }
 .source-reader[data-reading-theme=dark] { --paper:#1b1b1d; --ink:#ededed; --muted:#b9b9bc; --rule:#48484b; --accent:#f58b9b; --accent-wash:#39272d; --atlas-sidebar:#29292c; }
 .source-reader[data-reading-theme]:not([data-reading-theme=auto]) { padding-inline:clamp(10px,2vw,24px); border-radius:4px; }
-.source-reader .reader-text { font-family:var(--reading-font); font-size:var(--reading-size); line-height:var(--reading-spacing); white-space:pre-wrap; max-width:var(--reading-width); margin-inline:auto; text-align:start; }
+.source-reader[data-reading-theme] .reader-text { font-family:var(--reading-font); font-size:var(--reading-size); line-height:var(--reading-spacing); white-space:pre-wrap; max-width:var(--reading-width); margin-inline:auto; text-align:start; }
 .source-reader .reader-margin { font-size:var(--notes-size); --notebook-rule:var(--rule); --notebook-muted:var(--muted); }
 .source-reader .reader-margin .notebook-markdown,.source-reader .reader-margin .location-margin-notes textarea,.source-reader .reader-margin .passage-note-edit textarea,.source-reader .reader-margin .reader-capture textarea { font:400 var(--notes-size)/var(--reading-spacing) ui-sans-serif,system-ui,"Geeza Pro",Tahoma,sans-serif; }
 .source-reader .reader-margin .notebook-markdown h1 { font-size:1.45em; }
@@ -43,9 +43,9 @@
 .reading-page-steps { display:flex; justify-content:space-between; gap:12px; padding-block:12px; }
 .source-reader .reading-page-steps button { font-size:14px; padding:6px 10px; border:1px solid var(--rule); }
 .source-reader .reader-selection-hint { font-size:12px; }
-@media(max-width:600px) { .reading-appearance-panel > summary span { display:none; } .reading-options { position:fixed; top:100px; inset-inline:12px; width:auto; max-height:calc(100dvh - 125px); } .source-reader .reader-text { padding-inline-end:0; } }
+@media(max-width:600px) { .reading-appearance-panel > summary span { display:none; } .reading-options { position:fixed; top:100px; inset-inline:12px; width:auto; max-height:calc(100dvh - 125px); } .source-reader[data-reading-theme] .reader-text { padding-inline-end:0; } }
 /* Resolve each preserved paragraph independently in mixed Arabic/English text. */
-.source-reader .reader-text { unicode-bidi:plaintext; }
+.source-reader[data-reading-theme] .reader-text { unicode-bidi:plaintext; }
 
 /* The text is the primary surface. Workspace chrome must not override typography. */
 .source-reader .reader-heading-row { justify-content:flex-start; padding:8px 0; border-bottom:1px solid var(--rule); }
@@ -62,7 +62,7 @@
 .source-reader .reader-edition-bar { padding:10px 0 12px; }
 .source-reader .reader-edition-picker { font-size:12px; color:var(--muted); }
 .source-reader .reader-page { padding-top:8px; padding-bottom:18px; }
-.source-reader .reader-text { max-height:none; padding-block:4px 16px; }
+.source-reader[data-reading-theme] .reader-text { max-height:none; padding-block:4px 16px; }
 .source-reader .reader-selection-hint { margin:8px 0 18px; color:var(--muted); }
 .source-reader .reader-edition-details,.source-reader .reader-import { margin-block:8px; }
 .source-reader .reading-options input[type=range] { appearance:none; -webkit-appearance:none; height:36px; padding:0; background:transparent; border:0; cursor:pointer; }
@@ -81,7 +81,7 @@
 .source-reader .reader-view-actions > button[aria-expanded=true],.source-reader .reader-view-actions > button[aria-pressed=true] { color:var(--accent); background:var(--accent-wash); }
 .source-reader .reader-heading-row { border-bottom:0; padding:0 0 16px; }
 .source-reader .reader-page { position:static; padding-top:0; }
-.source-reader .reader-text { padding-block:8px 24px; overflow-wrap:anywhere; }
+.source-reader[data-reading-theme] .reader-text { padding-block:8px 24px; overflow-wrap:anywhere; }
 .source-reader .reader-selection-hint { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
 .source-reader .reader-selection-hint button { font:inherit; color:var(--muted); padding:6px; min-height:36px; }
 .source-reader .reader-edition-details > summary { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }

@@ -28,6 +28,14 @@ class WorkspaceReadingTests(unittest.TestCase):
         place=quran.place(self.c,None);revision=place['revision'] if place else 0
         moved=quran.save_place(self.c,project_id=None,resource_key='itani-god',chapter=4,ayah=59,expected_revision=revision,actor='synthetic')
         self.assertEqual(moved['ayah'],59)
+        from islam_research import shared_library,library_shelf
+        alias=shared_library.source_identity(self.c,None,bound['record_id'])
+        item=shared_library.get(self.c,alias['item_id'])
+        edition=shared_library.documents(self.c,item['id'])[0]
+        target=shared_library.resolve(self.c,item_id=item['id'],document_id=doc['id'])
+        shared_library.update_item(self.c,item_id=item['id'],expected_revision=item['revision'],on_shelf=True,reading_status='reading',preferred_edition_id=target['edition_id'],actor='synthetic')
+        shelf=next(row for row in library_shelf.page(self.c)['items'] if row['id']==item['id'])
+        self.assertEqual((shelf['resume_chapter'],shelf['resume_ayah']),(4,59))
         desk=reading_desk.get(self.c,None)
         desk=reading_desk.save(self.c,project_id=None,record_id=bound['record_id'],document_id=doc['id'],annotation_id=None,start=3,end=3,expected_revision=desk['revision'] if desk else 0,actor='synthetic')
         self.assertEqual(desk['start_pos'],3)

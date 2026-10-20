@@ -102,3 +102,10 @@
 .connected-context-slot>.notebook-source-pane{max-width:100%;width:100%;border:0}
 .connected-context{border:0}
 @media(max-width:900px){.connected-with-context{display:block!important}.connected-with-context>.pane-divider{display:none}.connected-with-context>.connected-context-slot{position:fixed;inset:45px 0 0 auto;width:min(100%,600px);z-index:40;background:var(--paper);overflow:auto;height:calc(100dvh - 45px)}.connected-context-slot>.connected-context,.connected-context-slot>.notebook-source-pane{position:static;width:100%;max-height:none}}
+.connected-organization-properties{position:relative;font-size:13px;min-width:34px}
+.connected-organization-properties>summary{list-style:none;cursor:pointer;min-height:34px;padding:5px 9px;text-align:end}
+.connected-organization-properties[open]{padding:12px;max-width:290px;border-bottom:1px solid var(--rule)}
+.connected-organization-properties label,.connected-connection-properties label{display:grid;gap:5px}
+.connected-organization-properties input{background:transparent;color:var(--ink);font:inherit;border:0;border-bottom:1px solid var(--rule);padding:6px 0;width:100%}
+.connected-organization-properties small,.connected-connection-properties small{display:block;font-size:12px;line-height:1.6;color:var(--muted)}
+.connected-connection-properties pre{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto}

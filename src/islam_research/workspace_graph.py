@@ -57,6 +57,9 @@ def create(c,*,entity,request_uuid,actor,**fields):
         if entity=='connection':
             require_target(c,fields['from_kind'],fields['from_id']);require_target(c,fields['to_kind'],fields['to_id'])
             validate_connection(c,fields)
+            if fields['relation']=='comments_on' and fields['from_kind']=='entry' and fields['to_kind']=='record':
+                source=db.get_record(c,fields['to_id'])
+                if source['kind'] in {'source','work','edition'}:workspace.retain_source(c,source['id'],actor)
         columns=['id','creation_sha256','changed_by',*fields]
         values=[id,digest,actor,*[db.Jsonb(v) if isinstance(v,dict) else v for v in fields.values()]]
         return c.execute(sql.SQL('INSERT INTO research.{} ({}) VALUES ({}) RETURNING *').format(sql.Identifier(table),sql.SQL(',').join(map(sql.Identifier,columns)),sql.SQL(',').join(sql.Placeholder() for _ in columns)),values).fetchone()
@@ -188,3 +191,8 @@ def neighborhood(c,*,kind,id,depth=1,limit=40):
                 edges[row['id']]=row
         front=following
     return dict(root=root,nodes=list(nodes.values()),edges=list(edges.values()),truncated=truncated,coverage='Explicit private connections and original note/source/curated references; no inferred similarity or scholarly consensus.')
+
+
+def item(c,*,entity,id):
+    if entity not in {'collection','view'}:raise ValueError('Unsupported organization item')
+    return c.execute(sql.SQL('SELECT * FROM research.{} WHERE id=%s').format(sql.Identifier(TABLES[entity])),(id,)).fetchone()

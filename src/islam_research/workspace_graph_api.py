@@ -96,3 +96,15 @@ def register(router,store,owner):
     def reflect(value:Reflection,actor:str=Depends(owner)):return write('reflect',value,actor)
     @router.get('/workspace/reflections')
     def reflections(entry_id:ID,cursor:Annotated[str,Query(max_length=500)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):return store.workspace_graph_operation('reflections',entry_id=entry_id,cursor=cursor,limit=limit)
+
+    @router.get('/workspace/collection')
+    def collection(collection_id:ID):
+        row=store.workspace_graph_operation('item',entity='collection',id=collection_id)
+        if row is None:raise HTTPException(404,'Collection unavailable')
+        return row
+
+    @router.get('/workspace/view')
+    def view(view_id:ID):
+        row=store.workspace_graph_operation('item',entity='view',id=view_id)
+        if row is None:raise HTTPException(404,'Saved view unavailable')
+        return row

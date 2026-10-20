@@ -34,7 +34,7 @@ class PostgreSQLStore:
 
     def workspace_graph_operation(self,operation,**values):
         from . import workspace_graph
-        operations={name:getattr(workspace_graph,name) for name in ('create','listing','update','membership','members','investigation','investigate','reflect','reflections','neighborhood')}
+        operations={name:getattr(workspace_graph,name) for name in ('create','listing','update','membership','members','investigation','investigate','reflect','reflections','neighborhood','item')}
         if operation not in operations:raise ValueError('Unknown workspace graph operation')
         with db.connect(self.dsn) as c:return operations[operation](c,**values)
 

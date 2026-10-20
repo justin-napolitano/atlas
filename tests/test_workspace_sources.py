@@ -33,3 +33,13 @@ class WorkspaceSourceTests(unittest.TestCase):
         db.save_record(self.c,record_id=result['record_id'],project_id=None,kind='source',title='Corrected source title',actor='synthetic',expected_revision=1)
         self.assertTrue(workspace.intake(self.c,**fields)['replayed'])
         self.assertEqual(workspace.source(self.c,record_id=result['record_id'])['record']['title'],'Corrected source title')
+
+    def test_linked_loose_comment_appears_in_book_notebook_without_changing_anchor(self):
+        from islam_research import workspace_graph as graph
+        result=workspace.intake(self.c,**self.fields())
+        note=workspace.create_note(self.c,request_uuid=str(uuid.uuid4()),body='A thought captured before finding this book.',actor='synthetic')
+        graph.create(self.c,entity='connection',request_uuid=str(uuid.uuid4()),from_kind='entry',from_id=note['id'],to_kind='record',to_id=result['record_id'],relation='comments_on',rationale='This book speaks to my earlier thought.',attribution='',evidence_annotation_id=None,state='tentative',actor='synthetic')
+        source=workspace.source(self.c,record_id=result['record_id'])
+        self.assertEqual(shared_library.notes(self.c,source['library']['item_id'])[0]['id'],note['id'])
+        self.assertIsNone(workspace.note(self.c,note['id'])['record_id'])
+        self.assertIsNone(workspace.note(self.c,note['id'])['document_id'])
