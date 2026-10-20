@@ -167,3 +167,27 @@ def retain_source(connection,record_id,actor):
     item=connection.execute('SELECT * FROM research.library_items WHERE id=%s FOR UPDATE',(item_id,)).fetchone()
     if item['revision']==1 and not item['on_shelf']:
         shared_library.update_item(connection,item_id=item_id,expected_revision=1,on_shelf=True,reading_status='reading',preferred_edition_id=None,actor=actor)
+
+
+def search(connection,*,q,limit=20):
+    db._text(q,'query',300)
+    if type(limit) is not int or not 1<=limit<=30:raise ValueError('Invalid search limit')
+    writing=notes(connection,q=q,limit=limit)
+    records=connection.execute("""SELECT id,project_id,kind,title,summary,revision FROM research.records
+      WHERE deleted_at IS NULL AND review_state<>'withdrawn' AND strpos(lower(title||' '||summary),lower(%s))>0 ORDER BY id LIMIT %s""",(q,limit+1)).fetchall()
+    return dict(items=[dict(kind='entry',id=row['id'],title=row['title'],revision=row['revision'],origin_project_id=row['project_id'],thought_type=row['thought_type']) for row in writing['items']]+[dict(kind='record',id=row['id'],title=row['title'],revision=row['revision'],origin_project_id=row['project_id'],record_kind=row['kind']) for row in records[:limit]],truncated=bool(writing['next_cursor'] or len(records)>limit),coverage='Literal current note and record text. No embeddings or external search.')
+
+
+def continuing(connection,*,limit=12):
+    if type(limit) is not int or not 1<=limit<=20:raise ValueError('Invalid continue limit')
+    reading=connection.execute("""SELECT 'quran' AS reader,project_id,resource_key,chapter,ayah,NULL::int AS book_id,NULL::text AS version,NULL::int AS section,NULL::int AS position,updated_at FROM research.quran_places
+      UNION ALL SELECT 'quran',NULL,resource_key,chapter,ayah,NULL,NULL,NULL,NULL,updated_at FROM research.workspace_quran_places
+      UNION ALL SELECT 'gutenberg',project_id,NULL,NULL,NULL,book_id,version,section,position,updated_at FROM research.gutenberg_places
+      UNION ALL SELECT 'gutenberg',NULL,NULL,NULL,NULL,book_id,version,section,position,updated_at FROM research.workspace_gutenberg_places
+      ORDER BY updated_at DESC LIMIT %s""",(limit,)).fetchall()
+    documents=connection.execute("""SELECT p.project_id,p.record_id,p.document_id,p.start_pos,p.updated_at,r.title,d.edition,d.locator
+      FROM research.reading_desks p JOIN research.records r ON r.id=p.record_id LEFT JOIN research.reading_documents d ON d.id=p.document_id WHERE r.deleted_at IS NULL AND r.review_state<>'withdrawn'
+      UNION ALL SELECT NULL,p.record_id,p.document_id,p.start_pos,p.updated_at,r.title,d.edition,d.locator
+      FROM research.workspace_reading_desks p JOIN research.records r ON r.id=p.record_id LEFT JOIN research.reading_documents d ON d.id=p.document_id WHERE r.deleted_at IS NULL AND r.review_state<>'withdrawn'
+      ORDER BY updated_at DESC LIMIT %s""",(limit,)).fetchall()
+    return dict(reading=reading,documents=documents,notes=notes(connection,limit=limit)['items'],drafts=drafts(connection,limit=limit))

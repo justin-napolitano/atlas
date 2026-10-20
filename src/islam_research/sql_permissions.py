@@ -9,6 +9,7 @@ from psycopg import sql
 
 
 READ_TABLES = (
+    "workspace_collections", "workspace_collection_items", "workspace_saved_views", "workspace_connections", "workspace_investigations", "workspace_reflections", "workspace_organization_history",
     "workspace_reading_desks", "workspace_reading_desk_revisions", "workspace_quran_places", "workspace_quran_reading_progress", "workspace_quran_progress_revisions", "workspace_gutenberg_places", "workspace_annotation_trash", "workspace_annotation_trash_history",
     "owner_workspaces", "workspace_note_trash", "workspace_note_trash_history",
     "library_works", "library_editions", "library_representations", "library_items",
@@ -39,6 +40,12 @@ OWNER_FUNCTIONS = (
     "research.withdraw_publication(text,integer,text,text)",
 )
 INSERT_COLUMNS = {
+    "workspace_collections": "id title state creation_sha256 changed_by",
+    "workspace_collection_items": "collection_id target_kind target_id state changed_by",
+    "workspace_saved_views": "id title query state creation_sha256 changed_by",
+    "workspace_connections": "id from_kind from_id to_kind to_id relation rationale attribution evidence_annotation_id state creation_sha256 changed_by",
+    "workspace_investigations": "target_kind target_id target_revision state reason changed_by",
+    "workspace_reflections": "id entry_id entry_revision reason uncertainty evidence_annotation_id changed_by creation_sha256",
     "workspace_reading_desks": "workspace_id record_id document_id annotation_id start_pos end_pos changed_by",
     "workspace_quran_places": "workspace_id resource_key chapter ayah changed_by",
     "workspace_quran_reading_progress": "workspace_id chapter ayah is_read changed_by",
@@ -75,6 +82,11 @@ INSERT_COLUMNS = {
     "publication_previews": "id project_id record_ids relation_ids inputs payload payload_sha256 created_by",
 }
 UPDATE_COLUMNS = {
+    "workspace_collections": "title state revision changed_by",
+    "workspace_collection_items": "state revision changed_by",
+    "workspace_saved_views": "title query state revision changed_by",
+    "workspace_connections": "relation rationale attribution evidence_annotation_id state revision changed_by",
+    "workspace_investigations": "target_revision state reason revision changed_by",
     "workspace_reading_desks": "record_id document_id annotation_id start_pos end_pos changed_by revision",
     "workspace_quran_places": "resource_key chapter ayah revision changed_by updated_at",
     "workspace_quran_reading_progress": "is_read revision changed_by",
