@@ -102,7 +102,7 @@ BEGIN
  IF TG_OP='UPDATE' THEN
   IF (NEW.id,NEW.work_id,NEW.created_at) IS DISTINCT FROM (OLD.id,OLD.work_id,OLD.created_at)
     OR NEW.revision<>OLD.revision+1 THEN RAISE EXCEPTION 'immutable library identity or stale revision' USING ERRCODE='23514'; END IF;
-  NEW.retained_at:=CASE WHEN NEW.on_shelf THEN COALESCE(OLD.retained_at,clock_timestamp()) ELSE OLD.retained_at END;
+  NEW.retained_at:=CASE WHEN NEW.on_shelf THEN CASE WHEN NOT OLD.on_shelf THEN clock_timestamp() ELSE COALESCE(OLD.retained_at,clock_timestamp()) END ELSE OLD.retained_at END;
  ELSE
   IF NEW.revision<>1 THEN RAISE EXCEPTION 'initial revision must be one' USING ERRCODE='23514'; END IF;
   NEW.retained_at:=CASE WHEN NEW.on_shelf THEN clock_timestamp() ELSE NULL END;

@@ -86,6 +86,8 @@ class SharedLibraryTests(unittest.TestCase):
             library.update_item(c,item_id=self.item,expected_revision=2,on_shelf=False,reading_status='want_to_read',preferred_edition_id=None,actor='synthetic')
             library.index_source(c,**{**self.request,'request_uuid':str(uuid.uuid4())})
             self.assertFalse(library.get(c,self.item)['on_shelf'])
+            retained=library.update_item(c,item_id=self.item,expected_revision=3,on_shelf=True,reading_status='reading',preferred_edition_id=None,actor='synthetic')
+            self.assertGreater(retained['retained_at'],saved['retained_at'])
             with self.assertRaises(self.db.RevisionConflict):library.update_item(c,item_id=self.item,expected_revision=1,on_shelf=True,reading_status='finished',preferred_edition_id=None,actor='synthetic')
 
     def test_editions_versions_and_unresolved_duplicates_are_not_collapsed(self):
@@ -101,6 +103,19 @@ class SharedLibraryTests(unittest.TestCase):
             self.assertNotEqual(duplicate['item_id'],self.item)
             self.assertIsNone(library.resolve(c,item_id=duplicate['item_id'],document_id=self.doc['id']))
             with self.assertRaises(ValueError):library.update_item(c,item_id=duplicate['item_id'],expected_revision=1,on_shelf=True,reading_status='reading',preferred_edition_id=editions[0]['id'],actor='synthetic')
+
+    def test_bibliographic_edits_preserve_identity_and_show_current_title(self):
+        with self.db.connect(self.owner_dsn) as c:
+            self.db.save_record(c,project_id=self.project,record_id=self.source,kind='source',title='Corrected source title',expected_revision=1,actor='synthetic')
+            alias=library.source_identity(c,self.project,self.source)
+            self.assertEqual(alias['item_id'],self.item)
+            self.assertEqual(alias['source_revision'],1)
+            self.assertEqual(alias['current_source_revision'],2)
+            item=library.get(c,self.item)
+            self.assertEqual(item['title'],'Corrected source title')
+            self.assertEqual(item['identity_title'],'Synthetic research book')
+            listing=library.listing(c,retained=False)
+            self.assertEqual(next(row for row in listing if row['id']==self.item)['title'],'Corrected source title')
 
     def test_changed_snapshot_and_newer_notebook_edit_keep_original_identity(self):
         with self.db.connect(self.owner_dsn) as c:

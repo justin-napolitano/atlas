@@ -78,3 +78,5 @@ two-machine verification/backups and explicit public read-only publication remai
 #31/#33/#42; this plan neither merges outstanding PRs nor completes release gates.
 Open Library #169, papers #166, arbitrary folders #139, full Obsidian sync #40 and
 graph redesign remain separate scopes. No app/schema/API builds in this planning pass.
+
+Implementation candidate [PR #199](https://github.com/justin-napolitano/islam-research/pull/199) covers the bounded #101 identity/API gate. See [implementation and remaining scope](features/shared-library-identities.md); the shelf UI remains #195.

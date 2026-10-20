@@ -54,7 +54,7 @@ def _context(connection,item_id,project_id=''):
 
 def get(connection,item_id,project_id=''):
     if not _context(connection,item_id,project_id):return None
-    row=connection.execute(NOTES_SQL+"""SELECT i.*,w.title,w.identity_basis,w.legacy_source_id,
+    row=connection.execute(NOTES_SQL+"""SELECT i.*,r.title,w.title AS identity_title,w.identity_basis,w.legacy_source_id,
         (r.deleted_at IS NULL AND r.review_state<>'withdrawn') AS source_available,
         (SELECT count(DISTINCT note_key) FROM notes WHERE item_id=i.id) AS note_count,
         (SELECT count(*) FROM research.library_editions e WHERE e.work_id=i.work_id) AS edition_count
@@ -73,7 +73,7 @@ def listing(connection,*,project_id='',retained=True,cursor='',limit=30):
     if type(retained) is not bool or type(limit) is not int or not 1<=limit<=51:raise ValueError('Invalid library page')
     db._text(cursor,'cursor',500,empty=True);db._text(project_id,'project context',500,empty=True)
     # Identity inventory is ID-ordered. Shelf recency/search is #195, not inferred here.
-    rows=connection.execute("""SELECT i.*,w.title,w.identity_basis,w.legacy_source_id,
+    rows=connection.execute("""SELECT i.*,r.title,w.title AS identity_title,w.identity_basis,w.legacy_source_id,
         (r.deleted_at IS NULL AND r.review_state<>'withdrawn') AS source_available
         FROM research.library_items i JOIN research.library_works w ON w.id=i.work_id
         JOIN research.records r ON r.id=w.legacy_source_id
@@ -87,8 +87,10 @@ def listing(connection,*,project_id='',retained=True,cursor='',limit=30):
 
 
 def source_identity(connection,project_id,source_record_id):
-    return connection.execute('''SELECT b.*,i.revision AS item_revision,i.on_shelf,i.reading_status
+    return connection.execute('''SELECT b.*,i.revision AS item_revision,i.on_shelf,i.reading_status,
+        r.revision AS current_source_revision,(r.deleted_at IS NULL AND r.review_state<>'withdrawn') AS source_available
         FROM research.library_source_bindings b JOIN research.library_items i ON i.id=b.item_id
+        JOIN research.records r ON r.id=b.source_record_id AND r.project_id=b.project_id
         WHERE b.project_id=%s AND b.source_record_id=%s''',(project_id,source_record_id)).fetchone()
 
 
