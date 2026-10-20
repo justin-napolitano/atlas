@@ -16,7 +16,7 @@
 .library-book-actions{display:flex;gap:4px;align-items:center;flex-shrink:0;font-size:14px}
 .library-shelf h2{font:600 17px/1.5 system-ui}.library-continue{margin:24px 0 32px}
 .library-empty{margin:40px 0;color:var(--muted,#aaa6a0)}
-.library-detail{margin-top:24px;padding:20px 0;border-top:1px solid var(--rule)}
+.library-detail{position:fixed;inset:0 0 0 auto;width:min(460px,100vw);box-sizing:border-box;padding:24px;background:var(--paper);border-left:1px solid var(--rule);overflow:auto;z-index:82}.library-shelf .library-detail-scrim{position:fixed;inset:0;background:transparent;z-index:81;cursor:default}.library-detail>header{position:sticky;top:-24px;background:var(--paper);padding:12px 0;z-index:1}
 .library-detail header h2{overflow-wrap:anywhere}.library-editions{display:flex;flex-direction:column;align-items:flex-start;margin:12px 0}
 .library-note-link{display:flex;flex-direction:column;text-align:start;width:100%;gap:6px;border-bottom:1px solid var(--rule)!important;padding:16px 0!important;overflow-wrap:anywhere}
 .library-note-link span,.library-scope{color:var(--muted,#aaa6a0);font-size:14px}.library-note-link small{font-size:12px}

@@ -1,4 +1,5 @@
 import React,{useContext,useEffect,useRef,useState} from 'react';
+import {useModalFocus} from './useModalFocus.js';
 import {SurfaceActivity} from './surfaceActivity.js';
 import {itemUpdate,shelfTarget} from './libraryClient.js';
 import GutenbergSearch from './GutenbergSearch.jsx';
@@ -6,7 +7,8 @@ import './libraryShelf.css';
 const states=[['','All'],['reading','Reading'],['want_to_read','Want to read'],['finished','Finished']];
 export default function LibraryShelf({api,projects,projectId,onOpen,onOpenNote,onFindBook}){
   const [query,setQuery]=useState(''),[filter,setFilter]=useState(''),[scope,setScope]=useState(''),[rows,setRows]=useState([]),[recent,setRecent]=useState([]),[cursor,setCursor]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[discovery,setDiscovery]=useState(false),[detail,setDetail]=useState(null),[choices,setChoices]=useState([]),[notes,setNotes]=useState(null),[noteCursor,setNoteCursor]=useState(null),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
-  const active=useContext(SurfaceActivity);
+  const active=useContext(SurfaceActivity),detailPane=useRef(null);
+  useModalFocus(detailPane,active&&!!detail);
   const generation=useRef(0),detailGeneration=useRef(0),search=useRef(null),scroll=useRef(0),pending=useRef(null),membershipPending=useRef(null);
   async function load(append=false){const token=++generation.current;setLoading(true);setError('');
     try{const [page,cont]=await Promise.all([api.request('library/shelf',{q:query,state:filter,...(scope?{project_id:scope}:{}),...(append&&cursor?{cursor}:{}),limit:30}),api.request('library/continue',scope?{project_id:scope}:{})]);
@@ -47,8 +49,8 @@ export default function LibraryShelf({api,projects,projectId,onOpen,onOpenNote,o
       {message&&<p role="status">{message}</p>}{loading&&<p role="status">Loading library…</p>}{error&&<p role="alert">{error} {!detail&&<button onClick={()=>load()}>Retry library</button>}</p>}
       {!loading&&!error&&!rows.length&&<p className="library-empty">{query||filter||scope?'No saved books match this view.':'Your shelf is empty. Find a book, or save an existing source to your library.'}</p>}
       <div className="library-book-list">{rows.map(rowView)}</div>{cursor&&<button disabled={loading} onClick={()=>load(true)}>More saved books</button>}
-      {detail&&<section className="library-detail" aria-label={`${detail.tab==='notes'?'Notes':'Details'} for ${detail.title}`}><header><h2>{detail.title}</h2><button onClick={close} aria-label="Close book details">Close</button></header>
-        {detail.tab==='notes'?<>{notes===null?<p role="status">Loading notes…</p>:!notes.length?<p>No written notes yet. Open the text and write in the margin.</p>:notes.map(note=><button className="library-note-link" key={note.note_key} onClick={()=>onOpenNote(note)}><strong>{note.title || 'Reading note'}</strong><span>{note.body.slice(0,140)}</span><small>{projects.find(p=>p.id===note.origin_project_id)?.title || 'Original project'} · {note.thought_type}</small></button>)}{noteCursor&&<button disabled={busy} onClick={()=>inspect(detail,'notes',true)}>More notes</button>}</>:<>
+      {detail&&<><button className="library-detail-scrim" aria-label="Close book details" onClick={close}/><section ref={detailPane} role="dialog" aria-modal="true" onKeyDown={event=>{if(event.key==='Escape'){event.stopPropagation();close();}}} className="library-detail" aria-label={`${detail.tab==='notes'?'Notes':'Details'} for ${detail.title}`}><header><h2>{detail.title}</h2><button onClick={close} aria-label="Close book details">Close</button></header>
+        {detail.tab==='notes'?<>{notes===null?<p role="status">Loading notes…</p>:!notes.length?<p>No written notes yet. Open the text and write in the margin.</p>:notes.map(note=><button className="library-note-link" key={note.note_key} onClick={()=>{setDetail(null);onOpenNote(note);}}><strong>{note.title || 'Reading note'}</strong><span>{note.body.slice(0,140)}</span><small>{projects.find(p=>p.id===note.origin_project_id)?.title || 'Original project'} · {note.thought_type}</small></button>)}{noteCursor&&<button disabled={busy} onClick={()=>inspect(detail,'notes',true)}>More notes</button>}</>:<>
           <p>{detail.edition_label || 'Choose an edition before reading.'}</p><div className="library-editions" role="group" aria-label="Reading edition">{choices.map(edition=><button disabled={busy||!!pending.current||!!membershipPending.current} key={edition.id} aria-pressed={detail.preferred_edition_id===edition.id} onClick={()=>update({preferred_edition_id:edition.id})}>{edition.label}</button>)}{detail.moreEditions&&<p>More editions exist. Open the source to inspect them before choosing.</p>}</div>
           <div role="group" aria-label="Update reading state">{states.filter(([v])=>v).map(([value,label])=><button disabled={busy||!!pending.current||!!membershipPending.current} aria-pressed={detail.reading_status===value} key={value} onClick={()=>update({reading_status:value})}>{label}</button>)}</div>
           <div className="library-project-links" role="group" aria-label="Project associations">{projects.map(project=>{const linked=detail.project_associations?.some(row=>row.project_id===project.id&&row.state!=='removed');return <button key={project.id} disabled={busy||!!pending.current||!!membershipPending.current} aria-pressed={!!linked} onClick={()=>associate(project)}>{linked?'✓ ': '+ '}{project.title}</button>;})}</div>
@@ -56,7 +58,7 @@ export default function LibraryShelf({api,projects,projectId,onOpen,onOpenNote,o
           <button disabled={busy||!!pending.current||!!membershipPending.current} onClick={()=>update({on_shelf:false})}>Remove from shelf</button><p className="library-scope">Notes keep their original project and edition. Reading state does not change scholarly review.</p>
           {error&&pending.current&&<button disabled={busy} onClick={()=>update({})}>Retry exact change</button>}
         </>}
-      </section>}
+      </section></>}
     </div>
   </section>;
 }

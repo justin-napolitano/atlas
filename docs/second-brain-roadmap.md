@@ -80,3 +80,5 @@ Open Library #169, papers #166, arbitrary folders #139, full Obsidian sync #40 a
 graph redesign remain separate scopes. No app/schema/API builds in this planning pass.
 
 Implementation candidate [PR #199](https://github.com/justin-napolitano/islam-research/pull/199) covers the bounded #101 identity/API gate. See [implementation and remaining scope](features/shared-library-identities.md); the shelf UI remains #195.
+
+Shelf implementation candidate [PR #200](https://github.com/justin-napolitano/islam-research/pull/200) follows merged #199. [Behavior, API consistency and remaining scope](features/library-shelf.md): #95 primary book notebook and #196 native global catalog/first-note retention remain next.
