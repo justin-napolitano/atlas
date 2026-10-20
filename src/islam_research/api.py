@@ -365,6 +365,28 @@ class GutenbergNote(Input):
     note: NotebookCreate
 
 
+class LibraryIndex(VerseOwnerInput):
+    request_uuid: Annotated[str,Field(min_length=36,max_length=36)]
+    project_id: Identifier
+    source_record_id: Identifier
+    expected_source_revision: Annotated[int,Field(ge=1,strict=True)]
+
+
+class LibraryItemUpdate(VerseOwnerInput):
+    item_id: Identifier
+    expected_revision: Annotated[int,Field(ge=1,strict=True)]
+    on_shelf: Annotated[bool,Field(strict=True)]
+    reading_status: Literal['needs_review','want_to_read','reading','finished']
+    preferred_edition_id: Identifier | None
+
+
+class LibraryMembership(VerseOwnerInput):
+    item_id: Identifier
+    project_id: Identifier
+    state: Literal['active','removed']
+    expected_revision: Annotated[int,Field(ge=0,strict=True)]
+
+
 class NotebookDraftValue(Input):
     thought_type: Literal["note","question","source_claim","interpretation","objection"] = "note"
     title: Annotated[str,Field(max_length=300)] = ""
@@ -688,6 +710,62 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         return subject
 
     router = APIRouter(prefix="/v1", dependencies=[Depends(owner)])
+
+    def library_page(rows,limit,key='id'):
+        return {'items':rows[:limit],'next_cursor':rows[limit-1][key] if len(rows)>limit else None}
+
+    @router.get('/library/items')
+    def library_items(project_id: Identifier | None=None,retained:bool=True,
+        cursor:Annotated[str,Query(max_length=500)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):
+        return library_page(store.library_items(project_id=project_id or '',retained=retained,cursor=cursor,limit=limit+1),limit)
+
+    @router.get('/library/item')
+    def library_item(item_id:Identifier,project_id:Identifier | None=None):
+        row=store.library_item(item_id,project_id or '')
+        if row is None:raise HTTPException(404,'Library item not found in this context')
+        return row
+
+    @router.get('/library/source')
+    def library_source(project_id:Identifier,source_record_id:Identifier):
+        row=store.library_source(project_id,source_record_id)
+        if row is None:raise HTTPException(404,'Source is not indexed in the owner library')
+        return row
+
+    @router.post('/library/index-source',status_code=201)
+    def library_index(value:LibraryIndex,actor:str=Depends(owner)):
+        fields=value.model_dump();fields.pop('owner_confirmed')
+        return store.library_index_source(actor=actor,**fields)
+
+    @router.put('/library/item')
+    def library_item_update(value:LibraryItemUpdate,actor:str=Depends(owner)):
+        fields=value.model_dump();fields.pop('owner_confirmed')
+        return store.library_update_item(actor=actor,**fields)
+
+    @router.put('/library/project-membership')
+    def library_membership(value:LibraryMembership,actor:str=Depends(owner)):
+        fields=value.model_dump();fields.pop('owner_confirmed')
+        return store.library_membership(actor=actor,**fields)
+
+    @router.get('/library/editions')
+    def library_editions(item_id:Identifier,project_id:Identifier | None=None,
+        cursor:Annotated[str,Query(max_length=500)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):
+        return library_page(store.library_editions(item_id=item_id,project_id=project_id or '',cursor=cursor,limit=limit+1),limit)
+
+    @router.get('/library/documents')
+    def library_documents(item_id:Identifier,project_id:Identifier | None=None,edition_id:Identifier | None=None,
+        cursor:Annotated[str,Query(max_length=500)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):
+        return library_page(store.library_documents(item_id=item_id,project_id=project_id or '',edition_id=edition_id or '',cursor=cursor,limit=limit+1),limit,'document_id')
+
+    @router.get('/library/resolve')
+    def library_resolve(item_id:Identifier,document_id:Identifier,project_id:Identifier | None=None):
+        row=store.library_resolve(item_id=item_id,document_id=document_id,project_id=project_id or '')
+        if row is None:raise HTTPException(404,'Reading target not found in this library context')
+        return row
+
+    @router.get('/library/notes')
+    def library_notes(item_id:Identifier,project_id:Identifier | None=None,
+        cursor:Annotated[str,Query(max_length=700)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):
+        return library_page(store.library_notes(item_id=item_id,project_id=project_id or '',cursor=cursor,limit=limit+1),limit,'note_key')
 
     @router.get('/catalog/gutenberg/search')
     def gutenberg_search(q: Annotated[str,Query(min_length=1,max_length=200)],page: Annotated[int,Query(ge=1,le=100)]=1):
