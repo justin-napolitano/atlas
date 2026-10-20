@@ -30,7 +30,7 @@ export default function GutenbergReader({api,projectId,bookId,version='',drafts,
       setSection(saved?.section || 0);setInitialPosition(saved?.position || 0);setPlaceState({...held});
     }catch(err){if(alive.current)setError(err.message);}
   }
-  useEffect(()=>{alive.current=true;load();return()=>{alive.current=false;};},[projectId,bookId]);
+  useEffect(()=>{alive.current=true;load();return()=>{alive.current=false;};},[projectId,bookId,version]);
   useEffect(()=>{
     let live=true;setDoc(null);
     if(!book?.sections?.length)return;

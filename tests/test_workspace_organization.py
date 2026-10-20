@@ -38,3 +38,13 @@ class OrganizationTests(unittest.TestCase):
         self.assertEqual(graph.reflect(self.c,**fields)['id'],first['id'])
         self.assertEqual(graph.reflections(self.c,entry_id=self.a['id'])['items'][0]['entry_revision'],1)
         self.assertEqual(workspace.history(self.c,entry_id=self.a['id'])[-1]['snapshot']['body'],'An independent thought.')
+
+    def test_saved_unanswered_questions_is_a_live_filter_and_trash_is_excluded(self):
+        view=graph.create(self.c,entity='view',request_uuid=str(uuid.uuid4()),title='Unanswered questions',query=dict(version=1,scope='questions',q='change my mind',investigation_state='unanswered'),actor='synthetic')
+        result=workspace.view_results(self.c,view_id=view['id']);self.assertIn(self.b['id'],[r['id'] for r in result['items']])
+        graph.investigate(self.c,target_kind='entry',target_id=self.b['id'],target_revision=1,state='resolved',reason='A provisional owner decision for this test.',expected_revision=0,actor='synthetic')
+        self.assertNotIn(self.b['id'],[r['id'] for r in workspace.view_results(self.c,view_id=view['id'])['items']])
+        notes=graph.create(self.c,entity='view',request_uuid=str(uuid.uuid4()),title='Loose ideas',query=dict(version=1,scope='notes',q='independent thought',source_link='none'),actor='synthetic')
+        self.assertIn(self.a['id'],[r['id'] for r in workspace.view_results(self.c,view_id=notes['id'])['items']])
+        workspace.trash(self.c,entry_id=self.a['id'],target_revision=1,expected_revision=0,state='trashed',actor='synthetic')
+        self.assertNotIn(self.a['id'],[r['id'] for r in workspace.view_results(self.c,view_id=notes['id'])['items']])
