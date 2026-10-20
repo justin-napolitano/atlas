@@ -25,3 +25,10 @@ test('independent captures and blank editing retain their own recovery',async()=
 test('manual names survive editing the first line',async()=>{
  const f=fake(),note=new ConnectedWriting(f.api,{delay:100000});note.edit({title:'Chosen name',body:'Opening'});await note.flush();note.edit({body:'Different opening'});await note.flush();assert.equal(note.row.title,'Chosen name');
 });
+
+test('resume adopts newer confirmed writing but preserves a competing local draft',async()=>{
+ const f=fake(),note=new ConnectedWriting(f.api,{delay:100000});note.edit({body:'Initial body'});await note.flush();
+ const cloud={...note.row,body:'Changed on another device',title:'Changed on another device',revision:2};assert.equal(note.adopt(cloud),true);assert.equal(note.value.body,cloud.body);assert.equal(note.saved,true);
+ note.edit({body:'My competing draft'});assert.equal(note.adopt({...cloud,body:'A third version',revision:3}),false);assert.equal(note.value.body,'My competing draft');
+ note.queue.hold(note.value);for(const queue of note.recoveries.values())if(queue.latest)queue.hold(queue.latest);
+});

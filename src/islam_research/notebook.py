@@ -53,7 +53,7 @@ def network(connection,project_id,limit):
         raise ValueError('Notebook network limit must be between 1 and 201')
     return connection.execute('''SELECT id,project_id,title,body,thought_type,revision,
         record_id,document_id,annotation_id,reading_position,links FROM research.notebook_entries
-        WHERE project_id=%s AND state='active' AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=notebook_entries.project_id AND t.target_kind='entry' AND t.target_id=notebook_entries.id AND t.state='trashed')
+        WHERE project_id IS NOT DISTINCT FROM %s AND state='active' AND NOT EXISTS(SELECT 1 FROM research.workspace_note_trash w WHERE w.entry_id=notebook_entries.id AND w.state='trashed') AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=notebook_entries.project_id AND t.target_kind='entry' AND t.target_id=notebook_entries.id AND t.state='trashed')
         ORDER BY updated_at DESC,id COLLATE "C" LIMIT %s''',(project_id,limit)).fetchall()
 
 

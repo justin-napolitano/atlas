@@ -56,6 +56,14 @@ export class ConnectedWriting {
     }else previous.finish();
     this.onChanged(this);return row;
   }
+  adopt(row){
+    if(!this.saved||this.queue.busy||this.queue.sent||!row||row.id!==this.id||row.project_id!==this.row.project_id||row.revision<this.row.revision)return false;
+    if(!equal(anchor(row),this.anchor))throw new Error('The original note anchor changed; no writing was replaced.');
+    this.row=row;this.value=fields(row);this.queue.revision=row.revision;
+    this.queue.latest=structuredClone(this.value);this.queue.latestFingerprint=fingerprint(this.value);this.queue.confirmedFingerprint=this.queue.latestFingerprint;
+    for(const recovery of this.recoveries.values())recovery.finish();
+    this.queue.publish('saved',{row});return true;
+  }
   get saved(){return !!this.row&&equal(fields(this.row),this.value)&&!this.queue.sent&&!this.queue.busy;}
   get dirty(){return !this.saved&&!!(this.value.body||this.row||this.queue.sent);}
   get title(){return this.value.title||captureTitle(this.value.body);}
