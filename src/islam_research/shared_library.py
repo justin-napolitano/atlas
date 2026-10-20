@@ -14,23 +14,24 @@ NOTES_SQL="""
 WITH source_scope AS (
  SELECT b.work_id,b.item_id,b.source_record_id,b.project_id
  FROM research.library_source_bindings b JOIN research.records r
- ON r.id=b.source_record_id AND r.project_id=b.project_id
+ ON r.id=b.source_record_id AND r.project_id IS NOT DISTINCT FROM b.project_id
  WHERE b.item_id=ANY(%s) AND r.deleted_at IS NULL AND r.review_state<>'withdrawn'
 ), notes AS (
  SELECT 'entry:'||n.id AS note_key,'entry' AS item_kind,n.id,n.project_id,
   n.record_id,n.document_id,n.annotation_id,n.reading_position,n.title,n.body,
   n.thought_type,n.revision,n.updated_at,s.work_id,s.item_id
  FROM research.notebook_entries n JOIN source_scope s
- ON s.project_id=n.project_id AND s.source_record_id=n.record_id
+ ON s.source_record_id=n.record_id
  WHERE n.state='active' AND length(btrim(n.body))>0
  AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id
   AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed')
+ AND NOT EXISTS(SELECT 1 FROM research.workspace_note_trash t WHERE t.entry_id=n.id AND t.state='trashed')
  UNION ALL
  SELECT 'annotation:'||a.id,'annotation',a.id,a.project_id,d.source_record_id,
   a.document_id,a.id,a.start_pos,a.exact,a.body,'passage_note',a.revision,a.updated_at,s.work_id,s.item_id
  FROM research.reading_annotations a JOIN research.reading_documents d
- ON d.project_id=a.project_id AND d.id=a.document_id JOIN source_scope s
- ON s.project_id=d.project_id AND s.source_record_id=d.source_record_id
+ ON d.project_id IS NOT DISTINCT FROM a.project_id AND d.id=a.document_id JOIN source_scope s
+ ON s.project_id IS NOT DISTINCT FROM d.project_id AND s.source_record_id=d.source_record_id
  WHERE length(btrim(a.body))>0
  AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id
   AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed')
@@ -90,14 +91,15 @@ def source_identity(connection,project_id,source_record_id):
     return connection.execute('''SELECT b.*,i.revision AS item_revision,i.on_shelf,i.reading_status,
         r.revision AS current_source_revision,(r.deleted_at IS NULL AND r.review_state<>'withdrawn') AS source_available
         FROM research.library_source_bindings b JOIN research.library_items i ON i.id=b.item_id
-        JOIN research.records r ON r.id=b.source_record_id AND r.project_id=b.project_id
-        WHERE b.project_id=%s AND b.source_record_id=%s''',(project_id,source_record_id)).fetchone()
+        JOIN research.records r ON r.id=b.source_record_id AND r.project_id IS NOT DISTINCT FROM b.project_id
+        WHERE b.project_id IS NOT DISTINCT FROM %s AND b.source_record_id=%s''',(project_id,source_record_id)).fetchone()
 
 
 def index_source(connection,*,request_uuid,project_id,source_record_id,expected_source_revision,actor):
     request=uuid.UUID(request_uuid)
     if request.version!=4:raise ValueError('Retain a UUIDv4 indexing ID for retries')
-    for text,name in [(project_id,'project'),(source_record_id,'source'),(actor,'actor')]:db._text(text,name,500)
+    for text,name in [(project_id,'project'),(source_record_id,'source'),(actor,'actor')]:
+        if name!='project' or text is not None:db._text(text,name,500)
     if type(expected_source_revision) is not int or expected_source_revision<1:raise ValueError('Invalid source revision')
     payload=dict(project_id=project_id,source_record_id=source_record_id,expected_source_revision=expected_source_revision,actor=actor)
     digest=hashlib.sha256(json.dumps(payload,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
@@ -107,7 +109,7 @@ def index_source(connection,*,request_uuid,project_id,source_record_id,expected_
         if old:
             if old['input_sha256']!=digest:raise db.RevisionConflict(None)
             return {**old['result'],'replayed':True}
-        source=connection.execute("SELECT * FROM research.records WHERE id=%s AND project_id=%s AND kind IN ('source','work','edition') AND deleted_at IS NULL AND review_state<>'withdrawn' FOR SHARE",(source_record_id,project_id)).fetchone()
+        source=connection.execute("SELECT * FROM research.records WHERE id=%s AND project_id IS NOT DISTINCT FROM %s AND kind IN ('source','work','edition') AND deleted_at IS NULL AND review_state<>'withdrawn' FOR SHARE",(source_record_id,project_id)).fetchone()
         if not source:raise ValueError('Active source not found in this project')
         if source['revision']!=expected_source_revision:raise db.RevisionConflict(source)
         connection.execute('SELECT pg_advisory_xact_lock(184514,hashtext(%s))',('library-source:'+source_record_id,))
@@ -162,8 +164,8 @@ def documents(connection,item_id,project_id='',edition_id='',cursor='',limit=30)
         r.edition_id,r.text_sha256,r.locator,r.normalization,d.edition,d.representation_url,
         (s.deleted_at IS NULL AND s.review_state<>'withdrawn') AS source_available
         FROM research.library_document_bindings b JOIN research.library_representations r ON r.id=b.representation_id
-        JOIN research.library_items i ON i.work_id=b.work_id JOIN research.reading_documents d ON d.id=b.document_id AND d.project_id=b.project_id
-        JOIN research.records s ON s.id=b.source_record_id AND s.project_id=b.project_id
+        JOIN research.library_items i ON i.work_id=b.work_id JOIN research.reading_documents d ON d.id=b.document_id AND d.project_id IS NOT DISTINCT FROM b.project_id
+        JOIN research.records s ON s.id=b.source_record_id AND s.project_id IS NOT DISTINCT FROM b.project_id
         WHERE i.id=%s AND (%s='' OR r.edition_id=%s) AND b.document_id>%s ORDER BY b.document_id LIMIT %s''',
         (item_id,edition_id,edition_id,cursor,limit)).fetchall()
 
@@ -175,7 +177,7 @@ def resolve(connection,*,item_id,document_id,project_id=''):
         (s.deleted_at IS NULL AND s.review_state<>'withdrawn') AS source_available
         FROM research.library_document_bindings b JOIN research.library_representations r ON r.id=b.representation_id
         JOIN research.library_items i ON i.work_id=b.work_id JOIN research.records s
-        ON s.id=b.source_record_id AND s.project_id=b.project_id WHERE i.id=%s AND b.document_id=%s''',(item_id,document_id)).fetchone()
+        ON s.id=b.source_record_id AND s.project_id IS NOT DISTINCT FROM b.project_id WHERE i.id=%s AND b.document_id=%s''',(item_id,document_id)).fetchone()
     if target:target['target_status']='available' if target['source_available'] else 'source_unavailable'
     return target
 

@@ -52,7 +52,8 @@ def validate(values):
         date.fromisoformat(values["accessed_on"])
     for key,allowed in [("source_role",ROLES),("access_status",ACCESS),("rights_status",RIGHTS),("coverage_scope",COVERAGE)]:
         if values[key] not in allowed: raise ValueError("Invalid "+key)
-    for key in ("project_id","actor"): db._text(values[key],key,500)
+    for key in ("project_id","actor"):
+        if key!="project_id" or values[key] is not None:db._text(values[key],key,500)
     if values["existing_source_record_id"]:
         db._text(values["existing_source_record_id"],"existing source",500)
     keys = identity_keys(values["source_url"],values["identifier"])
@@ -81,10 +82,10 @@ def candidates(connection, project_id, source_url, identifier, limit=20):
         attributes->'source_intake' AS intake_metadata,
         (NULLIF(%s,'') IS NOT NULL AND attributes->'source_intake'->>'url_key'=%s) AS same_url,
         (NULLIF(%s,'') IS NOT NULL AND attributes->'source_intake'->>'identifier_key'=%s) AS same_identifier
-        FROM research.records WHERE project_id=%s AND deleted_at IS NULL AND kind IN ('source','work','edition')
+        FROM research.records WHERE (%s::text IS NULL OR project_id=%s) AND deleted_at IS NULL AND kind IN ('source','work','edition')
         AND ((NULLIF(%s,'') IS NOT NULL AND attributes->'source_intake'->>'url_key'=%s)
           OR (NULLIF(%s,'') IS NOT NULL AND attributes->'source_intake'->>'identifier_key'=%s))
-        ORDER BY id LIMIT %s""", (url_key,url_key,identifier_key,identifier_key,project_id,
+        ORDER BY id LIMIT %s""", (url_key,url_key,identifier_key,identifier_key,project_id,project_id,
                                    url_key,url_key,identifier_key,identifier_key,limit)).fetchall()
 
 
@@ -103,7 +104,7 @@ def create(connection, **values):
     with connection.transaction():
         if connection.execute("SHOW transaction_isolation").fetchone()["transaction_isolation"] != "read committed":
             raise ValueError("Source intake requires read committed isolation")
-        locks = sorted({"request:"+request,*(values["project_id"]+":"+key for key in keys if key)})
+        locks = sorted({"request:"+request,*((values["project_id"] or "workspace:owner")+":"+key for key in keys if key)})
         for key in locks: connection.execute("SELECT pg_advisory_xact_lock(184514,hashtext(%s))",(key,))
         old = connection.execute("SELECT * FROM research.source_intakes WHERE request_uuid=%s",(request,)).fetchone()
         if old:
@@ -119,7 +120,7 @@ def create(connection, **values):
             declarations["excerpt"]["input_sha256"] = hashlib.sha256(values["excerpt"]["text"].encode()).hexdigest()
         source_id = values["existing_source_record_id"]
         if source_id:
-            current = connection.execute("SELECT kind FROM research.records WHERE project_id=%s AND id=%s AND deleted_at IS NULL",(values["project_id"],source_id)).fetchone()
+            current = connection.execute("SELECT kind FROM research.records WHERE project_id IS NOT DISTINCT FROM %s AND id=%s AND deleted_at IS NULL",(values["project_id"],source_id)).fetchone()
             if not current or current["kind"] not in {"source","work","edition"}:
                 raise ValueError("Choose an active source, work, or edition from this project")
         else:

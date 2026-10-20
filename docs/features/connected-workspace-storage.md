@@ -89,3 +89,25 @@ Legacy sealed publication inputs explicitly omit the added workspace ownership f
 so unchanged source content retains its original preview fingerprint. Actual content,
 revision and publication choices still participate in the existing seal validation.
 No public global-note projection is created by this foundation.
+
+## Native source and reader layer (0026 design)
+
+Native source intake retains the existing structured rights/availability checks and
+receipt authority, with no project origin. Native source/document binding aliases are
+nullable origins derived only by the restricted indexing function. Bibliographic
+ambiguity remains an explicit choice; selecting an existing legacy source resolves
+its stored origin before writing, never relocates it.
+
+Source/edition/document/annotation IDs remain globally unique. Native sources and
+excerpts use the same records and immutable reading-document authorities. The native
+partial content index supplies NULL-origin deduplication; an explicit source-ID
+advisory lock makes retries deterministic. Exact annotation guards use NULL-safe
+origin equality. First successful source-note creation and first library retention
+share a transaction; a removed shelf item is never resurrected by editing notes.
+
+Qur’an and Gutenberg native reader adapters use the real workspace key to derive
+provider source IDs, not a surrogate project. New private place/progress tables use
+workspace/resource/book/version keys; legacy per-project tables remain intact. Native
+Gutenberg version is part of place identity. Reading an unretained catalog book still
+creates no source or shelf membership. Existing origin-resolving APIs continue to
+open legacy notes and sources. No network provider or rights policy is added.

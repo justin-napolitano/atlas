@@ -49,7 +49,7 @@ def page(connection,*,project_id='',q='',state='',cursor='',limit=30,continuing=
       LEFT JOIN LATERAL (
         SELECT b.document_id,rp.locator,rp.text_sha256,coalesce(p.start_pos,0) AS position,p.updated_at AS read_at
         FROM research.library_document_bindings b JOIN research.library_representations rp ON rp.id=b.representation_id
-        JOIN research.reading_documents d ON d.id=b.document_id AND d.project_id=b.project_id
+        JOIN research.reading_documents d ON d.id=b.document_id AND d.project_id IS NOT DISTINCT FROM b.project_id
         LEFT JOIN research.reading_desks p ON p.project_id=b.project_id AND p.document_id=b.document_id AND p.record_id=b.source_record_id
         WHERE b.work_id=i.work_id AND rp.edition_id=i.preferred_edition_id
         ORDER BY p.updated_at DESC NULLS LAST,d.created_at,b.document_id LIMIT 1

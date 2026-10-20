@@ -189,7 +189,11 @@ class SharedLibraryMigrationTests(unittest.TestCase):
                     before={t:c.execute(sql.SQL('SELECT to_jsonb(r) AS row FROM research.{} r ORDER BY to_jsonb(r)::text').format(sql.Identifier(t))).fetchall() for t in tables}
                     shutil.copyfile(actual/MIGRATION,root/'migrations'/MIGRATION)
                     with patch('islam_research.database.files',return_value=root):self.assertEqual(db.migrate(c),[MIGRATION])
-                    alias=library.source_identity(c,project,source);item=library.get(c,alias['item_id'])
+                    alias=library.source_identity(c,project,source)
+                    # Rehearse exactly schema 0024 using its columns, rather than
+                    # a newer projection that requires workspace tombstones.
+                    item=c.execute('SELECT * FROM research.library_items WHERE id=%s',(alias['item_id'],)).fetchone()
+                    item['legacy_reading_states']=c.execute('SELECT reading FROM research.personal_states WHERE record_id=%s',(source,)).fetchall()
                     self.assertFalse(item['on_shelf']);self.assertEqual(item['reading_status'],'needs_review')
                     self.assertIsNone(item['preferred_edition_id'])
                     self.assertEqual(item['legacy_reading_states'][0]['reading'],'read')

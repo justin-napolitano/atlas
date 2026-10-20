@@ -27,7 +27,7 @@ def create_document(connection, *, project_id, source_record_id, edition, locato
         if url.scheme not in {"https","http"} or not url.hostname or url.username or url.password:
             raise ValueError("Supply an HTTP(S) source representation without embedded credentials")
     with connection.transaction():
-        source = connection.execute("SELECT kind FROM research.records WHERE project_id=%s AND id=%s AND deleted_at IS NULL",
+        source = connection.execute("SELECT kind FROM research.records WHERE project_id IS NOT DISTINCT FROM %s AND id=%s AND deleted_at IS NULL",
                                     (project_id,source_record_id)).fetchone()
         if not source or source["kind"] not in {"source","work","edition"}:
             raise ValueError("A reading excerpt must target an active source, work, or edition in this project")
@@ -39,11 +39,12 @@ def create_document(connection, *, project_id, source_record_id, edition, locato
         row = connection.execute("""INSERT INTO research.reading_documents
             (id,project_id,source_record_id,edition,locator,representation_url,text_body,input_sha256,text_sha256,normalization,content_key,changed_by,source_notice)
             VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            ON CONFLICT(project_id,content_key) DO NOTHING RETURNING *""",
+            ON CONFLICT DO NOTHING RETURNING *""",
             (document_id or "urn:research:document:"+str(uuid.uuid4()),project_id,source_record_id,edition,locator,representation_url,
              snapshot["text"],snapshot["input_sha256"],snapshot["text_sha256"],snapshot["normalization"],key,actor,source_notice)).fetchone()
         if row is None:
-            row = connection.execute("SELECT * FROM research.reading_documents WHERE project_id=%s AND content_key=%s",(project_id,key)).fetchone()
+            row = connection.execute("SELECT * FROM research.reading_documents WHERE project_id IS NOT DISTINCT FROM %s AND content_key=%s",(project_id,key)).fetchone()
+            if row is None:raise ValueError("Snapshot identity requires reconciliation")
             if any(row[k] != v for k,v in {"source_record_id":source_record_id,"edition":edition,"locator":locator,
                                          "representation_url":representation_url,"text_body":snapshot["text"],"source_notice":source_notice}.items()):
                 raise ValueError("Snapshot fingerprint conflict requires reconciliation")
@@ -53,8 +54,8 @@ def create_document(connection, *, project_id, source_record_id, edition, locato
 def documents(connection, project_id, source_record_id, cursor, limit):
     return connection.execute("""SELECT d.id,d.project_id,d.source_record_id,d.edition,d.locator,d.representation_url,
         d.text_sha256,d.normalization,d.review_scope,d.created_at FROM research.reading_documents d
-        JOIN research.records r ON r.project_id=d.project_id AND r.id=d.source_record_id
-        WHERE d.project_id=%s AND d.source_record_id=%s AND d.id>%s AND r.deleted_at IS NULL ORDER BY d.id LIMIT %s""",
+        JOIN research.records r ON r.project_id IS NOT DISTINCT FROM d.project_id AND r.id=d.source_record_id
+        WHERE d.project_id IS NOT DISTINCT FROM %s AND d.source_record_id=%s AND d.id>%s AND r.deleted_at IS NULL ORDER BY d.id LIMIT %s""",
         (project_id,source_record_id,cursor,limit)).fetchall()
 
 
@@ -103,7 +104,7 @@ def create_annotation(connection, *, annotation_uuid, project_id, document_id, t
 def annotations(connection, project_id, document_id, cursor, limit):
     if get_document(connection,project_id,document_id) is None:
         return []
-    return connection.execute("SELECT a.*,coalesce((SELECT t.revision FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id),0) AS trash_revision FROM research.reading_annotations a WHERE project_id=%s AND document_id=%s AND id>%s AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed') ORDER BY id LIMIT %s",
+    return connection.execute("SELECT a.*,coalesce((SELECT t.revision FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id),0) AS trash_revision FROM research.reading_annotations a WHERE project_id IS NOT DISTINCT FROM %s AND document_id=%s AND id>%s AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=a.project_id AND t.target_kind='annotation' AND t.target_id=a.id AND t.state='trashed') ORDER BY id LIMIT %s",
                               (project_id,document_id,cursor,limit)).fetchall()
 
 
@@ -122,10 +123,10 @@ def update_annotation(connection, *, annotation_id, project_id, body, expected_r
             raise ValueError("Active annotation not found")
         row = connection.execute("""UPDATE research.reading_annotations SET body=%s,revision=revision+1,changed_by=%s,
             mark_style=coalesce(%s,mark_style)
-            WHERE project_id=%s AND id=%s AND revision=%s RETURNING *""",
+            WHERE project_id IS NOT DISTINCT FROM %s AND id=%s AND revision=%s RETURNING *""",
             (body,actor,mark_style,project_id,annotation_id,expected_revision)).fetchone()
         if row is None:
-            latest=connection.execute("SELECT * FROM research.reading_annotations WHERE project_id=%s AND id=%s",
+            latest=connection.execute("SELECT * FROM research.reading_annotations WHERE project_id IS NOT DISTINCT FROM %s AND id=%s",
                                       (project_id,annotation_id)).fetchone()
             # A repeated request after a lost response acknowledges the same edit,
             # but cannot overwrite a different newer body or explicit style.
