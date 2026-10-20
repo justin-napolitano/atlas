@@ -29,7 +29,7 @@ def page(connection,*,project_id='',q='',state='',cursor='',limit=30,continuing=
       target.document_id,target.locator,target.text_sha256,target.position,
       coalesce(qp.updated_at,gp.updated_at,target.read_at) AS read_at,
       qp.chapter AS resume_chapter,qp.ayah AS resume_ayah,qp.resource_key,
-      gp.book_id,gp.version AS book_version,gp.section AS book_section,gp.position AS book_position,
+      bv.book_id,bv.version AS book_version,coalesce(gp.section,0) AS book_section,coalesce(gp.position,0) AS book_position,
       (SELECT count(*) FROM research.library_editions x WHERE x.work_id=i.work_id) AS edition_count
       FROM research.library_items i JOIN research.library_works w ON w.id=i.work_id
       JOIN research.records r ON r.id=w.legacy_source_id
@@ -37,12 +37,15 @@ def page(connection,*,project_id='',q='',state='',cursor='',limit=30,continuing=
       LEFT JOIN research.quran_places qp ON qp.project_id=r.project_id
         AND qp.resource_key=r.attributes->>'quran_resource' AND i.preferred_edition_id IS NOT NULL
         AND r.deleted_at IS NULL AND r.review_state<>'withdrawn'
-      LEFT JOIN (research.gutenberg_places gp JOIN research.gutenberg_books gb
-        ON gb.book_id=gp.book_id AND gb.version=gp.version)
-        ON gp.project_id=r.project_id AND gp.book_id::text=r.attributes->>'gutenberg_id'
-        AND e.label=(gb.payload->>'edition')||' · '||left(gp.version,12)
+      LEFT JOIN LATERAL (
+        SELECT gb.book_id,gb.version FROM research.gutenberg_books gb
+        WHERE gb.book_id::text=r.attributes->>'gutenberg_id'
+        AND e.label=(gb.payload->>'edition')||' · '||left(gb.version,12)
         AND e.representation_url=gb.payload->>'representation_url'
-        AND r.deleted_at IS NULL AND r.review_state<>'withdrawn'
+        ORDER BY gb.version LIMIT 1
+      ) bv ON r.deleted_at IS NULL AND r.review_state<>'withdrawn'
+      LEFT JOIN research.gutenberg_places gp ON gp.project_id=r.project_id
+        AND gp.book_id=bv.book_id AND gp.version=bv.version
       LEFT JOIN LATERAL (
         SELECT b.document_id,rp.locator,rp.text_sha256,coalesce(p.start_pos,0) AS position,p.updated_at AS read_at
         FROM research.library_document_bindings b JOIN research.library_representations rp ON rp.id=b.representation_id

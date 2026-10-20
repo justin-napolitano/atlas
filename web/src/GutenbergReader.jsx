@@ -1,5 +1,6 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import SourceReader from './SourceReader.jsx';
+import SaveReadingToLibrary from './SaveReadingToLibrary.jsx';
 import {DocumentNavigation} from './WorkspaceNavigation.jsx';
 import {SurfaceActivity} from './surfaceActivity.js';
 import {useContext} from 'react';
@@ -52,9 +53,9 @@ export default function GutenbergReader({api,projectId,bookId,version='',drafts,
   if(error)return <section className="gutenberg-reader"><p role="alert">{error}</p><button onClick={load}>Retry book</button><a href={`https://www.gutenberg.org/ebooks/${bookId}`} target="_blank" rel="noopener noreferrer">Open on Gutenberg ↗</a><button onClick={onBack}>Back to sources</button></section>;
   if(!book)return <p role="status">Opening book…</p>;
   return <section ref={root} className="gutenberg-reader" aria-label={book.title}>
-    <header className="gutenberg-book-heading"><div><h1>{book.title}</h1><p>{book.creators.join(' · ')}{book.translators.length?' · Translated by '+book.translators.join(', '):''}</p></div>{doc&&<button onClick={saveBook}>Save to project</button>}</header>
+    <header className="gutenberg-book-heading"><div><h1>{book.title}</h1><p>{book.creators.join(' · ')}{book.translators.length?' · Translated by '+book.translators.join(', '):''}</p></div>{doc&&<><SaveReadingToLibrary key={bookId+book.version} api={api} prepare={async()=>{await readerAPI.ensure();return {record_id:doc.source_record_id,document_id:doc.id};}}/></>}</header>
     {message&&<p role="status">{message}</p>}
-    <details className="gutenberg-provenance"><summary>Gutenberg #{bookId} · {book.languages.join(', ')} · Digital edition</summary><p>{book.edition}</p><p>{book.rights_notice}</p><p>Digital release: {book.release_date || 'Not stated'} · Retrieved: {book.retrieved_at || 'Not yet acquired'}</p><a href={book.source_url} target="_blank" rel="noopener noreferrer">Provider record ↗</a>{book.version&&<p>Text version: {book.version.slice(0,16)}</p>}{book.source_notice&&<details><summary>Original source header and license</summary><pre>{book.source_notice}</pre></details>}</details>
+    <details className="gutenberg-provenance"><summary>Gutenberg #{bookId} · {book.languages.join(', ')} · Digital edition</summary><p>{book.edition}</p>{doc&&<button onClick={saveBook}>Save to project</button>}<p>{book.rights_notice}</p><p>Digital release: {book.release_date || 'Not stated'} · Retrieved: {book.retrieved_at || 'Not yet acquired'}</p><a href={book.source_url} target="_blank" rel="noopener noreferrer">Provider record ↗</a>{book.version&&<p>Text version: {book.version.slice(0,16)}</p>}{book.source_notice&&<details><summary>Original source header and license</summary><pre>{book.source_notice}</pre></details>}</details>
     {book.availability!=='read'?<p>This edition has no supported public-domain UTF-8 text in this reader yet. <a href={book.source_url} target="_blank" rel="noopener noreferrer">See available formats on Gutenberg ↗</a></p>:<>
       <DocumentNavigation><div className="gutenberg-contents"><strong>{book.title}</strong><nav aria-label="Book contents">{book.sections.map(item=><button key={item.index} aria-current={section===item.index?'location':undefined} onClick={()=>move(item.index)}>{item.index+1}. {item.label}</button>)}</nav></div></DocumentNavigation>
       <nav className="gutenberg-section-nav" aria-label="Reading sections"><button disabled={!section} onClick={()=>move(section-1)}>← Previous</button><span>{section+1} / {book.sections.length} · {book.sections[section]?.label}</span><button disabled={section===book.sections.length-1} onClick={()=>move(section+1)}>Next →</button></nav>

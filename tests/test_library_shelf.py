@@ -52,6 +52,32 @@ class LibraryShelfTests(unittest.TestCase):
         self.assertEqual(library.get(self.c,self.item['id'])['reading_status'],'want_to_read')
         self.assertEqual(shelf.page(self.c,project_id=self.project,continuing=True)['items'],[])
 
+    def retain_bound(self,bound):
+        source=bound['record_id'];row=db.get_record(self.c,source)
+        alias=library.index_source(self.c,project_id=self.project,source_record_id=source,expected_source_revision=row['revision'],request_uuid=str(uuid.uuid4()),actor='synthetic')
+        item=library.get(self.c,alias['item_id']);edition=library.resolve(self.c,item_id=item['id'],document_id=bound['document']['id'])['edition_id']
+        return library.update_item(self.c,item_id=item['id'],expected_revision=1,on_shelf=True,reading_status='want_to_read',preferred_edition_id=edition,actor='synthetic')
+
+    def test_quran_and_gutenberg_use_confirmed_native_places_and_same_selected_version(self):
+        from islam_research import quran_workspace,gutenberg_store
+        from test_gutenberg import book
+        quran=quran_workspace.binding(self.c,project_id=self.project,resource_key='itani-god',chapter=4,ayah_start=59,ayah_end=59,actor='synthetic')
+        qitem=self.retain_bound(quran)
+        quran_workspace.save_place(self.c,project_id=self.project,resource_key='itani-god',chapter=4,ayah=83,expected_revision=0,actor='synthetic')
+        rows=shelf.page(self.c,project_id=self.project,continuing=True)['items']
+        row=next(r for r in rows if r['id']==qitem['id'])
+        self.assertEqual(row['reader'],'quran');self.assertEqual(row['resume_ayah'],83)
+        self.assertEqual(row['resource_key'],'itani-god');self.assertEqual(row['reading_status'],'reading')
+        value=gutenberg_store.cache(self.c,book())
+        bound=gutenberg_store.binding(self.c,project_id=self.project,book_id=value['book_id'],version=value['version'],section=0,actor='synthetic')
+        gitem=self.retain_bound(bound)
+        row=next(r for r in shelf.page(self.c,project_id=self.project)['items'] if r['id']==gitem['id'])
+        self.assertEqual(row['reader'],'gutenberg');self.assertEqual(row['book_section'],0)
+        self.assertEqual(row['book_version'],value['version'])
+        gutenberg_store.save_place(self.c,project_id=self.project,book_id=value['book_id'],version=value['version'],section=1,position=2,expected_revision=0,actor='synthetic')
+        row=next(r for r in shelf.page(self.c,project_id=self.project,continuing=True)['items'] if r['id']==gitem['id'])
+        self.assertEqual(row['book_section'],1);self.assertEqual(row['book_position'],2)
+
 class ShelfCursorTests(unittest.TestCase):
     def test_malformed_cursor_is_rejected(self):
         for value in ['bad','e30','WzEsMl0','W10']:
