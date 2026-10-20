@@ -26,7 +26,7 @@ from .graph_engine import rank, registered_policy
 from .quran_citations import PARSER_VERSION as QURAN_PARSER_VERSION, PROFILE_ID as QURAN_PROFILE_ID
 from .quran_resources import pilot_resource
 from .reader_collection import collection_resource
-from . import quran_reader, quran_words
+from . import quran_reader, quran_words, gutenberg
 
 logger = logging.getLogger("research.api")
 Identifier = Annotated[str, Field(min_length=1, max_length=500, pattern=r"^[^\x00-\x1f\x7f]+$")]
@@ -277,6 +277,14 @@ class QuranPlace(VerseOwnerInput):
     expected_revision: Annotated[int,Field(ge=0)]
 
 
+class QuranProgress(VerseOwnerInput):
+    project_id: Identifier
+    chapter: Annotated[int,Field(ge=1,le=114)]
+    ayah: Annotated[int,Field(ge=1,le=286)]
+    is_read: bool
+    expected_revision: Annotated[int,Field(ge=0)]
+
+
 class CollectionReadingLink(VerseOwnerInput):
     project_id: Identifier
     reading_id: Identifier
@@ -333,6 +341,50 @@ class NotebookUpdate(NotebookMetadata):
     project_id: Identifier
     expected_revision: Annotated[int,Field(ge=1)]
     state: Literal["active","withdrawn"] = "active"
+
+
+class GutenbergBinding(Input):
+    project_id: Identifier
+    book_id: Annotated[int, Field(ge=1,le=999999,strict=True)]
+    version: Annotated[str,Field(pattern=r'^[a-f0-9]{64}$')]
+    section: Annotated[int,Field(ge=0,le=1000,strict=True)]
+
+
+class GutenbergPlace(GutenbergBinding):
+    position: Annotated[int,Field(ge=0,le=12000,strict=True)] = 0
+    expected_revision: Annotated[int,Field(ge=0,strict=True)]
+
+
+class GutenbergAnnotation(Input):
+    binding: GutenbergBinding
+    annotation: ReadingCaptureInput
+
+
+class GutenbergNote(Input):
+    binding: GutenbergBinding
+    note: NotebookCreate
+
+
+class LibraryIndex(VerseOwnerInput):
+    request_uuid: Annotated[str,Field(min_length=36,max_length=36)]
+    project_id: Identifier
+    source_record_id: Identifier
+    expected_source_revision: Annotated[int,Field(ge=1,strict=True)]
+
+
+class LibraryItemUpdate(VerseOwnerInput):
+    item_id: Identifier
+    expected_revision: Annotated[int,Field(ge=1,strict=True)]
+    on_shelf: Annotated[bool,Field(strict=True)]
+    reading_status: Literal['needs_review','want_to_read','reading','finished']
+    preferred_edition_id: Identifier | None
+
+
+class LibraryMembership(VerseOwnerInput):
+    item_id: Identifier
+    project_id: Identifier
+    state: Literal['active','removed']
+    expected_revision: Annotated[int,Field(ge=0,strict=True)]
 
 
 class NotebookDraftValue(Input):
@@ -659,6 +711,100 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
 
     router = APIRouter(prefix="/v1", dependencies=[Depends(owner)])
 
+    def library_page(rows,limit,key='id'):
+        return {'items':rows[:limit],'next_cursor':rows[limit-1][key] if len(rows)>limit else None}
+
+    @router.get('/library/items')
+    def library_items(project_id: Identifier | None=None,retained:bool=True,
+        cursor:Annotated[str,Query(max_length=500)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):
+        return library_page(store.library_items(project_id=project_id or '',retained=retained,cursor=cursor,limit=limit+1),limit)
+
+    @router.get('/library/item')
+    def library_item(item_id:Identifier,project_id:Identifier | None=None):
+        row=store.library_item(item_id,project_id or '')
+        if row is None:raise HTTPException(404,'Library item not found in this context')
+        return row
+
+    @router.get('/library/source')
+    def library_source(project_id:Identifier,source_record_id:Identifier):
+        row=store.library_source(project_id,source_record_id)
+        if row is None:raise HTTPException(404,'Source is not indexed in the owner library')
+        return row
+
+    @router.post('/library/index-source',status_code=201)
+    def library_index(value:LibraryIndex,actor:str=Depends(owner)):
+        fields=value.model_dump();fields.pop('owner_confirmed')
+        return store.library_index_source(actor=actor,**fields)
+
+    @router.put('/library/item')
+    def library_item_update(value:LibraryItemUpdate,actor:str=Depends(owner)):
+        fields=value.model_dump();fields.pop('owner_confirmed')
+        return store.library_update_item(actor=actor,**fields)
+
+    @router.put('/library/project-membership')
+    def library_membership(value:LibraryMembership,actor:str=Depends(owner)):
+        fields=value.model_dump();fields.pop('owner_confirmed')
+        return store.library_membership(actor=actor,**fields)
+
+    @router.get('/library/editions')
+    def library_editions(item_id:Identifier,project_id:Identifier | None=None,
+        cursor:Annotated[str,Query(max_length=500)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):
+        return library_page(store.library_editions(item_id=item_id,project_id=project_id or '',cursor=cursor,limit=limit+1),limit)
+
+    @router.get('/library/documents')
+    def library_documents(item_id:Identifier,project_id:Identifier | None=None,edition_id:Identifier | None=None,
+        cursor:Annotated[str,Query(max_length=500)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):
+        return library_page(store.library_documents(item_id=item_id,project_id=project_id or '',edition_id=edition_id or '',cursor=cursor,limit=limit+1),limit,'document_id')
+
+    @router.get('/library/resolve')
+    def library_resolve(item_id:Identifier,document_id:Identifier,project_id:Identifier | None=None):
+        row=store.library_resolve(item_id=item_id,document_id=document_id,project_id=project_id or '')
+        if row is None:raise HTTPException(404,'Reading target not found in this library context')
+        return row
+
+    @router.get('/library/notes')
+    def library_notes(item_id:Identifier,project_id:Identifier | None=None,
+        cursor:Annotated[str,Query(max_length=700)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):
+        return library_page(store.library_notes(item_id=item_id,project_id=project_id or '',cursor=cursor,limit=limit+1),limit,'note_key')
+
+    @router.get('/catalog/gutenberg/search')
+    def gutenberg_search(q: Annotated[str,Query(min_length=1,max_length=200)],page: Annotated[int,Query(ge=1,le=100)]=1):
+        try:return gutenberg.search(q,page)
+        except gutenberg.Unavailable:raise HTTPException(503,'Gutenberg search is unavailable. Your library and notes are unchanged.') from None
+
+    @router.get('/catalog/gutenberg/book')
+    def gutenberg_book(project_id: Identifier,book_id: Annotated[int,Query(ge=1,le=999999)],
+        version: Annotated[str,Query(max_length=64,pattern=r'^(?:[a-f0-9]{64})?$')]=''):
+        try:return store.gutenberg_book(project_id,book_id,version)
+        except gutenberg.Unavailable:raise HTTPException(503,'This book is unavailable or its text format is not supported yet. Try the provider link or retry later.') from None
+
+    @router.get('/catalog/gutenberg/section')
+    def gutenberg_section(project_id: Identifier,book_id: Annotated[int,Query(ge=1,le=999999)],
+        version: Annotated[str,Query(pattern=r'^[a-f0-9]{64}$')],section: Annotated[int,Query(ge=0,le=1000)]):
+        return store.gutenberg_section(project_id,book_id,version,section)
+
+    @router.post('/catalog/gutenberg/binding',status_code=201)
+    def gutenberg_binding(value:GutenbergBinding,actor:str=Depends(owner)):
+        return store.gutenberg_binding(actor=actor,**value.model_dump())
+
+    @router.post('/catalog/gutenberg/annotations',status_code=201)
+    def gutenberg_annotation(value:GutenbergAnnotation,actor:str=Depends(owner)):
+        return store.gutenberg_write(binding=value.binding.model_dump(),fields=value.annotation.model_dump(),action='annotation',actor=actor)
+
+    @router.post('/catalog/gutenberg/notes',status_code=201)
+    def gutenberg_note(value:GutenbergNote,actor:str=Depends(owner)):
+        return store.gutenberg_write(binding=value.binding.model_dump(),fields=value.note.model_dump(),action='notebook',actor=actor)
+
+    @router.get('/catalog/gutenberg/place')
+    def gutenberg_place(project_id:Identifier,book_id:Annotated[int,Query(ge=1,le=999999)]):
+        row=store.gutenberg_place(project_id,book_id)
+        if row is None:raise HTTPException(404,'No saved place for this book')
+        return row
+
+    @router.put('/catalog/gutenberg/place')
+    def save_gutenberg_place(value:GutenbergPlace,actor:str=Depends(owner)):
+        return store.save_gutenberg_place(actor=actor,**value.model_dump())
+
     @router.get("/me")
     def me():
         return {"mode": "owner", "can_edit": True}
@@ -739,6 +885,15 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         except Exception:
             # Do not relay provider response bodies or internal network errors.
             raise HTTPException(503,'Word translation is unavailable. Your reading and notes are unchanged.') from None
+
+    @router.get('/quran/progress')
+    def quran_progress(project_id: Identifier):
+        return {'project_id':project_id,'items':store.quran_progress(project_id)}
+
+    @router.put('/quran/progress')
+    def save_quran_progress(value: QuranProgress, actor: str=Depends(owner)):
+        quran_reader.reference(value.chapter,value.ayah)
+        return store.save_quran_progress(actor=actor,**value.model_dump(exclude={'owner_confirmed'}))
 
     @router.post('/quran/binding',status_code=201)
     def quran_binding(value: QuranBinding,actor: str=Depends(owner)):

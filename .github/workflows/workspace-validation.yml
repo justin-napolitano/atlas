@@ -34,6 +34,9 @@ jobs:
       - run: node scripts/review-quran-reader.mjs
         env:
           CHROME_PATH: /usr/bin/google-chrome
+      - run: node scripts/review-gutenberg.mjs
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
       - run: node scripts/review-source-intake.mjs
         env:
           CHROME_PATH: /usr/bin/google-chrome

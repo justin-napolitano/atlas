@@ -80,3 +80,23 @@
 .quran-word-translation small{font:13px/1.5 system-ui}
 .quran-translation-options{display:grid;gap:8px}
 .quran-translation-options a{color:var(--accent,#b82240);font:14px/1.5 system-ui}
+.quran-ayah-meta{display:flex;align-items:center;gap:12px;font:12px/1.5 system-ui}
+.quran-reader .quran-read-mark{font:12px/1.5 system-ui;min-height:32px;border:0;background:transparent;color:inherit;opacity:.7;padding:4px 8px}
+.quran-reader .quran-read-mark[aria-pressed=true]{color:var(--accent,#b82240);background:transparent;opacity:1}
+.quran-reader .quran-read-mark:hover,.quran-reader .quran-read-mark:focus-visible{opacity:1}
+.quran-read-saving{font:12px/1.5 system-ui;opacity:.7}
+.quran-chapter-progress{display:block;font:11px/1.4 system-ui;color:var(--muted,#777)}
+.quran-progress-summary{font:12px/1.5 system-ui;margin-left:0;position:relative}
+.quran-progress-summary>summary{cursor:pointer;padding:8px 0;list-style:none;min-height:32px;align-content:center}
+.quran-progress-summary[open]>div{position:absolute;right:0;top:100%;z-index:12;width:260px;max-width:calc(100vw - 48px);padding:18px;background:var(--quran-bg);border:1px solid var(--quran-line);border-radius:4px}
+.quran-progress-summary label{display:grid;gap:8px}
+.quran-progress-summary progress{accent-color:var(--accent,#b82240);width:100%;height:6px}
+.quran-progress-summary small{font:12px/1.5 system-ui;color:var(--muted,#777)}
+.quran-progress-error{font:13px/1.5 system-ui;display:flex;gap:8px;flex-wrap:wrap;padding:8px 0;color:var(--accent,#b82240)}
+.quran-progress-error button{font:13px/1.5 system-ui;background:transparent;color:inherit;border:1px solid var(--quran-line);padding:6px}
+.quran-sidebar-surahs nav button{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.quran-sidebar-surahs nav button small{font:10px/1.4 system-ui;color:var(--muted,#777);white-space:nowrap}
+.quran-keyboard-status{font:13px/1.5 system-ui;color:var(--muted,#777)}
+.quran-reader .quran-text article:focus-visible{outline:none;border-inline-start:2px solid var(--accent,#b82240)}
+
+.quran-notes .passage-location-label{display:block;font:12px/1.5 system-ui;color:var(--muted,#aaa6a0);margin-bottom:8px}

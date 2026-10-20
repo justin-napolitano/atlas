@@ -94,14 +94,23 @@ def probe():
 
 def verify(path):
     marker=(WORK/"marker.txt").read_text()
-    if path.stat().st_size>50_000_000:
-        raise ValueError("Unexpectedly large CI log")
-    logs=path.read_text(encoding="utf-8",errors="replace")
-    if SENTINEL not in logs:
+    # Scan the complete capture with bounded memory: repeated migration DDL can
+    # exceed 50 MB. Keep overlap so a marker split across reads cannot evade us.
+    needles=(SENTINEL,marker,"violates check constraint","statement timeout")
+    found={needle:False for needle in needles}
+    overlap=max(map(len,needles))-1
+    tail=""
+    with path.open(encoding="utf-8",errors="replace") as stream:
+        while chunk:=stream.read(65536):
+            window=tail+chunk
+            for needle in needles:
+                found[needle]=found[needle] or needle in window
+            tail=window[-overlap:]
+    if not found[SENTINEL]:
         raise ValueError("Probe sentinel missing: log capture is incomplete")
-    if marker in logs:
+    if found[marker]:
         raise ValueError("Private synthetic note appeared in database logs")
-    if "violates check constraint" not in logs or "statement timeout" not in logs:
+    if not all(found[needle] for needle in needles[2:]):
         raise ValueError("Expected error paths are absent from captured logs")
     print(json.dumps({"private_marker_leaked":False,"sentinel_present":True,"error_paths_present":True,"log_bytes":path.stat().st_size}))
 

@@ -8,9 +8,9 @@ const stateFor=value=>value?.current || value?.status==='conflict'?'Conflict':va
 export function workStatus(item,{drafts,records,passages}){
   const source=item.snapshot.selected,project=item.project,view=item.snapshot.libraryView;
   const pending=[];
-  if(view==='quran'){
+  if(view==='quran'||view==='gutenberg'){
     for(const value of passages.values())if(value.server.project_id===project&&value.status!=='saved')pending.push(value);
-    for(const value of drafts.values())if(value.projectId===project && ['quran','location-margin'].includes(value.workspaceMode))pending.push(value);
+    for(const value of drafts.values())if(value.projectId===project && ['quran','location-margin','gutenberg'].includes(value.workspaceMode))pending.push(value);
   }else if(view==='notebook'||view==='questions'){
     for(const [key,value] of drafts)if(key.startsWith('notebook:')){
       try{if(JSON.parse(key.slice('notebook:'.length))[0]===project && (!value.workspaceMode || value.workspaceMode===(view==='questions'?'questions':'notes')))pending.push(value);}catch{/* unknown keys cannot target another project */}
