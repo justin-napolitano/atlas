@@ -274,7 +274,7 @@ class PostgreSQLStore:
 
     def state(self, project_id: str, record_id: str) -> dict | None:
         with db.connect(self.dsn) as connection:
-            return connection.execute("SELECT * FROM research.personal_states WHERE project_id=%s AND record_id=%s",
+            return connection.execute("SELECT * FROM research.personal_states WHERE project_id IS NOT DISTINCT FROM %s AND record_id=%s",
                                       (project_id, record_id)).fetchone()
 
     def evidence_path(self, project_id: str, record_id: str, profile_id: str) -> dict | None:

@@ -7327,13 +7327,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {

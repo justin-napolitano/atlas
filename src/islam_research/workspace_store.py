@@ -174,7 +174,7 @@ def search(connection,*,q,limit=20):
     if type(limit) is not int or not 1<=limit<=30:raise ValueError('Invalid search limit')
     writing=notes(connection,q=q,limit=limit)
     records=connection.execute("""SELECT id,project_id,kind,title,summary,revision FROM research.records
-      WHERE deleted_at IS NULL AND review_state<>'withdrawn' AND strpos(lower(title||' '||summary),lower(%s))>0 ORDER BY id LIMIT %s""",(q,limit+1)).fetchall()
+      WHERE deleted_at IS NULL AND review_state<>'withdrawn' AND (strpos(lower(title||' '||summary),lower(%s))>0 OR EXISTS(SELECT 1 FROM research.personal_states p WHERE p.record_id=research.records.id AND strpos(lower(p.note),lower(%s))>0)) ORDER BY id LIMIT %s""",(q,q,limit+1)).fetchall()
     annotations=connection.execute("""SELECT a.id,a.project_id,a.document_id,a.exact,a.revision,d.locator,d.edition,d.source_record_id
       FROM research.reading_annotations a JOIN research.reading_documents d ON d.id=a.document_id JOIN research.records r ON r.id=d.source_record_id
       WHERE r.deleted_at IS NULL AND r.review_state<>'withdrawn' AND strpos(lower(a.exact||' '||a.body),lower(%s))>0

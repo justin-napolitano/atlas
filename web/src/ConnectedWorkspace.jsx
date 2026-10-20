@@ -13,6 +13,7 @@ import LibraryShelf from './LibraryShelf.jsx';
 import NotebookSourcePane from './NotebookSourcePane.jsx';
 import {useModalFocus} from './useModalFocus.js';
 import './connectedWorkspace.css';
+import ExistingSourceNote from './ExistingSourceNote.jsx';
 import {OrganizationProperties,ConnectionProperties} from './ConnectedProperties.jsx';
 const GutenbergReader=lazy(()=>import('./GutenbergReader.jsx'));
 const api=workspaceAPI();
@@ -57,7 +58,7 @@ function Reflection({api,session}){
 function SourceDocument({api,route,drafts,changed,noteEditor,onOpen,onOpenNotebook,onContext}){
  const page=usePage(()=>api.request('record',{record_id:route.record}),[route.record]);if(!page.data)return <PageState page={page}/>;const record=page.data;
  if(!['source','work','edition'].includes(record.kind))return <article className="connected-document"><h1>{record.title}</h1><p>{record.summary}</p>{record.kind==='question'&&<QuestionState api={api} target={{kind:'record',id:record.id,revision:record.revision}}/>}<button onClick={()=>onContext({kind:'record',id:record.id,title:record.title})}>Connections</button></article>;
- return <><header className="connected-reading-title"><h1>{record.title}</h1><button onClick={()=>onContext({kind:'record',id:record.id,title:record.title})}>Connections</button></header><SourceReader record={record} api={api} drafts={drafts} changed={changed} noteEditor={noteEditor} navigate={onOpen} initialDocumentId={route.document||''} initialAnnotationId={route.annotation||''} initialReadingPosition={route.position==null?null:Number(route.position)} onOpenNotebook={onOpenNotebook} onOpenVerse={ref=>onOpen({view:'quran',...ref})}/></>;
+ return <><header className="connected-reading-title"><h1>{record.title}</h1><button onClick={()=>onContext({kind:'record',id:record.id,title:record.title})}>Connections</button></header>{route.source_note&&<ExistingSourceNote api={api} record={record} drafts={drafts} changed={changed} focus/>}<SourceReader record={record} api={api} drafts={drafts} changed={changed} noteEditor={noteEditor} navigate={onOpen} initialDocumentId={route.document||''} initialAnnotationId={route.annotation||''} initialReadingPosition={route.position==null?null:Number(route.position)} onOpenNotebook={onOpenNotebook} onOpenVerse={ref=>onOpen({view:'quran',...ref})}/>{!route.source_note&&<ExistingSourceNote api={api} record={record} drafts={drafts} changed={changed}/>}</>;
 }
 function Context({api,target,onOpen,onClose,onSource}){
  const page=usePage(()=>api.request('workspace/neighborhood',{kind:target.kind,id:target.id,depth:2,limit:40}),[target.kind,target.id]),collections=usePage(()=>api.request('workspace/collections',{limit:50}),[]);
@@ -109,6 +110,7 @@ export default function ConnectedWorkspace(){
   const kind=value.kind||value.item_kind||'entry',id=value.id;
   if(kind==='entry'){navigate({view:'note',entry_id:id});return;}
   if(kind==='annotation'){await openPassage(id);return;}
+  if(kind==='record_note'){navigate({view:'source',record:id,project:value.origin_project_id||value.project_id||null,source_note:1});return;}
   navigate({view:'source',record:id,project:value.origin_project_id||value.project_id||null});
  }
  function capture(type='note'){
