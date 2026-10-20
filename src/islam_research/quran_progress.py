@@ -17,7 +17,7 @@ def save(connection, *, project_id, chapter, ayah, is_read, expected_revision, a
         table='workspace_quran_reading_progress' if project_id is None else 'quran_reading_progress'
         column='workspace_id' if project_id is None else 'project_id'
         key=project_id or 'owner'
-        old = connection.execute(f'SELECT *,NULL::text AS origin FROM research.{table} WHERE {column}=%s AND chapter=%s AND ayah=%s', (key, chapter, ayah)).fetchone()
+        old = connection.execute(f'SELECT * FROM research.{table} WHERE {column}=%s AND chapter=%s AND ayah=%s', (key, chapter, ayah)).fetchone()
         if old and project_id is None:old['project_id']=None
         # Lost acknowledgement: retrying the exact old CAS is one operation.
         if old and old['revision'] == expected_revision + 1 and old['is_read'] == is_read and old['changed_by'] == actor:
