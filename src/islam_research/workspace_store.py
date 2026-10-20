@@ -159,11 +159,11 @@ def intake(connection,**fields):
         if not result['replayed']:
             shared_library.index_source(connection,request_uuid=fields['intake_uuid'],project_id=origin,
               source_record_id=row['id'],expected_source_revision=row['revision'],actor=fields['actor'])
-        retain_source(connection,result['record_id'],fields['actor'])
+        retain_source(connection,result['record_id'],fields['actor'],reading_status='want_to_read')
         return result
 
 
-def retain_source(connection,record_id,actor):
+def retain_source(connection,record_id,actor,reading_status='reading'):
     # Only a first native retention is automatic after deliberate intake/writing.
     # Explicit removal (a later revision) is never undone by another note.
     source=db.get_record(connection,record_id)
@@ -172,7 +172,7 @@ def retain_source(connection,record_id,actor):
     item_id=connection.execute('SELECT research.index_library_source(%s) AS id',(record_id,)).fetchone()['id']
     item=connection.execute('SELECT * FROM research.library_items WHERE id=%s FOR UPDATE',(item_id,)).fetchone()
     if item['revision']==1 and not item['on_shelf']:
-        shared_library.update_item(connection,item_id=item_id,expected_revision=1,on_shelf=True,reading_status='reading',preferred_edition_id=None,actor=actor)
+        shared_library.update_item(connection,item_id=item_id,expected_revision=1,on_shelf=True,reading_status=reading_status,preferred_edition_id=None,actor=actor)
 
 
 def search(connection,*,q,limit=20):
@@ -201,6 +201,14 @@ def continuing(connection,*,limit=12):
       UNION ALL SELECT NULL,p.record_id,p.document_id,p.start_pos,p.updated_at,r.title,d.edition,d.locator
       FROM research.workspace_reading_desks p JOIN research.records r ON r.id=p.record_id LEFT JOIN research.reading_documents d ON d.id=p.document_id WHERE r.deleted_at IS NULL AND r.review_state<>'withdrawn'
       ORDER BY updated_at DESC LIMIT %s""",(limit,)).fetchall()
+    from . import gutenberg_store,quran_reader
+    for row in reading:
+        if row['reader']=='gutenberg':
+            book=gutenberg_store.snapshot(connection,row['book_id'],row['version'])
+            row['title']=(book['title'] if book else 'Unavailable Gutenberg #'+str(row['book_id']))+' · Section '+str(row['section']+1)
+        else:
+            resource=quran_reader._load(row['resource_key'])[1]
+            row['title']='Qur’an · '+str(row['chapter'])+':'+str(row['ayah'])+' · '+resource['label']
     return dict(reading=reading,documents=documents,notes=notes(connection,limit=limit)['items'],drafts=drafts(connection,limit=limit))
 
 
