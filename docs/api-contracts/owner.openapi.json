@@ -2732,19 +2732,63 @@
       "QueryDefinition": {
         "additionalProperties": false,
         "properties": {
+          "collection_id": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Collection Id",
+            "type": "string"
+          },
+          "investigation_state": {
+            "default": "",
+            "enum": [
+              "",
+              "open",
+              "investigating",
+              "provisional",
+              "resolved",
+              "revisiting",
+              "unanswered"
+            ],
+            "title": "Investigation State",
+            "type": "string"
+          },
           "q": {
             "default": "",
             "maxLength": 300,
             "title": "Q",
             "type": "string"
           },
+          "reading_status": {
+            "default": "",
+            "enum": [
+              "",
+              "needs_review",
+              "want_to_read",
+              "reading",
+              "finished"
+            ],
+            "title": "Reading Status",
+            "type": "string"
+          },
           "scope": {
             "default": "notes",
             "enum": [
               "notes",
-              "sources"
+              "sources",
+              "questions",
+              "reading"
             ],
             "title": "Scope",
+            "type": "string"
+          },
+          "source_link": {
+            "default": "",
+            "enum": [
+              "",
+              "none",
+              "present"
+            ],
+            "title": "Source Link",
             "type": "string"
           },
           "thought_type": {

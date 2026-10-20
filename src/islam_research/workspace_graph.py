@@ -38,11 +38,18 @@ def identifier(entity,request_uuid):
     return 'urn:research:'+entity+':'+str(request)
 
 def query_definition(value):
-    if not isinstance(value,dict) or set(value)-{'version','scope','q','thought_type'} or type(value.get('version')) is not int or value['version']!=1 or value.get('scope') not in {'notes','sources'}:raise ValueError('Unsupported saved search definition')
-    db._text(value.get('q',''),'query',300,empty=True)
+    allowed={'version','scope','q','thought_type','collection_id','reading_status','investigation_state','source_link'}
+    if not isinstance(value,dict) or set(value)-allowed or type(value.get('version')) is not int or value['version']!=1 or value.get('scope') not in {'notes','sources','questions','reading'}:raise ValueError('Unsupported saved search definition')
+    db._text(value.get('q',''),'query',300,empty=True);db._text(value.get('collection_id',''),'collection reference',500,empty=True)
     if value.get('thought_type','') not in {'','note','question','source_claim','interpretation','objection','decision','principle'}:raise ValueError('Unsupported thought filter')
-    if value['scope']=='sources' and value.get('thought_type'):raise ValueError('Sources do not have thought roles')
+    if value.get('reading_status','') not in {'','needs_review','want_to_read','reading','finished'} or value.get('investigation_state','') not in {'','open','investigating','provisional','resolved','revisiting','unanswered'} or value.get('source_link','') not in {'','none','present'}:raise ValueError('Unsupported saved view state')
+    scope=value['scope']
+    if scope in {'sources','reading'} and any(value.get(key) for key in ['thought_type','investigation_state','source_link']):raise ValueError('Source views do not have thought roles or question states')
+    if scope in {'notes','questions'} and value.get('reading_status'):raise ValueError('Writing views do not declare reading completion')
+    if scope=='questions' and (value.get('thought_type') not in {'',None,'question'} or value.get('source_link')):raise ValueError('Choose supported question filters')
+    if scope=='notes' and value.get('investigation_state') and value.get('thought_type')!='question':raise ValueError('Question state applies to question writing only')
     return value
+
 
 def create(c,*,entity,request_uuid,actor,**fields):
     if entity not in TABLES:raise ValueError('Unsupported organization object')

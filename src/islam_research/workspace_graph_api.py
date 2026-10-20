@@ -11,9 +11,13 @@ Reason=Annotated[str,Field(min_length=1,max_length=2000)]
 
 class QueryDefinition(Input):
     version:Literal[1]=1
-    scope:Literal['notes','sources']='notes'
+    scope:Literal['notes','sources','questions','reading']='notes'
     q:Annotated[str,Field(max_length=300)]=''
     thought_type:Kind|Literal['']=''
+    collection_id:Annotated[str,Field(max_length=500)]=''
+    reading_status:Literal['','needs_review','want_to_read','reading','finished']=''
+    investigation_state:Literal['','open','investigating','provisional','resolved','revisiting','unanswered']=''
+    source_link:Literal['','none','present']=''
 class CollectionCreate(Write):
     request_uuid:UUID4
     title:Title

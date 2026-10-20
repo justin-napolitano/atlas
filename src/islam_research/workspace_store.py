@@ -55,9 +55,10 @@ def _cursor(value):
     except (ValueError,TypeError,UnicodeError) as error:raise ValueError('Invalid workspace cursor') from error
 
 
-def notes(connection,*,q='',thought_type='',cursor='',limit=30,trashed=False):
+def notes(connection,*,q='',thought_type='',cursor='',limit=30,trashed=False,collection_id='',investigation_state='',source_link=''):
     db._text(q,'query',300,empty=True);db._text(cursor,'cursor',1200,empty=True)
     if thought_type not in notebook.TYPES|{''} or type(limit) is not int or not 1<=limit<=50 or type(trashed) is not bool:raise ValueError('Invalid note filter')
+    if investigation_state not in {'','open','investigating','provisional','resolved','revisiting','unanswered'} or source_link not in {'','none','present'}:raise ValueError('Unsupported note view filter')
     after=_cursor(cursor)
     rows=connection.execute('''WITH candidates AS (
       SELECT n.*,r.title AS source_title,d.edition,d.locator,
@@ -68,10 +69,13 @@ def notes(connection,*,q='',thought_type='',cursor='',limit=30,trashed=False):
       LEFT JOIN research.reading_documents d ON d.id=n.document_id
       WHERE n.workspace_id='owner' AND n.state='active' AND (%s='' OR n.thought_type=%s)
         AND strpos(lower(n.title||' '||n.body),lower(%s))>0
+        AND (%s='' OR EXISTS(SELECT 1 FROM research.workspace_collection_items m JOIN research.workspace_collections g ON g.id=m.collection_id WHERE m.target_kind='entry' AND m.target_id=n.id AND m.collection_id=%s AND m.state='active' AND g.state='active'))
+        AND (%s='' OR (%s='none' AND n.record_id IS NULL) OR (%s='present' AND n.record_id IS NOT NULL))
+        AND (%s='' OR n.thought_type='question' AND (coalesce((SELECT i.state FROM research.workspace_investigations i WHERE i.target_kind='entry' AND i.target_id=n.id),'open')=%s OR %s='unanswered' AND coalesce((SELECT i.state FROM research.workspace_investigations i WHERE i.target_kind='entry' AND i.target_id=n.id),'open')<>'resolved'))
     ) SELECT * FROM candidates WHERE trashed=%s
       AND (%s::timestamptz IS NULL OR (updated_at,id)<(%s::timestamptz,%s))
       ORDER BY updated_at DESC,id DESC LIMIT %s''',
-      (thought_type,thought_type,q.strip(),trashed,after[0] if after else None,after[0] if after else None,after[1] if after else '',limit+1)).fetchall()
+      (thought_type,thought_type,q.strip(),collection_id,collection_id,source_link,source_link,source_link,investigation_state,investigation_state,investigation_state,trashed,after[0] if after else None,after[0] if after else None,after[1] if after else '',limit+1)).fetchall()
     next_cursor=None
     if len(rows)>limit:
         last=rows[limit-1];next_cursor=base64.urlsafe_b64encode(json.dumps([last['updated_at'].isoformat(),last['id']]).encode()).decode().rstrip('=')
@@ -117,13 +121,15 @@ def drafts(connection,*,cursor='',limit=30):
     return connection.execute("SELECT * FROM research.notebook_drafts WHERE workspace_id='owner' AND state='active' AND id>%s ORDER BY id LIMIT %s",(cursor,limit)).fetchall()
 
 
-def sources(connection,*,q='',cursor='',limit=30):
+def sources(connection,*,q='',cursor='',limit=30,collection_id='',reading_status=''):
     db._text(q,'query',300,empty=True);db._text(cursor,'cursor',500,empty=True)
     if type(limit) is not int or not 1<=limit<=50:raise ValueError('Invalid source page')
     rows=connection.execute("""SELECT id,project_id,kind,title,summary,attributes,revision,updated_at
       FROM research.records WHERE workspace_id='owner' AND kind IN ('source','work','edition')
       AND deleted_at IS NULL AND review_state<>'withdrawn' AND id>%s
-      AND strpos(lower(title||' '||summary),lower(%s))>0 ORDER BY id LIMIT %s""",(cursor,q,limit+1)).fetchall()
+      AND strpos(lower(title||' '||summary),lower(%s))>0
+      AND (%s='' OR EXISTS(SELECT 1 FROM research.workspace_collection_items m JOIN research.workspace_collections g ON g.id=m.collection_id WHERE m.target_kind='record' AND m.target_id=research.records.id AND m.collection_id=%s AND m.state='active' AND g.state='active'))
+      AND (%s='' OR EXISTS(SELECT 1 FROM research.library_source_bindings b JOIN research.library_items i ON i.id=b.item_id WHERE b.source_record_id=research.records.id AND i.on_shelf AND i.reading_status=%s)) ORDER BY id LIMIT %s""",(cursor,q,collection_id,collection_id,reading_status,reading_status,limit+1)).fetchall()
     return dict(items=rows[:limit],next_cursor=rows[limit-1]['id'] if len(rows)>limit else None)
 
 
@@ -198,7 +204,7 @@ def continuing(connection,*,limit=12):
     return dict(reading=reading,documents=documents,notes=notes(connection,limit=limit)['items'],drafts=drafts(connection,limit=limit))
 
 
-def questions(connection,*,q='',cursor='',limit=30):
+def questions(connection,*,q='',cursor='',limit=30,collection_id='',investigation_state=''):
     db._text(q,'question query',300,empty=True);db._text(cursor,'question cursor',1000,empty=True)
     if type(limit) is not int or not 1<=limit<=50:raise ValueError('Invalid question page')
     rows=connection.execute("""WITH questions AS (
@@ -208,7 +214,9 @@ def questions(connection,*,q='',cursor='',limit=30):
        AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed')
       UNION ALL SELECT id,project_id,title,summary,'record','question',revision,updated_at FROM research.records
        WHERE kind='question' AND deleted_at IS NULL AND review_state<>'withdrawn'
-    ) SELECT * FROM questions WHERE item_kind||':'||id>%s AND strpos(lower(title||' '||body),lower(%s))>0 ORDER BY item_kind||':'||id LIMIT %s""",(cursor,q,limit+1)).fetchall()
+    ) SELECT * FROM questions WHERE item_kind||':'||id>%s AND strpos(lower(title||' '||body),lower(%s))>0
+      AND (%s='' OR EXISTS(SELECT 1 FROM research.workspace_collection_items m JOIN research.workspace_collections g ON g.id=m.collection_id WHERE m.target_kind=questions.item_kind AND m.target_id=questions.id AND m.collection_id=%s AND m.state='active' AND g.state='active'))
+      AND (%s='' OR coalesce((SELECT i.state FROM research.workspace_investigations i WHERE i.target_kind=questions.item_kind AND i.target_id=questions.id),'open')=%s OR %s='unanswered' AND coalesce((SELECT i.state FROM research.workspace_investigations i WHERE i.target_kind=questions.item_kind AND i.target_id=questions.id),'open')<>'resolved') ORDER BY item_kind||':'||id LIMIT %s""",(cursor,q,collection_id,collection_id,investigation_state,investigation_state,investigation_state,limit+1)).fetchall()
     return dict(items=rows[:limit],next_cursor=rows[limit-1]['item_kind']+':'+rows[limit-1]['id'] if len(rows)>limit else None)
 
 
@@ -217,6 +225,7 @@ def view_results(connection,*,view_id,cursor='',limit=30):
     view=connection.execute("SELECT * FROM research.workspace_saved_views WHERE id=%s AND state='active'",(view_id,)).fetchone()
     if not view:raise ValueError('Saved view unavailable')
     query=query_definition(view['query'])
-    if query['scope']=='notes':page=notes(connection,q=query.get('q',''),thought_type=query.get('thought_type',''),cursor=cursor,limit=limit)
-    else:page=sources(connection,q=query.get('q',''),cursor=cursor,limit=limit)
+    if query['scope']=='notes':page=notes(connection,q=query.get('q',''),thought_type=query.get('thought_type',''),collection_id=query.get('collection_id',''),source_link=query.get('source_link',''),investigation_state=query.get('investigation_state',''),cursor=cursor,limit=limit)
+    elif query['scope']=='questions':page=questions(connection,q=query.get('q',''),collection_id=query.get('collection_id',''),investigation_state=query.get('investigation_state',''),cursor=cursor,limit=limit)
+    else:page=sources(connection,q=query.get('q',''),collection_id=query.get('collection_id',''),reading_status=query.get('reading_status') or ('reading' if query['scope']=='reading' else ''),cursor=cursor,limit=limit)
     return dict(view=view,**page)

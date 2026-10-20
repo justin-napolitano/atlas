@@ -51,7 +51,7 @@ async function checkbox(label){await evaluate(`[...document.querySelectorAll('la
  await until(()=>evaluate('!!document.querySelector(".connected-note .cm-content")'),'open original note');
  await evaluate('document.querySelector(".cm-content").focus()');
  const first=await evaluate('[...window.__connectedTest.entries.keys()][0]');
- await evaluate('document.querySelector(".workspace-sidebar-new").click()');await until(()=>evaluate('document.activeElement?.getAttribute("aria-label")==="Note body"'),'second capture focus');
+ await call('Input.dispatchKeyEvent',{type:'keyDown',key:'>',code:'Period',modifiers:process.platform==='darwin'?9:3});await call('Input.dispatchKeyEvent',{type:'keyUp',key:'>',code:'Period',modifiers:process.platform==='darwin'?9:3});await until(()=>evaluate('document.activeElement?.getAttribute("aria-label")==="Note body"'),'second capture focus');
  await call('Input.insertText',{text:'A second unrelated thought.'});await until(()=>evaluate('window.__connectedTest.entries.size===2'),'independent second note');
  assert.equal(await evaluate('[...window.__connectedTest.entries.values()].every(row=>row.project_id===null&&row.record_id===null&&row.document_id===null)'),true);
  await evaluate('document.querySelector(`[aria-label="New collection"]`).click()');
