@@ -17,7 +17,7 @@ the broader goal.
 
 ## Everyday interface
 
-- **Library:** search connected open catalogs, open a readable edition directly, resume reading. Saving to a personal collection is optional.
+- **Library:** one shared personal shelf, Continue reading, saved books and direct reader/book-notebook opening. **Find books** opens connected-catalog discovery; reading a supported result requires no prior save. See the [approved shelf brief](design/library-shelf-brief.md) and [contracts](features/library-shelf-contract.md), planned under #194.
 - **Reader:** read comfortably; select a passage to annotate, inspect references,
   add commentary, or write a free thought near the current position.
 - **Notes:** independent Markdown pages and questions, organized within projects,
