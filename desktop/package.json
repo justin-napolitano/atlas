@@ -1,0 +1,16 @@
+{
+  "name": "atlas-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Atlas local academic reading and writing workspace",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.cjs",
+    "package": "node scripts/package.cjs"
+  },
+  "devDependencies": {
+    "@electron/packager": "20.3.0",
+    "electron": "44.9.1"
+  }
+}

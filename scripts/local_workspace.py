@@ -13,9 +13,12 @@ import os
 from pathlib import Path
 import secrets
 import shutil
+import signal
+import socket
 import subprocess
 import sys
 import time
+import threading
 import webbrowser
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -110,11 +113,34 @@ def serve(args):
     if credentials_path.is_symlink() or credentials_path.stat().st_mode & 0o077:raise ValueError('Local session file must be private')
     credentials=json.loads(credentials_path.read_text())
     dsn=make_conninfo(host=str(state/'socket'),port=55432,dbname='atlas_research',user='atlas_owner',password=value['owner_password'])
-    app=LocalOwner(database_url=dsn,directory=Path((state/'current-frontend').read_text()),port=args.port,credentials=credentials)
+    managed=getattr(args,'desktop_managed',False)
+    listener=None
+    if managed:
+        listener=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        try:listener.bind(('127.0.0.1',args.port))
+        except OSError:
+            if not args.port:raise
+            listener.bind(('127.0.0.1',0))
+        listener.listen(16)
+        port=listener.getsockname()[1]
+    else:port=args.port
+    app=LocalOwner(database_url=dsn,directory=Path((state/'current-frontend').read_text()),port=port,credentials=credentials)
     logging.basicConfig(level=logging.WARNING,format='%(message)s')
-    print(f'Persistent local workspace: http://127.0.0.1:{args.port}/',flush=True)
-    uvicorn.run(app,host='127.0.0.1',port=args.port,access_log=False,proxy_headers=False,
-        workers=1,limit_concurrency=24,backlog=16,server_header=False,log_level='warning')
+    settings=dict(host='127.0.0.1',port=port,access_log=False,proxy_headers=False,
+        workers=1,limit_concurrency=24,backlog=16,server_header=False,log_level='warning',timeout_graceful_shutdown=10)
+    if managed:
+        # The desktop owns this pipe. A crash/exit ends only its API, not PostgreSQL.
+        def watch_parent():
+            try:
+                while os.read(sys.stdin.fileno(),1024):pass
+            finally:os.kill(os.getpid(),signal.SIGTERM)
+        threading.Thread(target=watch_parent,daemon=True).start()
+        # The port is already bound by this child; no shared fixed port is trusted.
+        print(json.dumps({'kind':'atlas-local-owner','format':1,'port':port}),flush=True)
+        uvicorn.Server(uvicorn.Config(app,**settings)).run(sockets=[listener])
+    else:
+        print(f'Persistent local workspace: http://127.0.0.1:{port}/',flush=True)
+        uvicorn.run(app,**settings)
 
 
 def open_browser(args):
@@ -179,13 +205,16 @@ def main():
     init=commands.add_parser('init');init.add_argument('--postgres-bin',type=Path,required=True)
     commands.add_parser('build')
     commands.add_parser('backup')
+    managed=commands.add_parser('desktop-serve');managed.set_defaults(desktop_managed=True)
+    managed.add_argument('--port',type=int,default=0)
     migrate=commands.add_parser('import-progress')
     migrate.add_argument('--source',type=Path,required=True);migrate.add_argument('--project',required=True)
     for name in ('serve','open'):
         item=commands.add_parser(name);item.add_argument('--port',type=int,default=5187)
     args=parser.parse_args()
-    if getattr(args,'port',5187) not in range(1024,65536):parser.error('Invalid local port')
-    try:{'init':initialize,'build':build,'serve':serve,'open':open_browser,'import-progress':import_progress,'backup':backup_database}[args.command](args)
+    port=getattr(args,'port',5187)
+    if port not in range(1024,65536) and not (getattr(args,'desktop_managed',False) and port==0):parser.error('Invalid local port')
+    try:{'init':initialize,'build':build,'serve':serve,'desktop-serve':serve,'open':open_browser,'import-progress':import_progress,'backup':backup_database}[args.command](args)
     except Exception:
         # Driver exceptions can contain SQL or credentials; never dump operator state.
         parser.exit(1,'Local workspace operation failed. Existing database and preview files were retained.\n')
