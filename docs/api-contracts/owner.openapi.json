@@ -1,6 +1,34 @@
 {
   "components": {
     "schemas": {
+      "CollectionCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "owner_confirmed": {
+            "const": true,
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "request_uuid": {
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+            "title": "Request Uuid",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "request_uuid",
+          "title"
+        ],
+        "title": "CollectionCreate",
+        "type": "object"
+      },
       "CollectionReadingLink": {
         "additionalProperties": false,
         "properties": {
@@ -50,6 +78,243 @@
           "rationale"
         ],
         "title": "CollectionReadingLink",
+        "type": "object"
+      },
+      "CollectionUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Id",
+            "type": "string"
+          },
+          "owner_confirmed": {
+            "const": true,
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "state": {
+            "default": "active",
+            "enum": [
+              "active",
+              "archived"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "id",
+          "title",
+          "expected_revision"
+        ],
+        "title": "CollectionUpdate",
+        "type": "object"
+      },
+      "ConnectionCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "attribution": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Attribution",
+            "type": "string"
+          },
+          "evidence_annotation_id": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Annotation Id"
+          },
+          "from_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "From Id",
+            "type": "string"
+          },
+          "from_kind": {
+            "enum": [
+              "entry",
+              "record",
+              "annotation"
+            ],
+            "title": "From Kind",
+            "type": "string"
+          },
+          "owner_confirmed": {
+            "const": true,
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "relation": {
+            "default": "personal_association",
+            "enum": [
+              "personal_association",
+              "comments_on",
+              "asks_about",
+              "defines",
+              "supports",
+              "challenges",
+              "qualifies",
+              "interprets",
+              "historical_influence"
+            ],
+            "title": "Relation",
+            "type": "string"
+          },
+          "request_uuid": {
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+            "title": "Request Uuid",
+            "type": "string"
+          },
+          "state": {
+            "default": "tentative",
+            "enum": [
+              "tentative",
+              "accepted",
+              "withdrawn"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "to_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "To Id",
+            "type": "string"
+          },
+          "to_kind": {
+            "enum": [
+              "entry",
+              "record",
+              "annotation"
+            ],
+            "title": "To Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "rationale",
+          "request_uuid",
+          "from_kind",
+          "from_id",
+          "to_kind",
+          "to_id"
+        ],
+        "title": "ConnectionCreate",
+        "type": "object"
+      },
+      "ConnectionUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "attribution": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Attribution",
+            "type": "string"
+          },
+          "evidence_annotation_id": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Annotation Id"
+          },
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Id",
+            "type": "string"
+          },
+          "owner_confirmed": {
+            "const": true,
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "rationale": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "relation": {
+            "default": "personal_association",
+            "enum": [
+              "personal_association",
+              "comments_on",
+              "asks_about",
+              "defines",
+              "supports",
+              "challenges",
+              "qualifies",
+              "interprets",
+              "historical_influence"
+            ],
+            "title": "Relation",
+            "type": "string"
+          },
+          "state": {
+            "default": "tentative",
+            "enum": [
+              "tentative",
+              "accepted",
+              "withdrawn"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "rationale",
+          "id",
+          "expected_revision"
+        ],
+        "title": "ConnectionUpdate",
         "type": "object"
       },
       "Draft": {
@@ -573,6 +838,69 @@
           "rationale"
         ],
         "title": "Intake",
+        "type": "object"
+      },
+      "Investigation": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "owner_confirmed": {
+            "const": true,
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "open",
+              "investigating",
+              "provisional",
+              "resolved",
+              "revisiting"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "target_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_kind": {
+            "enum": [
+              "entry",
+              "record"
+            ],
+            "title": "Target Kind",
+            "type": "string"
+          },
+          "target_revision": {
+            "minimum": 1.0,
+            "title": "Target Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "target_kind",
+          "target_id",
+          "target_revision",
+          "expected_revision",
+          "state",
+          "reason"
+        ],
+        "title": "Investigation",
         "type": "object"
       },
       "LexiconCaptureInput": {
@@ -1367,6 +1695,62 @@
           "rationale"
         ],
         "title": "Link",
+        "type": "object"
+      },
+      "Membership": {
+        "additionalProperties": false,
+        "properties": {
+          "collection_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Collection Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "owner_confirmed": {
+            "const": true,
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "state": {
+            "enum": [
+              "active",
+              "removed"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "target_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_kind": {
+            "enum": [
+              "entry",
+              "record",
+              "annotation"
+            ],
+            "title": "Target Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "collection_id",
+          "target_kind",
+          "target_id",
+          "state",
+          "expected_revision"
+        ],
+        "title": "Membership",
         "type": "object"
       },
       "NoteCreate": {
@@ -2333,6 +2717,56 @@
         "title": "PublicationWithdrawalInput",
         "type": "object"
       },
+      "QueryDefinition": {
+        "additionalProperties": false,
+        "properties": {
+          "q": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Q",
+            "type": "string"
+          },
+          "scope": {
+            "default": "notes",
+            "enum": [
+              "notes",
+              "sources"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "thought_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "note",
+                  "question",
+                  "source_claim",
+                  "interpretation",
+                  "objection",
+                  "decision",
+                  "principle"
+                ],
+                "type": "string"
+              },
+              {
+                "const": "",
+                "type": "string"
+              }
+            ],
+            "default": "",
+            "title": "Thought Type"
+          },
+          "version": {
+            "const": 1,
+            "default": 1,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "title": "QueryDefinition",
+        "type": "object"
+      },
       "QuranBinding": {
         "additionalProperties": false,
         "properties": {
@@ -3232,6 +3666,68 @@
         "title": "RecordInput",
         "type": "object"
       },
+      "Reflection": {
+        "additionalProperties": false,
+        "properties": {
+          "entry_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "entry_revision": {
+            "minimum": 1.0,
+            "title": "Entry Revision",
+            "type": "integer"
+          },
+          "evidence_annotation_id": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Annotation Id"
+          },
+          "owner_confirmed": {
+            "const": true,
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "request_uuid": {
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+            "title": "Request Uuid",
+            "type": "string"
+          },
+          "uncertainty": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Uncertainty",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "request_uuid",
+          "entry_id",
+          "entry_revision",
+          "reason"
+        ],
+        "title": "Reflection",
+        "type": "object"
+      },
       "ScriptureResolutionInput": {
         "additionalProperties": false,
         "properties": {
@@ -3998,6 +4494,87 @@
           "rationale"
         ],
         "title": "VersePilotImport",
+        "type": "object"
+      },
+      "ViewCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "owner_confirmed": {
+            "const": true,
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "query": {
+            "$ref": "#/components/schemas/QueryDefinition"
+          },
+          "request_uuid": {
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+            "title": "Request Uuid",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "request_uuid",
+          "title",
+          "query"
+        ],
+        "title": "ViewCreate",
+        "type": "object"
+      },
+      "ViewUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Id",
+            "type": "string"
+          },
+          "owner_confirmed": {
+            "const": true,
+            "title": "Owner Confirmed",
+            "type": "boolean"
+          },
+          "query": {
+            "$ref": "#/components/schemas/QueryDefinition"
+          },
+          "state": {
+            "default": "active",
+            "enum": [
+              "active",
+              "archived"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner_confirmed",
+          "id",
+          "title",
+          "expected_revision",
+          "query"
+        ],
+        "title": "ViewUpdate",
         "type": "object"
       }
     }
@@ -10192,6 +10769,239 @@
         "summary": "Verse Pilot"
       }
     },
+    "/v1/workspace/collection": {
+      "put": {
+        "operationId": "update_collection_v1_workspace_collection_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Collection"
+      }
+    },
+    "/v1/workspace/collections": {
+      "get": {
+        "operationId": "collections_v1_workspace_collections_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 500,
+              "title": "Cursor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Collections"
+      },
+      "post": {
+        "operationId": "create_collection_v1_workspace_collections_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Collection"
+      }
+    },
+    "/v1/workspace/connection": {
+      "put": {
+        "operationId": "update_connection_v1_workspace_connection_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectionUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Connection"
+      }
+    },
+    "/v1/workspace/connections": {
+      "post": {
+        "operationId": "connect_v1_workspace_connections_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Connect"
+      }
+    },
+    "/v1/workspace/continue": {
+      "get": {
+        "operationId": "continuing_v1_workspace_continue_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 12,
+              "maximum": 20,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Continuing"
+      }
+    },
     "/v1/workspace/draft": {
       "get": {
         "operationId": "draft_v1_workspace_draft_get",
@@ -10401,6 +11211,270 @@
           }
         },
         "summary": "Candidates"
+      }
+    },
+    "/v1/workspace/investigation": {
+      "get": {
+        "operationId": "investigation_v1_workspace_investigation_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "target_kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "entry",
+                "record"
+              ],
+              "title": "Target Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "target_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Target Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Investigation"
+      },
+      "put": {
+        "operationId": "investigate_v1_workspace_investigation_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Investigation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Investigate"
+      }
+    },
+    "/v1/workspace/members": {
+      "get": {
+        "operationId": "members_v1_workspace_members_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Collection Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 1100,
+              "title": "Cursor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Members"
+      }
+    },
+    "/v1/workspace/membership": {
+      "put": {
+        "operationId": "membership_v1_workspace_membership_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Membership"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Membership"
+      }
+    },
+    "/v1/workspace/neighborhood": {
+      "get": {
+        "operationId": "neighborhood_v1_workspace_neighborhood_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "entry",
+                "record",
+                "annotation"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "depth",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 2,
+              "minimum": 1,
+              "title": "Depth",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 40,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Neighborhood"
       }
     },
     "/v1/workspace/note": {
@@ -10708,6 +11782,154 @@
         "summary": "Create"
       }
     },
+    "/v1/workspace/reflections": {
+      "get": {
+        "operationId": "reflections_v1_workspace_reflections_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 500,
+              "title": "Cursor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reflections"
+      },
+      "post": {
+        "operationId": "reflect_v1_workspace_reflections_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reflection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reflect"
+      }
+    },
+    "/v1/workspace/search": {
+      "get": {
+        "operationId": "search_v1_workspace_search_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 300,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 30,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search"
+      }
+    },
     "/v1/workspace/source": {
       "get": {
         "operationId": "source_v1_workspace_source_get",
@@ -10808,6 +12030,127 @@
           }
         },
         "summary": "Sources"
+      }
+    },
+    "/v1/workspace/view": {
+      "put": {
+        "operationId": "update_view_v1_workspace_view_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ViewUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update View"
+      }
+    },
+    "/v1/workspace/views": {
+      "get": {
+        "operationId": "views_v1_workspace_views_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 500,
+              "title": "Cursor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Views"
+      },
+      "post": {
+        "operationId": "create_view_v1_workspace_views_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ViewCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create View"
       }
     },
     "/v1/writing/trash": {

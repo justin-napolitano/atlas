@@ -112,6 +112,9 @@ class Intake(Write):
 
 
 def register_workspace(router,store,owner):
+    from .workspace_graph_api import register
+    register(router,store,owner)
+
     def write(operation,value,actor):
         fields=value.model_dump();fields.pop('owner_confirmed')
         return store.workspace_operation(operation,actor=actor,**fields)
@@ -171,3 +174,9 @@ def register_workspace(router,store,owner):
 
     @router.post('/workspace/intake',status_code=201)
     def intake(value:Intake,actor:str=Depends(owner)):return write('intake',value,actor)
+
+    @router.get('/workspace/search')
+    def search(q:Annotated[str,Query(min_length=1,max_length=300)],limit:Annotated[int,Query(ge=1,le=30)]=20):return store.workspace_operation('search',q=q,limit=limit)
+
+    @router.get('/workspace/continue')
+    def continuing(limit:Annotated[int,Query(ge=1,le=20)]=12):return store.workspace_operation('continuing',limit=limit)
