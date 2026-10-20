@@ -34,7 +34,7 @@ def page(connection,*,project_id='',q='',state='',cursor='',limit=30,continuing=
       FROM research.library_items i JOIN research.library_works w ON w.id=i.work_id
       JOIN research.records r ON r.id=w.legacy_source_id
       LEFT JOIN research.library_editions e ON e.id=i.preferred_edition_id
-      LEFT JOIN research.quran_places qp ON qp.project_id=r.project_id
+      LEFT JOIN LATERAL (SELECT resource_key,chapter,ayah,updated_at FROM research.quran_places WHERE project_id=r.project_id UNION ALL SELECT resource_key,chapter,ayah,updated_at FROM research.workspace_quran_places WHERE r.project_id IS NULL) qp ON true
         AND qp.resource_key=r.attributes->>'quran_resource' AND i.preferred_edition_id IS NOT NULL
         AND r.deleted_at IS NULL AND r.review_state<>'withdrawn'
       LEFT JOIN LATERAL (
@@ -44,13 +44,13 @@ def page(connection,*,project_id='',q='',state='',cursor='',limit=30,continuing=
         AND e.representation_url=gb.payload->>'representation_url'
         ORDER BY gb.version LIMIT 1
       ) bv ON r.deleted_at IS NULL AND r.review_state<>'withdrawn'
-      LEFT JOIN research.gutenberg_places gp ON gp.project_id=r.project_id
+      LEFT JOIN LATERAL (SELECT book_id,version,section,position,updated_at FROM research.gutenberg_places WHERE project_id=r.project_id UNION ALL SELECT book_id,version,section,position,updated_at FROM research.workspace_gutenberg_places WHERE r.project_id IS NULL) gp ON true
         AND gp.book_id=bv.book_id AND gp.version=bv.version
       LEFT JOIN LATERAL (
         SELECT b.document_id,rp.locator,rp.text_sha256,coalesce(p.start_pos,0) AS position,p.updated_at AS read_at
         FROM research.library_document_bindings b JOIN research.library_representations rp ON rp.id=b.representation_id
         JOIN research.reading_documents d ON d.id=b.document_id AND d.project_id IS NOT DISTINCT FROM b.project_id
-        LEFT JOIN research.reading_desks p ON p.project_id=b.project_id AND p.document_id=b.document_id AND p.record_id=b.source_record_id
+        LEFT JOIN LATERAL (SELECT document_id,record_id,start_pos,updated_at FROM research.reading_desks WHERE project_id=b.project_id UNION ALL SELECT document_id,record_id,start_pos,updated_at FROM research.workspace_reading_desks WHERE b.project_id IS NULL) p ON p.document_id=b.document_id AND p.record_id=b.source_record_id
         WHERE b.work_id=i.work_id AND rp.edition_id=i.preferred_edition_id
         ORDER BY p.updated_at DESC NULLS LAST,d.created_at,b.document_id LIMIT 1
       ) target ON r.deleted_at IS NULL AND r.review_state<>'withdrawn'

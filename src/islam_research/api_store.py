@@ -28,13 +28,13 @@ class PostgreSQLStore:
 
     def workspace_operation(self,operation,**values):
         from . import workspace_store
-        operations={name:getattr(workspace_store,name) for name in ('note','notes','create_note','update_note','history','trash','draft','drafts','save_draft','sources','source','intake_candidates','intake','search','continuing')}
+        operations={name:getattr(workspace_store,name) for name in ('note','notes','create_note','update_note','history','trash','draft','drafts','save_draft','sources','source','intake_candidates','intake','search','continuing','questions','view_results')}
         if operation not in operations:raise ValueError('Unknown workspace operation')
         with db.connect(self.dsn) as c:return operations[operation](c,**values)
 
     def workspace_graph_operation(self,operation,**values):
         from . import workspace_graph
-        operations={name:getattr(workspace_graph,name) for name in ('create','listing','update','membership','members','investigation','investigate','reflect','reflections','neighborhood')}
+        operations={name:getattr(workspace_graph,name) for name in ('create','listing','update','membership','members','investigation','investigate','reflect','reflections','neighborhood','item')}
         if operation not in operations:raise ValueError('Unknown workspace graph operation')
         with db.connect(self.dsn) as c:return operations[operation](c,**values)
 
@@ -274,7 +274,7 @@ class PostgreSQLStore:
 
     def state(self, project_id: str, record_id: str) -> dict | None:
         with db.connect(self.dsn) as connection:
-            return connection.execute("SELECT * FROM research.personal_states WHERE project_id=%s AND record_id=%s",
+            return connection.execute("SELECT * FROM research.personal_states WHERE project_id IS NOT DISTINCT FROM %s AND record_id=%s",
                                       (project_id, record_id)).fetchone()
 
     def evidence_path(self, project_id: str, record_id: str, profile_id: str) -> dict | None:

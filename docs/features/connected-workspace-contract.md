@@ -1,6 +1,7 @@
 # Connected workspace interaction and acceptance contracts
 
-Status: owner-approved target, implementation pending. Epic #201.
+Status: owner-approved contract; implementation #207–211. Epic #201.
+See [delivery and verification status](connected-workspace-delivery.md).
 Read [vision](../connected-research-vision.md) and [ADR 0005](../adr/0005-connected-owner-workspace.md).
 This supersedes project-required navigation and project-owned writing as the target
 product model. Existing identity/save/editor/reader invariants still apply.
@@ -123,4 +124,4 @@ unchanged until a separately validated authority migration.
 8. Exercise legacy links and synthetic migrate/rollback/retry/export mappings. Real
    two-machine save/recovery/backup evidence remains #42, owner reading remains #146.
 
-No app, schema, API, dependency or preview changes are made by this planning document.
+This contract governs implementation; the delivery ledger distinguishes code/test completion from hosted deployment and owner acceptance.

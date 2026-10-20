@@ -1529,11 +1529,18 @@
             "type": "boolean"
           },
           "project_id": {
-            "maxLength": 500,
-            "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-            "title": "Project Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
           },
           "request_uuid": {
             "maxLength": 36,
@@ -1552,7 +1559,6 @@
         "required": [
           "owner_confirmed",
           "request_uuid",
-          "project_id",
           "source_record_id",
           "expected_source_revision"
         ],
@@ -2074,7 +2080,9 @@
               "question",
               "source_claim",
               "interpretation",
-              "objection"
+              "objection",
+              "decision",
+              "principle"
             ],
             "title": "Thought Type",
             "type": "string"
@@ -2264,7 +2272,9 @@
               "question",
               "source_claim",
               "interpretation",
-              "objection"
+              "objection",
+              "decision",
+              "principle"
             ],
             "title": "Thought Type",
             "type": "string"
@@ -2376,7 +2386,9 @@
               "question",
               "source_claim",
               "interpretation",
-              "objection"
+              "objection",
+              "decision",
+              "principle"
             ],
             "title": "Thought Type",
             "type": "string"
@@ -2720,19 +2732,63 @@
       "QueryDefinition": {
         "additionalProperties": false,
         "properties": {
+          "collection_id": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Collection Id",
+            "type": "string"
+          },
+          "investigation_state": {
+            "default": "",
+            "enum": [
+              "",
+              "open",
+              "investigating",
+              "provisional",
+              "resolved",
+              "revisiting",
+              "unanswered"
+            ],
+            "title": "Investigation State",
+            "type": "string"
+          },
           "q": {
             "default": "",
             "maxLength": 300,
             "title": "Q",
             "type": "string"
           },
+          "reading_status": {
+            "default": "",
+            "enum": [
+              "",
+              "needs_review",
+              "want_to_read",
+              "reading",
+              "finished"
+            ],
+            "title": "Reading Status",
+            "type": "string"
+          },
           "scope": {
             "default": "notes",
             "enum": [
               "notes",
-              "sources"
+              "sources",
+              "questions",
+              "reading"
             ],
             "title": "Scope",
+            "type": "string"
+          },
+          "source_link": {
+            "default": "",
+            "enum": [
+              "",
+              "none",
+              "present"
+            ],
+            "title": "Source Link",
             "type": "string"
           },
           "thought_type": {
@@ -6642,13 +6698,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -7308,13 +7371,20 @@
           {
             "in": "query",
             "name": "project_id",
-            "required": true,
+            "required": false,
             "schema": {
-              "maxLength": 500,
-              "minLength": 1,
-              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
-              "title": "Project Id",
-              "type": "string"
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
             }
           },
           {
@@ -10770,6 +10840,44 @@
       }
     },
     "/v1/workspace/collection": {
+      "get": {
+        "operationId": "collection_v1_workspace_collection_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "Collection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Collection"
+      },
       "put": {
         "operationId": "update_collection_v1_workspace_collection_put",
         "requestBody": {
@@ -11782,6 +11890,68 @@
         "summary": "Create"
       }
     },
+    "/v1/workspace/questions": {
+      "get": {
+        "operationId": "questions_v1_workspace_questions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 300,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 1000,
+              "title": "Cursor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Questions"
+      }
+    },
     "/v1/workspace/reflections": {
       "get": {
         "operationId": "reflections_v1_workspace_reflections_get",
@@ -12033,6 +12203,44 @@
       }
     },
     "/v1/workspace/view": {
+      "get": {
+        "operationId": "view_v1_workspace_view_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "view_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "View Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "View"
+      },
       "put": {
         "operationId": "update_view_v1_workspace_view_put",
         "requestBody": {
@@ -12066,6 +12274,86 @@
           }
         },
         "summary": "Update View"
+      }
+    },
+    "/v1/workspace/view/results": {
+      "get": {
+        "operationId": "view_results_v1_workspace_view_results_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "view_id",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+              "title": "View Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 1200,
+              "title": "Cursor",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view_revision",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "View Revision"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "View Results"
       }
     },
     "/v1/workspace/views": {

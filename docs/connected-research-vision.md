@@ -1,7 +1,7 @@
 # One connected research workspace
 
-Owner-approved product direction: 2026-10-19. Planning only; the project-required
-schema/UI has not been replaced by this document. Delivery epic [#201](https://github.com/justin-napolitano/islam-research/issues/201).
+Owner-approved product direction: 2026-10-19. Implementation is tracked in #207–211; see the [delivery ledger](features/connected-workspace-delivery.md)
+for shipped code, verification and remaining release gates. Delivery epic [#201](https://github.com/justin-napolitano/islam-research/issues/201).
 [Roadmap](second-brain-roadmap.md), [interaction contracts](features/connected-workspace-contract.md),
 and [ownership decision](adr/0005-connected-owner-workspace.md) govern implementation.
 

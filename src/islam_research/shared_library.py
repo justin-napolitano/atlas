@@ -21,7 +21,7 @@ WITH source_scope AS (
   n.record_id,n.document_id,n.annotation_id,n.reading_position,n.title,n.body,
   n.thought_type,n.revision,n.updated_at,s.work_id,s.item_id
  FROM research.notebook_entries n JOIN source_scope s
- ON s.source_record_id=n.record_id
+ ON s.source_record_id=n.record_id OR EXISTS(SELECT 1 FROM research.workspace_connections x WHERE x.from_kind='entry' AND x.from_id=n.id AND x.to_kind='record' AND x.to_id=s.source_record_id AND x.relation='comments_on' AND x.state<>'withdrawn')
  WHERE n.state='active' AND length(btrim(n.body))>0
  AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id
   AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed')
@@ -184,5 +184,5 @@ def resolve(connection,*,item_id,document_id,project_id=''):
 
 def notes(connection,item_id,project_id='',cursor='',limit=30):
     if not _context(connection,item_id,project_id):return []
-    return connection.execute(NOTES_SQL+'''SELECT notes.*,project_id AS origin_project_id FROM notes
+    return connection.execute(NOTES_SQL+'''SELECT DISTINCT ON (note_key) notes.*,project_id AS origin_project_id FROM notes
         WHERE item_id=%s AND note_key>%s ORDER BY note_key LIMIT %s''',([item_id],item_id,cursor,limit)).fetchall()

@@ -16,13 +16,21 @@ from jsonschema import Draft202012Validator
 from referencing import Registry
 
 TABLES = {
-    "notebook_entries": {"id","project_id","record_id","document_id","annotation_id","thought_type","title","body","links","state","review_state","revision","updated_at"},
+    "owner_workspaces": {"id","title","created_at"},
+    "workspace_collections": {"id","workspace_id","title","state","revision","updated_at"},
+    "workspace_collection_items": {"collection_id","target_kind","target_id","state","revision","updated_at"},
+    "workspace_saved_views": {"id","workspace_id","title","query","state","revision","updated_at"},
+    "workspace_connections": {"id","workspace_id","from_kind","from_id","to_kind","to_id","relation","rationale","attribution","evidence_annotation_id","state","revision","updated_at"},
+    "workspace_investigations": {"target_kind","target_id","target_revision","state","reason","revision","updated_at"},
+    "workspace_reflections": {"id","entry_id","entry_revision","reason","uncertainty","evidence_annotation_id","created_at"},
+
+    "notebook_entries": {"workspace_id","title_mode","id","project_id","record_id","document_id","annotation_id","thought_type","title","body","links","state","review_state","revision","updated_at"},
     "projects": {"id", "title", "scope", "graph_authority"},
-    "records": {"id", "project_id", "kind", "title", "summary", "review_state", "origin", "revision", "updated_at"},
+    "records": {"workspace_id","id", "project_id", "kind", "title", "summary", "review_state", "origin", "revision", "updated_at"},
     "relations": {"id", "project_id", "from_id", "predicate", "to_id", "provenance", "review_state"},
     "personal_states": {"record_id", "project_id", "reading", "read_at", "decision", "note", "revision"},
-    "reading_documents": {"id", "project_id", "source_record_id", "edition", "locator", "representation_url", "text_sha256", "review_scope"},
-    "reading_annotations": {"id", "project_id", "document_id", "text_sha256", "start_pos", "end_pos", "exact", "capture_kind", "body", "revision", "mark_style"},
+    "reading_documents": {"workspace_id","id", "project_id", "source_record_id", "edition", "locator", "representation_url", "text_sha256", "review_scope"},
+    "reading_annotations": {"workspace_id","id", "project_id", "document_id", "text_sha256", "start_pos", "end_pos", "exact", "capture_kind", "body", "revision", "mark_style"},
     "reading_desks": {"project_id","record_id","document_id","annotation_id","start_pos","end_pos","revision","updated_at"},
     "scripture_citations": {"id", "project_id", "annotation_id", "document_id", "text_sha256", "candidate_key", "detector_kind", "profile_id", "decision", "chapter", "ayah_start", "ayah_end", "rationale", "revision"},
     "verse_materials": {"id","project_id","annotation_id","document_id","text_sha256","profile_id","chapter","ayah_start","ayah_end",

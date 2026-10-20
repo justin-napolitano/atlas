@@ -143,3 +143,13 @@ The [private research notebook](docs/research-notebook.md) collects running thou
 The [shared library identity foundation](docs/features/shared-library-identities.md) adds owner-only book identities and cross-project references while preserving existing notes and source links. Shelf and discovery UI remain subsequent work.
 
 The [shared personal library shelf](docs/features/library-shelf.md) adds saved-book navigation, selected-edition reading, original-note links and project associations within the existing sidebar.
+
+
+The connected owner workspace is implemented in #207–211: one sidebar, independent
+body-first Markdown capture, global reading/notes/questions, optional collections and
+saved views, explained connections and dated reasons. Start with the
+[delivery/use guide](docs/features/connected-workspace-delivery.md), the
+[product roadmap](docs/second-brain-roadmap.md) and the
+[interaction contracts](docs/features/connected-workspace-contract.md).
+Hosted owner sign-in, two-device/backup proof and scholarly/owner reading acceptance
+remain separate gates; a local review or passing CI does not establish them.

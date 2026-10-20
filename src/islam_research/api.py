@@ -329,7 +329,7 @@ class NotebookLink(Input):
 
 
 class NotebookMetadata(VerseOwnerInput):
-    thought_type: Literal["note","question","source_claim","interpretation","objection"] = "note"
+    thought_type: Literal["note","question","source_claim","interpretation","objection","decision","principle"] = "note"
     title: Annotated[str,Field(min_length=1,max_length=300)]
     body: Annotated[str,Field(min_length=1,max_length=20000)]
     links: Annotated[list[NotebookLink],Field(max_length=25)] = Field(default_factory=list)
@@ -375,7 +375,7 @@ class GutenbergNote(Input):
 
 class LibraryIndex(VerseOwnerInput):
     request_uuid: Annotated[str,Field(min_length=36,max_length=36)]
-    project_id: Identifier
+    project_id: Identifier | None = None
     source_record_id: Identifier
     expected_source_revision: Annotated[int,Field(ge=1,strict=True)]
 
@@ -396,7 +396,7 @@ class LibraryMembership(VerseOwnerInput):
 
 
 class NotebookDraftValue(Input):
-    thought_type: Literal["note","question","source_claim","interpretation","objection"] = "note"
+    thought_type: Literal["note","question","source_claim","interpretation","objection","decision","principle"] = "note"
     title: Annotated[str,Field(max_length=300)] = ""
     body: Annotated[str,Field(max_length=20000)] = ""
     links: Annotated[list[NotebookLink],Field(max_length=25)] = Field(default_factory=list)
@@ -744,7 +744,7 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         return row
 
     @router.get('/library/source')
-    def library_source(project_id:Identifier,source_record_id:Identifier):
+    def library_source(*,project_id:Identifier | None=None,source_record_id:Identifier):
         row=store.library_source(project_id,source_record_id)
         if row is None:raise HTTPException(404,'Source is not indexed in the owner library')
         return row
@@ -1052,7 +1052,7 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
         return store.save_state(actor=actor, **value.model_dump())
 
     @router.get("/personal-state")
-    def personal_state(project_id: Identifier, record_id: Identifier):
+    def personal_state(*,project_id: Identifier | None=None, record_id: Identifier):
         result = store.state(project_id, record_id)
         if result is None:
             raise HTTPException(404, "Personal state not yet recorded")

@@ -140,3 +140,17 @@ class GutenbergDatabaseTests(unittest.TestCase):
             second=self.books.binding(c,**{**self.binding,'project_id':another},actor='synthetic')
             self.assertNotEqual(first['record_id'],second['record_id'])
             self.assertNotEqual(first['document']['id'],second['document']['id'])
+
+    def test_native_workspace_book_binding_and_resume_do_not_require_a_project(self):
+        from islam_research import gutenberg_store as store,workspace_store as workspace
+        with self.db.connect(self.owner_dsn) as c:
+            before=c.execute('SELECT count(*) AS n FROM research.projects').fetchone()['n']
+            value=store.cache(c,book('A native synthetic reading section.'))
+            bound=store.binding(c,project_id=None,book_id=value['book_id'],version=value['version'],section=0,actor='synthetic')
+            self.assertIsNone(bound['project_id'])
+            note=workspace.create_note(c,request_uuid=str(uuid.uuid4()),body='My native book note.',record_id=bound['record_id'],document_id=bound['document']['id'],reading_position=2,actor='synthetic')
+            previous=store.place(c,None,value['book_id'])
+            place=store.save_place(c,project_id=None,book_id=value['book_id'],version=value['version'],section=0,position=2,expected_revision=previous['revision'] if previous else 0,actor='synthetic')
+            self.assertEqual(place['version'],value['version']);self.assertEqual(place['position'],2)
+            self.assertIsNone(note['project_id'])
+            self.assertEqual(c.execute('SELECT count(*) AS n FROM research.projects').fetchone()['n'],before)

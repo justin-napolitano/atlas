@@ -11,9 +11,13 @@ Reason=Annotated[str,Field(min_length=1,max_length=2000)]
 
 class QueryDefinition(Input):
     version:Literal[1]=1
-    scope:Literal['notes','sources']='notes'
+    scope:Literal['notes','sources','questions','reading']='notes'
     q:Annotated[str,Field(max_length=300)]=''
     thought_type:Kind|Literal['']=''
+    collection_id:Annotated[str,Field(max_length=500)]=''
+    reading_status:Literal['','needs_review','want_to_read','reading','finished']=''
+    investigation_state:Literal['','open','investigating','provisional','resolved','revisiting','unanswered']=''
+    source_link:Literal['','none','present']=''
 class CollectionCreate(Write):
     request_uuid:UUID4
     title:Title
@@ -96,3 +100,15 @@ def register(router,store,owner):
     def reflect(value:Reflection,actor:str=Depends(owner)):return write('reflect',value,actor)
     @router.get('/workspace/reflections')
     def reflections(entry_id:ID,cursor:Annotated[str,Query(max_length=500)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):return store.workspace_graph_operation('reflections',entry_id=entry_id,cursor=cursor,limit=limit)
+
+    @router.get('/workspace/collection')
+    def collection(collection_id:ID):
+        row=store.workspace_graph_operation('item',entity='collection',id=collection_id)
+        if row is None:raise HTTPException(404,'Collection unavailable')
+        return row
+
+    @router.get('/workspace/view')
+    def view(view_id:ID):
+        row=store.workspace_graph_operation('item',entity='view',id=view_id)
+        if row is None:raise HTTPException(404,'Saved view unavailable')
+        return row

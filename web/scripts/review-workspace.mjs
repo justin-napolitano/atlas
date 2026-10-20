@@ -376,7 +376,7 @@ try {
     else if (message.method==='Page.frameNavigated' && !message.params.frame.parentId) navigation++;
   });
   await call('Runtime.enable'); await call('Page.enable'); await call('Fetch.enable',{ patterns:[{ urlPattern:'*/v1/*' }] });
-  await call('Page.navigate',{ url:testOrigin+'/workspace.html' });
+  await call('Page.navigate',{ url:testOrigin+'/workspace.html?legacy=1' });
   await until(() => evaluate('document.querySelectorAll(".workspace-row").length===2'),'project record list');
   await click('Library');
   await until(()=>evaluate('!!document.querySelector(".library-book-title")'),'saved library rows');
@@ -1016,7 +1016,7 @@ try {
   const mobile=await call('Page.captureScreenshot',{ format:'png' }); await writeFile(join(artifacts,'mobile.png'),Buffer.from(mobile.data,'base64'));
   assert.equal(await evaluate('Object.values(localStorage).some(v=>v.includes("Synthetic browser note")||v.includes("Cloud edit")||v.includes("Synthetic anchored term note"))'),false);
   const previousNavigation=navigation;
-  await call('Page.navigate',{url:testOrigin+'/workspace.html?'+new URLSearchParams({project:'synthetic',record:'synthetic:other',annotation:captures[0].id})});
+  await call('Page.navigate',{url:testOrigin+'/workspace.html?'+new URLSearchParams({legacy:'1',project:'synthetic',record:'synthetic:other',annotation:captures[0].id})});
   await until(()=>navigation>previousNavigation,'mismatched source document committed');
   await until(()=>evaluate('document.querySelector(".reader-message")?.textContent.includes("belongs to another source")'),'mismatched source rejected');
   assert.equal(await evaluate('!!document.querySelector(".reader-text")'),false);
@@ -1050,7 +1050,7 @@ try {
   await evaluate('document.querySelector("[name=title]").focus()');await call('Input.insertText',{text:'Private retained source draft'});
   await click('Back to reading');await click('Read the Sirry article');
   await until(()=>evaluate('document.querySelector("[name=title]")?.value==="Private retained source draft"'),'article preset never overwrites retained intake');
-  await call('Page.navigate',{url:testOrigin+'/workspace.html?'+new URLSearchParams({project:'synthetic',record:collectionRecord.id,document:collectionDocument.id,reading_id:collectionReading.id,view:'collection-link'})});
+  await call('Page.navigate',{url:testOrigin+'/workspace.html?'+new URLSearchParams({legacy:'1',project:'synthetic',record:collectionRecord.id,document:collectionDocument.id,reading_id:collectionReading.id,view:'collection-link'})});
   await until(()=>evaluate('!!document.querySelector(".collection-reading-link textarea")'),'confirmed reading connection entry point');
   assert.equal(await evaluate('document.querySelector(".collection-reading-link input[type=checkbox]").checked'),false);
   await evaluate('document.querySelector(".collection-reading-link textarea").focus()');await call('Input.insertText',{text:'Compare the named translation with the identified Arabic verse.'});
@@ -1078,16 +1078,16 @@ try {
   const retainedDesk=readingDesk;
   readingLibraryRows=[{project_id:'synthetic',record_id:records[1].id,document_id:readingDocument.id,title:records[1].title,edition:readingDocument.edition,locator:readingDocument.locator,reading:'unread'}];
   readingDesk=null;
-  await call('Page.navigate',{url:testOrigin+'/workspace.html?project=synthetic'});
+  await call('Page.navigate',{url:testOrigin+'/workspace.html?legacy=1&project=synthetic'});
   await until(()=>evaluate('document.querySelector(".reader-text")?.textContent==='+JSON.stringify(readingDocument.text_body)),'landing opens first saved reading, not metadata');
   assert.equal(await evaluate('new URL(location.href).searchParams.get("record")'),records[1].id);
   assert.equal(await evaluate('new URL(location.href).searchParams.get("document")'),readingDocument.id);
   assert.equal(await evaluate('document.querySelectorAll(".atlas-reading-item").length'),1);
   readingDesk={project_id:'synthetic',record_id:records[1].id,document_id:comparisonDocument.id,annotation_id:null,start_pos:0,end_pos:0,revision:7};
-  await call('Page.navigate',{url:testOrigin+'/workspace.html?project=synthetic'});
+  await call('Page.navigate',{url:testOrigin+'/workspace.html?legacy=1&project=synthetic'});
   await until(()=>evaluate('document.querySelector(".reader-text")?.textContent==='+JSON.stringify(comparisonDocument.text_body)),'landing bookmark wins over first library version');
   assert.equal(await evaluate('new URL(location.href).searchParams.get("document")'),comparisonDocument.id);
-  await call('Page.navigate',{url:testOrigin+'/workspace.html?'+new URLSearchParams({project:'synthetic',record:records[0].id})});
+  await call('Page.navigate',{url:testOrigin+'/workspace.html?'+new URLSearchParams({legacy:'1',project:'synthetic',record:records[0].id})});
   await until(()=>evaluate('document.querySelector(".workspace-record-heading")?.textContent.includes("Synthetic question")'),'explicit record URL wins over bookmark and first reading');
   assert.equal(await evaluate('new URL(location.href).searchParams.get("record")'),records[0].id);
   assert.equal(await evaluate('!!document.querySelector(".reader-text")'),false,'explicit question does not receive another source text');
