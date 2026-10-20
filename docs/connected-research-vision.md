@@ -114,5 +114,5 @@ and Gutenberg reading and existing note/recovery features. Continue #95 for the
 primary book notebook, #101 for reviewed source reconciliation, #168/#196 for catalog
 retention, #38 for application-state search and #40/#54 for later sync/archive.
 Owner reading acceptance (#146) and hosted two-device/backup proof (#42) remain real
-checks. This planning pass applies no migrations, deploys no service and reads no
-owner writing.
+checks. The implementation was validated on synthetic databases and browser fixtures.
+No live owner database was migrated, service deployed or owner writing read.
