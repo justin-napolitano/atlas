@@ -6,6 +6,8 @@ The research should understand traditions in context before evaluating them. “
 
 ## Start here
 
+- [Persistent local workspace](docs/local-postgres-workspace.md) — real PostgreSQL-backed reading and writing on this Mac; startup, local sign-in, durability checks and the explicit limits of legacy-data import.
+
 - [Connected research workspace](docs/connected-research-vision.md) — latest owner-approved direction: one private workspace, effortless loose-note capture, optional collections and meaningful connections; epic #201.
 
 - `docs/reading-desk-checkpoint.md` — the dependable reading-desk slices and an actual owner reading-session checklist; deployment/research gates remain explicit.
