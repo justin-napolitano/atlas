@@ -2,9 +2,10 @@
 
 Delivery date: 2026-10-19. Epic #201; product roadmap #84.
 Implementation: #207 ownership, #208 sources, #209 native reading, #210 organization,
-#211 assembled frontend and compatibility. Backend slices #207–210 are merged.
-The assembled frontend is under final CI verification; this document is not a
-claim of deployed hosted authoring or owner usability acceptance.
+#211 assembled frontend and compatibility. All five implementation PRs are merged.
+The final #211 head (`655d55b`) passed PostgreSQL 17/18, assembled and retained
+browser flows, owner/public containers and graph checks before merge. This is not
+a claim of deployed hosted authoring or owner usability acceptance.
 
 ## What the owner can do
 
@@ -109,8 +110,9 @@ remain deferred, with truthful coverage and lexical fallback.
 - The retained full browser regression passed source sizing/zoom, working-cache
   preservation, publication boundaries, exact passages, lexicon/citations,
   source intake, library behavior, mobile layout and private storage restrictions.
-- Offline Ossie/schema validation and production frontend build pass locally. Final
-  API-schema, PostgreSQL, browser and container checks run on the #211 head.
+- Offline Ossie/schema validation and production frontend build pass locally. The
+  [final #211 checks](https://github.com/justin-napolitano/islam-research/pull/211/checks)
+  passed API-schema, PostgreSQL 17/18, browser and owner/public container validation.
 
 Reproducible developer commands (synthetic data only):
 

@@ -11,7 +11,9 @@ The owner approved one connected private workspace under #201. The
 [connected-workspace vision](../connected-research-vision.md) and
 [interaction contracts](../features/connected-workspace-contract.md) supersede the
 required-project organization below. Keep the visual/editor/source-context contracts.
-Global ownership is planned under #202; compatibility must preserve existing writing.
+Global ownership and compatibility are implemented in #207–211; see the
+[delivery ledger](../features/connected-workspace-delivery.md) for verification and
+remaining hosted/owner-session gates.
 
 ## Product and outcome
 

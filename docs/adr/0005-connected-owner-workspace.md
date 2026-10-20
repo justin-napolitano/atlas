@@ -1,7 +1,8 @@
 # ADR 0005: workspace ownership with optional organization
 
 - Date: 2026-10-19.
-- Status: product decision accepted by owner; schema/API cutover design pending #202.
+- Status: accepted; schema/API and frontend implementation merged in #207–211.
+  See [delivery evidence and hosted release gates](../features/connected-workspace-delivery.md).
 - Delivery: #201; source identity #101; writing #95/#96; organization #139/#205.
 - Supersedes: project ownership/required project selection in the target product,
   including project-first organization portions of ADR 0004 and earlier UI plans.
