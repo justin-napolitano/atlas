@@ -36,6 +36,13 @@ a claim of deployed hosted authoring or owner usability acceptance.
   private links. Scholarly acceptance requires attribution and a located source
   annotation. Original curated references retain provenance and their authority.
 
+The Library also presents the available **Qur’an** as a book. Its built-in entry
+opens the existing reader without creating a source or read/completion state.
+Retained readable Qur’an rows share one book presentation; opening keeps the
+most recent confirmed edition/verse tuple. Notes, progress, source IDs and histories
+remain edition-specific and are never summed or merged. Before a first read the
+built-in book appears under All and matching searches, not Reading or Finished.
+
 The original specialist research tools remain available through the sidebar's
 secondary **Advanced research tools** link. This retains existing lexicon, citation,
 comparison, review/publication and compatibility operations during the reset.

@@ -64,6 +64,14 @@ async function checkbox(label){await evaluate(`[...document.querySelectorAll('la
  assert.notEqual(await evaluate('document.querySelector(`[aria-label="Resize document and context"]`).getAttribute("aria-valuenow")'),before);
  await evaluate('document.querySelector(`[aria-label="Close connections"]`).click()');
  await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(async value=>writeFile(join(artifacts,'connected-notes-desktop.png'),Buffer.from(value.data,'base64')));
+ await click('Library');
+ await until(()=>evaluate('document.querySelector(".working-surface:not([hidden]) .library-book-title")?.textContent==="Qur’an"'),'Quran is a library book before first read');
+ await until(()=>evaluate('!document.querySelector(".working-surface:not([hidden]) .library-shelf").textContent.includes("Loading library…")'),'saved shelf finished loading');
+ assert.equal(await evaluate('document.querySelector(".working-surface:not([hidden]) .library-empty")===null'),true);
+ assert.equal(await evaluate('[...document.querySelectorAll(".working-surface:not([hidden]) button")].some(b=>b.textContent==="Read Qur’an")'),false);
+ await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false}).then(async value=>writeFile(join(artifacts,'connected-library-desktop.png'),Buffer.from(value.data,'base64')));
+ await evaluate('document.querySelector(".working-surface:not([hidden]) .library-book-title").click()');
+ await until(()=>evaluate('document.querySelectorAll(".working-surface:not([hidden]) [data-ayah]").length===7'),'library book opens complete Al-Fatiha reader');
  // The assembled shell uses the same complete Qur’an reader, then returns to its
  // current verse after independent capture without resetting its selected text.
  await evaluate('history.pushState(null,"","?view=quran&chapter=4&ayah_start=59");dispatchEvent(new PopStateEvent("popstate"))');
