@@ -26,6 +26,10 @@ from . import shared_library
 class PostgreSQLStore:
     """Keep private queries and public projection reads separate."""
 
+    def library_shelf(self,**values):
+        from . import library_shelf
+        with db.connect(self.dsn) as c:return library_shelf.page(c,**values)
+
     def library_items(self,**values):
         with db.connect(self.dsn) as c:return shared_library.listing(c,**values)
 

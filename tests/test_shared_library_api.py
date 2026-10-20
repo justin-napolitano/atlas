@@ -9,6 +9,17 @@ class SharedLibraryHTTPTests(unittest.TestCase):
     setUp=base_api.APIBoundaryTests.setUp
     headers=base_api.APIBoundaryTests.headers
 
+    def test_shelf_routes_are_private_bounded_and_pass_filters_to_store(self):
+        self.assertEqual(self.client.get('/v1/library/shelf').status_code,401)
+        with patch.object(MemoryBoundaryStore,'library_shelf',return_value={'items':[],'next_cursor':None},create=True) as query:
+            self.assertEqual(self.client.get('/v1/library/shelf?q=test&state=reading&project_id=synthetic',headers=self.headers()).status_code,200)
+            self.assertEqual(query.call_args.kwargs['q'],'test')
+            self.assertEqual(query.call_args.kwargs['project_id'],'synthetic')
+            self.assertEqual(self.client.get('/v1/library/continue',headers=self.headers()).status_code,200)
+            self.assertTrue(query.call_args.kwargs['continuing']);self.assertEqual(query.call_args.kwargs['limit'],5)
+        for query in ['limit=51','state=reviewed','q='+'x'*301]:
+            self.assertEqual(self.client.get('/v1/library/shelf?'+query,headers=self.headers()).status_code,422)
+
     def test_owner_only_reads_and_bounded_membership_context(self):
         for path in ['/library/items','/library/item?item_id=synthetic:item','/library/notes?item_id=synthetic:item','/library/resolve?item_id=synthetic:item&document_id=synthetic:doc']:
             with self.subTest(path=path):self.assertEqual(self.client.get('/v1'+path).status_code,401)
@@ -49,6 +60,6 @@ class SharedLibraryHTTPTests(unittest.TestCase):
         from islam_research.api import Settings,create_app
         app=create_app(Settings('synthetic-public-offline',mode='public'),store=MemoryBoundaryStore())
         with TestClient(app) as client:
-            for method,path in [('GET','/v1/library/items'),('GET','/v1/library/notes?item_id=synthetic:item'),('POST','/v1/library/index-source'),('PUT','/v1/library/project-membership')]:
+            for method,path in [('GET','/v1/library/items'),('GET','/v1/library/shelf'),('GET','/v1/library/continue'),('GET','/v1/library/notes?item_id=synthetic:item'),('POST','/v1/library/index-source'),('PUT','/v1/library/project-membership')]:
                 self.assertEqual(client.request(method,path).status_code,404)
         self.assertFalse(any('/library/' in route for route in app.openapi()['paths']))

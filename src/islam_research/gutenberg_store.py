@@ -86,4 +86,6 @@ def save_place(connection, *, project_id, book_id, version, section, position, e
         else:
             connection.execute('''INSERT INTO research.gutenberg_places(project_id,book_id,version,section,position,changed_by)
                 VALUES(%s,%s,%s,%s,%s,%s)''',(project_id,book_id,version,section,position,actor))
+        from .library_shelf import mark_reading
+        mark_reading(connection,source_id=target['source_record_id'],edition=target['edition'],representation_url=target['representation_url'],actor=actor)
         return place(connection,project_id,book_id)

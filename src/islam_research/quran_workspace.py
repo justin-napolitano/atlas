@@ -89,6 +89,10 @@ def save_place(connection,*,project_id,resource_key,chapter,ayah,expected_revisi
         connection.execute('''INSERT INTO research.quran_places(project_id,resource_key,chapter,ayah,changed_by)
             VALUES(%s,%s,%s,%s,%s) ON CONFLICT(project_id) DO UPDATE SET resource_key=EXCLUDED.resource_key,chapter=EXCLUDED.chapter,
             ayah=EXCLUDED.ayah,changed_by=EXCLUDED.changed_by,revision=research.quran_places.revision+1,updated_at=clock_timestamp()''',(project_id,resource_key,chapter,ayah,actor))
+        from .library_shelf import mark_reading
+        _,resource=quran_reader._load(resource_key)
+        source_id='urn:research:source:'+str(uuid.uuid5(uuid.NAMESPACE_URL,project_id+'\n'+resource['resource_id']))
+        mark_reading(connection,source_id=source_id,edition=resource['label'] if resource_key=='tanzil-uthmani' else resource['label']+' · '+resource['version'],representation_url=resource['source_url'],actor=actor)
         return place(connection,project_id)
 
 

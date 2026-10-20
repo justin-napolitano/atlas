@@ -722,6 +722,16 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
     def library_page(rows,limit,key='id'):
         return {'items':rows[:limit],'next_cursor':rows[limit-1][key] if len(rows)>limit else None}
 
+    @router.get('/library/shelf')
+    def library_shelf(project_id: Identifier | None=None,q:Annotated[str,Query(max_length=300)]='',
+        state:Literal['','needs_review','want_to_read','reading','finished']='',
+        cursor:Annotated[str,Query(max_length=1200)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):
+        return store.library_shelf(project_id=project_id or '',q=q,state=state,cursor=cursor,limit=limit)
+
+    @router.get('/library/continue')
+    def library_continue(project_id:Identifier | None=None):
+        return store.library_shelf(project_id=project_id or '',limit=5,continuing=True)
+
     @router.get('/library/items')
     def library_items(project_id: Identifier | None=None,retained:bool=True,
         cursor:Annotated[str,Query(max_length=500)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):
