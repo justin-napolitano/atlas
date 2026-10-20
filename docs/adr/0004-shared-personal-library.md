@@ -6,6 +6,14 @@
 - Scope: one authenticated owner, private library and authoring, explicit public
   research projections. No multi-user collaboration or new provider integrations.
 
+## Ownership amendment — 2026-10-19
+
+[ADR 0005](0005-connected-owner-workspace.md) supersedes required project ownership
+as the target model. #201/#202 plan a single private owner workspace with optional
+collections and global writing. This ADR's source/edition distinctions, merged 0024
+legacy mappings and preservation/privacy contracts remain valid; global note
+ownership is not implemented merely by approving the new product direction.
+
 ## Problem and current state
 
 The desired product has one shared library, reusable by Islam, Philosophy and

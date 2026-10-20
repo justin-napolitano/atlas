@@ -5,6 +5,14 @@ Decision date: 2026-10-18. This brief supersedes older frontend instructions tha
 
 Delivery tracking: [workspace reset #177](https://github.com/justin-napolitano/islam-research/issues/177), with ordered slices [shell and theme #178](https://github.com/justin-napolitano/islam-research/issues/178), [inline Markdown and safe autosave #179](https://github.com/justin-napolitano/islam-research/issues/179), then [reader/context #180](https://github.com/justin-napolitano/islam-research/issues/180). These refine the existing design umbrella #51 and product roadmap #84; they do not replace hosted-release or owner-session verification.
 
+## Organization amendment — 2026-10-19
+
+The owner approved one connected private workspace under #201. The
+[connected-workspace vision](../connected-research-vision.md) and
+[interaction contracts](../features/connected-workspace-contract.md) supersede the
+required-project organization below. Keep the visual/editor/source-context contracts.
+Global ownership is planned under #202; compatibility must preserve existing writing.
+
 ## Product and outcome
 
 A personal academic second brain with three equally real activities: reading sources, writing connected Markdown notes, and developing research questions. Qur’an reading is the first complete reading flow. Sources, annotations, citations, commentary, concepts, research links and personal writing remain connected. Other disciplines and catalogs follow later.
@@ -23,11 +31,11 @@ Do not put screenshots containing personal writing or local research state in th
 
 ## Information architecture: settled decisions
 
-- One persistent left sidebar contains search, a small New action, projects and their content. Account, appearance and a truthful storage/sync indicator sit at its bottom.
-- Projects expand in that same sidebar. Sources, Questions and Notes are views/branches inside the project; their items open directly in the main workspace. Do not render another project root or explorer inside Notes.
+- One persistent left sidebar contains search, a persistent New note action, Continue, Library, Notes, Questions, Explore and optional collections. Account, appearance and a truthful storage/sync indicator sit at its bottom.
+- Library, Questions and Notes are workspace-wide destinations. Optional collections reference the same items; no project selection or creation is required to read or write. Do not render a second explorer inside Notes.
 - A single selected item has one title and one document surface. No global top navigation, permanent top tab strip, duplicate notebook heading, or enclosing document card.
 - Recent/open items may occupy a compact sidebar section. Preserve unfinished work and navigation history underneath; removing visible tabs does not authorize deleting the working cache or its draft protections.
-- Existing My writing / Reading notes / Everything collections are filters, not physical directories. Simplify or relocate them as secondary filters. Do not misrepresent them as user-created folders. Actual nested folders remain tracked under #139; implement their authority separately when scheduled.
+- Existing My writing / Reading notes / Everything collections are filters, not physical directories. Simplify or relocate them as secondary filters. Do not misrepresent them as user-created folders. Optional collection organization is tracked under #139; arbitrary nested folders remain deferred.
 - Graph exploration and research tools remain reachable through project/context actions. They are not default furniture around every note.
 - The main content is the selected note, question or reading. Search results temporarily replace that surface; selecting a result opens the actual item with its verified context.
 
@@ -44,7 +52,7 @@ A textarea with a separate rendered preview is not the desired live-editing expe
 
 Remove permanent Write/Preview buttons, “click text to write” instructions, word counts and Thought type dropdowns from the document. Keep an explicit raw Markdown/source option available as a secondary command. Creating under Questions sets the existing question type; Notes defaults to a note. Classification remains editable in item properties. Never relabel personal writing as reviewed evidence.
 
-New creates a blank note in the active project, or a question when invoked in the Questions branch. Focus the title/body directly. Adding a source is contextual to Sources/search and retains the real intake/rights contract where acquisition is needed; no mandatory import form before ordinary supported reading.
+New note creates independent body-first writing without a project, title or source requirement. A distinct explicit New question action can create a question when useful. Focus the title/body directly. Adding a source is contextual to Sources/search and retains the real intake/rights contract where acquisition is needed; no mandatory import form before ordinary supported reading.
 
 ### Reader and source context
 

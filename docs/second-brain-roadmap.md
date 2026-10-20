@@ -1,82 +1,96 @@
-# Qur’an-first product roadmap
+# Connected research workspace roadmap
 
-The product is a research library with a reader and connected Markdown notebook. The next useful experience is **open the Qur’an → choose surah/ayah → read continuously → write or inspect commentary → resume**. Open Library, Gutenberg and arXiv remain the wider catalog goal; they come after this reading loop works.
+Latest owner-approved direction: 2026-10-19. Product authority: #84; current delivery
+epic [#201](https://github.com/justin-napolitano/islam-research/issues/201); technical/
+hosting umbrella #30. This is a plan, not a claim that global authoring has shipped.
 
-This issue is the authoritative product roadmap. #30 remains the technical/hosting umbrella. Roadmap labels indicate order, not completion. The earlier hardening checklist #134 is superseded by this reconciled plan.
+One private workspace connects sources, reading, ordinary Markdown writing and ideas.
+Nothing needs a project, collection, source, title, tags or classification to exist.
+Unrelated loose thoughts are first-class notes. Organization and meaning can follow
+later, or never. See [product vision](connected-research-vision.md),
+[interaction/acceptance contracts](features/connected-workspace-contract.md), and
+[ownership ADR 0005](adr/0005-connected-owner-workspace.md).
 
-## Already merged
+## Current software and preservation baseline
 
-The owner-approved stack #148 → #150 → #151 → #152 → #153 → #155 → #157 → #159 → #161 → #163 → #167 → #171 is merged into main. It supplies private recovery, save state, bounded warm tabs, reversible Trash, free margin writing, Markdown/highlight navigation, working appearance controls, document-first notes, and the compact notebook explorer. #149 was already merged separately.
+The Qur’an/Markdown workspace, word meanings, personal progress, keyboard advancement,
+Gutenberg reading, exact note-location fix and shared source-identity foundation were
+merged through #176/#181/#186/#188/#190/#191/#193/#199. The integrated stack passed
+PostgreSQL 17/18, browser, owner/public container and graph checks. This establishes
+software integration, not hosted two-device delivery or scholarly review.
 
-Completed bounded slices: #135/#136/#137/#145/#154/#156/#158/#160/#162/#165. This is software integration, not deployment, scholarly review, a complete Qur’an corpus, arbitrary nested folders, or Obsidian sync.
+Shelf PR #200 is a separate implementation candidate. It must follow this revised
+organization direction rather than cement project selection as a prerequisite. Keep
+its compact/direct-reading behavior and shared identities. Do not call native global
+catalog retention, a primary book notebook or the global-writing migration complete
+because a shelf exists.
 
-Integration evidence: final application merge 21390a9 passed main browser/public-container/owner-container checks; final backend-bearing integration aa6cda3 passed PostgreSQL 17/18 contracts. PR heads had passing checks before merge. The newer nightly public snapshot on main was preserved.
+## Build order
 
-## Build order and demonstration gates
-
-| Order | Work | Done when |
+| Order | Delivery | Acceptance gate |
 | --- | --- | --- |
-| 1 | **#172: actual reading resources**, under #19/#45 | An identified permitted Arabic text and named translation supply a complete supported surah, with resource/version/coverage recorded. Two pilot verses are insufficient. |
-| 2 | **#173: continuous Qur’an reader** | Open a surah or direct ayah link, read comfortably, navigate, change presentation/resource choices, and resume. No mandatory import wizard. |
-| 3 | **#174 + #164: seamless notes and context** | Write free notes or exact annotations, inspect actual attributed commentary in one sidebar, then find a note and return to its same verse/resource. First-note source association happens safely behind the scenes. |
-| 4 | **#146: real reading session and fixes** | The owner actually reads for about 30 minutes. Record and fix blocked navigation, lost writing or readability friction before expanding. Fixture tests do not complete this gate. |
-| 5 | **#31/#33/#42/#52: usable hosted release** | One-owner PostgreSQL/IAP authoring works from two machines, notes/progress survive, backup/restore is demonstrated, and anonymous visitors see only explicitly published read-only material. Source/resource and open-source release requirements remain explicit. |
-| 6 | **#168/#170/#169/#166: broader open catalog** | One search → open → read → note flow spans supported Gutenberg texts, Open Library discovery/availability, then versioned papers. Reading does not require importing every catalog result into a project. |
+| 1 | #202 global owner-workspace identities/authoring; extend #101 source identity | Create/search/edit writing and sources with no project. Preserve old tuples, exact versions, histories, recovery and publication through a rehearsed cutover. |
+| 2 | #203 effortless independent capture; #140 global Continue/navigation | One action opens body-first writing. Save privately without required metadata. Return to reading/drafts unchanged; find loose notes in recent Notes/literal search. |
+| 3 | #139 optional collections; #205 saved views | One object in several or zero collections; no copies. Views store queries. Rename/remove organization without losing content or changing rights/review. |
+| 4 | #95 global book notebook; #96 optional developing roles; #97 meaningful links | Same Markdown/annotation IDs across views; exact source beside writing; optional question/decision/principle development and explained reversible connections. |
+| 5 | #204 question investigations; #98 changes in understanding | Linked evidence, competing interpretations and provisional answers; preserve old wording and why understanding changed. Owner controls question state. |
+| 6 | #141 bounded neighborhoods; #38/#34/#37 application-state retrieval | Readable local threads first. Semantic/agent suggestions remain attributable and unaccepted until reviewed. Full graph visualization/ranking upgrades are later. |
 
-Proposed English starting preference: Mustafa Khattab’s The Clear Quran; Saheeh International for comparison where supported. Neither is a universally authoritative English standard. #172 must verify resource access/terms and record exact attribution. Morphology in #19 is not a prerequisite for basic reading. Public text coverage never implies full scholarly commentary/research coverage.
+Some slices can share implementation work after their identity dependencies resolve;
+this table is dependency order, not a mandate for six separate visual rebuilds. The
+owner approved a coherent product reset. Preserve old data via compatibility mappings
+underneath, rather than a prolonged required-project UI or hidden default project.
 
-## Organization and reusable reading patterns
+## Reused scope and changed priorities
 
-#139 custom folders, #140 project home and #143 project lifecycle follow observed reading needs; the compact explorer currently shows existing project/collection views. Do not claim those views implement arbitrary nested storage folders.
+- #87 remains the connected-notebook umbrella; #88 remains source intake. #101 keeps
+  edition/version/source equivalence, merge/split and exact-reference work. #202 adds
+  workspace-wide writing ownership, not another source identity system.
+- #139 is now optional workspace collections, replacing required project folders.
+  #140 is global Continue, replacing a separate project home. #143 project-management
+  UI is deferred; legacy links/jobs/scope compatibility is part of #202.
+- #95/#96/#97/#98 already own notebooks, optional roles, connections and changed
+  understanding; refine them rather than opening duplicates. #204 supplies the
+  investigation presentation and #205 the saved-view contract.
+- #194/#195/#196/#197 remain library/shelf/discovery validation work. Replace mandatory
+  project selection with global references and optional collections in their next
+  iterations. #196/#168/#100 retain direct Open/Save/first-note behavior with no project
+  prerequisite. Open Library #169 and papers #166 remain provider-specific later work.
+- #38 global literal/application-state search, #34 Apache Ossie semantics, #36 ranking
+  and #37 traversals are reused. Quick capture/search cannot depend on embeddings or
+  AI; derived semantic coverage and accepted scholarly links remain distinct.
 
-Reuse a few composable structures as actual texts require them: numbered units now, chapter/section prose next, fixed pages when PDFs/scans arrive, and line/stanza locators when needed. #92/#104 validate later domain extensions; avoid a speculative universal plugin system.
+## Core interface
 
-## Later
+One sidebar: Continue, Library, Notes, Questions, Explore; global search, persistent
+New note and optional collections. Same document surface, live Markdown, source/margin
+context and charcoal/ivory/red tokens. No required project tree, extra dashboard,
+provider wizard, metadata form before a thought, forced Inbox processing or mandatory
+whole-graph visualization.
 
-Advanced ranking #36; complexity/background/history/concordances #46/#55–58; expanded agent proposals/automation #53/#90; full bidirectional Obsidian sync #40; complete portable archive restore #54; elaborate graph exploration #141. Basic source attribution, useful evidence links and Markdown export remain core. Existing features and deterministic harvesting are preserved.
+## Research, hosting and later work
 
-## Research and release boundaries
+Qur’an remains the primary real reading corpus; preserve named resources, canonical
+surah/ayah and translation-specific notes. Khattab's The Clear Quran connection #185
+remains a resource-access/rights gap; the implemented Itani text is not Khattab.
+The actual scholarly pilot #15, editorial standards #13/#50 and real reading session
+#146 remain separate from code/test completion.
 
-#15 remains the actual scholarly pilot, with #13/#50 editorial standards and explicit review scope. Coding or displaying a source does not mean its full argument was read or reviewed. #85–92 remain broader epics where acceptance extends beyond merged software slices.
+One verified owner writes privately. Anonymous visitors see explicitly approved
+read-only projections (#33/#41). Collection/source reuse never publishes writing.
+PostgreSQL/GCP #31, backups/sync and real two-machine proof #42, and open-source
+release #52 are delivery gates, not obsolete project features.
 
-Keep stable IDs, exact quotation/resource anchors, personal notes versus attributed findings, owner-only writes, private defaults and explicit public publication. A translation switch must not move a highlight to different wording. The local preview still saves on this Mac; merged code and synthetic cross-session tests do not establish a hosted synchronized service. The owner subsequently authorized implementation of steps 1–3; PR #176 contains those software slices. Next is the real reading session (#146), followed by the hosted-release gates. The implemented English text is explicitly named Talal Itani ClearQuran; the proposed Khattab/Saheeh connections remain unavailable pending provider access/reuse authorization. See [implementation evidence](features/quran-continuous-reader.md).
+Defer elaborate whole-graph layouts, advanced rankings #36, background/history and
+complexity #46/#55–58, expanded agents #53/#90, complete Obsidian sync #40, portable
+restore #54, arbitrary folder hierarchies, project-management UI #143 and speculative
+universal block/plugin systems. Preserve existing useful search, harvesting, reader,
+research connections, safe Markdown export and source attribution.
 
-Repository plan: [second-brain roadmap](https://github.com/justin-napolitano/islam-research/blob/main/docs/second-brain-roadmap.md). Reading design: [Qur’an first](https://github.com/justin-napolitano/islam-research/blob/main/docs/quran-first-reading.md). Catalog contract: [seamless open catalog](https://github.com/justin-napolitano/islam-research/blob/main/docs/seamless-open-catalog.md).
+## History and authority
 
-## Owner-approved workspace simplification
-
-Before expanding the catalog, integrate the [unified workspace design brief](design/unified-workspace-brief.md): one left navigation tree and one document surface, live Markdown editing, contextual source reading, and a consistent charcoal/ivory/red palette. Sequence the work as shell/navigation, document editing, then reader/context integration. This replaces the nested application presentation; it preserves the implemented research and persistence contracts. The brief includes exact acceptance flows. PR #181 implements these three slices on top of #176; see [implementation and verification contracts](features/unified-workspace.md). The owner reading session (#146), native Mac input-method review and hosted-release proof (#42) remain separate acceptance work.
-
-## Gutenberg delivery update (2026-10-19)
-
-The owner has selected #170 as the next delivery after the Qur’an reading loop.
-PR #191, stacked on #190, implements official OPDS search → supported UTF-8 book
-reading → exact and free margin notes → original-source return, with optional
-project saving and private versioned resume. See [behavior, limits, threat model
-and validation](features/gutenberg-direct-reading.md). It does not establish a
-hosted release, complete #168 cross-provider catalog work, or connect Open Library
-#169 / papers #166. Those remain subsequent slices.
-
-## Next product slice: personal library and book notebooks (plan only)
-
-The owner selected a compact library list with small optional covers, Continue
-reading, direct title → reader and Notes count → book notebook. Catalog discovery
-moves behind Find books. This is one shared library across projects; it cannot
-be delivered by cloning project-scoped records. [Design/examples](design/library-shelf-brief.md),
-[interaction/data/acceptance contracts](features/library-shelf-contract.md), and
-[proposed shared-identity ADR](adr/0004-shared-personal-library.md) are written before build.
-
-Epic #194 orders the work: #101 minimum shared-identity/legacy migration/API gate →
-#195 shelf/navigation → #196 discovery/Open/Save → #95 per-book notebook integration
-→ #197 cross-flow validation and #146 owner acceptance. #101/#95 are reused, not
-duplicated or declared complete. #140 project home later consumes project-filtered
-library data; it must not introduce another library dashboard.
-
-This is the selected next product plan following Gutenberg #191 and note-location
-#193. Their code is separate from this documentation pass. Hosted owner sign-in,
-two-machine verification/backups and explicit public read-only publication remain
-#31/#33/#42; this plan neither merges outstanding PRs nor completes release gates.
-Open Library #169, papers #166, arbitrary folders #139, full Obsidian sync #40 and
-graph redesign remain separate scopes. No app/schema/API builds in this planning pass.
-
-Implementation candidate [PR #199](https://github.com/justin-napolitano/islam-research/pull/199) covers the bounded #101 identity/API gate. See [implementation and remaining scope](features/shared-library-identities.md); the shelf UI remains #195.
+The [previous project-first roadmap](roadmap-history/2026-10-19-project-first-roadmap.md)
+is retained for context. Its required-project organization is superseded here; its
+implemented reader/save/privacy contracts are not discarded. This documentation pass
+creates/reconciles issues and contracts only. It applies no migrations, rewrites no
+owner notes, changes no application code and restarts no preview.

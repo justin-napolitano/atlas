@@ -6,6 +6,8 @@ The research should understand traditions in context before evaluating them. “
 
 ## Start here
 
+- [Connected research workspace](docs/connected-research-vision.md) — latest owner-approved direction: one private workspace, effortless loose-note capture, optional collections and meaningful connections; epic #201.
+
 - `docs/reading-desk-checkpoint.md` — the dependable reading-desk slices and an actual owner reading-session checklist; deployment/research gates remain explicit.
 
 - `docs/second-brain-roadmap.md` — Now / Next / Later: reliable reading and writing first, simple organization next, advanced research features later.
