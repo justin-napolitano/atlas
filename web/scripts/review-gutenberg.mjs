@@ -63,10 +63,13 @@ try{
   await evaluate('document.querySelector(".reader-text").focus();getSelection().removeAllRanges()');
   const width=await evaluate('document.querySelector(".reader-text").getBoundingClientRect().width');assert.ok(width>300);
   await call('Page.captureScreenshot',{format:'png'}).then(r=>writeFile(join(artifacts,'gutenberg-desktop.png'),Buffer.from(r.data,'base64')));
+  await click('Save to library');await until(()=>evaluate('document.body.textContent.includes("In library")'),'explicit reader library retention');
+  assert.equal(await evaluate('window.__books.library().on_shelf'),true);
+  assert.equal(await evaluate('window.__books.library().preferred_edition_id'),'synthetic:edition');
   await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   await evaluate(`{const shell=document.querySelector('.atlas-workspace');shell.style.gridTemplateColumns='minmax(0,1fr)';shell.querySelector('aside').style.display='none';}`);
   await sleep(200);
   assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),true,'390px book has no horizontal page overflow');
   await call('Page.captureScreenshot',{format:'png'}).then(r=>writeFile(join(artifacts,'gutenberg-mobile.png'),Buffer.from(r.data,'base64')));
-  console.log(JSON.stringify({searchToReading:true,noImportRequired:true,atomicExactNote:true,lostResponseRetry:true,originalHighlightReturn:true,sectionResume:true,inertText:true,mobileNoOverflow:true,book:book.title,artifacts}));
+  console.log(JSON.stringify({explicitLibraryRetention:true,searchToReading:true,noImportRequired:true,atomicExactNote:true,lostResponseRetry:true,originalHighlightReturn:true,sectionResume:true,inertText:true,mobileNoOverflow:true,book:book.title,artifacts}));
 }finally{socket?.close();chrome.kill('SIGTERM');await preview.httpServer.close();await new Promise(resolve=>{if(chrome.exitCode!==null)return resolve();chrome.once('exit',resolve);setTimeout(resolve,3000);});await rm(temporary,{recursive:true,force:true,maxRetries:5,retryDelay:200});}

@@ -66,10 +66,12 @@ def page(connection,*,project_id='',q='',state='',cursor='',limit=30,continuing=
     counts={r['item_id']:r['n'] for r in counts}
     for row in visible:
         attrs=row.pop('attributes')
-        row['creators']=attrs.get('creators',[]);row['language']=attrs.get('language',[])
+        row['creators']=attrs.get('creators',[]) if isinstance(attrs.get('creators',[]),list) else []
+        row['creators']=[name for name in row['creators'][:30] if isinstance(name,str)]
+        row['language']=attrs.get('language',[]) if isinstance(attrs.get('language',[]),list) else []
         row['note_count']=counts.get(row['id'],0)
         row['reader']='document'
-        if row['source_available'] and row['preferred_edition_id'] and attrs.get('quran_resource') in {'tanzil-uthmani','itani-god'}:
+        if row['source_available'] and row['preferred_edition_id'] and isinstance(attrs.get('quran_resource'),str) and attrs.get('quran_resource') in {'tanzil-uthmani','itani-god'}:
             from . import quran_reader
             _,resource=quran_reader._load(attrs['quran_resource'])
             if attrs.get('source_sha256')==resource['sha256']:

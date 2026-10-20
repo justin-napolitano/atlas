@@ -15,7 +15,7 @@ export function sourceRetention(api,source,documentId=''){
       sent=itemUpdate(item,{on_shelf:true,reading_status:item.reading_status==='needs_review'?'want_to_read':item.reading_status,preferred_edition_id:preferred});
     }
     const result=await api.request('library/item',{},sent);
-    if(result.id!==item.id || !result.on_shelf || result.preferred_edition_id!==sent.preferred_edition_id)throw new Error('The exact library save was not confirmed.');
+    if(result.id!==item.id || result.revision!==sent.expected_revision+1 || !result.on_shelf || result.reading_status!==sent.reading_status || result.preferred_edition_id!==sent.preferred_edition_id)throw new Error('The exact library save was not confirmed.');
     return result;
   };
 }
