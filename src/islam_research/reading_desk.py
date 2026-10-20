@@ -47,7 +47,11 @@ def save(connection,*,project_id,record_id,document_id,annotation_id,start,end,e
             row=connection.execute("""UPDATE research.reading_desks SET record_id=%s,document_id=%s,annotation_id=%s,start_pos=%s,end_pos=%s,
                 changed_by=%s,revision=revision+1 WHERE project_id=%s AND revision=%s RETURNING *""",
                 (record_id,document_id,annotation_id,start,end,actor,project_id,expected_revision)).fetchone()
-        if row is not None: return get(connection,project_id)
+        if row is not None:
+            if document_id:
+                from .library_shelf import mark_reading
+                mark_reading(connection,source_id=record_id,edition=document['edition'],representation_url=document['representation_url'],actor=actor)
+            return get(connection,project_id)
         current=get(connection,project_id)
         if current and current["revision"]==expected_revision+1 and all(current[k]==v for k,v in values.items()):
             return current
