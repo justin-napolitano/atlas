@@ -453,6 +453,10 @@ class PostgreSQLStore:
     def verse_import_pilot(self, **values):
         with db.connect(self.dsn) as connection: return verse_store.import_pilot(connection,**values)
 
+    def quran_reader_association(self, **values):
+        from .quran_reader_candidate import associate_verse
+        with db.connect(self.dsn) as connection: return associate_verse(connection,**values)
+
     def verse_update(self, **values):
         with db.connect(self.dsn) as connection: return verse_store.update(connection,**values)
 

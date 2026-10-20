@@ -1924,6 +1924,60 @@
         "title": "QuranProgress",
         "type": "object"
       },
+      "QuranReaderAssociation": {
+        "additionalProperties": false,
+        "properties": {
+          "ayah": {
+            "maximum": 286.0,
+            "minimum": 1.0,
+            "title": "Ayah",
+            "type": "integer"
+          },
+          "chapter": {
+            "maximum": 114.0,
+            "minimum": 1.0,
+            "title": "Chapter",
+            "type": "integer"
+          },
+          "project_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "resource_id": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "text_sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Text Sha256",
+            "type": "string"
+          },
+          "translation_key": {
+            "default": "english_saheeh",
+            "enum": [
+              "english_saheeh",
+              "english_rwwad"
+            ],
+            "title": "Translation Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "chapter",
+          "ayah",
+          "resource_id",
+          "text_sha256"
+        ],
+        "title": "QuranReaderAssociation",
+        "type": "object"
+      },
       "RankCandidate": {
         "additionalProperties": false,
         "properties": {
@@ -6709,6 +6763,95 @@
           }
         },
         "summary": "Save Quran Progress"
+      }
+    },
+    "/v1/quran/reader": {
+      "get": {
+        "operationId": "quran_reader_candidate_resource_v1_quran_reader_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "chapter",
+            "required": true,
+            "schema": {
+              "maximum": 114,
+              "minimum": 1,
+              "title": "Chapter",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "translation_key",
+            "required": false,
+            "schema": {
+              "default": "english_saheeh",
+              "enum": [
+                "english_saheeh",
+                "english_rwwad"
+              ],
+              "title": "Translation Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Quran Reader Candidate Resource"
+      }
+    },
+    "/v1/quran/reader-association": {
+      "post": {
+        "operationId": "quran_reader_association_v1_quran_reader_association_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuranReaderAssociation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Quran Reader Association"
       }
     },
     "/v1/quran/words": {

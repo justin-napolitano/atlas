@@ -16,6 +16,7 @@ The research should understand traditions in context before evaluating them. “
 - `docs/features/gutenberg-direct-reading.md` — Gutenberg catalog search, direct plain-text reading, located private notes and revision-safe resume; Open Library remains planned.
 - `docs/quran-first-reading.md` — current priority: continuous Qur’an reading, translation, commentary and durable notes; reusable reading patterns follow real texts.
 - `docs/features/quran-reading-progress.md` — private, reversible ayah read marks, surah/work completion and revision-safe saves, separate from reading place and scholarly review.
+- `docs/quran-reader-candidate.md` — local Qur’an reader candidate, source/version and rights record, verification, and owner review gates.
 - `docs/seamless-open-catalog.md` — planned unified open catalog, direct reading, and durable notes without a mandatory import step.
 - `docs/research-library-vision.md` — library, reader, commentary and portable notes as one product, with a versioned arXiv reading pilot planned.
 - `docs/features/document-first-workspace.md` — simplified reader controls, formatted notebook pages, direct editing, and automatic private writing saves.
@@ -38,6 +39,7 @@ The research should understand traditions in context before evaluating them. “
 - `graph/schema.md` — node and edge model.
 - `graph/research.ttl` — canonical RDF graph using SKOS and PROV-O.
 - `reports/pilot-ulul-amr-quran-4-59.md` — first bounded, source-linked interpretation comparison; the graph carries its attributed claim and evidence records.
+- `reports/pilot-ulul-amr-review-proposal-2026-10-18.md` — newly inspected section-level Q 4:59 source notes proposed for human editorial review; no graph promotion.
 - `islam-research visualize` — creates an offline interactive radial view of the graph, with search, type filters, and connection highlighting.
 - `web/` — lightweight React public research atlas for the curated graph and a deliberately separate, sanitized set of unreviewed discovery leads; deployable as static output on Vercel.
 - `graph/shapes.ttl` — SHACL validation constraints.
