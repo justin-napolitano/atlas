@@ -1,6 +1,6 @@
 /** Device-local presentation only. Never persist research content or identities. */
 export const readingPreferencesKey='research:reading-appearance:v1';
-export const readingDefaults=Object.freeze({size:22,notesSize:17,font:'serif',spacing:1.65,width:'comfortable',theme:'auto',zoom:100,mode:'scroll'});
+export const readingDefaults=Object.freeze({size:22,notesSize:17,font:'serif',spacing:1.65,width:'comfortable',theme:'auto',zoom:100,mode:'scroll',arabicSize:34,arabicFont:'geeza',showArabic:true,showEnglish:true});
 const number=(value,fallback,min,max)=>typeof value==='number'&&Number.isFinite(value)?Math.max(min,Math.min(max,value)):fallback;
 const choice=(value,options,fallback)=>options.includes(value)?value:fallback;
 export function normalizeReadingPreferences(value){
@@ -8,7 +8,7 @@ export function normalizeReadingPreferences(value){
   return {size:Math.round(number(v.size,22,14,48)),notesSize:Math.round(number(v.notesSize,17,12,32)),
     font:choice(v.font,['serif','book','sans'],'serif'),spacing:number(v.spacing,1.65,1.3,2.2),
     width:choice(v.width,['narrow','comfortable','wide'],'comfortable'),theme:choice(v.theme,['auto','light','paper','dark'],'auto'),
-    zoom:Math.round(number(v.zoom,100,80,200)),mode:choice(v.mode,['scroll','pages'],'scroll')};
+    zoom:Math.round(number(v.zoom,100,80,200)),mode:choice(v.mode,['scroll','pages'],'scroll'),arabicSize:Math.round(number(v.arabicSize,34,24,64)),arabicFont:choice(v.arabicFont,['geeza','serif','sans'],'geeza'),showArabic:v.showArabic!==false,showEnglish:v.showArabic===false?true:v.showEnglish!==false};
 }
 export function readReadingPreferences(storage){try{return normalizeReadingPreferences(JSON.parse(storage.getItem(readingPreferencesKey)));}catch{return {...readingDefaults};}}
 export function writeReadingPreferences(storage,value){try{storage.setItem(readingPreferencesKey,JSON.stringify(normalizeReadingPreferences(value)));return true;}catch{return false;}}

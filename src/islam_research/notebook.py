@@ -35,8 +35,8 @@ def get(connection,project_id,entry_id):
     return connection.execute('''SELECT n.*,r.title AS source_title,r.deleted_at IS NULL AS source_active,
         EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed') AS trashed,
         coalesce((SELECT t.revision FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id),0) AS trash_revision,
-        d.edition,d.locator,d.text_sha256,a.exact AS selected_quote,a.start_pos,a.end_pos
-        FROM research.notebook_entries n LEFT JOIN research.records r ON r.project_id=n.project_id AND r.id=n.record_id
+        d.edition,d.locator,d.text_sha256,a.exact AS selected_quote,a.start_pos,a.end_pos,to_jsonb(q) AS quran_context
+        FROM research.notebook_entries n LEFT JOIN research.quran_note_contexts q ON q.project_id=n.project_id AND q.entry_id=n.id LEFT JOIN research.records r ON r.project_id=n.project_id AND r.id=n.record_id
         LEFT JOIN research.reading_documents d ON d.project_id=n.project_id AND d.id=n.document_id
         LEFT JOIN research.reading_annotations a ON a.project_id=n.project_id AND a.id=n.annotation_id
         WHERE n.project_id=%s AND n.id=%s''',(project_id,entry_id)).fetchone()

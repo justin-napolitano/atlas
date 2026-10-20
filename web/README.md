@@ -54,3 +54,7 @@ The harvested queue and screening files stay ephemeral on the GitHub runner. Onl
 Import this repository into Vercel and set the project root directory to `web`. Enable Git deployments from `main`; nightly data commits will then trigger a fresh deployment. The included `vercel.json` builds with `npm run build` and serves `dist/` as a static site. There are no serverless functions or runtime API secrets. Vercel Hobby currently offers free personal-use hosting with a 100 GB/month transfer allowance ([pricing and terms](https://vercel.com/pricing)); quotas and eligibility can change, so verify them before deployment. The generated `dist/` folder is also portable to Google Cloud Storage or any static web host.
 
 This project has not been deployed by this change.
+
+## Unified workspace
+
+The one-sidebar reader/notebook implementation, Markdown editor and preservation contracts are documented in [unified workspace](../docs/features/unified-workspace.md). The editor loads on demand; ordinary reading uses the existing reading preferences and source identities. See #177–#180 and PR #181 for delivery tracking.

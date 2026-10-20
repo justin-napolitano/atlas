@@ -47,11 +47,7 @@ and an attributed interpretation. Display only actual linked material, with hone
 coverage gaps. Showing full reading text is not reviewing the whole Qur’an or
 claiming comprehensive tafsir coverage under the scholarly pilot.
 
-The current application supplies bounded Q 4:59/4:83 Arabic and reading excerpts.
-It is not a complete continuous Qur’an reader. First prove a complete supported
-surah from an identified permitted resource, including direct navigation to 4:59
-where available, a durable note, commentary return, and resume. Expand resource
-coverage through #19 without fabricating missing verses or source access.
+PR #176 implements the first three roadmap slices: complete pinned Tanzil Arabic and Talal Itani ClearQuran God-edition text, continuous surah/ayah reading, and private source-bound notes/highlights. Itani is explicitly a different translation from the proposed Khattab default; Khattab and Saheeh remain unavailable pending provider access/reuse authorization. See [resource evidence and reading flow](features/quran-continuous-reader.md). The owner reading session (#146), scholarly review (#15), and hosted release (#42) remain separate gates. Expand provider coverage through #19 without fabricating missing verses or access.
 
 ## Reuse a few composable reading patterns
 

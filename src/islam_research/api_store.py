@@ -17,10 +17,109 @@ from . import private_trash
 from . import reading_drafts
 from . import collection_link
 from . import research_search
+from . import quran_workspace
+from . import quran_progress
+from . import gutenberg, gutenberg_store
+from . import shared_library
 
 
 class PostgreSQLStore:
     """Keep private queries and public projection reads separate."""
+
+    def library_items(self,**values):
+        with db.connect(self.dsn) as c:return shared_library.listing(c,**values)
+
+    def library_item(self,item_id,project_id=''):
+        with db.connect(self.dsn) as c:return shared_library.get(c,item_id,project_id)
+
+    def library_source(self,project_id,source_record_id):
+        with db.connect(self.dsn) as c:return shared_library.source_identity(c,project_id,source_record_id)
+
+    def library_index_source(self,**values):
+        with db.connect(self.dsn) as c:return shared_library.index_source(c,**values)
+
+    def library_update_item(self,**values):
+        with db.connect(self.dsn) as c:return shared_library.update_item(c,**values)
+
+    def library_membership(self,**values):
+        with db.connect(self.dsn) as c:return shared_library.membership(c,**values)
+
+    def library_editions(self,**values):
+        with db.connect(self.dsn) as c:return shared_library.editions(c,**values)
+
+    def library_documents(self,**values):
+        with db.connect(self.dsn) as c:return shared_library.documents(c,**values)
+
+    def library_resolve(self,**values):
+        with db.connect(self.dsn) as c:return shared_library.resolve(c,**values)
+
+    def library_notes(self,**values):
+        with db.connect(self.dsn) as c:return shared_library.notes(c,**values)
+
+    def gutenberg_book(self, project_id, book_id, version='', refresh=False):
+        with db.connect(self.dsn) as c:
+            saved=gutenberg_store.place(c,project_id,book_id)
+            chosen=version or (saved['version'] if saved and not refresh else '')
+            value=gutenberg_store.snapshot(c,book_id,chosen)
+            if value and not refresh: return value
+            if chosen and not value: raise ValueError('The requested version is unavailable')
+        value=gutenberg.book(book_id)
+        with db.connect(self.dsn) as c:return gutenberg_store.cache(c,value)
+
+    def gutenberg_section(self, project_id, book_id, version, section):
+        with db.connect(self.dsn) as c:
+            value=gutenberg_store.snapshot(c,book_id,version)
+            if not value: raise ValueError('The reading version is unavailable')
+            return gutenberg_store.representation(value,project_id,section)
+
+    def gutenberg_binding(self, **values):
+        with db.connect(self.dsn) as c:return gutenberg_store.binding(c,**values)
+
+    def gutenberg_place(self, project_id, book_id):
+        with db.connect(self.dsn) as c:return gutenberg_store.place(c,project_id,book_id)
+
+    def save_gutenberg_place(self, **values):
+        with db.connect(self.dsn) as c:return gutenberg_store.save_place(c,**values)
+
+    def gutenberg_write(self, *, binding, fields, action, actor):
+        # First source/document and real note commit together, preserving existing
+        # UUID exact retries, Unicode verification and private notebook authority.
+        with db.connect(self.dsn) as c, c.transaction():
+            bound=gutenberg_store.binding(c,**binding,actor=actor)
+            if fields['project_id']!=binding['project_id'] or fields.get('document_id')!=bound['document']['id']:
+                raise ValueError('The note target did not match this book version')
+            if action=='annotation':return passage_store.create_annotation(c,actor=actor,**fields)
+            if action=='notebook' and fields.get('record_id')==bound['record_id']:
+                fields=dict(fields);fields.pop('owner_confirmed')
+                return notebook.create(c,actor=actor,**fields)
+            raise ValueError('Unsupported catalog note target')
+
+    def quran_progress(self, project_id):
+        with db.connect(self.dsn) as connection:return quran_progress.listing(connection,project_id)
+
+    def save_quran_progress(self, **values):
+        with db.connect(self.dsn) as connection:return quran_progress.save(connection,**values)
+
+    def quran_binding(self, **values):
+        with db.connect(self.dsn) as connection:return quran_workspace.binding(connection,**values)
+
+    def quran_existing(self, **values):
+        with db.connect(self.dsn) as connection:return quran_workspace.existing(connection,**values)
+
+    def quran_note(self, **values):
+        with db.connect(self.dsn) as connection:return quran_workspace.create_note(connection,**values)
+
+    def quran_marks(self, **values):
+        with db.connect(self.dsn) as connection:return quran_workspace.marks(connection,**values)
+
+    def quran_notes(self, **values):
+        with db.connect(self.dsn) as connection:return quran_workspace.notes(connection,**values)
+
+    def quran_place(self, project_id):
+        with db.connect(self.dsn) as connection:return quran_workspace.place(connection,project_id)
+
+    def save_quran_place(self, **values):
+        with db.connect(self.dsn) as connection:return quran_workspace.save_place(connection,**values)
 
     def research_search(self, project_id, query, limit):
         with db.connect(self.dsn) as connection:
@@ -355,7 +454,7 @@ class PostgreSQLStore:
         with db.connect(self.dsn) as connection: return verse_store.import_pilot(connection,**values)
 
     def quran_reader_association(self, **values):
-        from .quran_reader import associate_verse
+        from .quran_reader_candidate import associate_verse
         with db.connect(self.dsn) as connection: return associate_verse(connection,**values)
 
     def verse_update(self, **values):

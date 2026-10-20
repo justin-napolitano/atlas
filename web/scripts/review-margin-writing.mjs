@@ -47,7 +47,7 @@ try{
   assert.equal(await evaluate('[...window.__notebookTest.entries.values()][0].annotation_id'),null);
   assert.ok(Number.isInteger(await evaluate('[...window.__notebookTest.entries.values()][0].reading_position')));
   assert.equal(await evaluate('!!document.querySelector(".reader-capture")'),false);
-  assert.equal(await evaluate('document.activeElement===document.querySelector(".location-margin-composer textarea")'),true);
+  assert.equal(await evaluate('document.activeElement===document.querySelector(".location-margin-composer .cm-content")'),true);
   await writeFile(join(artifacts,'margin-writing.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
   await call('Input.insertText',{text:' Still thinking.'});
   await until(()=>evaluate('[...window.__notebookTest.entries.values()][0].revision===2&&window.__notebookTest.drafts.current.size===0'),'automatic correction');
@@ -64,13 +64,13 @@ try{
   assert.equal(await evaluate('document.querySelector(".reader-text").textContent'),sourceBefore);
   await until(()=>evaluate('!!document.querySelector(".reading-point-marker")'),'point marker appears beside reading');
   await evaluate('document.querySelector(".reading-point-marker").click()');
-  await until(()=>evaluate('document.activeElement===document.querySelector(".location-note-body")'),'location marker opens formatted note');
+  await until(()=>evaluate('document.activeElement===document.querySelector(".location-note-body .cm-content")'),'location marker opens formatted note');
   await writeFile(join(artifacts,'markdown-sidebar.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
 
   await evaluate('window.__notebookTest.losePageMemory()');
   await until(()=>evaluate('document.querySelector(".location-note-body")?.textContent.includes("Still thinking.")'),'confirmed note survives loss of page memory');
-  await evaluate('window.__notebookTest.hold=true;document.querySelector(".location-note-body").click()');
-  await until(()=>evaluate('document.activeElement===document.querySelector(".location-margin-note textarea")'),'click note enters inline editor');
+  await evaluate('window.__notebookTest.hold=true;document.querySelector(".location-note-body .cm-content").focus()');
+  await until(()=>evaluate('document.activeElement===document.querySelector(".location-margin-note .cm-content")'),'click note enters inline editor');
   await call('Input.insertText',{text:' Older pending.'});
   await until(()=>evaluate('!!window.__notebookTest.release'),'correction in flight');
   await call('Input.insertText',{text:' Newer typing.'});
@@ -80,11 +80,11 @@ try{
   await click('Move to Trash');await until(()=>evaluate('!!document.querySelector(".location-margin-note")&&document.querySelector(".location-margin-notes").textContent.includes("Undo trash")'),'margin trash acknowledgement');
   await click('Undo trash');await until(()=>evaluate('!!document.querySelector(".location-note-body")'),'inline margin restore');
   assert.equal(await evaluate('window.__notebookTest.entries.size'),1);
-  await evaluate('window.__notebookTest.remote();document.querySelector(".location-note-body").click()');
-  await until(()=>evaluate('document.activeElement===document.querySelector(".location-margin-note textarea")'),'restored note enters editor');
+  await evaluate('window.__notebookTest.remote();document.querySelector(".location-note-body .cm-content").focus()');
+  await until(()=>evaluate('document.activeElement===document.querySelector(".location-margin-note .cm-content")'),'restored note enters editor');
   await call('Input.insertText',{text:' My local version.'});
   await until(()=>evaluate('!!document.querySelector(".location-save-error")'),'another device conflict');
-  assert.equal(await evaluate('document.querySelector(".location-margin-note textarea").value.includes("My local version.")'),true);
+  assert.equal(await evaluate('document.querySelector(".location-margin-note .cm-content").textContent.includes("My local version.")'),true);
   assert.equal(await evaluate('[...window.__notebookTest.entries.values()][0].body'),'Cloud thought from another device');
   await evaluate('document.querySelector(".reader-text mark[role=button]").click()');
   await until(()=>evaluate('document.activeElement===document.querySelector(".saved-passage-note.is-active")'),'highlight reveals its note in sidebar');

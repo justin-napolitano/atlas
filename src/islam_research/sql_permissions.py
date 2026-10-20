@@ -9,6 +9,11 @@ from psycopg import sql
 
 
 READ_TABLES = (
+    "library_works", "library_editions", "library_representations", "library_items",
+    "library_source_bindings", "library_document_bindings", "library_project_items", "library_requests", "library_events",
+    "gutenberg_books", "gutenberg_places",
+    "quran_reading_progress", "quran_progress_revisions",
+    "quran_places", "quran_note_contexts",
     "projects", "records", "record_revisions", "relation_types", "relations",
     "personal_states", "personal_state_revisions", "import_snapshots",
     "reading_documents", "reading_annotations", "reading_annotation_revisions",
@@ -24,12 +29,21 @@ READ_TABLES = (
 )
 PUBLIC_TABLES = ("snapshots", "publication_heads")
 OWNER_FUNCTIONS = (
+    "research.library_id(text,jsonb)",
+    "research.index_library_source(text)",
     "research.publication_inputs(text,text[],text[])",
     "research.publication_head(text)",
     "research.approve_publication(text,text,integer,text,text,boolean)",
     "research.withdraw_publication(text,integer,text,text)",
 )
 INSERT_COLUMNS = {
+    "library_project_items": "item_id project_id state changed_by",
+    "library_requests": "request_uuid input_sha256 result changed_by",
+    "gutenberg_books": "book_id version payload",
+    "gutenberg_places": "project_id book_id version section position changed_by",
+    "quran_reading_progress": "project_id chapter ayah is_read changed_by",
+    "quran_note_contexts": "entry_id project_id resource_key note_scope chapter ayah_start ayah_end",
+    "quran_places": "project_id resource_key chapter ayah changed_by",
     "notebook_entries": "id project_id creation_sha256 record_id document_id annotation_id reading_position thought_type title body links changed_by",
     "notebook_drafts": "id project_id entry_id request_uuid record_id document_id annotation_id reading_position base_revision base_snapshot value state changed_by",
     "note_trash": "project_id target_kind target_id target_revision state changed_by",
@@ -53,6 +67,11 @@ INSERT_COLUMNS = {
     "publication_previews": "id project_id record_ids relation_ids inputs payload payload_sha256 created_by",
 }
 UPDATE_COLUMNS = {
+    "library_items": "preferred_edition_id on_shelf reading_status revision changed_by",
+    "library_project_items": "state revision changed_by",
+    "gutenberg_places": "version section position revision changed_by updated_at",
+    "quran_reading_progress": "is_read revision changed_by",
+    "quran_places": "resource_key chapter ayah revision changed_by updated_at",
     "notebook_entries": "thought_type title body links state revision changed_by",
     "notebook_drafts": "value state revision changed_by",
     "note_trash": "target_revision state revision changed_by",

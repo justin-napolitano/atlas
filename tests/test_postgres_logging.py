@@ -39,6 +39,21 @@ class PostgresLoggingTests(unittest.TestCase):
                 logs.write_text(self.probe.SENTINEL+" violates check constraint statement timeout")
                 self.probe.verify(logs)
 
+    def test_large_logs_and_chunk_boundary_markers_are_fully_scanned(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);marker="SYNTHETIC-NOTE-MARKER"
+            (root/"marker.txt").write_text(marker);logs=root/"postgres.log"
+            with logs.open("w") as stream:
+                stream.write("x"*65536*800)
+                stream.write(self.probe.SENTINEL+" violates check constraint statement timeout")
+            with patch.object(self.probe,"WORK",root):
+                self.probe.verify(logs)
+                # A leak at the end, straddling two scan chunks, must still fail.
+                with logs.open("a") as stream:
+                    stream.write("x"*((65536-logs.stat().st_size%65536)-5))
+                    stream.write(marker)
+                with self.assertRaises(ValueError):self.probe.verify(logs)
+
     def test_unsafe_policy_changes_are_rejected_before_server_configuration(self):
         baseline=json.loads((self.probe.ROOT/"config/postgres-observability.json").read_text())
         with tempfile.TemporaryDirectory() as directory:

@@ -11,7 +11,11 @@ The research should understand traditions in context before evaluating them. “
 - `docs/second-brain-roadmap.md` — Now / Next / Later: reliable reading and writing first, simple organization next, advanced research features later.
 - `docs/merge-issue-reconciliation.md` — merged workspace scope, integration checks, backlog closures, and unfinished research/release gates.
 - `docs/reader-first-workspace.md` — the Reader A interface connected to saved readings, margin notes, comparison, notebook, search, and sourced agent briefs.
+- `docs/design/library-shelf-brief.md` — agreed compact shared library, direct book opening, reference examples and per-book notebook layout; planning only, epic #194.
+- `docs/features/library-shelf-contract.md` — planned shelf/discovery/note/save/accessibility acceptance and the #101 identity migration gate.
+- `docs/features/gutenberg-direct-reading.md` — Gutenberg catalog search, direct plain-text reading, located private notes and revision-safe resume; Open Library remains planned.
 - `docs/quran-first-reading.md` — current priority: continuous Qur’an reading, translation, commentary and durable notes; reusable reading patterns follow real texts.
+- `docs/features/quran-reading-progress.md` — private, reversible ayah read marks, surah/work completion and revision-safe saves, separate from reading place and scholarly review.
 - `docs/quran-reader-candidate.md` — local Qur’an reader candidate, source/version and rights record, verification, and owner review gates.
 - `docs/seamless-open-catalog.md` — planned unified open catalog, direct reading, and durable notes without a mandatory import step.
 - `docs/research-library-vision.md` — library, reader, commentary and portable notes as one product, with a versioned arXiv reading pilot planned.
@@ -133,3 +137,5 @@ The [linked reading workflow](docs/linked-reading-workflow.md) follows saved pas
 
 The [private research notebook](docs/research-notebook.md) collects running thoughts and live passage/record notes with exact source anchors, explained connections and revision history.
 [Recoverable private writing drafts](docs/recoverable-writing-drafts.md) preserve explicitly saved unfinished record/passage notes across sessions, with exact source anchors, historical baselines, conflict comparison and recoverable discard. Recovery fills the editor; it does not automatically commit notes or publish content.
+
+The [shared library identity foundation](docs/features/shared-library-identities.md) adds owner-only book identities and cross-project references while preserving existing notes and source links. Shelf and discovery UI remain subsequent work.
