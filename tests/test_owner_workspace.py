@@ -123,7 +123,7 @@ class WorkspaceMigrationTests(unittest.TestCase):
 @unittest.skipUnless(os.environ.get('RESEARCH_TEST_DATABASE_URL'),'Requires isolated PostgreSQL roles')
 class WorkspacePrivilegeTests(unittest.TestCase):
     def test_owner_can_author_without_project_but_cannot_reassign_workspace_or_rewrite_history(self):
-        from psycopg import sql
+        from psycopg import sql,errors
         from psycopg.conninfo import make_conninfo
         from islam_research.sql_permissions import configure
         dsn=os.environ['RESEARCH_TEST_DATABASE_URL'];owner='workspace_owner_'+uuid.uuid4().hex;public='workspace_public_'+uuid.uuid4().hex
@@ -140,13 +140,13 @@ class WorkspacePrivilegeTests(unittest.TestCase):
                    'UPDATE research.notebook_entries SET workspace_id=workspace_id',
                    'UPDATE research.notebook_entries SET project_id=project_id',
                    'DELETE FROM research.notebook_revisions']:
-                    with self.assertRaises(Exception):
+                    with self.assertRaises(errors.InsufficientPrivilege):
                         with c.transaction():c.execute(statement)
                 row=workspace.update_note(c,entry_id=first['id'],expected_revision=1,body='Updated through the same authority.',actor='synthetic')
                 self.assertEqual(row['revision'],2)
                 workspace.trash(c,entry_id=first['id'],target_revision=2,expected_revision=0,state='trashed',actor='synthetic')
             with db.connect(make_conninfo(dsn,user=public)) as c:
-                with self.assertRaises(Exception):
+                with self.assertRaises(errors.InsufficientPrivilege):
                     with c.transaction():c.execute('SELECT body FROM research.notebook_entries')
         finally:
             with db.connect(dsn) as admin:
