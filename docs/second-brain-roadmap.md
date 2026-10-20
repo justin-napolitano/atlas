@@ -2,7 +2,9 @@
 
 Latest owner-approved direction: 2026-10-19. Product authority: #84; current delivery
 epic [#201](https://github.com/justin-napolitano/islam-research/issues/201); technical/
-hosting umbrella #30. This is a plan, not a claim that global authoring has shipped.
+hosting umbrella #30. Ownership/source/reading/organization slices #207–210 are merged;
+assembled workspace #211 is in final validation. See the [delivery ledger](features/connected-workspace-delivery.md)
+for actual capabilities, checks and remaining hosted/research gates.
 
 One private workspace connects sources, reading, ordinary Markdown writing and ideas.
 Nothing needs a project, collection, source, title, tags or classification to exist.
@@ -19,13 +21,14 @@ merged through #176/#181/#186/#188/#190/#191/#193/#199. The integrated stack pas
 PostgreSQL 17/18, browser, owner/public container and graph checks. This establishes
 software integration, not hosted two-device delivery or scholarly review.
 
-Shelf PR #200 is a separate implementation candidate. It must follow this revised
-organization direction rather than cement project selection as a prerequisite. Keep
-its compact/direct-reading behavior and shared identities. Do not call native global
-catalog retention, a primary book notebook or the global-writing migration complete
-because a shelf exists.
+Shelf #200 and planning #206 are merged. The connected reset keeps their compact
+reading behavior while replacing required-project navigation with global writing
+and optional collections. #207–210 supply the native authority/API foundations;
+#211 integrates capture, Continue, organization, investigations and exploration.
+No live owner data was migrated. Hosted sign-in/sync and actual owner reading remain
+separate release gates, not implications of passing software tests.
 
-## Build order
+## Delivery sequence (implemented in #207–211)
 
 | Order | Delivery | Acceptance gate |
 | --- | --- | --- |
