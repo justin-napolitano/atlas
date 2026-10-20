@@ -1,0 +1,28 @@
+.live-markdown-editor{font:19px/1.75 ui-sans-serif,system-ui,"Geeza Pro",Tahoma,sans-serif;min-width:0;min-height:40vh;cursor:text}
+.live-markdown-editor .cm-editor{background:transparent;color:inherit;font:inherit;outline:none}
+.live-markdown-editor .cm-scroller{font:inherit;overflow:visible;line-height:inherit}
+.live-markdown-editor .cm-content{padding:0;min-height:40vh;caret-color:var(--accent,#b13a48)}
+.live-markdown-editor .cm-line{padding:0;overflow-wrap:anywhere}
+.live-markdown-editor .cm-focused .cm-selectionBackground,.live-markdown-editor .cm-selectionBackground{background:var(--wash,#ddd)!important}
+.live-markdown-editor .cm-cursor{border-left-color:var(--accent,#b13a48)}
+.live-markdown-editor .cm-placeholder{color:var(--muted,#777)}
+.live-markdown-editor .live-markdown-block{cursor:text;min-height:1em}
+.live-markdown-editor .notebook-markdown{font:inherit!important;padding:0!important}
+.live-markdown-editor .notebook-markdown p{font:inherit;margin:.25em 0 1em}
+.live-markdown-editor .notebook-markdown h1,.live-markdown-editor .notebook-markdown h2,.live-markdown-editor .notebook-markdown h3{font-family:inherit!important;letter-spacing:-.3px}
+.live-markdown-editor .notebook-markdown h1{font-size:1.6em}
+.live-markdown-editor .notebook-markdown h2{font-size:1.35em}
+.live-markdown-editor .notebook-markdown h3{font-size:1.15em}
+.live-markdown-editor .notebook-markdown blockquote{font:inherit;border-inline-start:2px solid var(--accent);padding-inline-start:18px;margin:12px 0}
+.live-markdown-editor .notebook-markdown table{font-size:15px}
+.live-markdown-editor :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media(max-width:600px){.live-markdown-editor{font-size:18px}}
+.live-markdown-editor .cm-editor:focus-visible,.live-markdown-editor .cm-content:focus-visible{outline:none}
+.live-markdown-editor .live-markdown-block{padding-bottom:16px}
+.live-markdown-editor .live-markdown-block .notebook-markdown>:first-child{margin-top:0}
+.live-markdown-editor .live-markdown-block .notebook-markdown>:last-child{margin-bottom:0}
+.margin-markdown .live-markdown-editor{font:inherit;line-height:1.65;min-height:5em}
+.margin-markdown .live-markdown-editor .cm-content{min-height:5em;padding:8px 0}
+.margin-markdown .live-markdown-editor .notebook-markdown table{font-size:.85em}
+.margin-markdown .live-markdown-editor .cm-content:focus-visible{outline:none;box-shadow:none}
+.margin-markdown .live-markdown-editor .live-markdown-block{padding-bottom:.7em}

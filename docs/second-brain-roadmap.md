@@ -45,4 +45,38 @@ Repository plan: [second-brain roadmap](https://github.com/justin-napolitano/isl
 
 ## Owner-approved workspace simplification
 
-Before expanding the catalog, integrate the [unified workspace design brief](design/unified-workspace-brief.md): one left navigation tree and one document surface, live Markdown editing, contextual source reading, and a consistent charcoal/ivory/red palette. Sequence the work as shell/navigation, document editing, then reader/context integration. This replaces the nested application presentation; it preserves the implemented research and persistence contracts. The brief includes exact acceptance flows and explicitly remains planned work.
+Before expanding the catalog, integrate the [unified workspace design brief](design/unified-workspace-brief.md): one left navigation tree and one document surface, live Markdown editing, contextual source reading, and a consistent charcoal/ivory/red palette. Sequence the work as shell/navigation, document editing, then reader/context integration. This replaces the nested application presentation; it preserves the implemented research and persistence contracts. The brief includes exact acceptance flows. PR #181 implements these three slices on top of #176; see [implementation and verification contracts](features/unified-workspace.md). The owner reading session (#146), native Mac input-method review and hosted-release proof (#42) remain separate acceptance work.
+
+## Gutenberg delivery update (2026-10-19)
+
+The owner has selected #170 as the next delivery after the Qur’an reading loop.
+PR #191, stacked on #190, implements official OPDS search → supported UTF-8 book
+reading → exact and free margin notes → original-source return, with optional
+project saving and private versioned resume. See [behavior, limits, threat model
+and validation](features/gutenberg-direct-reading.md). It does not establish a
+hosted release, complete #168 cross-provider catalog work, or connect Open Library
+#169 / papers #166. Those remain subsequent slices.
+
+## Next product slice: personal library and book notebooks (plan only)
+
+The owner selected a compact library list with small optional covers, Continue
+reading, direct title → reader and Notes count → book notebook. Catalog discovery
+moves behind Find books. This is one shared library across projects; it cannot
+be delivered by cloning project-scoped records. [Design/examples](design/library-shelf-brief.md),
+[interaction/data/acceptance contracts](features/library-shelf-contract.md), and
+[proposed shared-identity ADR](adr/0004-shared-personal-library.md) are written before build.
+
+Epic #194 orders the work: #101 minimum shared-identity/legacy migration/API gate →
+#195 shelf/navigation → #196 discovery/Open/Save → #95 per-book notebook integration
+→ #197 cross-flow validation and #146 owner acceptance. #101/#95 are reused, not
+duplicated or declared complete. #140 project home later consumes project-filtered
+library data; it must not introduce another library dashboard.
+
+This is the selected next product plan following Gutenberg #191 and note-location
+#193. Their code is separate from this documentation pass. Hosted owner sign-in,
+two-machine verification/backups and explicit public read-only publication remain
+#31/#33/#42; this plan neither merges outstanding PRs nor completes release gates.
+Open Library #169, papers #166, arbitrary folders #139, full Obsidian sync #40 and
+graph redesign remain separate scopes. No app/schema/API builds in this planning pass.
+
+Implementation candidate [PR #199](https://github.com/justin-napolitano/islam-research/pull/199) covers the bounded #101 identity/API gate. See [implementation and remaining scope](features/shared-library-identities.md); the shelf UI remains #195.

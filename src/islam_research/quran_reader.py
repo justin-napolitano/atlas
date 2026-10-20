@@ -64,7 +64,7 @@ def _load(key):
 def catalog():
     return dict(profile_id=PROFILE_ID,names_metadata=deepcopy(NAMES_METADATA), chapters=[dict(chapter=c,ayah_count=n,label=NAMES.get(c,f'Surah {c}')) for c,n in enumerate(AYAH_COUNTS,1)],
         resources=[dict(_load(k)[1]) for k in RESOURCES], unavailable=[
-            dict(key='khattab',label='Mustafa Khattab · The Clear Quran',reason='Provider access and reuse authorization not configured.'),
+            dict(key='khattab',label='Dr. Mustafa Khattab · The Clear Quran',reason='Quran Foundation production access is not configured; the public legacy API omits this translation.',source_url='https://quran.com/?translations=131'),
             dict(key='saheeh',label='Saheeh International',reason='Provider access and reuse authorization not configured.')])
 
 

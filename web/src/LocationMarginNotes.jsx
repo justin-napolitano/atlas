@@ -5,12 +5,13 @@ import {recoveryFingerprint} from './recoveryQueue.js';
 import {recoverySession,useWritingRecovery,notebookRecoveryPayload,verifyNotebookRecovery} from './useWritingRecovery.js';
 import {readingPosition,revealReadingPosition} from './readingPosition.js';
 import {useSurfaceResume} from './surfaceActivity.js';
-import NotebookMarkdown from './NotebookMarkdown.jsx';
+import MarginMarkdownEditor from './MarginMarkdownEditor.jsx';
 import {TrashAction} from './PrivateTrash.jsx';
+import {noteLocationLabel} from './noteLocation.js';
 
-function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLeave,onOpenNotebook,markdown,active=false}){
+function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLeave,onOpenNotebook,markdown,active=false,locationLabel='',onReturn}){
   const id=initial.id,key=notebookKey(record.project_id,id),store=drafts.current;
-  const [editing,setEditing]=useState(!initial.revision || store.has(key)),caret=useRef(null);
+  const [editing,setEditing]=useState(!initial.revision || store.has(key));
   const [,render]=useState(0),alive=useRef(true),input=useRef(null),left=useRef(false),promoted=useRef(false);
   const notify=()=>{changed();if(alive.current)render(n=>n+1);};
   const writer=useMemo(()=>recoverySession(store,'actual-margin:'+key,()=>marginWriter({api,projectId:record.project_id,id,initial,onConfirmed:row=>{
@@ -38,7 +39,6 @@ function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLe
     if(draft?.value.body.trim()&&!draft.current)writer.enqueue(notebookMetadata(draft.value));
   },[writer,JSON.stringify(draft?.value)]);
   useEffect(()=>{const flush=()=>writer.flush();window.addEventListener('pagehide',flush);return()=>window.removeEventListener('pagehide',flush);},[writer]);
-  useEffect(()=>{if(input.current){input.current.style.height='auto';input.current.style.height=input.current.scrollHeight+'px';}},[value.body,editing]);
   function edit(body){
     const current=store.get(key),source=writer.row || initial;
     store.set(key,{...current,value:{...(current?.value || source),body},base:current?.base || writer.row || null,
@@ -46,32 +46,22 @@ function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLe
     notify();
   }
   function blur(event){if(event.currentTarget.contains(event.relatedTarget))return;if(value.body.trim())setEditing(false);left.current=true;writer.flush();if(writer.status.phase==='saved'&&!store.has(key)&&!promoted.current){promoted.current=true;onLeave?.(writer.row);}}
-  function beginEditing(event){
-    if(event?.target?.closest('a,button,input'))return;
-    if(event?.type==='keydown'&&!['Enter',' '].includes(event.key))return;
-    event?.preventDefault();left.current=false;setEditing(true);
-    requestAnimationFrame(()=>{input.current?.focus({preventScroll:true});const at=caret.current ?? value.body.length;input.current?.setSelectionRange(at,at);});
-  }
   const phase=writer.status.phase,failed=['error','conflict'].includes(phase),saved=writer.row;
   const trashAction=<TrashAction api={api} projectId={record.project_id} kind="entry" id={id} revision={saved?.revision || 1} trashRevision={saved?.trash_revision || initial.trash_revision || 0} trashed={!!saved?.trashed} disabled={!!draft} onChanged={result=>{setEditing(false);writer.row={...saved,trashed:result.state==='trashed',trash_revision:result.revision};notify();onLeave?.(writer.row);}}/>;
   if(saved?.trashed)return <article className="location-margin-note"><small>Moved to Trash. Your note and reading location are retained.</small>{trashAction}</article>;
   return <article className={`location-margin-note${active?' is-active':''}${editing?' is-writing':''}`} data-margin-note-id={id} onBlur={blur}>
-    <div className="location-margin-meta"><button className="location-return" onClick={()=>revealReadingPosition(textRoot.current,value.reading_position)}>Near {Math.round(value.reading_position/Math.max(1,Array.from(document.text_body).length)*100)}% ↖</button>
+    <div className="location-margin-meta"><button className="location-return" onClick={()=>onReturn ? onReturn() : revealReadingPosition(textRoot.current,value.reading_position)}>{noteLocationLabel(document,value.reading_position,locationLabel)} ↖</button>
       <small role="status">{failed?'Not saved':draft?['saving','waiting'].includes(phase)?'Saving…':value.body.trim()?'Unsaved':'Write something to save':saved?'Saved':'Private note'}</small></div>
-    {editing?<textarea ref={input} aria-label="Margin thought" dir="auto" rows={3} maxLength={20000} placeholder="Write in the margin…" value={value.body}
-      onFocus={()=>{left.current=false;}} onSelect={event=>{caret.current=event.currentTarget.selectionStart;}} onChange={event=>edit(event.target.value)} onInput={event=>{event.currentTarget.style.height='auto';event.currentTarget.style.height=event.currentTarget.scrollHeight+'px';}}
-      onKeyDown={event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();const root=event.currentTarget.closest('.source-reader');setEditing(false);writer.flush();requestAnimationFrame(()=>[...(root?.querySelectorAll('[data-margin-note-id]') || [])].find(n=>n.dataset.marginNoteId===id)?.querySelector('.location-note-body')?.focus());}else if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();writer.flush();}}}/>
-      :<div className="location-note-body" role="group" tabIndex={0} aria-label="Margin note. Press Enter to edit" onClick={beginEditing} onKeyDown={beginEditing}>
-        <NotebookMarkdown body={value.body} {...markdown}/>
-      </div>}
+    <div className="location-note-body"><MarginMarkdownEditor ref={input} autoFocus={!initial.revision||active} label="Margin thought" placeholder="Write in the margin…" value={value.body} onChange={edit} sessionStore={store} sessionKey={key} {...markdown}
+      onFocus={()=>{left.current=false;setEditing(true);}} onKeyDown={event=>{if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();writer.flush();}}}/></div>
     {failed&&<div className="location-save-error" role="alert"><p>{writer.status.error?.message || 'Save not confirmed. Your writing is retained here.'}</p><button onClick={()=>writer.retry()}>Retry save</button>
       {writer.status.current&&<details><summary>Compare the other version</summary><pre>{writer.status.current.body}</pre><p>Your version stays in the editor. Open Notes to compare and choose which revision to keep.</p></details>}</div>}
     {draft&&!value.body.trim()&&saved&&<small>Empty writing is retained here; use Trash to remove a saved note.</small>}
-    {saved&&<div className="location-note-actions">{onOpenNotebook&&<button onClick={()=>onOpenNotebook(saved)}>Open in Notes</button>}{trashAction}</div>}
+    {saved&&<details className="margin-note-options"><summary>Note options</summary><div className="location-note-actions">{onOpenNotebook&&<button onClick={()=>onOpenNotebook(saved)}>Open in Notes</button>}{trashAction}</div></details>}
   </article>;
 }
 
-export default function LocationMarginNotes({api,record,document,textRoot,drafts,changed,composerRef,onOpenNotebook,navigate,onLocations,activeId='',hideComposer=false}){
+export default function LocationMarginNotes({api,record,document,textRoot,drafts,changed,composerRef,onOpenNotebook,navigate,onLocations,activeId='',hideComposer=false,locationLabel='',onReturn}){
   const [network,setNetwork]=useState({items:[],truncated:true}),[linkError,setLinkError]=useState('');
   const [rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[error,setError]=useState(''),[loading,setLoading]=useState(true),[next,setNext]=useState(null);
   const root=useRef(null),position=useRef(null),alive=useRef(true),generation=useRef(0);
@@ -99,7 +89,7 @@ export default function LocationMarginNotes({api,record,document,textRoot,drafts
     navigate?.(doc.source_record_id,record.project_id,id,doc.id);
   }catch{if(alive.current)setLinkError('Could not verify that passage link. Your note is unchanged.');}}
 
-  useEffect(()=>{if(composerRef)composerRef.current={focus:()=>root.current?.querySelector('.location-margin-composer textarea')?.focus(),open:id=>{const card=[...(root.current?.querySelectorAll('[data-margin-note-id]') || [])].find(node=>node.dataset.marginNoteId===id);card?.scrollIntoView({block:'nearest'});card?.querySelector('.location-note-body,textarea')?.focus({preventScroll:true});}};return()=>{if(composerRef)composerRef.current=null;};},[composerRef]);
+  useEffect(()=>{if(composerRef)composerRef.current={focus:()=>root.current?.querySelector('.location-margin-composer textarea,.location-margin-composer .cm-content')?.focus(),open:id=>{const card=[...(root.current?.querySelectorAll('[data-margin-note-id]') || [])].find(node=>node.dataset.marginNoteId===id);card?.scrollIntoView({block:'nearest'});card?.querySelector('.cm-content,textarea')?.focus({preventScroll:true});}};return()=>{if(composerRef)composerRef.current=null;};},[composerRef]);
   function start(body){if(!body)return;const value=newThought({record_id:record.id,document_id:document.id,reading_position:position.current ?? readingPosition(textRoot.current)});
     value.title=('Margin note · '+document.locator).slice(0,300);value.body=body;
     const id='urn:research:notebook:'+value.request_uuid;
@@ -107,7 +97,7 @@ export default function LocationMarginNotes({api,record,document,textRoot,drafts
     setFresh({...value,id});setNext(id);changed();}
   useEffect(()=>{if(next){const field=root.current?.querySelector('.location-margin-composer textarea');field?.focus();field?.setSelectionRange(field.value.length,field.value.length);setNext(null);}},[next]);
   function settle(row){if(!alive.current)return;setRows(old=>[row,...old.filter(r=>r.id!==row.id)]);if(fresh?.id===row.id){setFresh(null);position.current=null;}}
-  const shared={api,record,document,textRoot,drafts,changed,onOpenNotebook,markdown:{notes:[...new Map([...network.items,...rows].map(n=>[n.id,n])).values()],complete:!network.truncated,onOpen:onOpenNotebook?id=>onOpenNotebook({id}):undefined,onOpenPassage:navigate?openPassage:undefined}};
+  const shared={api,record,document,textRoot,drafts,changed,onOpenNotebook,locationLabel,onReturn,markdown:{notes:[...new Map([...network.items,...rows].map(n=>[n.id,n])).values()],complete:!network.truncated,onOpen:onOpenNotebook?id=>onOpenNotebook({id}):undefined,onOpenPassage:navigate?openPassage:undefined}};
   return <section ref={root} className="location-margin-notes" aria-label="Free margin writing">
 
     {loading&&<small role="status">Opening margin notes…</small>}{error&&<p role="alert">{error} <button onClick={()=>load()}>Retry loading</button></p>}

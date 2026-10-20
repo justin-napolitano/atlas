@@ -7,6 +7,7 @@ export class RecoveryQueue {
   subscribe=listener=>{this.listeners.add(listener);return()=>this.listeners.delete(listener);};
   publish(phase,extra={}){this.status={phase,...extra};for(const listener of this.listeners)listener(this.status);}
   enqueue(payload){
+    this.paused=false;
     const fingerprint=recoveryFingerprint(payload);
     if(fingerprint===this.latestFingerprint)return;
     this.latest=structuredClone(payload);this.latestFingerprint=fingerprint;
@@ -15,9 +16,18 @@ export class RecoveryQueue {
     if(!this.deadline)this.deadline=setTimeout(()=>this.flush(),this.maxDelay);
     if(!this.busy)this.publish('waiting');
   }
+  /** Retain a currently invalid/empty draft without sending an older queued body.
+   * An already-sent request remains frozen so an uncertain acknowledgement can
+   * still be reconciled explicitly; its result never confirms the held draft.
+   */
+  hold(payload){
+    this.paused=true;this.latest=structuredClone(payload);this.latestFingerprint=recoveryFingerprint(payload);
+    clearTimeout(this.quiet);clearTimeout(this.deadline);this.quiet=this.deadline=null;
+    if(!this.busy&&!this.sent)this.publish('paused');
+  }
   async flush(){
     clearTimeout(this.quiet);clearTimeout(this.deadline);this.quiet=this.deadline=null;
-    if(this.busy || !this.latest || ['error','conflict'].includes(this.status.phase))return;
+    if(this.busy || !this.latest || (this.paused&&!this.sent) || ['error','conflict'].includes(this.status.phase))return;
     if(!this.sent&&this.latestFingerprint===this.confirmedFingerprint)return;
     if(!this.sent)this.sent={...this.latest,draft_uuid:this.identity,expected_revision:this.revision};
     const sent=this.sent;this.busy=true;this.publish('saving');
@@ -27,6 +37,7 @@ export class RecoveryQueue {
       this.revision=row.revision;this.sent=null;this.busy=false;
       const {draft_uuid,expected_revision,...payload}=sent;
       this.confirmedFingerprint=recoveryFingerprint(payload);
+      if(this.paused){this.publish('paused');return;}
       if(recoveryFingerprint(payload)!==this.latestFingerprint){this.publish('waiting');return this.flush();}
       this.publish('saved',{row});
     }catch(error){this.busy=false;this.publish(error.status===409?'conflict':'error',{error,current:error.current || null});}
