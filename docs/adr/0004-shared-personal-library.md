@@ -93,3 +93,57 @@ The additive mapping approach costs a migration slice before UI delivery, but pr
 working readings and source links. Work/edition consolidation remains conservative.
 Full merge/split tools, arbitrary folders, Obsidian synchronization and additional
 catalog providers remain their existing issues, not prerequisites for a basic shelf.
+
+## Minimum identity implementation decision (#101)
+
+Implementation scope: additive owner-only identity/membership authority, before
+shelf #195 and book notebook #95. Existing reader/frontend APIs remain compatible.
+
+- `library_works` conservatively wraps each legacy source/work/edition record,
+  with `identity_basis=legacy_source_unresolved`. Matching titles or provider hints
+  do not consolidate existing records. Explicit project reuse references the same
+  item. Reviewed work/edition merge/split/redirect remains broader #101 work.
+- `library_items` owns retained shelf membership, an optional preferred edition,
+  personal status and CAS revision. Backfilled rows start off-shelf, needs-review;
+  migration does not manufacture a reading queue or choose a preferred edition.
+- `library_editions` distinguishes original edition labels and representation URLs
+  within a wrapped source; `library_representations` describes immutable snapshot
+  identities/hashes/locators. No text body is copied into these tables.
+- `library_source_bindings` and `library_document_bindings` preserve origin project,
+  source/document IDs and representation identity. Existing note bodies, notebook
+  and annotation IDs/revisions, Unicode anchors, drafts and public RDF are untouched.
+- `library_project_items` adds reversible, revisioned project associations, separate
+  from source ownership. Legacy source projects are recorded as legacy associations;
+  removal is a tombstone, never deletion of source/notes.
+- `library_requests` freezes indexing UUID/input/result IDs for retries. Indexing
+  after migration adds newly created sources/documents without reassigning old
+  targets. A source revision check prevents indexing unexpected metadata.
+- `library_events` records confirmed item/membership revisions through triggers;
+  runtime grants cannot rewrite history or identity mappings.
+- Owner `/library` APIs index a legacy source, list/get items and origin aliases,
+  update retained/status/preferred-edition state with CAS, associate/remove projects,
+  resolve original source/document tuples, and project existing notes/counts without
+  cloning. The original project remains visible on legacy notes. Public runtime
+  receives neither routes nor private table privileges. New notes can use the
+  returned original tuple and existing notebook/annotation APIs.
+
+Legacy reading signals remain separately inspectable through origin personal state,
+Qur’an place/progress and Gutenberg place records. No maximum/latest-state merge,
+notebook concatenation, or automatic primary notebook selection occurs. Existing
+resume state remains authoritative for old readers; shared per-edition resume/UI is
+subsequent shelf work, not falsely claimed by this identity slice.
+
+Roll forward: migration creates/backfills only additive identities; existing writers
+continue unchanged. Re-index an explicitly chosen source after adding snapshots.
+Rollback rehearsal: an administrator can remove only the new schema objects/ledger
+entry when no post-migration library mutations/index requests have occurred. If
+owner library edits exist, refuse rollback and require export/restore planning;
+never delete new associations silently. Legacy rows remain byte/ID/revision-identical.
+The rollback utility is migration-owner tooling, never an API/runtime capability.
+
+Security review: new owner APIs and additive private-table grants require review
+before release. No external integration, new dependencies, CORS, auth, publication
+or runtime-infrastructure changes. Threats addressed: cross-project reference
+confusion (validated immutable mappings), private count leaks (owner-only routes and
+pre-filtered projections), stale/lost updates (CAS/frozen UUID receipts), destructive
+rollback (mutation guard), and identity drift (no body rewrite or automatic merges).
