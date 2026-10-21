@@ -1,5 +1,5 @@
 import {useSurfaceResume} from './surfaceActivity.js';
-import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {readingVersionLabel} from './readingVersionLabel.js';
 import { selectedPassage } from './passageSelection.js';
 import ReadingAppearance from './ReadingAppearance.jsx';
@@ -15,6 +15,8 @@ import RecoverableDraft from './RecoverableDraft.jsx';
 import {recoverPassageWriting} from './recoverIntoEditor.js';
 import {finishReadingRecovery} from './useWritingRecovery.js';
 import SourceMarkdown from './SourceMarkdown.jsx';
+import {sourceCodePointIndex} from './sourceMarkdown.js';
+import {useModalFocus} from './useModalFocus.js';
 import './sourceReader.css';
 import './readerPresentation.css';
 import './readingAppearance.css';
@@ -22,6 +24,8 @@ import './readerNotebookFlow.css';
 
 /** Edition-bound reading surface with saved inline marks and adjacent private notes. */
 export default function SourceReader({ record, api, drafts, changed, noteEditor, navigate, initialAnnotationId = '',initialDocumentId='',initialReadingPosition=null,focused=false,onFocusChange,onOpenVerse,onReadingPlace,onBookmark,initialMarginOpen,onQuote,onOpenNotebook,catalogReading=false,notebookContent=null,initialBookWriting=false,markdownDocuments=[],rememberPosition=false }) {
+  const [narrow,setNarrow]=useState(()=>window.matchMedia('(max-width:900px)').matches),[notebookRefresh,setNotebookRefresh]=useState(0);
+  useEffect(()=>{const media=window.matchMedia('(max-width:900px)'),change=()=>setNarrow(media.matches);media.addEventListener('change',change);return()=>media.removeEventListener('change',change);},[]);
   const [originalMarkdown,setOriginalMarkdown]=useState(false),[bookWriting,setBookWriting]=useState(initialBookWriting);
   const [appearance,setAppearance]=useState(()=>{try{return readReadingPreferences(window.localStorage);}catch{return normalizeReadingPreferences();}}),appearancePlace=useRef(null);
   const [snapshots,setSnapshots]=useState([]), [cursor,setCursor]=useState(null), [documentId,setDocumentId]=useState('');
@@ -40,6 +44,8 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
   },[]);
   const textRoot=useRef(null), mark=useRef(null), alive=useRef(true), currentDocument=useRef('');
   const margin=useRef(null), composer=useRef(null), freeComposer=useRef(null);
+  useModalFocus(margin,narrow&&marginOpen);
+  function closeMargin(){setMarginOpen(false);requestAnimationFrame(()=>textRoot.current?.closest('.source-reader')?.querySelector('.reader-margin-toggle')?.focus());}
   function changeAppearance(next){const root=textRoot.current,position=root?readingPosition(root):0;appearancePlace.current=root?{position,top:readingPointRect(root,position)?.top}:null;const clean=normalizeReadingPreferences(next);setAppearance(clean);try{writeReadingPreferences(window.localStorage,clean);}catch{/* Presentation remains available without storage. */}}
   useLayoutEffect(()=>{const place=appearancePlace.current,root=textRoot.current;appearancePlace.current=null;if(!place||!root||place.top==null)return;
     const rect=readingPointRect(root,place.position);if(!rect)return;const delta=rect.top-place.top;
@@ -200,7 +206,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
   }
   async function refreshAnnotations() {
     try { const value=await api.request('reading/annotations',{ project_id:record.project_id,document_id:documentId });
-      if(alive.current && currentDocument.current===documentId) { setAnnotations(value.items); setAnnotationCursor(value.next_cursor); }
+      if(alive.current && currentDocument.current===documentId) { setAnnotations(value.items); setAnnotationCursor(value.next_cursor);setNotebookRefresh(n=>n+1); }
     } catch(error) { if(alive.current) setMessage(error.message); }
   }
   function openMargin(ids) {
@@ -218,12 +224,13 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
   const isWriting=row=>row.body.trim() || (row.mark_style || 'highlight')!=='none' || row.capture_kind!=='comment' || noteEditor.entries.get(row.id)?.open || noteEditor.entries.get(row.id)?.status!=='saved' || activeAnnotation===row.id;
   const writingNotes=saved.filter(isWriting),sourceAnchors=saved.filter(row=>!isWriting(row));
   const marked=document ? readingMarks(document,saved.filter(row=>!row.trashed),highlight) : {runs:[],unanchored:[]};
+  const sourceIndex=useMemo(()=>sourceCodePointIndex(document?.text_body||''),[document?.text_body]),runeRuns=marked.runs.map(run=>({...run,chars:Array.from(run.text)}));
   let firstSelectedMark=false;
   function renderSlice(from,to,hidden=false){
-    const left=Array.from(document.text_body.slice(0,from)).length,right=Array.from(document.text_body.slice(0,to)).length;
-    return marked.runs.flatMap(run=>{
+    const left=sourceIndex[from],right=sourceIndex[to];
+    return runeRuns.flatMap(run=>{
       const start=Math.max(left,run.start),end=Math.min(right,run.end);if(start>=end)return [];
-      const text=Array.from(run.text).slice(start-run.start,end-run.start).join('');
+      const text=run.chars.slice(start-run.start,end-run.start).join('');
       if(!run.ids.length&&!run.selected)return text;
       const first=run.selected&&!hidden&&!firstSelectedMark;if(first)firstSelectedMark=true;
       return <mark key={start+':'+end} ref={first?mark:null} className={`${run.highlight?'has-highlight ':''}${run.underline?'has-underline ':''}${run.selected?'is-selected ':''}${run.ids.length>1?'has-overlap':''}`}
@@ -276,12 +283,12 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
             {!catalogReading && importForm}
           </details>
         </div>
-        <aside ref={margin} id={marginId} hidden={!marginOpen} className="reader-margin" aria-label="Passage margin notes" onKeyDown={event=>{if(!event.defaultPrevented && event.key==='Escape' && window.matchMedia('(max-width: 900px)').matches){event.preventDefault();event.stopPropagation();setMarginOpen(false);textRoot.current?.closest('.source-reader')?.querySelector('.reader-margin-toggle')?.focus();}}}>
-          <div className="reader-margin-heading"><h4>Notebook</h4><button className="reader-refresh" onClick={refreshAnnotations}>Refresh saved notes</button><button className="reader-margin-close" aria-label="Close margin notes" onClick={()=>setMarginOpen(false)}>×</button></div>
+        <aside ref={margin} id={marginId} hidden={!marginOpen} className="reader-margin" aria-label={notebookContent?'Source notebook':'Passage margin notes'} role={narrow&&marginOpen?'dialog':undefined} aria-modal={narrow&&marginOpen?'true':undefined} onKeyDown={event=>{if(!event.defaultPrevented && event.key==='Escape' && window.matchMedia('(max-width: 900px)').matches){event.preventDefault();event.stopPropagation();setMarginOpen(false);textRoot.current?.closest('.source-reader')?.querySelector('.reader-margin-toggle')?.focus();}}}>
+          <div className="reader-margin-heading"><h4>Notebook</h4><button className="reader-refresh" onClick={refreshAnnotations}>Refresh saved notes</button><button className="reader-margin-close" aria-label="Close margin notes" onClick={closeMargin}>×</button></div>
           {notebookContent&&<div className="reader-writing-scope"><button aria-pressed={!bookWriting} onClick={()=>{setBookWriting(false);requestAnimationFrame(()=>freeComposer.current?.focus());}}>At this page</button><button aria-pressed={bookWriting} onClick={()=>setBookWriting(true)}>Book notes</button></div>}
-          <LocationMarginNotes hideComposer={!!capture||bookWriting} key={document.id} api={api} record={record} document={document} textRoot={textRoot} drafts={drafts} changed={changed} composerRef={freeComposer} onOpenNotebook={onOpenNotebook} navigate={navigate} onLocations={setLocationNotes} activeId={activeLocation}/>
+          <LocationMarginNotes refreshKey={notebookRefresh} hideComposer={!!capture||bookWriting} key={document.id} api={api} record={record} document={document} textRoot={textRoot} drafts={drafts} changed={changed} composerRef={freeComposer} onOpenNotebook={onOpenNotebook} navigate={navigate} onLocations={setLocationNotes} activeId={activeLocation}/>
 
-          {notebookContent?.({active:bookWriting,onActivate:()=>setBookWriting(true),document})}
+          {notebookContent?.({active:bookWriting,onActivate:()=>setBookWriting(true),document,refreshKey:notebookRefresh})}
 
           {!capture && <details className="reader-recovery-disclosure" open={recoveryOpen || pendingRecovery} onToggle={event=>setRecoveryOpen(event.currentTarget.open)}><summary>Recover unfinished writing</summary><RecoverableDraft key={document.id+':capture-finder'} api={api} projectId={record.project_id} recordId={record.id} contextKind="capture" document={document} body="" drafts={drafts} changed={changed} onRecover={recoverCapture}/></details>}
           {capture && <div className="reader-capture"><h4 className="reader-visually-hidden">Passage note</h4><blockquote dir="auto">{capture.exact}</blockquote>

@@ -61,7 +61,7 @@ function MarginWriting({api,record,document,textRoot,drafts,changed,initial,onLe
   </article>;
 }
 
-export default function LocationMarginNotes({api,record,document,textRoot,drafts,changed,composerRef,onOpenNotebook,navigate,onLocations,activeId='',hideComposer=false,locationLabel='',onReturn}){
+export default function LocationMarginNotes({api,record,document,textRoot,drafts,changed,composerRef,onOpenNotebook,navigate,onLocations,activeId='',refreshKey=0,hideComposer=false,locationLabel='',onReturn}){
   const [network,setNetwork]=useState({items:[],truncated:true}),[linkError,setLinkError]=useState('');
   const [rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[error,setError]=useState(''),[loading,setLoading]=useState(true),[next,setNext]=useState(null);
   const root=useRef(null),position=useRef(null),alive=useRef(true),generation=useRef(0);
@@ -74,7 +74,7 @@ export default function LocationMarginNotes({api,record,document,textRoot,drafts
     if(page.items.some(row=>!valid(row)))throw new Error('Margin notes did not match this reading version.');
     if(alive.current&&token===generation.current){setRows(old=>[...new Map([...(after?old:[]),...page.items].map(row=>[row.id,row])).values()]);setCursor(page.next_cursor);setError('');}
   }catch(err){if(alive.current&&token===generation.current)setError(err.message || 'Could not load margin notes.');}finally{if(alive.current&&token===generation.current)setLoading(false);}}
-  useEffect(()=>{alive.current=true;load();return()=>{alive.current=false;generation.current++;};},[document.id]);
+  useEffect(()=>{alive.current=true;load();return()=>{alive.current=false;generation.current++;};},[document.id,refreshKey]);
   useSurfaceResume(()=>load());
   useEffect(()=>{let mounted=true;api.request('notebook/network',{project_id:record.project_id,limit:200}).then(value=>{
     if(value.project_id!==record.project_id||!Array.isArray(value.items)||typeof value.truncated!=='boolean'||value.items.some(n=>n.project_id!==record.project_id))throw new Error();

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {sourceMarkdownPlan,planText} from './sourceMarkdown.js';
+import {sourceMarkdownPlan,planText,sourceCodePointIndex} from './sourceMarkdown.js';
 const walk=(node,found=[])=>{found.push(node);node.parts?.forEach(child=>walk(child,found));return found;};
 test('formatted reading preserves every original character and source range',()=>{
  for(const source of ['# Heading\n\nA **strong** and *gentle* thought.','## العربية 😀\n\nBefore `code` and ~~removed~~ after.','- One\n- Two\n\n1. First\n2. Next','| Term | Meaning |\n| --- | --- |\n| tafsīr | Commentary |','```js\nconst a = 1;\n```\n','A [citation](https://example.invalid/paper) follows.','> Quoted\n> reading','A &amp; entity and \\*escape\\*.','<script>synthetic()</script>\n![image](https://example.invalid/tracker)']){
@@ -15,4 +15,9 @@ test('syntax is hidden only inside source-proven structures, with ambiguous text
  assert.equal(nodes.filter(node=>node.hidden).map(node=>source.slice(node.from,node.to)).join(''),'# ****');
  const escaped=walk(sourceMarkdownPlan('An &amp; entity.'));assert.ok(!escaped.some(node=>node.hidden));
  const unsafe=walk(sourceMarkdownPlan('<img src=x onerror=synthetic()>'));assert.ok(unsafe.every(node=>node.type==='root'||node.type==='literal'));
+});
+
+test('formatted source boundaries retain Unicode positions for Arabic and emoji',()=>{
+ const source='# العربية 😀 **idea**',index=sourceCodePointIndex(source);
+ for(const node of walk(sourceMarkdownPlan(source))){assert.equal(index[node.from],Array.from(source.slice(0,node.from)).length);assert.equal(index[node.to],Array.from(source.slice(0,node.to)).length);}
 });

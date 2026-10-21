@@ -62,6 +62,7 @@ app.whenReady().then(async()=>{
   await ui('document.querySelector(`.working-surface:not([hidden]) [aria-label="Write beside this source"]`).focus()');
   await reopened.webContents.insertText('## A synthetic source-level thought\n\nNo fabricated passage.');
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .desktop-source-writing [role=status]")?.textContent==="Saved"'),'source note durable');
+  await ui('document.querySelector(".working-surface:not([hidden]) .source-information").open=true');
   await ui('document.querySelector(".working-surface:not([hidden]) .desktop-source-details summary").click()');
   await ui('(()=>{const field=document.querySelector(".working-surface:not([hidden]) .desktop-source-details input");field.focus();field.select();})()');
   await reopened.webContents.insertText('Synthetic corrected reference');await click('Save details');

@@ -37,3 +37,10 @@ export function sourceMarkdownPlan(source){
  return {type:'root',from:0,to:source.length,parts};
 }
 export function planText(source,node){return node.parts?node.parts.map(part=>planText(source,part)).join(''):source.slice(node.from,node.to);}
+
+/** Linear UTF-16 to Unicode position map; source spelling is never transformed. */
+export function sourceCodePointIndex(source){
+ const offsets=new Uint32Array(source.length+1);let units=0,points=0;
+ for(const char of source){for(let i=0;i<char.length;i++)offsets[units+i]=points;units+=char.length;offsets[units]=++points;}
+ return offsets;
+}

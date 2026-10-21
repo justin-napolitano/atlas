@@ -78,7 +78,7 @@ export function SourceDetails({api,record,onSaved,drafts,changed}){
  {error&&<p role="alert">{error} Your metadata draft is retained.</p>}{current&&<section><p>Saved revision {current.revision}: {current.title}</p><p>{current.attributes?.source_intake?.creators||'Author unknown'} · {current.attributes?.source_intake?.edition||'Edition unknown'}</p><button type="button" onClick={()=>{pending.current={...pending.current,request_uuid:crypto.randomUUID(),expected_revision:current.revision};setCurrent(null);setError('Reviewed the other revision. Save again to apply your metadata.');}}>Keep my details against this revision</button><button type="button" onClick={()=>{pending.current=null;setTitle(current.title);setCreators(current.attributes?.source_intake?.creators||'');setEdition(current.attributes?.source_intake?.edition||'');setCurrent(null);setError('');drafts.current.delete(key);changed();onSaved();}}>Use saved details</button></section>}</form></details>;
 }
 
-export function DesktopSourceWriting({api,record,sessions,changed,onOpen,active=true,onActivate,currentDocumentId=null}){
+export function DesktopSourceWriting({api,record,sessions,changed,onOpen,active=true,onActivate,currentDocumentId=null,refreshKey=0}){
  const pageContext=useContext(PageLinkContext),pageSupport=pageContext.enabled;
  const [,render]=useState(0),[rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[error,setError]=useState(''),editorState=useRef(new Map()),editor=useRef(null),request=useRef(0);
  if(!composers.has(sessions))composers.set(sessions,new Map());const cache=composers.get(sessions);
@@ -87,7 +87,7 @@ export function DesktopSourceWriting({api,record,sessions,changed,onOpen,active=
   sessions.set(session.id,session);cache.set(record.id,session);return session;
  }
  const session=cache.get(record.id)||(active?create():null),revision=session?.row?.revision;
- useEffect(()=>{let live=true;api.request('desktop/source/writing',{record_id:record.id,limit:20}).then(page=>{if(live){setRows(page.items);setCursor(page.next_cursor);}}).catch(err=>{if(live)setError(err.message);});return()=>{live=false;};},[record.id,revision]);
+ useEffect(()=>{let live=true;api.request('desktop/source/writing',{record_id:record.id,limit:20}).then(page=>{if(live){setRows(page.items);setCursor(page.next_cursor);}}).catch(err=>{if(live)setError(err.message);});return()=>{live=false;};},[record.id,revision,refreshKey]);
  useEffect(()=>{if(active&&session)requestAnimationFrame(()=>editor.current?.focus());},[active,session?.id]);
  useEffect(()=>{if(session?.dirty)onActivate?.();},[session?.dirty]);
  async function more(){try{const page=await api.request('desktop/source/writing',{record_id:record.id,cursor,limit:20});setRows(old=>[...new Map([...old,...page.items].map(row=>[row.note_key,row])).values()]);setCursor(page.next_cursor);}catch(err){setError(err.message);}}

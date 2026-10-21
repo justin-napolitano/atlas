@@ -82,3 +82,4 @@
 .connected-source-document .reader-toolbar.is-floating button{font-size:13px;min-height:36px}
 .connected-source-document .reader-toolbar.is-floating .reader-selection-label{display:none}
 .source-reader .source-book-note-title{font-size:12px;font-weight:400;color:var(--muted)}
+@media(max-width:900px){.connected-source-document .reader-writing-scope button,.connected-source-document .reader-toolbar.is-floating button,.source-information>summary{min-height:44px}}

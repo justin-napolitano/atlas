@@ -45,7 +45,7 @@ async function checkbox(label){await evaluate(`[...document.querySelectorAll('la
  await call('Input.insertText',{text:' Newer typing during the acknowledgement.'});await evaluate('window.__connectedTest.release()');
  await until(()=>evaluate('[...window.__connectedTest.entries.values()][0].body.endsWith("Newer typing during the acknowledgement.")'),'newer typing survives held create');
  await until(()=>evaluate('document.querySelector(".working-surface:not([hidden]) .connected-document-tools [role=status]").textContent==="Saved"'),'exact current revision saved');
- await evaluate('document.querySelector(".connected-nav button").click()');
+ await evaluate('document.querySelector(".connected-secondary-nav").open=true');await click('Continue');
  await until(()=>evaluate('document.querySelector(".working-surface:not([hidden]) .connected-document h1")?.textContent==="Continue"'),'global continue');
  await click('A loose idea العربية 😀');
  await until(()=>evaluate('!!document.querySelector(".connected-note .cm-content")'),'open original note');
@@ -56,6 +56,7 @@ async function checkbox(label){await evaluate(`[...document.querySelectorAll('la
  await call('Input.dispatchKeyEvent',{type:'keyDown',key:'>',code:'Period',modifiers:process.platform==='darwin'?12:10});await call('Input.dispatchKeyEvent',{type:'keyUp',key:'>',code:'Period',modifiers:process.platform==='darwin'?12:10});await until(()=>evaluate('document.activeElement!==window.__previousCaptureEditor&&document.activeElement?.getAttribute("aria-label")==="Note body"&&document.activeElement===document.querySelector(".working-surface:not([hidden]) .cm-content")'),'second capture focus');
  await call('Input.insertText',{text:'A second unrelated thought.'});await until(()=>evaluate('window.__connectedTest.entries.size===2'),'independent second note');
  assert.equal(await evaluate('[...window.__connectedTest.entries.values()].every(row=>row.project_id===null&&row.record_id===null&&row.document_id===null)'),true);
+ await evaluate('document.querySelector(".connected-secondary-nav").open=true');
  await evaluate('document.querySelector(`[aria-label="New collection"]`).click()');
  await evaluate('document.querySelector(`[aria-label="Collection name"]`).focus()');await call('Input.insertText',{text:'Ideas about authority'});await click('Create');
  await until(()=>evaluate('document.querySelector(".working-surface:not([hidden]) .connected-document h1")?.textContent==="Ideas about authority"'),'optional collection');
