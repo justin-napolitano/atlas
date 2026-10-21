@@ -49,7 +49,7 @@ class DesktopHost{
         message:'Your latest writing has not been saved yet.',detail:'Keep Atlas open to finish saving. Close anyway only if you intend to leave this unfinished writing.',
         buttons:['Keep writing','Close anyway'],defaultId:0,cancelId:0,noLink:true})===1;
       if(discard){this.savePreferences('/workspace.html?view=continue');event.preventDefault();}
-      else this.quitting=false;
+      else {this.quitting=false;this.beforeExit=null;}
     });
     win.on('close',()=>this.savePreferences());
     win.on('closed',()=>{this.window=null;if(this.quitting||process.platform!=='darwin')this.finishQuit();});
@@ -73,7 +73,7 @@ class DesktopHost{
   }
   async finishQuit(){
     if(this.finishing)return this.finishing;
-    this.finishing=(async()=>{await this.preferencesWrite;await this.backend?.stop();this.finished=true;this.electron.app.quit();})();return this.finishing;
+    this.finishing=(async()=>{await this.preferencesWrite;await this.backend?.stop();await this.beforeExit?.();this.finished=true;this.electron.app.quit();})();return this.finishing;
   }
 }
 module.exports={DesktopHost};

@@ -56,5 +56,22 @@ class LocalBackend{
       if(!this.exit)this.child.kill('SIGKILL');
     })();return this.stopPromise;
   }
+  async maintenance(operation,archive){
+    if(!this.config.serviceExecutable||!['backup','restore'].includes(operation))throw new Error('Packaged storage command required');
+    const args=['--state-dir',this.config.stateDir,...(archive?['--archive',archive]:[]),operation];
+    const env={...process.env};for(const key of ['PYTHONPATH','PYTHONHOME','PYTHONINSPECT','PYTHONSTARTUP','NODE_OPTIONS','ELECTRON_RUN_AS_NODE'])delete env[key];
+    const child=this.spawnChild(this.config.serviceExecutable,args,{cwd:path.dirname(this.config.serviceExecutable),env,stdio:['ignore','pipe','pipe']});
+    return new Promise((resolve,reject)=>{
+      let output='',finished=false;
+      const timer=setTimeout(()=>{child.kill('SIGTERM');finish(new Error('Local storage command timed out'));},120000);
+      const finish=(error,value)=>{if(finished)return;finished=true;clearTimeout(timer);error?reject(error):resolve(value);};
+      child.stderr.on('data',()=>{});child.stdout.on('data',data=>{output+=data.toString();if(output.length>2048){child.kill('SIGTERM');finish(new Error('Invalid storage response'));}});
+      child.on('error',()=>finish(new Error('Local storage command could not start')));
+      child.on('exit',code=>{try{
+        if(code!==0)throw Error();const value=JSON.parse(output);
+        if(operation==='backup'?value.backup_created!==true:value.restored!==true)throw Error();finish(null,value);
+      }catch{finish(new Error('Local storage command failed; original research was retained'));}});
+    });
+  }
 }
 module.exports={LocalBackend};

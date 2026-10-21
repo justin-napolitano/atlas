@@ -25,7 +25,27 @@ else{
       config={serviceExecutable:path.join(process.resourcesPath,'offline/runtime/atlas-service/atlas-service'),stateDir:path.join(os.homedir(),'.local/share/atlas')};
     }else config={repoRoot:path.resolve(__dirname,'..'),stateDir:path.join(os.homedir(),'.local/share/atlas')};
     host=new DesktopHost(require('electron'),config);
-    const template=[...(process.platform==='darwin'?[{role:'appMenu'}]:[]),{label:'File',submenu:[{role:'close'}]},
+    let storageBusy=false;
+    const backup=async()=>{
+      if(storageBusy||!host.backend)return;storageBusy=true;
+      try{await host.backend.maintenance('backup');await dialog.showMessageBox(host.window,{type:'info',message:'Local backup saved',detail:'A consistent snapshot of saved research is in your private Atlas backups folder. Unfinished editor changes must finish saving to be included.',buttons:['OK','Show backups']}).then(({response})=>response===1?require('electron').shell.openPath(path.join(config.stateDir,'backups')):null);}
+      catch{await dialog.showMessageBox({type:'error',message:'Backup could not finish',detail:'Your current research is unchanged. Check available disk space and try again.'});}
+      finally{storageBusy=false;}
+    };
+    const restore=async()=>{
+      if(storageBusy||!host.backend)return;
+      const chosen=await dialog.showOpenDialog(host.window,{title:'Restore an Atlas backup',defaultPath:path.join(config.stateDir,'backups'),properties:['openFile'],filters:[{name:'Atlas local backup',extensions:['dump']}]});
+      if(chosen.canceled||chosen.filePaths.length!==1)return;
+      const choice=await dialog.showMessageBox(host.window,{type:'warning',message:'Restore this local Atlas snapshot?',detail:'Choose a backup created by this installation. Atlas will verify and restore it into a separate database, keep your original database, and restart. Cloud services are not involved.',buttons:['Cancel','Restore and restart'],defaultId:0,cancelId:0,noLink:true});
+      if(choice.response!==1)return;
+      host.beforeExit=async()=>{
+        try{await host.backend.maintenance('restore',chosen.filePaths[0]);}
+        catch{await dialog.showMessageBox({type:'error',message:'Restore was not completed',detail:'Atlas kept the original database selected. It will reopen your current research.'});}
+        app.relaunch();
+      };
+      host.requestQuit();
+    };
+    const template=[...(process.platform==='darwin'?[{role:'appMenu'}]:[]),{label:'File',submenu:[{role:'close'},...(app.isPackaged?[{type:'separator'},{label:'Back Up Research Now',click:backup},{label:'Restore Local Backup…',click:restore}]:[])]},
       {role:'editMenu'},{label:'View',submenu:[{role:'reload'},{type:'separator'},{role:'resetZoom'},{role:'zoomIn'},{role:'zoomOut'},{type:'separator'},{role:'togglefullscreen'}]},{role:'windowMenu'}];
     Menu.setApplicationMenu(Menu.buildFromTemplate(template));
     await host.open();
