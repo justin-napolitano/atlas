@@ -21,8 +21,10 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--resources',type=Path,default=ROOT/'research-library/desktop-resources')
     parser.add_argument('--electron',action='store_true')
+    parser.add_argument('--reader-flow',action='store_true',help='Run the focused synthetic reader/notebook native review')
     parser.add_argument('--artifacts',type=Path,default=ROOT/'research-library/testing/desktop-sources')
     args=parser.parse_args()
+    if args.reader_flow:args.electron=True
     # Short, private socket path; executable location includes spaces deliberately.
     with tempfile.TemporaryDirectory(prefix='atlas-offline-',dir='/private/tmp') as temporary:
         root=Path(temporary);resources=root/'Copied app resources';state=root/'state'
@@ -79,7 +81,7 @@ def main():
                 args.artifacts.mkdir(parents=True,exist_ok=True,mode=0o700)
                 config=root/'review.json';receipt=root/'review-result.json'
                 config.write_text(json.dumps({'origin':origin,'credentials':keys,'resultFile':str(receipt),'screenshots':str(args.artifacts.resolve())}));config.chmod(0o600)
-                result=subprocess.run([str(ROOT/'desktop/node_modules/.bin/electron'),str(ROOT/'desktop/scripts/review-electron.cjs')],
+                result=subprocess.run([str(ROOT/'desktop/node_modules/.bin/electron'),str(ROOT/('desktop/scripts/review-reader-flow.cjs' if args.reader_flow else 'desktop/scripts/review-electron.cjs'))],
                     env={**os.environ,'ATLAS_ELECTRON_TEST_CONFIG':str(config)},capture_output=True,timeout=300)
                 if result.returncode!=0 and (root/'electron-failure.txt').exists():
                     raise AssertionError('Synthetic native review: '+(root/'electron-failure.txt').read_text())

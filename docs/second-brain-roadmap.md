@@ -76,6 +76,18 @@ database-only restore is not a portable database-plus-files archive. Hosted clou
 sync #220 remains deferred until web deployment. No private owner state changes
 as a result of this plan.
 
+## Current refinement: reader and notebook flow
+
+Epic [#231](https://github.com/justin-napolitano/islam-research/issues/231) and
+[PR #235](https://github.com/justin-napolitano/islam-research/pull/235) refine the local
+source workspace after #227/#229. The [interaction contract](features/reader-notebook-flow.md)
+was committed before implementation. #232 puts formatted reading beneath a compact
+source header; #234 combines source-wide, current-location and exact quotation
+writing in one resizable notebook without merging their anchors; #233 simplifies
+navigation to Library/Notebook with secondary research routes and the existing folder tree.
+No hosted delivery or cloud sync is added. Review and native acceptance evidence
+belongs in that contract; keep these issues open until the implementation is merged.
+
 ## Reused scope and changed priorities
 
 - #87 remains the connected-notebook umbrella; #88 remains source intake. #101 keeps
@@ -97,7 +109,7 @@ as a result of this plan.
 
 ## Core interface
 
-One sidebar: Continue, Library, Notes, Questions, Explore; global search, persistent
+One sidebar: Library and Notebook, secondary Continue/Questions/Explore; global search, persistent
 New note and optional collections. Same document surface, live Markdown, source/margin
 context and charcoal/ivory/red tokens. No required project tree, extra dashboard,
 provider wizard, metadata form before a thought, forced Inbox processing or mandatory

@@ -103,3 +103,13 @@ bound to Q 4:85, location return, existing lost-response retries, keyboard readi
 resource isolation and mobile layout. The generic margin-writing browser suite
 also passes autosave, reload, newer typing, conflict retention, Trash/Undo,
 appearance controls and mobile reflow. No backend/schema or stored-note changes.
+
+## Local reader and notebook refinement (#231)
+
+[PR #235](https://github.com/justin-napolitano/islam-research/pull/235) applies the
+[reader/notebook contract](reader-notebook-flow.md): compact source header, safe
+formatted Markdown, one resizable notebook and primary Library/Notebook navigation.
+The contract records the 174-test frontend suite, shared browser/container checks,
+and isolated signed-package Electron acceptance, including source/selector equality,
+real saves, draft retention, 390px layout, 200% sizing and fresh database/file restore.
+Owner usability acceptance and hosted deployment/sync remain separate.
