@@ -18,6 +18,19 @@ class WorkspaceHTTPTests(unittest.TestCase):
                 self.assertEqual(self.client.post('/v1/workspace/notes',json={**value,**patch_value},headers=self.headers()).status_code,422)
         missing=self.headers();missing.pop('x-research-write')
         self.assertEqual(self.client.post('/v1/workspace/notes',json=value,headers=missing).status_code,403)
+    def test_freeform_skill_and_principle_types_keep_owner_boundaries(self):
+        for kind in ['skill','principle']:
+            value=dict(request_uuid='59e908ae-0344-4918-997d-26c963741a74',body='Synthetic freeform page',thought_type=kind,owner_confirmed=True)
+            with patch.object(MemoryBoundaryStore,'workspace_operation',return_value={'id':'synthetic:note'},create=True) as call:
+                self.assertEqual(self.client.post('/v1/workspace/notes',json=value,headers=self.headers()).status_code,201)
+                self.assertEqual(call.call_args.kwargs['thought_type'],kind)
+                self.assertEqual(self.client.post('/v1/workspace/notes',json=value).status_code,401)
+                for field in ['assessment','proficiency','stage','score']:
+                    self.assertEqual(self.client.post('/v1/workspace/notes',json={**value,field:'not supported'},headers=self.headers()).status_code,422)
+            with patch.object(MemoryBoundaryStore,'workspace_operation',return_value={'items':[],'next_cursor':None},create=True) as call:
+                self.assertEqual(self.client.get('/v1/workspace/notes?thought_type='+kind,headers=self.headers()).status_code,200)
+                self.assertEqual(call.call_args.kwargs['thought_type'],kind)
+
     def test_global_queries_are_owner_only_and_bounded(self):
         self.assertEqual(self.client.get('/v1/workspace/notes').status_code,401)
         with patch.object(MemoryBoundaryStore,'workspace_operation',return_value={'items':[],'next_cursor':None},create=True) as call:

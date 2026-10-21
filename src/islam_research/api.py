@@ -329,7 +329,7 @@ class NotebookLink(Input):
 
 
 class NotebookMetadata(VerseOwnerInput):
-    thought_type: Literal["note","question","source_claim","interpretation","objection","decision","principle"] = "note"
+    thought_type: Literal["note","question","source_claim","interpretation","objection","decision","principle","skill"] = "note"
     title: Annotated[str,Field(min_length=1,max_length=300)]
     body: Annotated[str,Field(min_length=1,max_length=20000)]
     links: Annotated[list[NotebookLink],Field(max_length=25)] = Field(default_factory=list)
@@ -396,7 +396,7 @@ class LibraryMembership(VerseOwnerInput):
 
 
 class NotebookDraftValue(Input):
-    thought_type: Literal["note","question","source_claim","interpretation","objection","decision","principle"] = "note"
+    thought_type: Literal["note","question","source_claim","interpretation","objection","decision","principle","skill"] = "note"
     title: Annotated[str,Field(max_length=300)] = ""
     body: Annotated[str,Field(max_length=20000)] = ""
     links: Annotated[list[NotebookLink],Field(max_length=25)] = Field(default_factory=list)

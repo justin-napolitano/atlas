@@ -9,7 +9,7 @@ import uuid
 
 from . import database as db, passage_store
 
-TYPES = {'note','question','source_claim','interpretation','objection','decision','principle'}
+TYPES = {'note','question','source_claim','interpretation','objection','decision','principle','skill'}
 
 
 def _optional(value,name):

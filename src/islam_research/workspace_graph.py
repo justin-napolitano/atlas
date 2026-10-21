@@ -41,7 +41,7 @@ def query_definition(value):
     allowed={'version','scope','q','thought_type','collection_id','reading_status','investigation_state','source_link'}
     if not isinstance(value,dict) or set(value)-allowed or type(value.get('version')) is not int or value['version']!=1 or value.get('scope') not in {'notes','sources','questions','reading'}:raise ValueError('Unsupported saved search definition')
     db._text(value.get('q',''),'query',300,empty=True);db._text(value.get('collection_id',''),'collection reference',500,empty=True)
-    if value.get('thought_type','') not in {'','note','question','source_claim','interpretation','objection','decision','principle'}:raise ValueError('Unsupported thought filter')
+    if value.get('thought_type','') not in {'','note','question','source_claim','interpretation','objection','decision','principle','skill'}:raise ValueError('Unsupported thought filter')
     if value.get('reading_status','') not in {'','needs_review','want_to_read','reading','finished'} or value.get('investigation_state','') not in {'','open','investigating','provisional','resolved','revisiting','unanswered'} or value.get('source_link','') not in {'','none','present'}:raise ValueError('Unsupported saved view state')
     scope=value['scope']
     if scope in {'sources','reading'} and any(value.get(key) for key in ['thought_type','investigation_state','source_link']):raise ValueError('Source views do not have thought roles or question states')
