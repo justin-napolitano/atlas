@@ -21,6 +21,7 @@ app.whenReady().then(async()=>{
  const saved=()=>until(()=>ui('document.querySelector("'+active+' .connected-document-tools [role=status]")?.textContent==="Saved"'),'real autosave');
  const note=id=>ui(`fetch('/v1/workspace/note?entry_id='+encodeURIComponent(${JSON.stringify(id)})).then(r=>r.json())`);
  const write=async text=>{await until(()=>ui('!!document.querySelector(`'+active+' [aria-label="Note body"]`)'),'blank editor');await ui('document.querySelector(`'+active+' [aria-label="Note body"]`).focus()');await window.webContents.insertText(text);};
+ if(config.shortcutOnly){
  // Exercise the actual native accelerator while writing; the previous page must survive.
  await electron.Menu.getApplicationMenu().items[0].submenu.items[0].click();
  await write('A synthetic keyboard page.');await saved();
@@ -33,6 +34,8 @@ app.whenReady().then(async()=>{
  assert.equal(await ui('document.querySelector(`'+active+' [aria-label="Note body"]`).textContent.trim()'),'Start writing…');
  assert.equal((await note(keyboardId)).body,'A synthetic keyboard page.');
  assert.equal(await ui('window.syntheticPageRoutes.length'),1);await ui('history.pushState=window.syntheticPush;delete window.syntheticPush;delete window.syntheticPageRoutes');
+ await fs.writeFile(config.resultFile,JSON.stringify({newPageShortcut:true,nativeMenu:true,oneBlankPage:true,writingFocus:true,priorWritingPreserved:true}),{mode:0o600});window.destroy();app.exit(0);return;
+ }
  await click('Notebook');await until(()=>ui('!!document.querySelector("'+active+' .connected-note-filters")'),'notebook filters');
  await click('Principles');await until(()=>ui('!![...document.querySelectorAll("'+active+' button")].find(row=>row.textContent==="New principle")'),'principle view');await click('New principle');
  await write('# Understand before criticizing\n\nA freeform principle, not a prescribed rule. العربية 😀');await saved();
@@ -74,5 +77,5 @@ app.whenReady().then(async()=>{
  if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'skills-notebook-mobile.png'),(await window.webContents.capturePage()).toPNG());
  const reloaded=new Promise(resolve=>window.webContents.once('did-finish-load',resolve));window.webContents.reload();await reloaded;await until(()=>ui('document.querySelector("'+active+' .connected-result")?.textContent.includes("An unrelated skill")'),'typed filter survives reload');
  assert.equal((await note(skillId)).thought_type,'skill');assert.equal((await note(principleId)).thought_type,'principle');
- await fs.writeFile(config.resultFile,JSON.stringify({nativeSkills:true,newPageShortcut:true,freeformCreation:true,standaloneWriting:true,stableLinks:true,backlinks:true,typeConversion:true,literalSearch:true,typeFilters:true,draftNavigation:true,reload:true,mobileLayout:true}),{mode:0o600});window.destroy();app.exit(0);
+ await fs.writeFile(config.resultFile,JSON.stringify({nativeSkills:true,freeformCreation:true,standaloneWriting:true,stableLinks:true,backlinks:true,typeConversion:true,literalSearch:true,typeFilters:true,draftNavigation:true,reload:true,mobileLayout:true}),{mode:0o600});window.destroy();app.exit(0);
 }).catch(async error=>{let details='';try{details=await window?.webContents.executeJavaScript('document.querySelector(".working-surface:not([hidden])")?.innerText.slice(0,2000)');if(window&&config?.screenshots)await fs.writeFile(path.join(config.screenshots,'skills-flow-failure.png'),(await window.webContents.capturePage()).toPNG());}catch{}await fs.writeFile(path.join(root,'electron-failure.txt'),String(error.stack)+'\n'+details,{mode:0o600});app.exit(1);});
