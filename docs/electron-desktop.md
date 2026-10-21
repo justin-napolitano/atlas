@@ -69,4 +69,54 @@ unsafe schemes/paths, malformed child announcements, startup/exit handling and p
 file checks. No sandbox-disable test flags or auth bypasses. Record the exact checks
 that pass and any unverified packaging/release/sync limitations below.
 
-Implementation and verification are pending in this initial contract commit.
+Implemented in PR #219. Portable embedded storage and hosted synchronization are
+planned separately in [the offline sync contract](desktop-offline-sync.md) and #220.
+
+### Opening and rebuilding on the configured Mac
+
+Open `~/Applications/Atlas.app` normally. The native window uses the same local
+PostgreSQL database as the browser workspace. Browser service 5187 remains independent.
+Closing the Mac window leaves Atlas available in the Dock; Cmd+Q quits its owned API.
+
+Development commands from this checkout:
+
+```sh
+cd desktop
+npm ci
+node node_modules/electron/install.js
+npm start
+npm test
+npm run package
+```
+
+Packaging writes `research-library/desktop-build/Atlas-darwin-<arch>/Atlas.app`.
+The allowlist contains only the desktop launcher, its own modules and nonsecret paths
+to this machine's configured checkout/state. It excludes tests, dependencies, private
+research, credentials and PostgreSQL data. The Mac development package is ad-hoc
+signed, with no Developer ID, notarization or hardened-runtime distribution claim.
+Chromium sandboxing, context isolation, navigation and permission restrictions remain
+enabled. A distributable installer needs a separate signed/notarized release path.
+
+This build still needs the configured checkout, its Python virtual environment,
+compiled owner UI and the existing native PostgreSQL installation. Moving/deleting
+those breaks this development package; installing it on another machine is unsupported.
+It opens without internet for locally retained material, but does not yet synchronize
+with any hosted service. Old preview notes were not silently imported (#216).
+
+### Verification performed
+
+- Eight Node tests pass: owned-origin/resource policy, private bootstrap files,
+  announcement validation, restore/export paths and managed-child startup/shutdown.
+- `PYTHONPATH=src .venv/bin/python scripts/check_local_workspace.py --electron`
+  passes using an isolated synthetic PostgreSQL database, actual owner HTTP API and
+  native Electron renderer. Covers Unicode Markdown save, reload, close/reopen,
+  protected unsaved closure, Qur’an opening and location-bound notes, library edition
+  retention, progress/place, API restart and conflicting revision rejection.
+- Native test verifies sandbox/context isolation, absent renderer Node globals,
+  blocked external renderer fetch and native-scheme popup, and deliberate system
+  browser routing. Tests do not read or modify the real owner's research.
+- Mac application bundle passes `codesign --verify --deep --strict` using local
+  development signing. This is not evidence of notarization or portable installation.
+- Desktop boundary/lifecycle tests and dependency audit are configured in CI.
+  Native Electron/PostgreSQL and packaging evidence above is from this configured Mac,
+  not a claim of automated cross-platform installer verification.

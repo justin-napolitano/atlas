@@ -1,0 +1,51 @@
+// Native renderer smoke test. Invoked only against an isolated synthetic SQL database.
+const {app}=require('electron');
+const electron=require('electron');
+const fs=require('node:fs/promises');
+const path=require('node:path');
+const assert=require('node:assert/strict');
+const {DesktopHost}=require('../src/host.cjs');
+const {privateJSON}=require('../src/policy.cjs');
+const root=path.dirname(process.env.ATLAS_ELECTRON_TEST_CONFIG||'');
+app.setName('Atlas Synthetic Review');app.enableSandbox();app.setPath('userData',path.join(root,'profile'));
+app.commandLine.appendSwitch('disable-background-networking');
+app.on('window-all-closed',()=>{});
+const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function until(check,label){for(let i=0;i<150;i++){try{if(await check())return;}catch{}await pause(100);}throw new Error('Timed out: '+label);}
+app.whenReady().then(async()=>{
+  const config=await privateJSON(process.env.ATLAS_ELECTRON_TEST_CONFIG);
+  assert.match(config.origin,/^http:\/\/127\.0\.0\.1:\d+$/);
+  let prevented=0,external=0;
+  const runtime={...electron,shell:{openExternal:async()=>{external++;}}};
+  const host=new DesktopHost(runtime,{}, {backendFactory:async()=>({origin:config.origin,credentials:config.credentials,stop:async()=>{}}),
+    confirmDiscard:()=>{prevented++;return false;},preferencesFile:path.join(root,'window.json')});
+  const win=await host.open();
+  const js=code=>win.webContents.executeJavaScript(code);
+  await until(()=>js('!!document.querySelector(".connected-nav")'),'actual connected workspace');
+  assert.equal(win.webContents.getLastWebPreferences().nodeIntegration,false);
+  assert.equal(win.webContents.getLastWebPreferences().sandbox,true);
+  assert.equal(win.webContents.getLastWebPreferences().contextIsolation,true);
+  assert.equal(await js('typeof require'), 'undefined');assert.equal(await js('typeof process'),'undefined');
+  await js('[...document.querySelectorAll(".connected-nav button")].find(b=>b.textContent==="Library").click()');
+  await until(()=>js('!!document.querySelector(".working-surface:not([hidden]) .library-book-title")'),'real SQL shelf');
+  await js('document.querySelector(".working-surface:not([hidden]) .library-book-title").click()');
+  await until(()=>js('document.querySelectorAll(".working-surface:not([hidden]) [data-ayah]").length===176'),'complete Quran and confirmed 4:59 reading');
+  await js('document.querySelector(".workspace-sidebar-new").click()');
+  await until(()=>js('document.activeElement?.getAttribute("aria-label")==="Note body"'),'body-first Markdown focus');
+  const body='## Electron persistence check\n\nSynthetic offline Markdown العربية 😀';
+  await win.webContents.insertText(body);
+  await until(()=>js('document.querySelector(".working-surface:not([hidden]) .cm-content")?.textContent.includes("Electron persistence check")'),'entered writing');
+  win.close();await until(()=>Promise.resolve(prevented>0),'dirty closing protected');assert.equal(win.isDestroyed(),false);
+  await until(()=>js('document.querySelector(".working-surface:not([hidden]) [role=status]")?.textContent==="Saved"'),'real PostgreSQL save');
+  await new Promise(resolve=>{win.webContents.once('did-finish-load',resolve);win.webContents.reload();});
+  await until(()=>js('document.querySelector(".working-surface:not([hidden]) .cm-content")?.textContent.includes("Synthetic offline Markdown")'),'note restored after native reload');
+  assert.equal(await js('Object.values(localStorage).some(v=>v.includes("Synthetic offline Markdown"))'),false);
+  assert.equal(await js('fetch("https://example.invalid/offline-test").then(()=>false).catch(()=>true)'),true);
+  await js('window.open("file:///tmp/not-an-app-page");window.open("https://example.invalid/citation")');
+  await pause(150);assert.equal(external,1);assert.equal(electron.BrowserWindow.getAllWindows().length,1);
+  win.close();await until(()=>Promise.resolve(win.isDestroyed()),'clean saved close');await host.preferencesWrite;
+  const reopened=await host.open();
+  await until(()=>reopened.webContents.executeJavaScript('document.querySelector(".working-surface:not([hidden]) .cm-content")?.textContent.includes("Synthetic offline Markdown")'),'last document reopened');
+  await fs.writeFile(config.resultFile,JSON.stringify({nativeElectron:true,realPostgresql:true,rendererIsolation:true,dirtyCloseProtected:true,reloadAndReopen:true,externalNetworkDenied:true}),{mode:0o600});
+  reopened.destroy();app.exit(0);
+}).catch(async error=>{await fs.writeFile(path.join(root,'electron-failure.txt'),String(error.stack),{mode:0o600});app.exit(1);});

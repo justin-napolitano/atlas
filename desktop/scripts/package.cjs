@@ -13,10 +13,16 @@ async function main(){
     const pkg=require('../package.json');
     await fs.writeFile(path.join(staging,'package.json'),JSON.stringify({name:'atlas-desktop',productName:'Atlas',version:pkg.version,main:'main.cjs',description:pkg.description}));
     await fs.writeFile(path.join(staging,'runtime.json'),JSON.stringify({format:1,repoRoot,stateDir}));
-    const {default:packager}=await import('@electron/packager');
+    const {packager}=await import('@electron/packager');
     const options={dir:staging,out:output,name:'Atlas',platform:process.platform,arch:process.arch,electronVersion:pkg.devDependencies.electron,
       appBundleId:'org.researchatlas.desktop',appCategoryType:'public.app-category.education',asar:true,overwrite:true,prune:true};
     if(process.platform==='darwin'){
+      // Local ad-hoc signature seals the bundle without a Developer ID account.
+      // Ad-hoc development builds have no Team ID for hardened-runtime library
+      // validation. A Developer ID distribution must use a separate release path.
+      // Grant only V8 JIT; do not inherit the signer's camera/mic/USB defaults.
+      options.osxSign={identity:'-',identityValidation:false,preAutoEntitlements:false,preEmbedProvisioningProfile:false,
+        optionsForFile:()=>({entitlements:['com.apple.security.cs.allow-jit'],hardenedRuntime:false,timestamp:'none'})};
       const png=path.join(staging,'atlas.png'),iconset=path.join(staging,'Atlas.iconset');await fs.mkdir(iconset);
       execFileSync('/usr/bin/swift',[path.join(__dirname,'icon.swift'),png],{stdio:'pipe'});
       for(const size of [16,32,128,256,512])for(const scale of [1,2])execFileSync('/usr/bin/sips',['-z',String(size*scale),String(size*scale),png,'--out',path.join(iconset,`icon_${size}x${size}${scale===2?'@2x':''}.png`)],{stdio:'pipe'});
@@ -25,7 +31,7 @@ async function main(){
       await fs.rm(iconset,{recursive:true});await fs.rm(png);
     }
     const paths=await packager(options);
-    console.log(JSON.stringify({kind:'configured_local_desktop',output:paths,standaloneInstaller:false,signed:false}));
+    console.log(JSON.stringify({kind:'configured_local_desktop',output:paths,standaloneInstaller:false,signature:process.platform==='darwin'?'ad-hoc':'none',notarized:false}));
   }finally{await fs.rm(staging,{recursive:true,force:true});}
 }
-main().catch(()=>{console.error('Desktop packaging failed. Existing app and research were not changed.');process.exitCode=1;});
+main().catch(error=>{console.error('Desktop packaging failed. Existing app and research were not changed.');console.error(error.stack);process.exitCode=1;});

@@ -13,6 +13,9 @@ import sys
 import threading
 import time
 import uuid
+import tempfile
+import subprocess
+import os
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
@@ -29,6 +32,7 @@ def main():
     from islam_research.sql_permissions import configure
     from islam_research.local_owner import LocalOwner
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--state-dir',type=Path,default=DEFAULT_STATE)
+    parser.add_argument('--electron',action='store_true',help='Also verify the native Electron renderer against this isolated database')
     args=parser.parse_args();state=args.state_dir.resolve();value=config(state)
     name='atlas_smoke_'+uuid.uuid4().hex
     admin=make_conninfo(admin_dsn(state,value),dbname='postgres')
@@ -80,6 +84,18 @@ def main():
         selected=client.put('/v1/library/item',json={'item_id':item['id'],'expected_revision':item['revision'],
             'on_shelf':True,'reading_status':'reading','preferred_edition_id':target['edition_id'],'owner_confirmed':True})
         assert selected.status_code==200
+        if args.electron:
+            with tempfile.TemporaryDirectory(prefix='atlas-electron-check-') as temporary:
+                base=Path(temporary);config_path=base/'runtime.json';result_file=base/'result.json'
+                config_path.write_text(json.dumps({'origin':str(client.base_url).rstrip('/'),'credentials':credentials,'resultFile':str(result_file)}));config_path.chmod(0o600)
+                env={**os.environ,'ATLAS_ELECTRON_TEST_CONFIG':str(config_path)};env.pop('ELECTRON_RUN_AS_NODE',None)
+                result=subprocess.run([str(ROOT/'desktop/node_modules/.bin/electron'),str(ROOT/'desktop/scripts/review-electron.cjs')],cwd=ROOT,env=env,capture_output=True,timeout=90)
+                if result.returncode:
+                    # Only synthetic fixture diagnostics. No owner database/notes are opened.
+                    failure=base/'electron-failure.txt'
+                    raise RuntimeError(failure.read_text() if failure.exists() else 'Native Electron review failed')
+                assert all(json.loads(result_file.read_text()).values())
+                print('Native Electron + isolated PostgreSQL: renderer isolation, dirty close, reload/reopen and offline request boundaries passed.')
         client.close();stop()
         client=start()
         restored=client.get('/v1/workspace/note',params={'entry_id':note['id']})

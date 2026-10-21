@@ -1,0 +1,29 @@
+name: Desktop boundaries
+
+on:
+  pull_request:
+    paths: ['desktop/**', '.github/workflows/desktop-validation.yml']
+  push:
+    branches: [main]
+    paths: ['desktop/**', '.github/workflows/desktop-validation.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  lifecycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+      - run: npm audit
