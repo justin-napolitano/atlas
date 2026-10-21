@@ -18,7 +18,7 @@ open their existing document. Add folders inline, rename without a modal form,
 and create a blank body-first note inside a folder using a durable preparation
 intent. Drag notes onto pages/folders and folders onto folders; root is an explicit
 drop target. Keyboard users get equivalent Move actions and focusable controls.
-Sibling order remains alphabetical; reordering by arbitrary drag position is deferred.
+Folders appear first, then notes, with alphabetical order in each group; reordering by arbitrary drag position is deferred.
 
 All mutations are desktop-owner-only, revision checked, actor bound and idempotent.
 A retry replays its original receipt without overwriting a later move. Reject
@@ -38,3 +38,14 @@ Synthetic tests cover folder nesting, rename, idempotent retries, stale moves,
 cycles/depth, note/page/folder moves without body edits, empty-only removal,
 Trash/restore, permissions and backup restore. Native review covers sidebar
 creation, keyboard movement and drag/drop with actual persisted state.
+
+## Delivery evidence
+
+PR #229 implements this alongside #228. Nine isolated folder SQL/API tests cover
+concurrent opposite moves, depth/cycle rejection, metadata-only creation,
+idempotent replay after later movement, paginated exploration, empty-only removal
+and strict owner/CSRF boundaries. The existing page and source tests remain.
+Native acceptance includes folder creation, note creation inside folders, note and
+folder drag/drop, renaming and the searchable keyboard Move action. The copied
+runtime check restores folder membership together with notes and backlinks.
+Consult the PR for the latest native/package outcome; all fixtures are synthetic.

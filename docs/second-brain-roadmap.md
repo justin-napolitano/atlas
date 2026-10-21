@@ -138,3 +138,10 @@ and moves accompany global `[[` page completion and backlinks. See the
 [linked-page contract](features/local-linked-pages.md) for durability, reference
 limits and remaining legacy-link indexing scope. Desktop only; cloud sync remains
 deferred. PR #229 stacks on local source intake #227.
+
+The owner’s follow-up #230 adds real local folders and direct sidebar movement to
+the same PR. Folders remain organization metadata rather than notes or project
+boundaries. Folder-first alphabetical order, inline creation/rename, note creation
+inside folders, drag/drop and keyboard Move share the existing explorer. See the
+[folder contract](features/local-note-folders.md). Cloud sync and manual sibling
+ordering remain deferred.
