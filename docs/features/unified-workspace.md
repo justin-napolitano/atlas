@@ -113,3 +113,12 @@ The contract records the 174-test frontend suite, shared browser/container check
 and isolated signed-package Electron acceptance, including source/selector equality,
 real saves, draft retention, 390px layout, 200% sizing and fresh database/file restore.
 Owner usability acceptance and hosted deployment/sync remain separate.
+
+## Freeform notebook roles (#236)
+
+[PR #239](https://github.com/justin-napolitano/islam-research/pull/239) adds optional
+skill pages beside the existing principle role and compact notebook type filters.
+Both remain ordinary standalone Markdown pages with the same IDs, folders, evidence
+links, recovery and private defaults. No assessments, stages or required structure.
+The [contract and acceptance ledger](freeform-skills-principles.md) records current
+storage/API/frontend/native checks and remaining review gates.

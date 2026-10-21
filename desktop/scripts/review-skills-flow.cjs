@@ -58,7 +58,7 @@ app.whenReady().then(async()=>{
  await window.setMinimumSize(0,0);await window.setContentSize(390,844);await pause(200);
  assert.equal(await ui('innerWidth'),390);assert.equal(await ui('document.documentElement.scrollWidth<=innerWidth+2'),true);
  if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'skills-notebook-mobile.png'),(await window.webContents.capturePage()).toPNG());
- await window.webContents.reload();await until(()=>ui('document.querySelector("'+active+' .connected-result")?.textContent.includes("An unrelated skill")'),'typed filter survives reload');
+ const reloaded=new Promise(resolve=>window.webContents.once('did-finish-load',resolve));window.webContents.reload();await reloaded;await until(()=>ui('document.querySelector("'+active+' .connected-result")?.textContent.includes("An unrelated skill")'),'typed filter survives reload');
  assert.equal((await note(skillId)).thought_type,'skill');assert.equal((await note(principleId)).thought_type,'principle');
  await fs.writeFile(config.resultFile,JSON.stringify({nativeSkills:true,freeformCreation:true,standaloneWriting:true,stableLinks:true,backlinks:true,typeConversion:true,literalSearch:true,typeFilters:true,draftNavigation:true,reload:true,mobileLayout:true}),{mode:0o600});window.destroy();app.exit(0);
 }).catch(async error=>{let details='';try{details=await window?.webContents.executeJavaScript('document.querySelector(".working-surface:not([hidden])")?.innerText.slice(0,2000)');if(window&&config?.screenshots)await fs.writeFile(path.join(config.screenshots,'skills-flow-failure.png'),(await window.webContents.capturePage()).toPNG());}catch{}await fs.writeFile(path.join(root,'electron-failure.txt'),String(error.stack)+'\n'+details,{mode:0o600});app.exit(1);});

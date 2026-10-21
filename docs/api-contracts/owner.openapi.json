@@ -479,7 +479,8 @@
               "interpretation",
               "objection",
               "decision",
-              "principle"
+              "principle",
+              "skill"
             ],
             "title": "Thought Type",
             "type": "string"
@@ -1850,7 +1851,8 @@
               "interpretation",
               "objection",
               "decision",
-              "principle"
+              "principle",
+              "skill"
             ],
             "title": "Thought Type",
             "type": "string"
@@ -1930,7 +1932,8 @@
                   "interpretation",
                   "objection",
                   "decision",
-                  "principle"
+                  "principle",
+                  "skill"
                 ],
                 "type": "string"
               },
@@ -2082,7 +2085,8 @@
               "interpretation",
               "objection",
               "decision",
-              "principle"
+              "principle",
+              "skill"
             ],
             "title": "Thought Type",
             "type": "string"
@@ -2274,7 +2278,8 @@
               "interpretation",
               "objection",
               "decision",
-              "principle"
+              "principle",
+              "skill"
             ],
             "title": "Thought Type",
             "type": "string"
@@ -2388,7 +2393,8 @@
               "interpretation",
               "objection",
               "decision",
-              "principle"
+              "principle",
+              "skill"
             ],
             "title": "Thought Type",
             "type": "string"
@@ -2801,7 +2807,8 @@
                   "interpretation",
                   "objection",
                   "decision",
-                  "principle"
+                  "principle",
+                  "skill"
                 ],
                 "type": "string"
               },
@@ -11793,7 +11800,8 @@
                 "interpretation",
                 "objection",
                 "decision",
-                "principle"
+                "principle",
+                "skill"
               ],
               "title": "Thought Type",
               "type": "string"

@@ -37,3 +37,46 @@ Verify existing owner/public boundaries and reading regressions. In native Elect
 exercise the actual editor, filters, links, retained writing, narrow layout and
 fresh database restart/backup restore. Prepare a separate review app without
 replacing or restarting the running owner app; never use owner notes as fixtures.
+
+## Using it
+
+Open Notebook, then Skills or Principles, then New skill/New principle. Write in
+the same blank Markdown editor. All pages also remain in All, the folder explorer
+and global literal search. Note properties can change the optional type later;
+existing body, placement and identity stay intact. Global New note is unchanged.
+
+Type `[[` and choose an existing page to link a skill to a principle, another skill
+or an ordinary note. The stable link and backlink reuse the existing page authority;
+no hierarchy or rationale form is required. Existing passage/source references and
+advanced Connections remain available when evidence is useful. Those advanced
+scholarly relations retain their original attribution/review requirements.
+
+## Implementation and evidence
+
+PR #239 implements #237/#238 under #236. Additive migration
+`0034_freeform_skills.sql` extends the entry type constraint and the existing
+recovery trigger's allowed types, preserving its baseline/anchor/revision guards.
+No old migration, body, history, receipt digest or source is rewritten. No new
+endpoint, privilege, dependency, assessment, score or progress table is added.
+
+- Five new isolated database tests pass: standalone saves and UUID replay,
+  conversion/CAS/history and placement, durable draft retry, filtered pagination
+  and saved views, stable backlinks and exact original evidence references.
+- Owner HTTP tests pass, including skill/principle creation/filtering, anonymous
+  rejection and rejection of assessment/stage/proficiency/score fields.
+- 174 frontend unit tests and the production frontend build pass.
+- Full isolated PostgreSQL 17 regression: 400 tests passed, with one expected skip.
+  Owner OpenAPI contracts were regenerated for the additive type; public schema
+  stayed unchanged. API contract drift checking passes after regeneration.
+- Copied frozen runtime, fresh isolated PostgreSQL and sandboxed native Electron
+  pass the actual blank-page create/write/filter/search flow, skill-to-principle
+  completion and backlink navigation, reversible type conversion, background save
+  after navigation, reload with retained type filter and 390px layout.
+- That native run also verifies typed bodies/links/revisions after service restart
+  and database-plus-original-file restore, along with conflict/tamper rejection.
+  Synthetic screenshots stay ignored in `research-library/testing/freeform-skills/`.
+
+Full PostgreSQL regression, CI and signed-package acceptance are recorded on the
+PR when complete. Owner usability review remains separate from synthetic tests.
+New optional types affect private data/API validation; normal review should inspect
+that migration and boundary. No external security approval is claimed.
