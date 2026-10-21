@@ -8,14 +8,15 @@ class LocalBackend{
     Object.assign(this,{config,spawnChild,fetchHTTP,timeout});this.child=null;this.stopping=false;
   }
   async start(){
-    const {repoRoot,stateDir}=this.config;
-    const keys=await privateJSON(path.join(stateDir,'local-session.json'));
-    if(Object.keys(keys).sort().join(',')!=='launch,session'||!Object.values(keys).every(v=>typeof v==='string'&&/^[A-Za-z0-9_-]{43,128}$/.test(v)))throw new Error('Local session is not configured');
-    this.credentials=keys;
-    const env={...process.env,PYTHONPATH:path.join(repoRoot,'src'),PYTHONDONTWRITEBYTECODE:'1'};
+    const {repoRoot,stateDir,serviceExecutable}=this.config;
+    const env={...process.env,PYTHONDONTWRITEBYTECODE:'1'};
+    if(repoRoot)env.PYTHONPATH=path.join(repoRoot,'src');else delete env.PYTHONPATH;
     for(const key of ['PYTHONHOME','PYTHONINSPECT','PYTHONSTARTUP','NODE_OPTIONS','ELECTRON_RUN_AS_NODE'])delete env[key];
     const preferred=Number.isInteger(this.config.preferredPort)&&this.config.preferredPort>=1024&&this.config.preferredPort<=65535?this.config.preferredPort:0;
-    const child=this.spawnChild(path.join(repoRoot,'.venv/bin/python'),[path.join(repoRoot,'scripts/local_workspace.py'),'--state-dir',stateDir,'desktop-serve','--port',String(preferred)],{cwd:repoRoot,env,stdio:['pipe','pipe','pipe'],windowsHide:true});
+    const command=serviceExecutable||path.join(repoRoot,'.venv/bin/python');
+    const args=serviceExecutable?['--state-dir',stateDir,'--port',String(preferred),'serve']:
+      [path.join(repoRoot,'scripts/local_workspace.py'),'--state-dir',stateDir,'desktop-serve','--port',String(preferred)];
+    const child=this.spawnChild(command,args,{cwd:serviceExecutable?path.dirname(serviceExecutable):repoRoot,env,stdio:['pipe','pipe','pipe'],windowsHide:true});
     this.child=child;
     child.stdin.on('error',()=>{});
     this.exited=new Promise(resolve=>{child.once('exit',(code,signal)=>{this.exit={code,signal};resolve();});child.once('error',()=>{this.exit={code:null,signal:'startup-error'};resolve();});});
@@ -29,6 +30,10 @@ class LocalBackend{
           if(line.includes('\n')){try{finish(null,announcement(line.slice(0,line.indexOf('\n'))));}catch{finish(new Error('Invalid backend startup response'));}}};
         child.stdout.on('data',read);this.exited.then(()=>finish(new Error('Local backend stopped during startup')));
       });
+      // A fresh packaged installation creates private credentials before announcing.
+      const keys=await privateJSON(path.join(stateDir,'local-session.json'));
+      if(Object.keys(keys).sort().join(',')!=='launch,session'||!Object.values(keys).every(v=>typeof v==='string'&&/^[A-Za-z0-9_-]{43,128}$/.test(v)))throw new Error('Local session is not configured');
+      this.credentials=keys;
       const deadline=Date.now()+this.timeout;
       while(Date.now()<deadline){
         if(this.exit)throw new Error('Local backend stopped during startup');

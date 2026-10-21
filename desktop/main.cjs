@@ -18,9 +18,12 @@ else{
   app.on('window-all-closed',()=>{if(process.platform!=='darwin')host?.requestQuit();});
   app.on('activate',()=>host?.open().catch(fail));
   app.whenReady().then(async()=>{
-    const config=app.isPackaged?JSON.parse(fs.readFileSync(path.join(app.getAppPath(),'runtime.json'),'utf8')):
-      {format:1,repoRoot:path.resolve(__dirname,'..'),stateDir:path.join(os.homedir(),'.local/share/atlas')};
-    if(Object.keys(config).sort().join(',')!=='format,repoRoot,stateDir'||config.format!==1||!path.isAbsolute(config.repoRoot)||!path.isAbsolute(config.stateDir))throw new Error('Invalid desktop runtime');
+    let config;
+    if(app.isPackaged){
+      const descriptor=JSON.parse(fs.readFileSync(path.join(app.getAppPath(),'runtime.json'),'utf8'));
+      if(Object.keys(descriptor).sort().join(',')!=='format,kind'||descriptor.format!==2||descriptor.kind!=='bundled-local-postgresql')throw new Error('Invalid desktop runtime');
+      config={serviceExecutable:path.join(process.resourcesPath,'offline/runtime/atlas-service/atlas-service'),stateDir:path.join(os.homedir(),'.local/share/atlas')};
+    }else config={repoRoot:path.resolve(__dirname,'..'),stateDir:path.join(os.homedir(),'.local/share/atlas')};
     host=new DesktopHost(require('electron'),config);
     const template=[...(process.platform==='darwin'?[{role:'appMenu'}]:[]),{label:'File',submenu:[{role:'close'}]},
       {role:'editMenu'},{label:'View',submenu:[{role:'reload'},{type:'separator'},{role:'resetZoom'},{role:'zoomIn'},{role:'zoomOut'},{type:'separator'},{role:'togglefullscreen'}]},{role:'windowMenu'}];

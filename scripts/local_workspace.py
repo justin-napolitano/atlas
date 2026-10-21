@@ -32,12 +32,13 @@ def private_json(path,value):
     with os.fdopen(fd,'w') as stream: json.dump(value,stream)
 
 
-def config(state):
+def config(state,postgres_bin=None):
     path=state/'local-config.json'
     if path.is_symlink() or path.stat().st_mode & 0o077:
         raise ValueError('Local config must be an owner-private regular file')
     value=json.loads(path.read_text())
     if value.get('format')!='atlas-local-postgres-v1':raise ValueError('Unknown local configuration')
+    if postgres_bin is not None:value={**value,'postgres_bin':str(postgres_bin)}
     return value
 
 
@@ -67,7 +68,7 @@ def initialize(args):
         value={'format':'atlas-local-postgres-v1','admin':getpass.getuser(),'postgres_bin':str(args.postgres_bin.resolve()),
             'owner_password':secrets.token_urlsafe(48),'publisher_password':secrets.token_urlsafe(48)}
         private_json(path,value)
-    value=config(state);binary=Path(value['postgres_bin'])
+    value=config(state,args.postgres_bin.resolve());binary=Path(value['postgres_bin'])
     data=state/'postgres-data';socket=state/'socket';socket.mkdir(exist_ok=True,mode=0o700);os.chmod(socket,0o700)
     if not (data/'PG_VERSION').exists():
         subprocess.run([str(binary/'initdb'),'-D',str(data),'--encoding=UTF8','--locale=C','--auth-local=peer','--auth-host=reject','--username='+value['admin']],check=True,stdout=subprocess.DEVNULL)
@@ -87,7 +88,7 @@ def initialize(args):
         migrations=db.migrate(c)
         configure(c,'atlas_owner','atlas_public',apply=True)
     if not (state/'local-session.json').exists():private_json(state/'local-session.json',{'launch':secrets.token_urlsafe(48),'session':secrets.token_urlsafe(48)})
-    print(json.dumps({'storage':'native_postgresql','new_migrations':len(migrations),'runtime_role':'atlas_owner','database_network_listener':False}))
+    if not getattr(args,'quiet',False):print(json.dumps({'storage':'native_postgresql','new_migrations':len(migrations),'runtime_role':'atlas_owner','database_network_listener':False}))
 
 
 def build(args):
@@ -108,7 +109,7 @@ def serve(args):
     import uvicorn
     from psycopg.conninfo import make_conninfo
     from islam_research.local_owner import LocalOwner
-    state=args.state_dir.resolve();value=config(state);start_database(state,value)
+    state=args.state_dir.resolve();value=config(state,getattr(args,'postgres_bin',None));start_database(state,value)
     credentials_path=state/'local-session.json'
     if credentials_path.is_symlink() or credentials_path.stat().st_mode & 0o077:raise ValueError('Local session file must be private')
     credentials=json.loads(credentials_path.read_text())
@@ -124,7 +125,8 @@ def serve(args):
         listener.listen(16)
         port=listener.getsockname()[1]
     else:port=args.port
-    app=LocalOwner(database_url=dsn,directory=Path((state/'current-frontend').read_text()),port=port,credentials=credentials)
+    directory=getattr(args,'frontend',None) or Path((state/'current-frontend').read_text())
+    app=LocalOwner(database_url=dsn,directory=directory,port=port,credentials=credentials)
     logging.basicConfig(level=logging.WARNING,format='%(message)s')
     settings=dict(host='127.0.0.1',port=port,access_log=False,proxy_headers=False,
         workers=1,limit_concurrency=24,backlog=16,server_header=False,log_level='warning',timeout_graceful_shutdown=10)

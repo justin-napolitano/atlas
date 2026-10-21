@@ -5,17 +5,23 @@ const os=require('node:os');
 const {execFileSync}=require('node:child_process');
 
 async function main(){
-  const desktop=path.resolve(__dirname,'..'),repoRoot=path.dirname(desktop),stateDir=path.join(os.homedir(),'.local/share/atlas');
+  const desktop=path.resolve(__dirname,'..'),repoRoot=path.dirname(desktop);
+  const resources=path.join(repoRoot,'research-library/desktop-resources');
+  await fs.access(path.join(resources,'runtime/atlas-service/atlas-service'));
+  await fs.access(path.join(resources,'frontend/owner-manifest.json'));
   const output=path.join(repoRoot,'research-library/desktop-build');
   const staging=await fs.mkdtemp(path.join(os.tmpdir(),'atlas-desktop-package-'));
   try{
     for(const name of ['main.cjs','src'])await fs.cp(path.join(desktop,name),path.join(staging,name),{recursive:true});
     const pkg=require('../package.json');
     await fs.writeFile(path.join(staging,'package.json'),JSON.stringify({name:'atlas-desktop',productName:'Atlas',version:pkg.version,main:'main.cjs',description:pkg.description}));
-    await fs.writeFile(path.join(staging,'runtime.json'),JSON.stringify({format:1,repoRoot,stateDir}));
+    await fs.writeFile(path.join(staging,'runtime.json'),JSON.stringify({format:2,kind:'bundled-local-postgresql'}));
     const {packager}=await import('@electron/packager');
     const options={dir:staging,out:output,name:'Atlas',platform:process.platform,arch:process.arch,electronVersion:pkg.devDependencies.electron,
-      appBundleId:'org.researchatlas.desktop',appCategoryType:'public.app-category.education',asar:true,overwrite:true,prune:true};
+      appBundleId:'org.researchatlas.desktop',appCategoryType:'public.app-category.education',asar:true,overwrite:true,prune:true,
+      ignore:[/^\/offline($|\/)/]};
+    // Packager copies by basename; rename the resource tree in its staging area.
+    const offline=path.join(staging,'offline');await fs.cp(resources,offline,{recursive:true});options.extraResource=[offline];
     if(process.platform==='darwin'){
       // Local ad-hoc signature seals the bundle without a Developer ID account.
       // Ad-hoc development builds have no Team ID for hardened-runtime library
@@ -31,7 +37,7 @@ async function main(){
       await fs.rm(iconset,{recursive:true});await fs.rm(png);
     }
     const paths=await packager(options);
-    console.log(JSON.stringify({kind:'configured_local_desktop',output:paths,standaloneInstaller:false,signature:process.platform==='darwin'?'ad-hoc':'none',notarized:false}));
+    console.log(JSON.stringify({kind:'offline_desktop',output:paths,bundledRuntime:true,bundledDatabase:true,cloudSync:false,signature:process.platform==='darwin'?'ad-hoc':'none',notarized:false}));
   }finally{await fs.rm(staging,{recursive:true,force:true});}
 }
 main().catch(error=>{console.error('Desktop packaging failed. Existing app and research were not changed.');console.error(error.stack);process.exitCode=1;});

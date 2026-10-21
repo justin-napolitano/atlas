@@ -9,6 +9,9 @@ description = "Local-first tools for traceable literature research and knowledge
 requires-python = ">=3.10"
 dependencies = []
 
+[dependency-groups]
+desktop-build = ["pyinstaller==6.22.3"]
+
 [project.optional-dependencies]
 graph = ["rdflib>=7,<8", "pyshacl>=0.25,<1"]
 database = [
