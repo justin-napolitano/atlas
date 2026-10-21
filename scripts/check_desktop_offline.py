@@ -23,8 +23,9 @@ def main():
     parser.add_argument('--electron',action='store_true')
     parser.add_argument('--reader-flow',action='store_true',help='Run the focused synthetic reader/notebook native review')
     parser.add_argument('--artifacts',type=Path,default=ROOT/'research-library/testing/desktop-sources')
+    parser.add_argument('--skills-flow',action='store_true',help='Run synthetic standalone skill/principle native acceptance')
     args=parser.parse_args()
-    if args.reader_flow:args.electron=True
+    if args.reader_flow or args.skills_flow:args.electron=True
     # Short, private socket path; executable location includes spaces deliberately.
     with tempfile.TemporaryDirectory(prefix='atlas-offline-',dir='/private/tmp') as temporary:
         root=Path(temporary);resources=root/'Copied app resources';state=root/'state'
@@ -81,7 +82,7 @@ def main():
                 args.artifacts.mkdir(parents=True,exist_ok=True,mode=0o700)
                 config=root/'review.json';receipt=root/'review-result.json'
                 config.write_text(json.dumps({'origin':origin,'credentials':keys,'resultFile':str(receipt),'screenshots':str(args.artifacts.resolve())}));config.chmod(0o600)
-                result=subprocess.run([str(ROOT/'desktop/node_modules/.bin/electron'),str(ROOT/('desktop/scripts/review-reader-flow.cjs' if args.reader_flow else 'desktop/scripts/review-electron.cjs'))],
+                result=subprocess.run([str(ROOT/'desktop/node_modules/.bin/electron'),str(ROOT/('desktop/scripts/review-skills-flow.cjs' if args.skills_flow else 'desktop/scripts/review-reader-flow.cjs' if args.reader_flow else 'desktop/scripts/review-electron.cjs'))],
                     env={**os.environ,'ATLAS_ELECTRON_TEST_CONFIG':str(config)},capture_output=True,timeout=300)
                 if result.returncode!=0 and (root/'electron-failure.txt').exists():
                     raise AssertionError('Synthetic native review: '+(root/'electron-failure.txt').read_text())
@@ -114,11 +115,15 @@ def main():
             assert page_child.status_code==201
             page_child=page_child.json()
             assert client.get('/v1/desktop/page',params={'entry_id':page_child['id']}).json()['parent_id']==note['id']
+            typed_notes=[r for kind in ['skill','principle'] for r in client.get('/v1/workspace/notes',params={'thought_type':kind}).json()['items']]
             snapshot=command('backup');archive=state/'backups'/snapshot['file'];assert archive.is_file()
             backup_receipt=json.loads(archive.with_suffix('.json').read_text())
             assert backup_receipt['format']==2 and backup_receipt['artifacts'][artifact['sha256']]==len(text)
             stop();start()
             assert client.get('/v1/workspace/note',params={'entry_id':note['id']}).json()['body']==body
+            for typed in typed_notes:
+                restored=client.get('/v1/workspace/note',params={'entry_id':typed['id']}).json()
+                assert all(restored[field]==typed[field] for field in ['body','thought_type','links','revision'])
             changed=client.put('/v1/workspace/note',json={'entry_id':note['id'],'expected_revision':note['revision'],
                 'body':'Synthetic later version','owner_confirmed':True});assert changed.status_code==200
             stale=client.put('/v1/workspace/note',json={'entry_id':note['id'],'expected_revision':note['revision'],
@@ -127,6 +132,9 @@ def main():
             assert command('restore',archive)['original_database_retained'] is True
             start()
             assert client.get('/v1/workspace/note',params={'entry_id':note['id']}).json()['body']==body
+            for typed in typed_notes:
+                restored=client.get('/v1/workspace/note',params={'entry_id':typed['id']}).json()
+                assert all(restored[field]==typed[field] for field in ['body','thought_type','links','revision'])
             assert client.get('/v1/desktop/page',params={'entry_id':page_child['id']}).json()['parent_id']==note['id']
             assert page_child['id'] in [row['id'] for row in client.get('/v1/desktop/pages/backlinks',params={'entry_id':note['id']}).json()['items']]
             assert client.get('/v1/desktop/page',params={'entry_id':note['id']}).json()['folder_id']==folder['id']
