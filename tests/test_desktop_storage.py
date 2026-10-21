@@ -9,7 +9,11 @@ import tempfile
 import unittest
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-import desktop_storage as storage
+try:
+    import desktop_storage as storage
+finally:
+    # Keep unittest discovery's tests/ imports ahead of similarly named scripts.
+    sys.path.pop(0)
 
 
 class DesktopStorageTests(unittest.TestCase):
