@@ -47,5 +47,25 @@ app.whenReady().then(async()=>{
   const reopened=await host.open();
   await until(()=>reopened.webContents.executeJavaScript('document.querySelector(".working-surface:not([hidden]) .cm-content")?.textContent.includes("Synthetic offline Markdown")'),'last document reopened');
   await fs.writeFile(config.resultFile,JSON.stringify({nativeElectron:true,realPostgresql:true,rendererIsolation:true,dirtyCloseProtected:true,reloadAndReopen:true,externalNetworkDenied:true}),{mode:0o600});
+  // Local reference -> body-first source writing -> retained Markdown file.
+  const ui=code=>reopened.webContents.executeJavaScript(code);
+  const click=label=>ui(`[...document.querySelectorAll('.working-surface:not([hidden]) button,.connected-nav button')].find(b=>b.textContent===${JSON.stringify(label)}).click()`);
+  await click('Library');await until(()=>ui('!![...document.querySelectorAll(".working-surface:not([hidden]) button")].find(b=>b.textContent==="Add a source")'),'local library');
+  await click('Add a source');await until(()=>ui('!!document.querySelector(".working-surface:not([hidden]) .desktop-add-source")'),'desktop quick reference');
+  await ui('document.querySelector(`.working-surface:not([hidden]) [aria-label="Source link, identifier or title"]`).focus()');
+  await reopened.webContents.insertText('Synthetic Electron reference');await click('Save reference');
+  await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .connected-reading-title h1")?.textContent==="Synthetic Electron reference"'),'saved reference');
+  assert.equal(await ui('document.querySelector(".working-surface:not([hidden]) .desktop-source-availability")?.textContent.includes("Reference only")'),true);
+  await until(()=>ui('!!document.querySelector(`.working-surface:not([hidden]) [aria-label="Write beside this source"]`)'),'source-level editor');
+  await ui('document.querySelector(`.working-surface:not([hidden]) [aria-label="Write beside this source"]`).focus()');
+  await reopened.webContents.insertText('## A synthetic source-level thought\n\nNo fabricated passage.');
+  await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .desktop-source-writing [role=status]")?.textContent==="Saved"'),'source note durable');
+  await ui(`(()=>{const field=document.querySelector('.working-surface:not([hidden]) input[type=file]');const transfer=new DataTransfer();transfer.items.add(new File(['# Imported Markdown\\n\\nSynthetic original from the desktop.'],'synthetic-desktop.md',{type:'text/markdown'}));field.files=transfer.files;field.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+  await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .desktop-file-import")?.textContent.includes("synthetic-desktop.md")'),'chosen local file');
+  await ui('document.querySelector(`.working-surface:not([hidden]) .desktop-file-import input[type=checkbox]`).click()');
+  await click('Keep locally');
+  await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .desktop-source-availability")?.textContent.includes("Saved reading text")'),'retained local source');
+  await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .source-reader")?.textContent.includes("Synthetic original from the desktop.")'),'actual imported reader');
+  await fs.writeFile(config.resultFile,JSON.stringify({nativeElectron:true,realPostgresql:true,rendererIsolation:true,dirtyCloseProtected:true,reloadAndReopen:true,externalNetworkDenied:true,referenceCapture:true,sourceWriting:true,localFileReading:true}),{mode:0o600});
   reopened.destroy();app.exit(0);
 }).catch(async error=>{await fs.writeFile(path.join(root,'electron-failure.txt'),String(error.stack),{mode:0o600});app.exit(1);});
