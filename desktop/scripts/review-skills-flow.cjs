@@ -32,8 +32,8 @@ app.whenReady().then(async()=>{
  await write('---');press('Return');await pause(100);await window.webContents.insertText('sk');
  await until(()=>ui('!![...document.querySelectorAll(".page-wiki-completion [role=option]")].find(row=>row.textContent==="skill")'),'type completion');press('Tab');await saved();
  const id=await ui('new URL(location.href).searchParams.get("entry_id")');assert.equal((await note(id)).thought_type,'skill');
- await ui('document.querySelector(`'+active+' [aria-label="Note body"]`).focus()');press('ArrowDown',[mod]);await pause(100);await window.webContents.insertText('\n/type pri');
- await until(()=>ui('!![...document.querySelectorAll(".page-wiki-completion [role=option]")].find(row=>row.textContent==="principle")'),'change role from keyboard');if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'keyboard-type-completion.png'),(await window.webContents.capturePage()).toPNG());press('Tab');await saved();assert.equal((await note(id)).thought_type,'principle');
+ await ui('document.querySelector(`'+active+' [aria-label="Note body"]`).focus()');press('A',[mod]);await window.webContents.insertText('# Synthetic command\n\n/type pri');
+ await until(()=>ui('!![...document.querySelectorAll(".page-wiki-completion [role=option]")].find(row=>row.textContent==="principle")'),'change role from keyboard');if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'keyboard-type-completion.png'),(await window.webContents.capturePage()).toPNG());press('Tab');await saved();assert.equal((await note(id)).thought_type,'principle');assert.ok((await note(id)).body.includes('# Synthetic command'));assert.ok(!(await note(id)).body.includes('/type'));
  // Replace a synthetic draft to test unfinished YAML and learned-tag completion.
  press('A',[mod]);await window.webContents.insertText('---\ntype: principle\ntags: [read');
  await until(()=>ui('!![...document.querySelectorAll(".page-wiki-completion [role=option]")].find(row=>row.textContent==="reading")'),'tag completion');press('Tab');

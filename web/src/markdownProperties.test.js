@@ -55,6 +55,6 @@ test('/type changes metadata and removes only its command in one undoable edit',
  const source=body+'\n/type pri';const next=EditorState.create({doc:source}).update(typeCommandEdit(source,typeCommandCompletion(source,source.length),'principle')).state.doc.toString();
  assert.ok(next.includes('type: principle # keep this'));assert.ok(next.includes('custom:'));assert.ok(next.includes('# Synthetic reading'));
  assert.equal(propertyTypeChange('---\ntype: # keep\n---\nText','skill'),'---\ntype: skill # keep\n---\nText');
- assert.equal(typeCommandCompletion('---\ntype: [skill]\n---\n/type',29),null);
+ const complex='---\ntype: [skill]\n---\n/type';assert.equal(typeCommandCompletion(complex,complex.length),null);
  for(const source of ['```md\n/type sk','    /type sk','Text /type sk','---\ntype: [unfinished\n---\n/type sk'])assert.equal(typeCommandCompletion(source,source.length),null,source);
 });
