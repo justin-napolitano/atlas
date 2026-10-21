@@ -23,6 +23,7 @@ The research should understand traditions in context before evaluating them. “
 - `docs/features/quran-reading-progress.md` — private, reversible ayah read marks, surah/work completion and revision-safe saves, separate from reading place and scholarly review.
 - `docs/quran-reader-candidate.md` — local Qur’an reader candidate, source/version and rights record, verification, and owner review gates.
 - `docs/seamless-open-catalog.md` — planned unified open catalog, direct reading, and durable notes without a mandatory import step.
+- [Metadata-first source plan](docs/features/metadata-first-sources.md) — next: save references and write connected notes immediately, then add private files and Markdown import; ordered issues #222–225.
 - `docs/research-library-vision.md` — library, reader, commentary and portable notes as one product, with a versioned arXiv reading pilot planned.
 - `docs/features/document-first-workspace.md` — simplified reader controls, formatted notebook pages, direct editing, and automatic private writing saves.
 - `docs/notebook-writing-workspace.md` — independent project notebooks, a dedicated writing view, searchable explained connections, revision-aware saves, and Markdown export.

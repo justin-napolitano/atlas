@@ -4,6 +4,13 @@ First manual vertical slice of #88 / #100. It uses existing private source/work/
 
 ## Product direction update
 
+Next delivery (2026-10-20): [metadata-first sources](features/metadata-first-sources.md),
+issues #222–225 under #100/#88. Save a reference and write beside it without a file,
+required project or invented edition. That contract supersedes the required metadata
+and sequencing described below for future quick capture; the historical manual
+fallback and its receipt/privacy/identity guarantees remain implemented behavior.
+Optional managed files and Markdown import follow only after coherent backups.
+
 This document records the implemented manual fallback. The planned default is
 [seamless catalog reading](seamless-open-catalog.md): find a source, open it, and
 write notes without a mandatory import. Metadata resolution and any permitted

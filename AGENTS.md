@@ -58,6 +58,12 @@ Keep the first corpus bounded by `methods/corpus-scope.md` and its versioned pil
 
 ## Current frontend direction
 
+For source intake and local document work, read `docs/features/metadata-first-sources.md`
+and the next-delivery table in `docs/second-brain-roadmap.md` (#222–225). References
+must be useful without files or invented edition metadata. Extend existing workspace
+intake/source identities; external artifacts require coordinated database-and-file
+backup/restore before shipping. The document is a plan, not implemented ingestion.
+
 For real local reading/writing, use `docs/local-postgres-workspace.md` and the explicit
 `scripts/local_workspace.py` launcher. The connected in-memory browser harness is
 only a disposable design/test fixture, never a durable owner app. Do not replace a

@@ -44,6 +44,27 @@ this table is dependency order, not a mandate for six separate visual rebuilds. 
 owner approved a coherent product reset. Preserve old data via compatibility mappings
 underneath, rather than a prolonged required-project UI or hidden default project.
 
+## Next: metadata-first sources
+
+Owner-approved planning direction, 2026-10-20: make a reference useful before any
+file import. Contract: [metadata-first sources and private documents](features/metadata-first-sources.md).
+These are planned deliveries under #100/#88, not implemented upload capabilities.
+
+| Order | Delivery | Acceptance gate |
+| --- | --- | --- |
+| 1 | [#222 minimal references](https://github.com/justin-napolitano/islam-research/issues/222) | Save URL/identifier/title offline with stable identity, no fabricated edition, safe receipts and owner search. |
+| 2 | [#223 source page and connected writing](https://github.com/justin-napolitano/islam-research/issues/223) | Write immediately beside a reference; related notes/questions share original IDs and exact backlinks, without a nested interface. |
+| 3 | [#224 private artifacts and coherent backups](https://github.com/justin-napolitano/islam-research/issues/224) | Retain optional originals safely; restore database plus referenced files together before selecting restored state. |
+| 4 | [#225 Markdown source/note import](https://github.com/justin-napolitano/islam-research/issues/225) | Immutable source versus editable canonical note is explicit; safe assets/links, exact anchors and recoverable imports. |
+| Later | #102 supported PDF/web/physical capture; #169 Open Library; #166 arXiv | Format/provider-specific coverage, rights, parser and locator evidence; no promise of universal file readability. |
+
+#101 remains source/edition reconciliation authority; #95/#97/#104 retain notebook,
+relation and locator responsibilities. #219 is merged and supplies the offline
+Electron/database baseline. #54 portable archives remains open: current local
+database-only restore is not a portable database-plus-files archive. Hosted cloud
+sync #220 remains deferred until web deployment. No private owner state changes
+as a result of this plan.
+
 ## Reused scope and changed priorities
 
 - #87 remains the connected-notebook umbrella; #88 remains source intake. #101 keeps
