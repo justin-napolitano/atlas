@@ -40,6 +40,11 @@ replacing or restarting the running owner app; never use owner notes as fixtures
 
 ## Using it
 
+Cmd/Ctrl+N opens a new blank page from anywhere in the workspace, including an
+active editor. File → New Page exposes the native accelerator in Electron.
+Existing writing stays in its own session; the new page receives writing focus.
+The older Cmd/Ctrl+Shift+. shortcut remains supported.
+
 Open Notebook, then Skills or Principles, then New skill/New principle. Write in
 the same blank Markdown editor. All pages also remain in All, the folder explorer
 and global literal search. Note properties can change the optional type later;

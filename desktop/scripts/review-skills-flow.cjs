@@ -3,6 +3,7 @@ const {app,BrowserWindow}=require('electron');
 const electron=require('electron'),fs=require('node:fs/promises'),path=require('node:path'),assert=require('node:assert/strict');
 const {DesktopHost}=require('../src/host.cjs');
 const {privateJSON}=require('../src/policy.cjs');
+const {newPageMenuItem}=require('../src/page-command.cjs');
 const root=path.dirname(process.env.ATLAS_ELECTRON_TEST_CONFIG||'');
 app.setName('Atlas Synthetic Skills Review');app.enableSandbox();app.setPath('userData',path.join(root,'skills-profile'));app.commandLine.appendSwitch('disable-background-networking');app.on('window-all-closed',()=>{});
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -11,6 +12,7 @@ let window,config;
 app.whenReady().then(async()=>{
  config=await privateJSON(process.env.ATLAS_ELECTRON_TEST_CONFIG);
  const host=new DesktopHost(electron,{}, {backendFactory:async()=>({origin:config.origin,credentials:config.credentials,stop:async()=>{}}),confirmDiscard:()=>false,preferencesFile:path.join(root,'skills-window.json')});
+ electron.Menu.setApplicationMenu(electron.Menu.buildFromTemplate([{label:'File',submenu:[newPageMenuItem(host)]},{role:'editMenu'}]));
  window=await host.open();window.setTitle("Atlas — synthetic skills review");window.webContents.setBackgroundThrottling(false);
  const ui=async code=>{try{return await window.webContents.executeJavaScript(code);}catch(error){throw Error(code.slice(0,120)+' :: '+error.message);}};
  const click=text=>ui(`[...document.querySelectorAll('.working-surface:not([hidden]) button,.connected-nav button')].find(row=>row.textContent===${JSON.stringify(text)}).click()`);
@@ -19,6 +21,18 @@ app.whenReady().then(async()=>{
  const saved=()=>until(()=>ui('document.querySelector("'+active+' .connected-document-tools [role=status]")?.textContent==="Saved"'),'real autosave');
  const note=id=>ui(`fetch('/v1/workspace/note?entry_id='+encodeURIComponent(${JSON.stringify(id)})).then(r=>r.json())`);
  const write=async text=>{await until(()=>ui('!!document.querySelector(`'+active+' [aria-label="Note body"]`)'),'blank editor');await ui('document.querySelector(`'+active+' [aria-label="Note body"]`).focus()');await window.webContents.insertText(text);};
+ // Exercise the actual native accelerator while writing; the previous page must survive.
+ await electron.Menu.getApplicationMenu().items[0].submenu.items[0].click();
+ await write('A synthetic keyboard page.');await saved();
+ const keyboardId=await ui('new URL(location.href).searchParams.get("entry_id")');
+ await ui('document.querySelector(`'+active+' [aria-label="Note body"]`).focus()');
+ await ui('window.syntheticPageRoutes=[];window.syntheticPush=history.pushState;history.pushState=function(...args){window.syntheticPageRoutes.push(String(args[2]));return window.syntheticPush.apply(this,args);}');
+ window.webContents.sendInputEvent({type:'keyDown',keyCode:'N',modifiers:[process.platform==='darwin'?'meta':'control']});
+ window.webContents.sendInputEvent({type:'keyUp',keyCode:'N',modifiers:[process.platform==='darwin'?'meta':'control']});
+ await until(()=>ui('new URL(location.href).searchParams.get("entry_id")!=='+JSON.stringify(keyboardId)+'&&document.activeElement?.getAttribute("aria-label")==="Note body"'),'Cmd/Ctrl N opens and focuses a new page');
+ assert.equal(await ui('document.querySelector(`'+active+' [aria-label="Note body"]`).textContent.trim()'),'Start writing…');
+ assert.equal((await note(keyboardId)).body,'A synthetic keyboard page.');
+ assert.equal(await ui('window.syntheticPageRoutes.length'),1);await ui('history.pushState=window.syntheticPush;delete window.syntheticPush;delete window.syntheticPageRoutes');
  await click('Notebook');await until(()=>ui('!!document.querySelector("'+active+' .connected-note-filters")'),'notebook filters');
  await click('Principles');await until(()=>ui('!![...document.querySelectorAll("'+active+' button")].find(row=>row.textContent==="New principle")'),'principle view');await click('New principle');
  await write('# Understand before criticizing\n\nA freeform principle, not a prescribed rule. العربية 😀');await saved();
@@ -60,5 +74,5 @@ app.whenReady().then(async()=>{
  if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'skills-notebook-mobile.png'),(await window.webContents.capturePage()).toPNG());
  const reloaded=new Promise(resolve=>window.webContents.once('did-finish-load',resolve));window.webContents.reload();await reloaded;await until(()=>ui('document.querySelector("'+active+' .connected-result")?.textContent.includes("An unrelated skill")'),'typed filter survives reload');
  assert.equal((await note(skillId)).thought_type,'skill');assert.equal((await note(principleId)).thought_type,'principle');
- await fs.writeFile(config.resultFile,JSON.stringify({nativeSkills:true,freeformCreation:true,standaloneWriting:true,stableLinks:true,backlinks:true,typeConversion:true,literalSearch:true,typeFilters:true,draftNavigation:true,reload:true,mobileLayout:true}),{mode:0o600});window.destroy();app.exit(0);
+ await fs.writeFile(config.resultFile,JSON.stringify({nativeSkills:true,newPageShortcut:true,freeformCreation:true,standaloneWriting:true,stableLinks:true,backlinks:true,typeConversion:true,literalSearch:true,typeFilters:true,draftNavigation:true,reload:true,mobileLayout:true}),{mode:0o600});window.destroy();app.exit(0);
 }).catch(async error=>{let details='';try{details=await window?.webContents.executeJavaScript('document.querySelector(".working-surface:not([hidden])")?.innerText.slice(0,2000)');if(window&&config?.screenshots)await fs.writeFile(path.join(config.screenshots,'skills-flow-failure.png'),(await window.webContents.capturePage()).toPNG());}catch{}await fs.writeFile(path.join(root,'electron-failure.txt'),String(error.stack)+'\n'+details,{mode:0o600});app.exit(1);});
