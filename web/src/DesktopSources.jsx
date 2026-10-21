@@ -18,7 +18,7 @@ export function LocalFileImport({api,recordId=null,onCreated,drafts,changed}){
      rights_basis:'Owner confirms authorship or permission to retain this file privately.',owner_confirmed:true};
    }
    retain(pending.current);const result=await api.post('desktop/files',pending.current);
-   if(!result.artifact_id||result.entry_id==null&&result.record_id==null)throw Error('File save was not confirmed. Retry this exact import.');
+   if(result.artifact_id!==pending.current.request_uuid||result.entry_id==null&&result.record_id==null||recordId&&result.record_id!==recordId)throw Error('File save was not confirmed. Retry this exact import.');
    pending.current=null;uncertain.current=false;retain(null);setFile(null);setPermitted(false);if(input.current)input.current.value='';onCreated(result);
   }catch(err){if([400,413,415,422].includes(err.status)&&!uncertain.current)pending.current=null;else if(pending.current)uncertain.current=true;setError(err.message);}finally{setBusy(false);}
  }
@@ -46,7 +46,7 @@ export function DesktopAddSource({api,onCreated,onOpenNote,drafts,changed}){
     pending.current={request_uuid:crypto.randomUUID(),reference:reference.trim(),existing_source_record_id:existing,distinct_reason:reason,owner_confirmed:true};
    }
    const row=await api.post('desktop/references',pending.current);
-   if(!row.record_id)throw Error('Save was not confirmed. Retry this exact reference.');
+   if(row.record_id!==(pending.current.existing_source_record_id||'urn:research:source:'+pending.current.request_uuid))throw Error('Save was not confirmed. Retry this exact reference.');
    pending.current=null;uncertain.current=false;drafts.current.delete(key.current);setReference('');setCandidates(null);setReason('');changed();onCreated(row);
   }catch(err){if([400,413,415,422].includes(err.status)&&!uncertain.current){pending.current=null;setCandidates(null);}else if(pending.current)uncertain.current=true;setError(err.message);}finally{setBusy(false);}
  }
@@ -64,7 +64,7 @@ export function SourceDetails({api,record,onSaved,drafts,changed}){
  const [title,setTitle]=useState(record.title),[creators,setCreators]=useState(values.creators||''),[edition,setEdition]=useState(values.edition||''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[current,setCurrent]=useState(null),pending=useRef(null),key='source-details:'+record.id;
  function retain(patch){drafts.current.set(key,{workspaceMode:'source-metadata',...patch});changed();}
  async function save(e){e.preventDefault();setBusy(true);setError('');
-  try{pending.current??={request_uuid:crypto.randomUUID(),record_id:record.id,expected_revision:record.revision,title,creators,edition,owner_confirmed:true};await api.post('desktop/source/metadata',pending.current);pending.current=null;drafts.current.delete(key);changed();onSaved();}
+  try{pending.current??={request_uuid:crypto.randomUUID(),record_id:record.id,expected_revision:record.revision,title,creators,edition,owner_confirmed:true};const saved=await api.post('desktop/source/metadata',pending.current);if(saved.record_id!==record.id||saved.revision!==pending.current.expected_revision+1)throw Error('Metadata save was not confirmed. Retry this exact save.');pending.current=null;drafts.current.delete(key);changed();onSaved();}
   catch(err){setError(err.message);if(err.status===409&&err.current)setCurrent(err.current);}finally{setBusy(false);}
  }
  return <details className="desktop-source-details"><summary>Bibliography</summary><form onSubmit={save}>
@@ -72,7 +72,7 @@ export function SourceDetails({api,record,onSaved,drafts,changed}){
  <label>Author or responsible people<input value={creators} maxLength={2000} disabled={busy||!!pending.current} onChange={e=>{setCreators(e.target.value);retain({title,creators:e.target.value,edition});}}/></label>
  <label>Edition, if known<input value={edition} maxLength={1000} disabled={busy||!!pending.current} onChange={e=>{setEdition(e.target.value);retain({title,creators,edition:e.target.value});}}/></label>
  <button disabled={busy||!title.trim()}>{busy?'Saving…':pending.current?'Retry exact metadata save':'Save details'}</button>
- {error&&<p role="alert">{error} Your metadata draft is retained.</p>}{current&&<section><p>Saved revision {current.revision}: {current.title}</p><p>{current.attributes?.source_intake?.creators||'Author unknown'} · {current.attributes?.source_intake?.edition||'Edition unknown'}</p><button type="button" onClick={()=>{pending.current={...pending.current,request_uuid:crypto.randomUUID(),expected_revision:current.revision};setCurrent(null);setError('Reviewed the other revision. Save again to apply your metadata.');}}>Keep my details against this revision</button><button type="button" onClick={()=>{pending.current=null;drafts.current.delete(key);changed();onSaved();}}>Use saved details</button></section>}</form></details>;
+ {error&&<p role="alert">{error} Your metadata draft is retained.</p>}{current&&<section><p>Saved revision {current.revision}: {current.title}</p><p>{current.attributes?.source_intake?.creators||'Author unknown'} · {current.attributes?.source_intake?.edition||'Edition unknown'}</p><button type="button" onClick={()=>{pending.current={...pending.current,request_uuid:crypto.randomUUID(),expected_revision:current.revision};setCurrent(null);setError('Reviewed the other revision. Save again to apply your metadata.');}}>Keep my details against this revision</button><button type="button" onClick={()=>{pending.current=null;setTitle(current.title);setCreators(current.attributes?.source_intake?.creators||'');setEdition(current.attributes?.source_intake?.edition||'');setCurrent(null);setError('');drafts.current.delete(key);changed();onSaved();}}>Use saved details</button></section>}</form></details>;
 }
 
 export function DesktopSourceWriting({api,record,sessions,changed,onOpen}){

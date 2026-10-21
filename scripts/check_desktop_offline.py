@@ -21,6 +21,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--resources',type=Path,default=ROOT/'research-library/desktop-resources')
     parser.add_argument('--electron',action='store_true')
+    parser.add_argument('--artifacts',type=Path,default=ROOT/'research-library/testing/desktop-sources')
     args=parser.parse_args()
     # Short, private socket path; executable location includes spaces deliberately.
     with tempfile.TemporaryDirectory(prefix='atlas-offline-',dir='/private/tmp') as temporary:
@@ -75,8 +76,9 @@ def main():
             assert client.put('/v1/library/item',json={'item_id':item['id'],'expected_revision':item['revision'],'on_shelf':True,
                 'reading_status':'reading','preferred_edition_id':target['edition_id'],'owner_confirmed':True}).status_code==200
             if args.electron:
+                args.artifacts.mkdir(parents=True,exist_ok=True,mode=0o700)
                 config=root/'review.json';receipt=root/'review-result.json'
-                config.write_text(json.dumps({'origin':origin,'credentials':keys,'resultFile':str(receipt)}));config.chmod(0o600)
+                config.write_text(json.dumps({'origin':origin,'credentials':keys,'resultFile':str(receipt),'screenshots':str(args.artifacts.resolve())}));config.chmod(0o600)
                 result=subprocess.run([str(ROOT/'desktop/node_modules/.bin/electron'),str(ROOT/'desktop/scripts/review-electron.cjs')],
                     env={**os.environ,'ATLAS_ELECTRON_TEST_CONFIG':str(config)},capture_output=True,timeout=90)
                 assert result.returncode==0 and all(json.loads(receipt.read_text()).values()), 'Native copied-bundle review failed'

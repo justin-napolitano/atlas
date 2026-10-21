@@ -65,12 +65,14 @@ app.whenReady().then(async()=>{
   await reopened.webContents.insertText('Synthetic corrected reference');await click('Save details');
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .connected-reading-title h1")?.textContent==="Synthetic corrected reference"'),'bibliography revision saved');
   assert.equal(await ui('document.querySelector(".working-surface:not([hidden]) .desktop-source-writing")?.textContent.includes("No fabricated passage.")'),true);
+  if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'reference-and-writing.png'),(await reopened.webContents.capturePage()).toPNG());
   await ui(`(()=>{const field=document.querySelector('.working-surface:not([hidden]) input[type=file]');const transfer=new DataTransfer();transfer.items.add(new File(['# Imported Markdown\\n\\nSynthetic original from the desktop.'],'synthetic-desktop.md',{type:'text/markdown'}));field.files=transfer.files;field.dispatchEvent(new Event('change',{bubbles:true}));})()`);
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .desktop-file-import")?.textContent.includes("synthetic-desktop.md")'),'chosen local file');
   await ui('document.querySelector(`.working-surface:not([hidden]) .desktop-file-import input[type=checkbox]`).click()');
   await click('Keep locally');
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .desktop-source-availability")?.textContent.includes("Saved reading text")'),'retained local source');
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .source-reader")?.textContent.includes("Synthetic original from the desktop.")'),'actual imported reader');
+  if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'retained-file-reader.png'),(await reopened.webContents.capturePage()).toPNG());
   await fs.writeFile(config.resultFile,JSON.stringify({nativeElectron:true,realPostgresql:true,rendererIsolation:true,dirtyCloseProtected:true,reloadAndReopen:true,externalNetworkDenied:true,referenceCapture:true,sourceWriting:true,localFileReading:true}),{mode:0o600});
   reopened.destroy();app.exit(0);
 }).catch(async error=>{await fs.writeFile(path.join(root,'electron-failure.txt'),String(error.stack),{mode:0o600});app.exit(1);});
