@@ -60,6 +60,11 @@ app.whenReady().then(async()=>{
   await ui('document.querySelector(`.working-surface:not([hidden]) [aria-label="Write beside this source"]`).focus()');
   await reopened.webContents.insertText('## A synthetic source-level thought\n\nNo fabricated passage.');
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .desktop-source-writing [role=status]")?.textContent==="Saved"'),'source note durable');
+  await ui('document.querySelector(".working-surface:not([hidden]) .desktop-source-details summary").click()');
+  await ui('(()=>{const field=document.querySelector(".working-surface:not([hidden]) .desktop-source-details input");field.focus();field.select();})()');
+  await reopened.webContents.insertText('Synthetic corrected reference');await click('Save details');
+  await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .connected-reading-title h1")?.textContent==="Synthetic corrected reference"'),'bibliography revision saved');
+  assert.equal(await ui('document.querySelector(".working-surface:not([hidden]) .desktop-source-writing")?.textContent.includes("No fabricated passage.")'),true);
   await ui(`(()=>{const field=document.querySelector('.working-surface:not([hidden]) input[type=file]');const transfer=new DataTransfer();transfer.items.add(new File(['# Imported Markdown\\n\\nSynthetic original from the desktop.'],'synthetic-desktop.md',{type:'text/markdown'}));field.files=transfer.files;field.dispatchEvent(new Event('change',{bubbles:true}));})()`);
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .desktop-file-import")?.textContent.includes("synthetic-desktop.md")'),'chosen local file');
   await ui('document.querySelector(`.working-surface:not([hidden]) .desktop-file-import input[type=checkbox]`).click()');
