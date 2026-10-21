@@ -119,7 +119,57 @@ app.whenReady().then(async()=>{
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .page-breadcrumbs")?.textContent.includes("Renamed research page")'),'restored hierarchy');
   assert.equal(await ui('!!document.querySelector(".connected-page-tree .page-tree-level .page-tree-level")'),true);
   if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'linked-pages.png'),(await reopened.webContents.capturePage()).toPNG());
-  await fs.writeFile(config.resultFile,JSON.stringify({nativeElectron:true,realPostgresql:true,rendererIsolation:true,dirtyCloseProtected:true,reloadAndReopen:true,externalNetworkDenied:true,referenceCapture:true,sourceWriting:true,localFileReading:true,pageHierarchy:true,stableWikiCompletion:true,backlinks:true,renameAndMove:true}),{mode:0o600});
+  // Folder organization is a separate rapid journey; preserve the normal rate limit.
+  await pause(61000);
+  async function makeFolder(name){
+    await ui('document.querySelector(`.page-tree-heading [aria-label="New folder"]`).click()');
+    await until(()=>ui('!!document.querySelector(`[aria-label="Folder name"]`)'),'inline folder creation');
+    await ui('document.querySelector(`[aria-label="Folder name"]`).focus()');await reopened.webContents.insertText(name);
+    reopened.webContents.sendInputEvent({type:'keyDown',keyCode:'Return'});reopened.webContents.sendInputEvent({type:'keyUp',keyCode:'Return'});
+    await until(()=>ui(`!![...document.querySelectorAll('.connected-page-tree .page-tree-title')].find(row=>row.title===${JSON.stringify(name)})`),'saved sidebar folder');
+    const result=await ui(`fetch('/v1/desktop/tree?all_items=true&q='+encodeURIComponent(${JSON.stringify(name)})).then(r=>r.json())`);
+    return result.items.find(row=>row.title===name);
+  }
+  async function rowAction(title,action){
+    await ui(`[...document.querySelectorAll('.connected-page-tree .page-tree-title')].find(row=>row.title===${JSON.stringify(title)}).closest('.page-tree-row').querySelector('.page-tree-actions').click()`);
+    await until(()=>ui(`!![...document.querySelectorAll('.page-tree-menu button')].find(row=>row.textContent===${JSON.stringify(action)})`),'sidebar action '+action);
+    await ui(`[...document.querySelectorAll('.page-tree-menu button')].find(row=>row.textContent===${JSON.stringify(action)}).click()`);
+  }
+  async function dragRow(title,destination){
+    await ui(`(()=>{const find=title=>[...document.querySelectorAll('.connected-page-tree .page-tree-title')].find(row=>row.title===title).closest('.page-tree-row');const from=find(${JSON.stringify(title)}),to=find(${JSON.stringify(destination)}),dataTransfer=new DataTransfer();for(const [node,type] of [[from,'dragstart'],[to,'dragover'],[to,'drop'],[from,'dragend']])node.dispatchEvent(new DragEvent(type,{bubbles:true,cancelable:true,dataTransfer}));})()`);
+  }
+  const researchFolder=await makeFolder('Synthetic research folder'),inboxFolder=await makeFolder('Synthetic inbox folder');
+  await dragRow('Child research page','Synthetic research folder');
+  await until(()=>ui(`fetch('/v1/desktop/page?entry_id='+encodeURIComponent(${JSON.stringify(childId)})).then(r=>r.json()).then(row=>row.folder_id===${JSON.stringify(researchFolder.id)})`),'drag moves note into folder');
+  assert.equal(await ui(`fetch('/v1/workspace/note?entry_id='+encodeURIComponent(${JSON.stringify(childId)})).then(r=>r.json()).then(row=>row.body)`),savedChild.body);
+  await rowAction('Synthetic research folder','New note');
+  await until(()=>ui('!!document.querySelector(`.working-surface:not([hidden]) [aria-label="Note body"]`)'),'folder note body');
+  await ui('document.querySelector(`.working-surface:not([hidden]) [aria-label="Note body"]`).focus()');
+  await reopened.webContents.insertText('# Folder field note\n\nSynthetic folder writing.');
+  await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .connected-document-tools [role=status]")?.textContent==="Saved"'),'folder note saved');
+  const folderNoteId=await ui('new URL(location.href).searchParams.get("entry_id")');
+  assert.equal(await ui(`fetch('/v1/desktop/page?entry_id='+encodeURIComponent(${JSON.stringify(folderNoteId)})).then(r=>r.json()).then(row=>row.folder_id)`),researchFolder.id);
+  await rowAction('Synthetic research folder','New folder');
+  await until(()=>ui('!!document.querySelector(`[aria-label="Folder name"]`)'),'nested folder input');
+  await ui('document.querySelector(`[aria-label="Folder name"]`).focus()');await reopened.webContents.insertText('Nested research');
+  reopened.webContents.sendInputEvent({type:'keyDown',keyCode:'Return'});reopened.webContents.sendInputEvent({type:'keyUp',keyCode:'Return'});
+  await until(()=>ui('!![...document.querySelectorAll(".page-tree-title")].find(row=>row.title==="Nested research")'),'nested folder visible');
+  await dragRow('Synthetic inbox folder','Nested research');
+  await until(()=>ui(`fetch('/v1/desktop/tree?all_items=true&q=Synthetic+inbox+folder').then(r=>r.json()).then(row=>!!row.items[0]?.parent_id)`),'folder drag persists nested placement');
+  await rowAction('Synthetic research folder','Rename');
+  await until(()=>ui('!!document.querySelector(`[aria-label="Rename folder"]`)'),'inline folder rename');
+  await ui('(()=>{const input=document.querySelector(`[aria-label="Rename folder"]`);input.focus();input.select();})()');
+  await reopened.webContents.insertText('Reading notebook');
+  reopened.webContents.sendInputEvent({type:'keyDown',keyCode:'Return'});reopened.webContents.sendInputEvent({type:'keyUp',keyCode:'Return'});
+  await until(()=>ui('!![...document.querySelectorAll(".page-tree-title")].find(row=>row.title==="Reading notebook")'),'renamed folder');
+  await rowAction('Folder field note','Move…');
+  await until(()=>ui('!!document.querySelector(`[aria-label="Find destination"]`)'),'keyboard move destination');
+  await ui('document.querySelector(`[aria-label="Find destination"]`).focus()');await reopened.webContents.insertText('Synthetic inbox');
+  await until(()=>ui('!![...document.querySelectorAll(".page-tree-move .page-search-result")].find(row=>row.textContent.includes("Synthetic inbox folder"))'),'folder move result');
+  await ui('[...document.querySelectorAll(".page-tree-move .page-search-result")].find(row=>row.textContent.includes("Synthetic inbox folder")).click()');
+  await until(()=>ui(`fetch('/v1/desktop/page?entry_id='+encodeURIComponent(${JSON.stringify(folderNoteId)})).then(r=>r.json()).then(row=>row.folder_id===${JSON.stringify(inboxFolder.id)})`),'keyboard note move');
+  if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'note-folders.png'),(await reopened.webContents.capturePage()).toPNG());
+  await fs.writeFile(config.resultFile,JSON.stringify({nativeElectron:true,realPostgresql:true,rendererIsolation:true,dirtyCloseProtected:true,reloadAndReopen:true,externalNetworkDenied:true,referenceCapture:true,sourceWriting:true,localFileReading:true,noteFolders:true,folderDragDrop:true,keyboardFolderMoves:true,pageHierarchy:true,stableWikiCompletion:true,backlinks:true,renameAndMove:true}),{mode:0o600});
   reopened.destroy();app.exit(0);
 }).catch(async error=>{
   let diagnostic='';

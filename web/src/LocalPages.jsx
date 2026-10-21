@@ -43,13 +43,17 @@ function TreeLevel({api,parentId,folderId,activeId,expanded,toggle,onOpen,epoch,
 export function PageTree({api,activeId,onOpen,onCapture,onChanged,epoch,drafts=[],titles=new Map()}){
  const [expanded,setExpanded]=useState(new Set()),[path,setPath]=useState([]),[version,setVersion]=useState(0),[editing,setEditing]=useState(null),[name,setName]=useState(''),[menu,setMenu]=useState(null),[moving,setMoving]=useState(null),[query,setQuery]=useState(''),[results,setResults]=useState([]),[error,setError]=useState(''),[busy,setBusy]=useState(false),[over,setOver]=useState(null),drag=useRef(null),pending=useRef(null),input=useRef(null);
  const treeEpoch=epoch+':'+version;
- useEffect(()=>{let live=true;if(!activeId){setPath([]);return;}api.request('desktop/page',{entry_id:activeId}).then(row=>{if(!live)return;const ancestors=row.ancestors.filter(item=>!item.unavailable);setPath([...ancestors,...(row.current?[{...row.current,kind:'page',placement_revision:row.placement_revision}]:[])]);setExpanded(old=>new Set([...old,...ancestors.map(item=>item.id)]));}).catch(()=>{if(live)setPath([]);});return()=>{live=false;};},[activeId,treeEpoch]);
+ useEffect(()=>{let live=true;if(!activeId){setPath([]);return;}api.request('desktop/page',{entry_id:activeId}).then(row=>{if(!live)return;const ancestors=row.ancestors.some(item=>item.unavailable)?[]:row.ancestors;setPath([...ancestors,...(row.current?[{...row.current,kind:'page',placement_revision:row.placement_revision}]:[])]);setExpanded(old=>new Set([...old,...ancestors.map(item=>item.id)]));}).catch(()=>{if(live)setPath([]);});return()=>{live=false;};},[activeId,treeEpoch]);
  useEffect(()=>{if(editing)requestAnimationFrame(()=>{input.current?.focus();input.current?.select();});},[editing]);
  useEffect(()=>{let live=true;if(!moving)return;const timer=setTimeout(()=>api.request('desktop/tree',{q:query,all_items:true,limit:20}).then(row=>{if(live)setResults(row.items.filter(item=>item.id!==moving.id&&(moving.kind!=='folder'||item.kind==='folder')));}).catch(err=>{if(live)setError(err.message);}),120);return()=>{live=false;clearTimeout(timer);};},[moving,query]);
  const toggle=id=>setExpanded(old=>{const next=new Set(old);next.has(id)?next.delete(id):next.add(id);return next;});
  async function mutate(endpoint,payload,after){
   if(busy)return;setBusy(true);setError('');pending.current??={endpoint,payload,after};const request=pending.current;
-  try{const row=await api.post(request.endpoint,request.payload);pending.current=null;setVersion(n=>n+1);onChanged();setMenu(null);setMoving(null);setEditing(null);request.after?.(row);}
+  try{const row=await api.post(request.endpoint,request.payload),sent=request.payload;
+   if(request.endpoint==='desktop/folders'&&(row.id!==(sent.folder_id||'urn:research:folder:'+sent.request_uuid)||row.revision!==(sent.expected_revision||0)+1))throw Error('Folder change was not confirmed. Retry this exact change.');
+   if(request.endpoint==='desktop/pages/prepare'&&(row.entry_id!=='urn:research:notebook:'+sent.request_uuid||row.request_uuid!==sent.request_uuid||row.folder_id!==sent.folder_id))throw Error('Folder note preparation was not confirmed. Retry this exact change.');
+   if(request.endpoint==='desktop/pages/parent'&&(row.entry_id!==sent.entry_id||row.revision!==sent.expected_revision+1||row.parent_id!==sent.parent_id||row.folder_id!==sent.folder_id))throw Error('Note placement was not confirmed. Retry this exact change.');
+   pending.current=null;setVersion(n=>n+1);onChanged();setMenu(null);setMoving(null);setEditing(null);request.after?.(row);}
   catch(err){if([400,409,422].includes(err.status)){pending.current=null;setVersion(n=>n+1);setError(err.status===409?'This item changed. Choose it again to use its current placement.':'Cannot make that change. Check for a cycle, nesting limit, or a folder that still contains notes.');}else setError(err.message);}
   finally{setBusy(false);}
  }

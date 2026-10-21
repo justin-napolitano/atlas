@@ -76,3 +76,37 @@ class FolderTests(unittest.TestCase):
         empty=self.folder();self.change(empty,'remove');note=self.note()
         with self.assertRaises(db.psycopg.errors.CheckViolation),self.c.transaction():
             self.c.execute('INSERT INTO research.desktop_page_positions(entry_id,folder_id,changed_by) VALUES(%s,%s,%s)',(note['id'],empty['id'],'synthetic'))
+
+    def test_concurrent_opposite_folder_moves_cannot_create_cycle(self):
+        from concurrent.futures import ThreadPoolExecutor
+        a=self.folder();b=self.folder();self.c.commit()
+        def attempt(entry,parent):
+            try:
+                with db.connect(os.environ['RESEARCH_TEST_DATABASE_URL']) as c:
+                    folders.change(c,request_uuid=str(uuid.uuid4()),folder_id=entry['id'],parent_id=parent['id'],expected_revision=1,action='move',actor='synthetic')
+                return 'moved'
+            except db.psycopg.errors.CheckViolation:return 'cycle'
+        with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(lambda pair:attempt(*pair),[(a,b),(b,a)]))
+        self.assertCountEqual(results,['moved','cycle'])
+
+
+class FolderAPITests(unittest.TestCase):
+    def test_desktop_only_owner_csrf_strict_confirmation_and_bounds(self):
+        from pathlib import Path
+        from unittest.mock import patch
+        from fastapi.testclient import TestClient
+        import test_api_boundary as base
+        from islam_research.api import create_app
+        context=base.APIBoundaryTests();context.setUp()
+        headers=base.APIBoundaryTests.headers(context)
+        plain=TestClient(create_app(context.settings,store=base.MemoryBoundaryStore(),verifier=context.verifier))
+        self.assertEqual(plain.get('/v1/desktop/tree',headers=headers).status_code,404)
+        local=TestClient(create_app(context.settings,store=base.MemoryBoundaryStore(),verifier=context.verifier,desktop_artifact_root=Path('/synthetic-private-objects')))
+        value=dict(request_uuid=str(uuid.uuid4()),title='Synthetic folder',owner_confirmed=True)
+        self.assertEqual(local.post('/v1/desktop/folders',json=value).status_code,401)
+        with patch.object(base.MemoryBoundaryStore,'folder_operation',return_value={'id':'synthetic:folder'},create=True) as call:
+            self.assertEqual(local.post('/v1/desktop/folders',json=value,headers=headers).status_code,201)
+            self.assertEqual(call.call_args.kwargs['actor'],base.OWNER)
+            self.assertEqual(local.post('/v1/desktop/folders',json={**value,'owner_confirmed':1},headers=headers).status_code,422)
+            self.assertEqual(local.post('/v1/desktop/folders',json=value,headers={k:v for k,v in headers.items() if k!='x-research-write'}).status_code,403)
+            self.assertEqual(local.get('/v1/desktop/tree?limit=51',headers=headers).status_code,422)
