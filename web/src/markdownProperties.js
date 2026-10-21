@@ -34,6 +34,7 @@ export function propertyTypeChange(source,type){
  if(properties.status!=='valid')return null;
  const pair=properties.doc.contents.items.find(item=>item.key?.value==='type');
  if(!pair)return source.slice(0,properties.range.end)+`type: ${type}\n`+source.slice(properties.range.end);
+ if(!pair.value||(isScalar(pair.value)&&pair.value.range?.[0]===pair.value.range?.[1])){const colon=source.indexOf(':',properties.range.start+pair.key.range[1]);return source.slice(0,colon+1)+' '+type+source.slice(colon+1);}
  if(!isScalar(pair.value)||!pair.value.range)return null;
  const [from,to]=pair.value.range,base=properties.range.start;
  return source.slice(0,base+from)+type+source.slice(base+to);
@@ -64,6 +65,7 @@ export function typeCommandCompletion(source,cursor){
  if(!match)return null;
  const properties=markdownProperties(source);
  if(properties.range&&(properties.status!=='valid'||start<properties.range.to))return null;
+ if(properties.range&&propertyTypeChange(source,'note')===null)return null;
  if(markdownBlocks(source).some(block=>['code','html'].includes(block.type)&&start>=block.from&&cursor<=block.to))return null;
  const from=start+line.indexOf('/'),prefix=match[1]||'';
  return {from,to:cursor,cursor,raw:source.slice(from,cursor),kind:'type-command',items:thoughtTypes.filter(type=>type!=='source_claim'&&type.startsWith(prefix)).map(type=>({id:type,title:type.replaceAll('_',' '),insert:type}))};
@@ -73,6 +75,7 @@ export function typeCommandEdit(source,query,type){
  const properties=markdownProperties(source);
  if(properties.range&&properties.status!=='valid')return null;
  const next=propertyTypeChange(source,type);
+ if(next===null)return null;
  if(properties.range&&next===source)return {changes:{from:query.from,to:query.to,insert:''},selection:{anchor:query.from},scrollIntoView:true};
  // Apply two edits atomically so text between properties and command keeps its
  // selection mapping and a single undo restores both the command and metadata.
