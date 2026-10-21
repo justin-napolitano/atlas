@@ -87,7 +87,13 @@ def main():
                 if result.returncode!=0 and (root/'electron-failure.txt').exists():
                     raise AssertionError('Synthetic native review: '+(root/'electron-failure.txt').read_text())
                 assert result.returncode==0 and all(json.loads(receipt.read_text()).values()), 'Native copied-bundle review failed'
-            assert client.get('/v1/desktop/capabilities').json()['local_sources'] is True
+            # The native journey and following storage checks share the unchanged
+            # per-owner request budget. Respect a full rate window before continuing.
+            for attempt in range(13):
+                capabilities=client.get('/v1/desktop/capabilities')
+                if capabilities.status_code!=429:break
+                if attempt<12:time.sleep(5)
+            assert capabilities.status_code==200 and capabilities.json()['local_sources'] is True
             reference={'request_uuid':str(uuid.uuid4()),'reference':'Synthetic local reference without full text','owner_confirmed':True}
             created=client.post('/v1/desktop/references',json=reference);assert created.status_code==201
             source=created.json()

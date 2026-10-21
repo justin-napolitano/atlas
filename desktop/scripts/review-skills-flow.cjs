@@ -26,7 +26,7 @@ app.whenReady().then(async()=>{
  await write('A synthetic keyboard page.');await saved();
  const keyboardId=await ui('new URL(location.href).searchParams.get("entry_id")');
  await ui('document.querySelector(`'+active+' [aria-label="Note body"]`).focus()');
- await ui('window.syntheticPageRoutes=[];window.syntheticPush=history.pushState;history.pushState=function(...args){window.syntheticPageRoutes.push(String(args[2]));return window.syntheticPush.apply(this,args);}');
+ await ui('window.syntheticPageRoutes=[];window.syntheticPush=history.pushState;history.pushState=function(...args){window.syntheticPageRoutes.push(String(args[2]));return window.syntheticPush.apply(this,args);};true');
  window.webContents.sendInputEvent({type:'keyDown',keyCode:'N',modifiers:[process.platform==='darwin'?'meta':'control']});
  window.webContents.sendInputEvent({type:'keyUp',keyCode:'N',modifiers:[process.platform==='darwin'?'meta':'control']});
  await until(()=>ui('new URL(location.href).searchParams.get("entry_id")!=='+JSON.stringify(keyboardId)+'&&document.activeElement?.getAttribute("aria-label")==="Note body"'),'Cmd/Ctrl N opens and focuses a new page');
