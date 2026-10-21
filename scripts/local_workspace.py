@@ -130,7 +130,10 @@ def serve(args):
         port=listener.getsockname()[1]
     else:port=args.port
     directory=getattr(args,'frontend',None) or Path((state/'current-frontend').read_text())
-    app=LocalOwner(database_url=dsn,directory=directory,port=port,credentials=credentials)
+    artifact_namespace=value.get('artifact_namespace','artifacts')
+    if not re.fullmatch(r'artifacts(?:-[a-f0-9]{32})?',artifact_namespace):raise ValueError('Invalid local artifact namespace')
+    app=LocalOwner(database_url=dsn,directory=directory,port=port,credentials=credentials,
+        desktop_artifact_root=state/artifact_namespace if managed else None)
     logging.basicConfig(level=logging.WARNING,format='%(message)s')
     settings=dict(host='127.0.0.1',port=port,access_log=False,proxy_headers=False,
         workers=1,limit_concurrency=24,backlog=16,server_header=False,log_level='warning',timeout_graceful_shutdown=10)

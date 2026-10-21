@@ -643,7 +643,7 @@ class RequestBoundary:
                                    "duration_ms": round((time.monotonic() - started) * 1000)}))
 
 
-def create_app(settings: Settings | None = None, *, store=None, verifier=None) -> FastAPI:
+def create_app(settings: Settings | None = None, *, store=None, verifier=None, desktop_artifact_root=None) -> FastAPI:
     """Build the owner/public API; test adapters are Python injections, not env bypasses."""
     settings = settings or Settings.from_env()
     store = store or PostgreSQLStore(settings.database_url)
@@ -1345,5 +1345,8 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None) -
 
     from .workspace_api import register_workspace
     register_workspace(router,store,owner)
+    if desktop_artifact_root is not None:
+        from .desktop_api import register as register_desktop
+        register_desktop(router,store,owner,desktop_artifact_root)
     app.include_router(router)
     return app
