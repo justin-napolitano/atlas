@@ -59,8 +59,9 @@ def tree(c,*,folder_id=None,parent_id=None,q='',cursor='',limit=30,all_items=Fal
       FROM active n LEFT JOIN research.desktop_page_positions p ON p.entry_id=n.id
       WHERE %s OR (%s::text IS NOT NULL AND p.parent_id=%s) OR (%s::text IS NULL AND p.folder_id IS NOT DISTINCT FROM %s::text
         AND (p.parent_id IS NULL OR NOT EXISTS(SELECT 1 FROM active a WHERE a.id=p.parent_id)))
-    ) SELECT *,lower(title) AS sort_title FROM nodes WHERE (strpos(lower(title),lower(%s))>0 OR id=%s)
-      AND (%s='' OR (lower(title),id)>(%s,%s)) ORDER BY lower(title),id LIMIT %s''',
+    ), ordered AS (SELECT *,CASE WHEN kind='folder' THEN '0:' ELSE '1:' END || lower(title) AS sort_title FROM nodes)
+      SELECT * FROM ordered WHERE (strpos(lower(title),lower(%s))>0 OR id=%s)
+      AND (%s='' OR (sort_title,id)>(%s,%s)) ORDER BY sort_title,id LIMIT %s''',
       (all_items,parent_id,folder_id,all_items,parent_id,parent_id,parent_id,folder_id,q,q,id,title,id,limit+1)).fetchall()
     import base64,json
     next_cursor=None

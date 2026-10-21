@@ -22,7 +22,7 @@ def _cursor(value):
     try:
         row=json.loads(base64.urlsafe_b64decode(value+'='*(-len(value)%4)))
         if not isinstance(row,list) or len(row)!=2:raise ValueError()
-        db._text(row[0],'cursor title',300,empty=True);db._text(row[1],'cursor ID',500)
+        db._text(row[0],'cursor title',302,empty=True);db._text(row[1],'cursor ID',500)
         return row
     except (ValueError,TypeError,UnicodeError):raise ValueError('Invalid page cursor') from None
 
