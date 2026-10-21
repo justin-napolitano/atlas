@@ -191,12 +191,14 @@ def ingest(connection,*,artifact_root,request_uuid,filename,content_base64,inten
                 db.save_record(connection,record_id=record_id,project_id=None,kind='source',title=filename,actor=actor,
                     attributes={'source_intake':dict(metadata_origin='owner_imported_file',edition='',identity_resolution='unresolved',rights_status='unknown',access_status='owned_copy')})
             source=workspace.source(connection,record_id=record_id);origin=source['record']['project_id']
-            for start in range(0,len(text),10000):
-                chunk=text[start:start+10000]
+            reading_text=text.replace('\r\n','\n').replace('\r','\n')
+            for start in range(0,len(reading_text),10000):
+                chunk=reading_text[start:start+10000]
                 if not chunk.strip():continue
                 doc=passage_store.create_document(connection,project_id=origin,source_record_id=record_id,
-                    edition='Imported digital file · SHA-256 '+sha,locator=f'Characters {start+1}–{start+len(chunk)} of retained file',
-                    text=chunk,representation_url='',actor=actor,source_notice='Owner-retained file. Bibliographic edition unverified. '+rights_basis)
+                    edition='Imported digital file · SHA-256 '+sha,locator=f'Decoded characters {start+1}–{start+len(chunk)} · UTF-8, LF line endings',
+                    document_id=f'urn:research:document:{request}:part:{start:06d}',text=chunk,representation_url='',actor=actor,
+                    source_notice='Owner-retained original bytes. Reading text decoded as UTF-8 with optional BOM removed and LF line endings. Bibliographic edition unverified. '+rights_basis)
                 documents.append(doc['id'])
             connection.execute('SELECT research.index_library_source(%s)',(record_id,))
             workspace.retain_source(connection,record_id,actor,reading_status='want_to_read')

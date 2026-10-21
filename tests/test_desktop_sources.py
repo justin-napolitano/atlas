@@ -115,7 +115,9 @@ class DesktopSourceTests(unittest.TestCase):
         artifact=desktop.artifacts(self.c,record_id=row['record_id'])[0]
         documents=[passage_store.get_document(self.c,None,id) for id in artifact['document_ids']]
         self.assertEqual(len(documents),3)
-        self.assertEqual(''.join(d['text_body'] for d in documents).replace(' ',''),text.replace(' ',''))
+        self.assertEqual(''.join(d['text_body'] for d in documents),text)
+        reopened=workspace.source(self.c,record_id=row['record_id'])['documents']
+        self.assertEqual([d['id'] for d in reopened],artifact['document_ids'])
         with self.assertRaises(ValueError):self.file(intent='note',content_base64=base64.b64encode(text.encode()).decode())
 
 
