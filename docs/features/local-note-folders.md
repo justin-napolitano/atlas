@@ -1,6 +1,6 @@
 # Local note folders and sidebar movement
 
-Owner request: 2026-10-20. Extends the local linked-page contract and PR #229.
+Owner request: 2026-10-20. Issue #230. Extends the local linked-page contract and PR #229.
 Folders organize writing in the same left explorer; they are not synthetic notes,
 projects, source containers or publication boundaries.
 
@@ -25,7 +25,8 @@ A retry replays its original receipt without overwriting a later move. Reject
 cycles, self targets and excessive depth in SQL. Deleting a folder is allowed only
 when empty and must never cascade. Use tombstones/history rather than erasing IDs.
 Trashed notes remain recoverable and retain their placement. Folder removal is
-blocked while any note still refers to it, including a trashed note.
+blocked while any saved note still refers to it, including a trashed note. A blank
+prepared draft whose folder was removed saves at the root; its writing is retained.
 
 Backups retain folders, placements, pending creation intents and note links in the
 same PostgreSQL snapshot. No filesystem folder mirroring, Obsidian vault sync,
