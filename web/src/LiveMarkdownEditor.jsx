@@ -9,7 +9,7 @@ import {markdownBlocks,blockSelected} from './liveMarkdown.js';
 import './liveMarkdown.css';
 import {PageLinkContext} from './LocalPages.jsx';
 import {wikiCompletion,pageWikiText,wikiTargetAt} from './pageLinks.js';
-import {propertyCompletion,frontmatterEdit} from './markdownProperties.js';
+import {propertyCompletion,frontmatterEdit,typeCommandCompletion,typeCommandEdit} from './markdownProperties.js';
 
 // EditorState contains source, undo and selection. It lives with the workspace's
 // in-memory draft owner, never in localStorage or another persistence authority.
@@ -27,12 +27,13 @@ const LiveMarkdownEditor=forwardRef(function LiveMarkdownEditor({value,onChange,
   options.current={onChange,notes,complete,onOpen,onOpenPassage,raw,maxLength,onFocus,onBlur,onKeyDown,pageLinks,pageContext,properties,thoughtType,disabled};
   popup.current={wiki,matches,active};
   function choosePage(row){
-    const editor=view.current,query=popup.current?.wiki;if(!editor||!query||options.current.disabled||(query.kind!=='property'&&!options.current.pageContext.enabled))return;
+    const editor=view.current,query=popup.current?.wiki;if(!editor||!query||options.current.disabled||(!['property','type-command'].includes(query.kind)&&!options.current.pageContext.enabled))return;
     if(editor.state.selection.main.head!==query.cursor||editor.state.doc.sliceString(query.from,query.to)!==query.raw){setWiki(null);return;}
+    if(query.kind==='type-command'){const change=typeCommandEdit(editor.state.doc.toString(),query,row.insert);setWiki(null);if(change)editor.dispatch(change);editor.focus();return;}
     const insert=query.kind==='property'?row.insert:pageWikiText(row);setWiki(null);dismissed.current=null;
     editor.dispatch({changes:{from:query.from,to:query.to,insert},selection:{anchor:query.from+insert.length-(query.kind==='property'&&insert.endsWith('[]')?1:0)},effects:query.kind==='property'?[]:insertedPage.of(row),scrollIntoView:true});editor.focus();
   }
-  useEffect(()=>{let live=true;setMatches([]);setActive(0);setWikiError('');if(!wiki)return;if(wiki.kind==='property'){setMatches(wiki.items);return;}const timer=setTimeout(()=>pageContext.api.request('desktop/pages',{q:wiki.query,all_pages:true,limit:10}).then(row=>{if(live)setMatches(row.items);}).catch(error=>{if(live)setWikiError(error.message);}),120);return()=>{live=false;clearTimeout(timer);};},[wiki?.query,wiki?.raw,wiki?.from,wiki?.kind,pageContext.api]);
+  useEffect(()=>{let live=true;setMatches([]);setActive(0);setWikiError('');if(!wiki)return;if(['property','type-command'].includes(wiki.kind)){setMatches(wiki.items);return;}const timer=setTimeout(()=>pageContext.api.request('desktop/pages',{q:wiki.query,all_pages:true,limit:10}).then(row=>{if(live)setMatches(row.items);}).catch(error=>{if(live)setWikiError(error.message);}),120);return()=>{live=false;clearTimeout(timer);};},[wiki?.query,wiki?.raw,wiki?.from,wiki?.kind,pageContext.api]);
   useEffect(()=>{const editor=view.current;if(!editor)return;if(wiki){editor.contentDOM.setAttribute('aria-controls',menuId);editor.contentDOM.setAttribute('aria-expanded','true');if(matches.length)editor.contentDOM.setAttribute('aria-activedescendant',menuId+'-'+active);else editor.contentDOM.removeAttribute('aria-activedescendant');document.getElementById(menuId+'-'+active)?.scrollIntoView({block:'nearest'});}else{editor.contentDOM.removeAttribute('aria-controls');editor.contentDOM.removeAttribute('aria-expanded');editor.contentDOM.removeAttribute('aria-activedescendant');}},[!!wiki,menuId,active,matches.length]);
   if(!sessions.has(sessionStore))sessions.set(sessionStore,new Map());
   const cache=sessions.get(sessionStore);
@@ -102,8 +103,8 @@ const LiveMarkdownEditor=forwardRef(function LiveMarkdownEditor({value,onChange,
           if(!available){setWiki(null);return;}
           update.view.requestMeasure({key:parent.current,read:editor=>{
             const source=editor.state.doc.toString(),cursor=editor.state.selection.main.head;
-            const query=(options.current.properties?propertyCompletion(source,cursor,options.current.notes):null)||(options.current.pageLinks?wikiCompletion(source,cursor):null);
-            if(!query||(query.kind==='property'&&!query.items.length)||dismissed.current===query.raw+':'+query.from)return null;
+            const query=(options.current.properties?(typeCommandCompletion(source,cursor)||propertyCompletion(source,cursor,options.current.notes)):null)||(options.current.pageLinks?wikiCompletion(source,cursor):null);
+            if(!query||(['property','type-command'].includes(query.kind)&&!query.items.length)||dismissed.current===query.raw+':'+query.from)return null;
             const rect=editor.coordsAtPos(query.cursor);return rect?{...query,left:Math.max(12,Math.min(rect.left,innerWidth-344)),top:Math.max(12,Math.min(rect.bottom+6,innerHeight-260))}:null;
           },write:next=>setWiki(next)});
         }
@@ -121,6 +122,6 @@ const LiveMarkdownEditor=forwardRef(function LiveMarkdownEditor({value,onChange,
   },[sessionKey,sessionStore]);
   useEffect(()=>{const editor=view.current;if(editor&&editor.state.doc.toString()!==value){external.current=true;try{editor.dispatch({changes:{from:0,to:editor.state.doc.length,insert:value}});}finally{external.current=false;}}},[value]);
   useEffect(()=>{view.current?.dispatch({effects:[editable.current.reconfigure([EditorView.editable.of(!disabled),EditorState.readOnly.of(disabled)]),repaint.of(null)]});},[disabled,raw,notes,complete,pageContext.enabled]);
-  return <><div className="live-markdown-editor" ref={parent}/>{wiki&&createPortal(<div id={menuId} className="page-wiki-completion" role="listbox" aria-label={wiki.kind==='property'?'Markdown properties':'Link a page'} style={{left:wiki.left,top:wiki.top}}>{matches.map((row,index)=><button id={menuId+'-'+index} role="option" aria-selected={index===active} key={row.id} onMouseDown={e=>e.preventDefault()} onClick={()=>choosePage(row)}><span>{row.title}</span><small>{wiki.kind==='property'?'':row.parent_title||'Top level'}</small></button>)}{!matches.length&&<p>{wikiError||(wiki.kind==='property'?'Keep typing your own value.':'No matching pages yet.')}</p>}</div>,document.body)}</>;
+  return <><div className="live-markdown-editor" ref={parent}/>{wiki&&createPortal(<div id={menuId} className="page-wiki-completion" role="listbox" aria-label={wiki.kind==='type-command'?'Change note type':wiki.kind==='property'?'Markdown properties':'Link a page'} style={{left:wiki.left,top:wiki.top}}>{matches.map((row,index)=><button id={menuId+'-'+index} role="option" aria-selected={index===active} key={row.id} onMouseDown={e=>e.preventDefault()} onClick={()=>choosePage(row)}><span>{row.title}</span><small>{['property','type-command'].includes(wiki.kind)?'':row.parent_title||'Top level'}</small></button>)}{!matches.length&&<p>{wikiError||(wiki.kind==='property'?'Keep typing your own value.':'No matching pages yet.')}</p>}</div>,document.body)}</>;
 });
 export default LiveMarkdownEditor;

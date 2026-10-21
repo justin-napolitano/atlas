@@ -1,5 +1,6 @@
 import {parseDocument,isAlias,isCollection,isPair,isScalar} from 'yaml';
 import {thoughtTypes} from './notebookClient.js';
+import {markdownBlocks} from './liveMarkdown.js';
 
 // Source ranges, never a reserialized document: comments and unknown fields survive.
 export function frontmatterRange(source){
@@ -54,4 +55,30 @@ export function frontmatterEdit(source,type='note'){
  if(properties.range){const pair=properties.doc?.contents.items.find(item=>item.key?.value==='type'),range=pair?.value?.range;return {selection:range?{anchor:properties.range.start+range[0],head:properties.range.start+range[1]}:{anchor:properties.range.start},scrollIntoView:true};}
  const insert=`---\ntype: ${type}\ntags: []\n---\n\n`;
  return {changes:{from:0,insert},selection:{anchor:10,head:10+type.length},scrollIntoView:true};
+}
+
+/** A standalone /type command is an editing action, never saved as metadata. */
+export function typeCommandCompletion(source,cursor){
+ const start=source.lastIndexOf('\n',cursor-1)+1,line=source.slice(start,cursor);
+ const match=/^[ \t]*\/t(?:y(?:p(?:e)?)?)?(?:[ \t]+([a-z_]*))?$/.exec(line);
+ if(!match)return null;
+ const properties=markdownProperties(source);
+ if(properties.range&&(properties.status!=='valid'||start<properties.range.to))return null;
+ if(markdownBlocks(source).some(block=>['code','html'].includes(block.type)&&start>=block.from&&cursor<=block.to))return null;
+ const from=start+line.indexOf('/'),prefix=match[1]||'';
+ return {from,to:cursor,cursor,raw:source.slice(from,cursor),kind:'type-command',items:thoughtTypes.filter(type=>type!=='source_claim'&&type.startsWith(prefix)).map(type=>({id:type,title:type.replaceAll('_',' '),insert:type}))};
+}
+export function typeCommandEdit(source,query,type){
+ if(!thoughtTypes.includes(type)||type==='source_claim'||source.slice(query.from,query.to)!==query.raw)return null;
+ const properties=markdownProperties(source);
+ if(properties.range&&properties.status!=='valid')return null;
+ const next=propertyTypeChange(source,type);
+ if(properties.range&&next===source)return {changes:{from:query.from,to:query.to,insert:''},selection:{anchor:query.from},scrollIntoView:true};
+ // Apply two edits atomically so text between properties and command keeps its
+ // selection mapping and a single undo restores both the command and metadata.
+ let metadata;
+ if(!properties.range)metadata={from:0,insert:`---\ntype: ${type}\n---\n\n`};
+ else{let from=0;while(from<source.length&&source[from]===next[from])from++;let to=source.length,end=next.length;while(to>from&&end>from&&source[to-1]===next[end-1]){to--;end--;}metadata={from,to,insert:next.slice(from,end)};}
+ const added=metadata.insert.length-((metadata.to??metadata.from)-metadata.from);
+ return {changes:[metadata,{from:query.from,to:query.to,insert:''}],selection:{anchor:query.from+added},scrollIntoView:true};
 }

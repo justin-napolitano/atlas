@@ -22,6 +22,16 @@ This extends the unified workspace and freeform skills/principles contracts.
   when absent; it never replaces the document. Preserve undo and cursor sessions.
 - No permanent metadata form, additional sidebar, assessments or stages.
 
+## Owner amendment: /type — 2026-10-21
+
+A standalone `/type` (or `/type sk`, `/type pri`) in the document opens role
+suggestions. Arrows and Tab/Enter choose; Escape preserves the literal writing.
+Acceptance removes only the command and updates/adds frontmatter in a single
+undoable transaction; comments, unknown properties and surrounding writing survive.
+Ignore code, HTML and unfinished frontmatter. Source claims still require the
+existing exact-source workflow and are excluded from this freeform command.
+The owner authorized a normal quit/reopen into the completed latest build.
+
 ## Authority and preservation
 
 PostgreSQL stores body, role, links and revisions using existing CAS, frozen

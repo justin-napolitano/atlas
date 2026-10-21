@@ -4,6 +4,9 @@ import {markdownProperties,propertyCompletion,propertyTypeChange,frontmatterEdit
 import {markdownBlocks} from './liveMarkdown.js';
 import {captureTitle} from './connectedWriting.js';
 import {wikiTargetAt} from './pageLinks.js';
+import {typeCommandCompletion,typeCommandEdit} from './markdownProperties.js';
+import {EditorState} from '@codemirror/state';
+import {history,undo} from '@codemirror/commands';
 
 const body='---\ntype: skill # keep this\ntags: [reading, العربية]\naliases: [Close reading]\ncustom:\n  source: "https://example.invalid"\n---\n\n# Synthetic reading\n\nA paragraph.\n';
 test('bounded YAML properties preserve source and reject ambiguous/unsafe headers',()=>{
@@ -39,4 +42,17 @@ test('keyboard link following resolves only the wiki link under the cursor',()=>
  assert.equal(wikiTargetAt(text,20),'urn:research:notebook:synthetic');
  assert.equal(wikiTargetAt(text,text.length),null);
  for(const text of ['`[[Hidden]]`','\\[[Hidden]]','```\n[[Hidden]]\n```'])assert.equal(wikiTargetAt(text,text.indexOf('Hidden')+3),null);
+});
+test('/type changes metadata and removes only its command in one undoable edit',()=>{
+ for(const source of ['/type sk','Existing words\n\n/type sk',body+'\n/type sk']){
+  const menu=typeCommandCompletion(source,source.length);assert.deepEqual(menu.items.map(row=>row.insert),['skill']);
+  let state=EditorState.create({doc:source,extensions:[history()]});
+  state=state.update(typeCommandEdit(source,menu,'skill')).state;
+  assert.equal(markdownProperties(state.doc.toString()).type,'skill');assert.ok(!state.doc.toString().includes('/type'));
+  if(source.startsWith('Existing'))assert.ok(state.doc.toString().includes('Existing words'));
+  const target={get state(){return state;},dispatch(tr){state=tr.state;}};assert.ok(undo(target));assert.equal(state.doc.toString(),source);
+ }
+ const source=body+'\n/type pri';const next=EditorState.create({doc:source}).update(typeCommandEdit(source,typeCommandCompletion(source,source.length),'principle')).state.doc.toString();
+ assert.ok(next.includes('type: principle # keep this'));assert.ok(next.includes('custom:'));assert.ok(next.includes('# Synthetic reading'));
+ for(const source of ['```md\n/type sk','    /type sk','Text /type sk','---\ntype: [unfinished\n---\n/type sk'])assert.equal(typeCommandCompletion(source,source.length),null,source);
 });

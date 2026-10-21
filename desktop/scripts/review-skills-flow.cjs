@@ -32,7 +32,7 @@ app.whenReady().then(async()=>{
  await write('---');press('Return');await pause(100);await window.webContents.insertText('sk');
  await until(()=>ui('!![...document.querySelectorAll(".page-wiki-completion [role=option]")].find(row=>row.textContent==="skill")'),'type completion');press('Tab');await saved();
  const id=await ui('new URL(location.href).searchParams.get("entry_id")');assert.equal((await note(id)).thought_type,'skill');
- press('M',[mod,'shift']);await pause(100);await window.webContents.insertText('pri');
+ press('End',[mod]);await window.webContents.insertText('/type pri');
  await until(()=>ui('!![...document.querySelectorAll(".page-wiki-completion [role=option]")].find(row=>row.textContent==="principle")'),'change role from keyboard');if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'keyboard-type-completion.png'),(await window.webContents.capturePage()).toPNG());press('Tab');await saved();assert.equal((await note(id)).thought_type,'principle');
  // Replace a synthetic draft to test unfinished YAML and learned-tag completion.
  press('A',[mod]);await window.webContents.insertText('---\ntype: principle\ntags: [read');
@@ -47,7 +47,7 @@ app.whenReady().then(async()=>{
  press('Return',[mod]);await until(()=>ui('new URL(location.href).searchParams.get("entry_id")==='+JSON.stringify(target)),'keyboard follows stable page link');
  const reloaded=new Promise(resolve=>window.webContents.once('did-finish-load',resolve));window.webContents.reload();await reloaded;await until(()=>ui('!!document.querySelector(".connected-nav")'),'reload');await until(()=>ui('document.querySelector(`'+active+' [aria-label="Note body"]`)?.textContent.includes("Synthetic tag source")'),'reloaded document renders');assert.equal((await note(id)).body,row.body);
  if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'keyboard-properties.png'),(await window.webContents.capturePage()).toPNG());
- await fs.writeFile(config.resultFile,JSON.stringify({keyboardProperties:true,typeCompletion:true,typeConversion:true,tagCompletion:true,wikiCompletion:true,keyboardFollow:true,undoRedo:true,exactReload:true}),{mode:0o600});window.destroy();app.exit(0);return;
+ await fs.writeFile(config.resultFile,JSON.stringify({keyboardProperties:true,slashType:true,typeCompletion:true,typeConversion:true,tagCompletion:true,wikiCompletion:true,keyboardFollow:true,undoRedo:true,exactReload:true}),{mode:0o600});window.destroy();app.exit(0);return;
  }
  if(config.shortcutOnly){
  // Exercise the actual native accelerator while writing; the previous page must survive.
