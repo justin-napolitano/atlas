@@ -30,6 +30,9 @@ def create_note(connection,*,request_uuid,body,actor,title='',thought_type='note
         result=notebook.create(connection,request_uuid=request_uuid,project_id=origin,body=body,actor=actor,
           title=title if mode=='manual' else derived_title(body),title_mode=mode,thought_type=thought_type,links=links or [],
           record_id=record_id,document_id=document_id,annotation_id=annotation_id,reading_position=reading_position)
+        if not result['replayed']:
+            from .desktop_pages import apply_prepared_parent
+            apply_prepared_parent(connection,request_uuid=request_uuid,entry_id=result['id'],actor=actor)
         if record_id and origin is None:retain_source(connection,record_id,actor)
         return note(connection,result['id'])
 

@@ -7,6 +7,7 @@ const assert=require('node:assert/strict');
 const {DesktopHost}=require('../src/host.cjs');
 const {privateJSON}=require('../src/policy.cjs');
 const root=path.dirname(process.env.ATLAS_ELECTRON_TEST_CONFIG||'');
+const requestLog=[];
 app.setName('Atlas Synthetic Review');app.enableSandbox();app.setPath('userData',path.join(root,'profile'));
 app.commandLine.appendSwitch('disable-background-networking');
 app.on('window-all-closed',()=>{});
@@ -45,10 +46,11 @@ app.whenReady().then(async()=>{
   await pause(150);assert.equal(external,1);assert.equal(electron.BrowserWindow.getAllWindows().length,1);
   win.close();await until(()=>Promise.resolve(win.isDestroyed()),'clean saved close');await host.preferencesWrite;
   const reopened=await host.open();
+  reopened.webContents.session.webRequest.onCompleted(details=>{const url=new URL(details.url);if(url.origin===config.origin&&url.pathname.startsWith('/v1/'))requestLog.push({path:url.pathname,status:details.statusCode,at:Date.now()});});
   await until(()=>reopened.webContents.executeJavaScript('document.querySelector(".working-surface:not([hidden]) .cm-content")?.textContent.includes("Synthetic offline Markdown")'),'last document reopened');
   await fs.writeFile(config.resultFile,JSON.stringify({nativeElectron:true,realPostgresql:true,rendererIsolation:true,dirtyCloseProtected:true,reloadAndReopen:true,externalNetworkDenied:true}),{mode:0o600});
   // Local reference -> body-first source writing -> retained Markdown file.
-  const ui=code=>reopened.webContents.executeJavaScript(code);
+  const ui=async code=>{try{return await reopened.webContents.executeJavaScript(code);}catch(error){throw new Error('Synthetic UI step: '+code.slice(0,180)+' :: '+error.message);}};
   const click=label=>ui(`[...document.querySelectorAll('.working-surface:not([hidden]) button,.connected-nav button')].find(b=>b.textContent===${JSON.stringify(label)}).click()`);
   await click('Library');await until(()=>ui('!![...document.querySelectorAll(".working-surface:not([hidden]) button")].find(b=>b.textContent==="Add a source")'),'local library');
   await click('Add a source');await until(()=>ui('!!document.querySelector(".working-surface:not([hidden]) .desktop-add-source")'),'desktop quick reference');
@@ -73,6 +75,112 @@ app.whenReady().then(async()=>{
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .desktop-source-availability")?.textContent.includes("Saved reading text")'),'retained local source');
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .source-reader")?.textContent.includes("Synthetic original from the desktop.")'),'actual imported reader');
   if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'retained-file-reader.png'),(await reopened.webContents.capturePage()).toPNG());
-  await fs.writeFile(config.resultFile,JSON.stringify({nativeElectron:true,realPostgresql:true,rendererIsolation:true,dirtyCloseProtected:true,reloadAndReopen:true,externalNetworkDenied:true,referenceCapture:true,sourceWriting:true,localFileReading:true}),{mode:0o600});
+  // Separate rapid synthetic journeys across the unchanged API request window.
+  await pause(61000);
+  await ui('document.querySelector(".workspace-sidebar-new").click()');
+  await until(()=>ui('!!document.querySelector(`.working-surface:not([hidden]) [aria-label="Note body"]`)'),'parent page editor');
+  await ui('document.querySelector(`.working-surface:not([hidden]) [aria-label="Note body"]`).focus()');
+  await reopened.webContents.insertText('# Parent research page\n\nA synthetic parent.');
+  await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .connected-document-tools [role=status]")?.textContent==="Saved"'),'saved parent page');
+  const parentId=await ui('new URL(location.href).searchParams.get("entry_id")');
+  await click('＋ Subpage');
+  await until(()=>ui('new URL(location.href).searchParams.get("entry_id")!=='+JSON.stringify(parentId)+'&&!!document.querySelector(`.working-surface:not([hidden]) [aria-label="Note body"]`)'),'prepared subpage opens body first');
+  await ui('document.querySelector(`.working-surface:not([hidden]) [aria-label="Note body"]`).focus()');
+  await reopened.webContents.insertText('# Child research page\n\nRelated to [[Parent re');
+  await until(()=>ui('!![...document.querySelectorAll(".page-wiki-completion [role=option]")].find(row=>row.textContent.includes("Parent research page"))'),'global page completion');
+  reopened.webContents.sendInputEvent({type:'keyDown',keyCode:'Return'});reopened.webContents.sendInputEvent({type:'keyUp',keyCode:'Return'});
+  await until(()=>ui('!document.querySelector(".page-wiki-completion")'),'keyboard selects page');
+  await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .connected-document-tools [role=status]")?.textContent==="Saved"'),'linked child saved');
+  const childId=await ui('new URL(location.href).searchParams.get("entry_id")');
+  assert.notEqual(childId,parentId);
+  const savedChild=await ui(`fetch('/v1/workspace/note?entry_id='+encodeURIComponent(${JSON.stringify(childId)})).then(async r=>{if(!r.ok)throw new Error('Page verification HTTP '+r.status);return r.json();})`);
+  assert.ok(savedChild.body.includes(parentId),'Synthetic completion body: '+JSON.stringify(savedChild.body));
+  assert.ok(savedChild.links.some(link=>link.id===parentId),'Synthetic completion links: '+JSON.stringify(savedChild.links));
+  await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .page-breadcrumbs")?.textContent.includes("Parent research page")'),'parent breadcrumb');
+  await ui('[...document.querySelectorAll(".working-surface:not([hidden]) .page-breadcrumbs button")].find(row=>row.textContent==="Parent research page").click()');
+  await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .page-relationships")?.textContent.includes("Linked from")'),'parent backlinks');
+  await ui('document.querySelector(`.working-surface:not([hidden]) [aria-label="Note properties"]`).click()');
+  await ui('(()=>{const field=document.querySelector(".working-surface:not([hidden]) .connected-properties input");field.focus();field.select();})()');
+  await reopened.webContents.insertText('Renamed research page');await click('Use this name');
+  await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .connected-note>h1")?.textContent==="Renamed research page"&&document.querySelector(".working-surface:not([hidden]) .connected-document-tools [role=status]")?.textContent==="Saved"'),'rename keeps page identity');
+  await ui('[...document.querySelectorAll(".working-surface:not([hidden]) .page-related-link")].find(row=>row.textContent.includes("Child research page")).click()');
+  await until(()=>ui('new URL(location.href).searchParams.get("entry_id")==='+JSON.stringify(childId)),'return to same child');
+  await ui('document.querySelector(".working-surface:not([hidden]) .connected-document-tools button").focus()');
+  await until(()=>ui('!!document.querySelector(".working-surface:not([hidden]) .notebook-wikilink")'),'rendered stable link');
+  await ui('document.querySelector(".working-surface:not([hidden]) .notebook-wikilink").click()');
+  await until(()=>ui('new URL(location.href).searchParams.get("entry_id")==='+JSON.stringify(parentId)),'stable link follows renamed parent');
+  await ui('[...document.querySelectorAll(".working-surface:not([hidden]) .page-related-link")].find(row=>row.textContent.includes("Child research page")).click()');
+  await until(()=>ui('new URL(location.href).searchParams.get("entry_id")==='+JSON.stringify(childId)),'child before move');
+  await click('Move');await click('Top level');
+  await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .page-breadcrumbs")?.textContent.trim()==="Notes"'),'move to top level');
+  assert.equal(await ui(`fetch('/v1/desktop/page?entry_id='+encodeURIComponent(${JSON.stringify(childId)})).then(r=>r.json()).then(row=>row.parent_id===null)`),true);
+  await click('Move');
+  await ui('document.querySelector(`.working-surface:not([hidden]) [aria-label="Find parent page"]`).focus()');
+  await reopened.webContents.insertText('Renamed research');
+  await until(()=>ui('!![...document.querySelectorAll(".working-surface:not([hidden]) .page-move-picker .page-search-result")].find(row=>row.textContent.includes("Renamed research page"))'),'searchable move target');
+  await ui('[...document.querySelectorAll(".working-surface:not([hidden]) .page-move-picker .page-search-result")].find(row=>row.textContent.includes("Renamed research page")).click()');
+  await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .page-breadcrumbs")?.textContent.includes("Renamed research page")'),'restored hierarchy');
+  assert.equal(await ui('!!document.querySelector(".connected-page-tree .page-tree-level .page-tree-level")'),true);
+  if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'linked-pages.png'),(await reopened.webContents.capturePage()).toPNG());
+  // Folder organization is a separate rapid journey; preserve the normal rate limit.
+  await pause(61000);
+  async function makeFolder(name){
+    await ui('document.querySelector(`.page-tree-heading [aria-label="New folder"]`).click()');
+    await until(()=>ui('!!document.querySelector(`[aria-label="Folder name"]`)'),'inline folder creation');
+    await ui('document.querySelector(`[aria-label="Folder name"]`).focus()');await reopened.webContents.insertText(name);
+    reopened.webContents.sendInputEvent({type:'keyDown',keyCode:'Return'});reopened.webContents.sendInputEvent({type:'keyUp',keyCode:'Return'});
+    await until(()=>ui(`!![...document.querySelectorAll('.connected-page-tree .page-tree-title')].find(row=>row.title===${JSON.stringify(name)})`),'saved sidebar folder');
+    const result=await ui(`fetch('/v1/desktop/tree?all_items=true&q='+encodeURIComponent(${JSON.stringify(name)})).then(r=>r.json())`);
+    return result.items.find(row=>row.title===name);
+  }
+  async function rowAction(title,action){
+    await ui(`[...document.querySelectorAll('.connected-page-tree .page-tree-title')].find(row=>row.title===${JSON.stringify(title)}).closest('.page-tree-row').querySelector('.page-tree-actions').click()`);
+    await until(()=>ui(`!![...document.querySelectorAll('.page-tree-menu button')].find(row=>row.textContent===${JSON.stringify(action)})`),'sidebar action '+action);
+    await ui(`[...document.querySelectorAll('.page-tree-menu button')].find(row=>row.textContent===${JSON.stringify(action)}).click()`);
+  }
+  async function dragRow(title,destination){
+    await ui(`(()=>{const find=title=>[...document.querySelectorAll('.connected-page-tree .page-tree-title')].find(row=>row.title===title).closest('.page-tree-row');const from=find(${JSON.stringify(title)}),to=find(${JSON.stringify(destination)}),dataTransfer=new DataTransfer();for(const [node,type] of [[from,'dragstart'],[to,'dragover'],[to,'drop'],[from,'dragend']])node.dispatchEvent(new DragEvent(type,{bubbles:true,cancelable:true,dataTransfer}));})()`);
+  }
+  const researchFolder=await makeFolder('Synthetic research folder'),inboxFolder=await makeFolder('Synthetic inbox folder');
+  await dragRow('Child research page','Synthetic research folder');
+  await until(()=>ui(`fetch('/v1/desktop/page?entry_id='+encodeURIComponent(${JSON.stringify(childId)})).then(r=>r.json()).then(row=>row.folder_id===${JSON.stringify(researchFolder.id)})`),'drag moves note into folder');
+  assert.equal(await ui(`fetch('/v1/workspace/note?entry_id='+encodeURIComponent(${JSON.stringify(childId)})).then(r=>r.json()).then(row=>row.body)`),savedChild.body);
+  await rowAction('Synthetic research folder','New note');
+  await until(()=>ui('new URL(location.href).searchParams.get("entry_id")!=='+JSON.stringify(childId)+'&&!!document.querySelector(`.working-surface:not([hidden]) [aria-label="Note body"]`)'),'prepared folder note body');
+  await ui('document.querySelector(`.working-surface:not([hidden]) [aria-label="Note body"]`).focus()');
+  await reopened.webContents.insertText('# Folder field note\n\nSynthetic folder writing.');
+  await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .connected-document-tools [role=status]")?.textContent==="Saved"'),'folder note saved');
+  const folderNoteId=await ui('new URL(location.href).searchParams.get("entry_id")');
+  assert.equal(await ui(`fetch('/v1/desktop/page?entry_id='+encodeURIComponent(${JSON.stringify(folderNoteId)})).then(r=>r.json()).then(row=>row.folder_id)`),researchFolder.id);
+  await rowAction('Synthetic research folder','New folder');
+  await until(()=>ui('!!document.querySelector(`[aria-label="Folder name"]`)'),'nested folder input');
+  await ui('document.querySelector(`[aria-label="Folder name"]`).focus()');await reopened.webContents.insertText('Nested research');
+  reopened.webContents.sendInputEvent({type:'keyDown',keyCode:'Return'});reopened.webContents.sendInputEvent({type:'keyUp',keyCode:'Return'});
+  await until(()=>ui('!![...document.querySelectorAll(".page-tree-title")].find(row=>row.title==="Nested research")'),'nested folder visible');
+  await dragRow('Synthetic inbox folder','Nested research');
+  await until(()=>ui(`fetch('/v1/desktop/tree?all_items=true&q=Synthetic+inbox+folder').then(r=>r.json()).then(row=>!!row.items[0]?.parent_id)`),'folder drag persists nested placement');
+  await rowAction('Synthetic research folder','Rename');
+  await until(()=>ui('!!document.querySelector(`[aria-label="Rename folder"]`)'),'inline folder rename');
+  await ui('(()=>{const input=document.querySelector(`[aria-label="Rename folder"]`);input.focus();input.select();})()');
+  await reopened.webContents.insertText('Reading notebook');
+  reopened.webContents.sendInputEvent({type:'keyDown',keyCode:'Return'});reopened.webContents.sendInputEvent({type:'keyUp',keyCode:'Return'});
+  await until(()=>ui('!![...document.querySelectorAll(".page-tree-title")].find(row=>row.title==="Reading notebook")'),'renamed folder');
+  await rowAction('Folder field note','Move…');
+  await until(()=>ui('!!document.querySelector(`[aria-label="Find destination"]`)'),'keyboard move destination');
+  await ui('document.querySelector(`[aria-label="Find destination"]`).focus()');await reopened.webContents.insertText('Synthetic inbox');
+  await until(()=>ui('!![...document.querySelectorAll(".page-tree-move .page-search-result")].find(row=>row.textContent.includes("Synthetic inbox folder"))'),'folder move result');
+  await ui('[...document.querySelectorAll(".page-tree-move .page-search-result")].find(row=>row.textContent.includes("Synthetic inbox folder")).click()');
+  await until(()=>ui(`fetch('/v1/desktop/page?entry_id='+encodeURIComponent(${JSON.stringify(folderNoteId)})).then(r=>r.json()).then(row=>row.folder_id===${JSON.stringify(inboxFolder.id)})`),'keyboard note move');
+  if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'note-folders.png'),(await reopened.webContents.capturePage()).toPNG());
+  await fs.writeFile(config.resultFile,JSON.stringify({nativeElectron:true,realPostgresql:true,rendererIsolation:true,dirtyCloseProtected:true,reloadAndReopen:true,externalNetworkDenied:true,referenceCapture:true,sourceWriting:true,localFileReading:true,noteFolders:true,folderDragDrop:true,keyboardFolderMoves:true,pageHierarchy:true,stableWikiCompletion:true,backlinks:true,renameAndMove:true}),{mode:0o600});
   reopened.destroy();app.exit(0);
-}).catch(async error=>{await fs.writeFile(path.join(root,'electron-failure.txt'),String(error.stack),{mode:0o600});app.exit(1);});
+}).catch(async error=>{
+  let diagnostic='';
+  const window=electron.BrowserWindow.getAllWindows()[0];
+  if(window&&!window.isDestroyed()){
+    diagnostic=await window.webContents.executeJavaScript('JSON.stringify({route:location.search,active:document.activeElement?.getAttribute("aria-label"),text:document.querySelector(".working-surface:not([hidden])")?.innerText.slice(0,2500)})').catch(()=> '');
+    const config=await privateJSON(process.env.ATLAS_ELECTRON_TEST_CONFIG);
+    if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'page-review-failure.png'),(await window.webContents.capturePage()).toPNG());
+  }
+  await fs.writeFile(path.join(root,'electron-failure.txt'),String(error.stack)+'\n'+diagnostic+'\nRecent synthetic requests: '+JSON.stringify(requestLog.filter(row=>row.at>Date.now()-60000).reduce((counts,row)=>{const key=row.status+' '+row.path;counts[key]=(counts[key]||0)+1;return counts;},{})),{mode:0o600});app.exit(1);
+});

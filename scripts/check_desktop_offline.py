@@ -80,7 +80,9 @@ def main():
                 config=root/'review.json';receipt=root/'review-result.json'
                 config.write_text(json.dumps({'origin':origin,'credentials':keys,'resultFile':str(receipt),'screenshots':str(args.artifacts.resolve())}));config.chmod(0o600)
                 result=subprocess.run([str(ROOT/'desktop/node_modules/.bin/electron'),str(ROOT/'desktop/scripts/review-electron.cjs')],
-                    env={**os.environ,'ATLAS_ELECTRON_TEST_CONFIG':str(config)},capture_output=True,timeout=90)
+                    env={**os.environ,'ATLAS_ELECTRON_TEST_CONFIG':str(config)},capture_output=True,timeout=300)
+                if result.returncode!=0 and (root/'electron-failure.txt').exists():
+                    raise AssertionError('Synthetic native review: '+(root/'electron-failure.txt').read_text())
                 assert result.returncode==0 and all(json.loads(receipt.read_text()).values()), 'Native copied-bundle review failed'
             assert client.get('/v1/desktop/capabilities').json()['local_sources'] is True
             reference={'request_uuid':str(uuid.uuid4()),'reference':'Synthetic local reference without full text','owner_confirmed':True}
@@ -97,6 +99,19 @@ def main():
             linked=client.post('/v1/workspace/notes',json={'request_uuid':str(uuid.uuid4()),'body':'A source-level thought with no invented selection.',
                 'record_id':source['record_id'],'owner_confirmed':True});assert linked.status_code==201
             assert linked.json()['id'] in [r['id'] for r in client.get('/v1/desktop/source/writing',params={'record_id':source['record_id']}).json()['items']]
+            folder=client.post('/v1/desktop/folders',json={'request_uuid':str(uuid.uuid4()),'title':'Synthetic backup folder','owner_confirmed':True})
+            assert folder.status_code==201
+            folder=folder.json()
+            assert client.post('/v1/desktop/pages/parent',json={'request_uuid':str(uuid.uuid4()),'entry_id':note['id'],
+                'folder_id':folder['id'],'expected_revision':0,'owner_confirmed':True}).status_code==200
+            child_request=str(uuid.uuid4())
+            prepared=client.post('/v1/desktop/pages/prepare',json={'request_uuid':child_request,'parent_id':note['id'],'owner_confirmed':True})
+            assert prepared.status_code==201
+            page_child=client.post('/v1/workspace/notes',json={'request_uuid':child_request,'body':'Synthetic nested page',
+                'links':[{'kind':'entry','id':note['id'],'rationale':'Markdown page link'}],'owner_confirmed':True})
+            assert page_child.status_code==201
+            page_child=page_child.json()
+            assert client.get('/v1/desktop/page',params={'entry_id':page_child['id']}).json()['parent_id']==note['id']
             snapshot=command('backup');archive=state/'backups'/snapshot['file'];assert archive.is_file()
             backup_receipt=json.loads(archive.with_suffix('.json').read_text())
             assert backup_receipt['format']==2 and backup_receipt['artifacts'][artifact['sha256']]==len(text)
@@ -110,6 +125,9 @@ def main():
             assert command('restore',archive)['original_database_retained'] is True
             start()
             assert client.get('/v1/workspace/note',params={'entry_id':note['id']}).json()['body']==body
+            assert client.get('/v1/desktop/page',params={'entry_id':page_child['id']}).json()['parent_id']==note['id']
+            assert page_child['id'] in [row['id'] for row in client.get('/v1/desktop/pages/backlinks',params={'entry_id':note['id']}).json()['items']]
+            assert client.get('/v1/desktop/page',params={'entry_id':note['id']}).json()['folder_id']==folder['id']
             selected_config=json.loads((state/'local-config.json').read_text())
             assert (state/selected_config['artifact_namespace']/artifact['sha256']).read_bytes()==text
             assert client.post('/v1/desktop/files',json=file_request).json()['replayed'] is True

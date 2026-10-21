@@ -1,0 +1,51 @@
+# Local note folders and sidebar movement
+
+Owner request: 2026-10-20. Issue #230. Extends the local linked-page contract and PR #229.
+Folders organize writing in the same left explorer; they are not synthetic notes,
+projects, source containers or publication boundaries.
+
+## Implementation contract
+
+Each folder has a stable ID, name, optional parent folder, revision and immutable
+history. Each note may have one parent page OR one containing folder. Existing
+page nesting, Markdown, note IDs, citations, recovery and backlinks remain intact.
+Folders cannot be children of notes. Folder depth is bounded at 16 independently
+of the existing page depth of 32. Moving a folder moves its visible subtree;
+relative note placement and bodies are unchanged. Root notes remain valid.
+
+Use the single sidebar tree. Folder names expand/collapse their children; notes
+open their existing document. Add folders inline, rename without a modal form,
+and create a blank body-first note inside a folder using a durable preparation
+intent. Drag notes onto pages/folders and folders onto folders; root is an explicit
+drop target. Keyboard users get equivalent Move actions and focusable controls.
+Folders appear first, then notes, with alphabetical order in each group; reordering by arbitrary drag position is deferred.
+
+All mutations are desktop-owner-only, revision checked, actor bound and idempotent.
+A retry replays its original receipt without overwriting a later move. Reject
+cycles, self targets and excessive depth in SQL. Deleting a folder is allowed only
+when empty and must never cascade. Use tombstones/history rather than erasing IDs.
+Trashed notes remain recoverable and retain their placement. Folder removal is
+blocked while any saved note still refers to it, including a trashed note. A blank
+prepared draft whose folder was removed saves at the root; its writing is retained.
+
+Backups retain folders, placements, pending creation intents and note links in the
+same PostgreSQL snapshot. No filesystem folder mirroring, Obsidian vault sync,
+cloud service or hosted web delivery is included.
+
+## Verification
+
+Synthetic tests cover folder nesting, rename, idempotent retries, stale moves,
+cycles/depth, note/page/folder moves without body edits, empty-only removal,
+Trash/restore, permissions and backup restore. Native review covers sidebar
+creation, keyboard movement and drag/drop with actual persisted state.
+
+## Delivery evidence
+
+PR #229 implements this alongside #228. Nine isolated folder SQL/API tests cover
+concurrent opposite moves, depth/cycle rejection, metadata-only creation,
+idempotent replay after later movement, paginated exploration, empty-only removal
+and strict owner/CSRF boundaries. The existing page and source tests remain.
+Native acceptance includes folder creation, note creation inside folders, note and
+folder drag/drop, renaming and the searchable keyboard Move action. The copied
+runtime check restores folder membership together with notes and backlinks.
+Consult the PR for the latest native/package outcome; all fixtures are synthetic.

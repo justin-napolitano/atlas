@@ -9,6 +9,7 @@ from psycopg import sql
 
 
 READ_TABLES = (
+    "desktop_page_positions", "desktop_page_intents", "desktop_page_history", "desktop_folders", "desktop_folder_history",
     "desktop_requests", "desktop_artifacts",
     "workspace_legacy_collections",
     "workspace_collections", "workspace_collection_items", "workspace_saved_views", "workspace_connections", "workspace_investigations", "workspace_reflections", "workspace_organization_history",
@@ -42,6 +43,9 @@ OWNER_FUNCTIONS = (
     "research.withdraw_publication(text,integer,text,text)",
 )
 INSERT_COLUMNS = {
+    "desktop_page_positions": "entry_id parent_id folder_id changed_by",
+    "desktop_folders": "id title parent_id changed_by",
+    "desktop_page_intents": "request_uuid parent_id folder_id changed_by",
     "desktop_requests": "request_uuid input_sha256 result changed_by",
     "desktop_artifacts": "id sha256 bytes filename media_type record_id entry_id document_ids rights_basis changed_by",
     "workspace_collections": "id title state creation_sha256 changed_by",
@@ -86,6 +90,8 @@ INSERT_COLUMNS = {
     "publication_previews": "id project_id record_ids relation_ids inputs payload payload_sha256 created_by",
 }
 UPDATE_COLUMNS = {
+    "desktop_page_positions": "parent_id folder_id revision changed_by",
+    "desktop_folders": "title parent_id state revision changed_by",
     "workspace_collections": "title state revision changed_by",
     "workspace_collection_items": "state revision changed_by",
     "workspace_saved_views": "title query state revision changed_by",
