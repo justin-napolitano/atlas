@@ -95,7 +95,7 @@ class FolderAPITests(unittest.TestCase):
         from pathlib import Path
         from unittest.mock import patch
         from fastapi.testclient import TestClient
-        import test_api_boundary as base
+        import test_api as base
         from islam_research.api import create_app
         context=base.APIBoundaryTests();context.setUp()
         headers=base.APIBoundaryTests.headers(context)
