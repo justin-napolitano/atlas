@@ -58,6 +58,11 @@ Keep the first corpus bounded by `methods/corpus-scope.md` and its versioned pil
 
 ## Current frontend direction
 
+Authoring is keyboard-first: see `docs/features/keyboard-markdown-properties.md`.
+Primary writing, classification and page-link actions must work without mouse
+clicks. Reuse Cmd/Ctrl+N and search; suggestions support arrows, Tab/Enter and
+Escape. Preserve ordinary text editing, IME, focus, undo and exact autosave.
+
 For source intake and local document work, read `docs/features/metadata-first-sources.md`
 and the next-delivery table in `docs/second-brain-roadmap.md` (#222–225). References
 must be useful without files or invented edition metadata. Extend existing workspace

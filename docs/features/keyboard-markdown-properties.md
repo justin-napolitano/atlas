@@ -44,3 +44,17 @@ renders as text. Existing Arabic, tables, code, citations, frozen retry and conf
 tests continue passing. Verify popup placement, active option semantics, Escape,
 IME and undo. New YAML/render parser dependencies need dependency review in PR;
 no external approval is claimed. Keep owner app running untouched during testing.
+
+## Delivery evidence — 2026-10-21
+
+Issue #240, PR #241 (stacked on #239). Implemented in the existing live Markdown
+editor and save requests, without a new database schema or content store.
+178 frontend tests and the focused server title test pass; production build and
+dependency audit pass. An isolated native Electron run verifies keyboard template
+creation, skill→principle conversion, loaded-tag completion, stable wiki links,
+Cmd/Ctrl+Enter navigation, undo/redo and exact body readback after reload. The
+copied frozen service also passes restart/CAS and coordinated database/original-file
+backup/restore, including corrupt/tampered restore rejection. These use fresh
+synthetic databases and do not establish owner usability acceptance or cloud sync.
+The separately packaged Atlas Markdown.app passes strict signature verification;
+the running owner app was neither replaced nor restarted.
