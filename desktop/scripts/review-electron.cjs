@@ -143,7 +143,7 @@ app.whenReady().then(async()=>{
   await until(()=>ui(`fetch('/v1/desktop/page?entry_id='+encodeURIComponent(${JSON.stringify(childId)})).then(r=>r.json()).then(row=>row.folder_id===${JSON.stringify(researchFolder.id)})`),'drag moves note into folder');
   assert.equal(await ui(`fetch('/v1/workspace/note?entry_id='+encodeURIComponent(${JSON.stringify(childId)})).then(r=>r.json()).then(row=>row.body)`),savedChild.body);
   await rowAction('Synthetic research folder','New note');
-  await until(()=>ui('!!document.querySelector(`.working-surface:not([hidden]) [aria-label="Note body"]`)'),'folder note body');
+  await until(()=>ui('new URL(location.href).searchParams.get("entry_id")!=='+JSON.stringify(childId)+'&&!!document.querySelector(`.working-surface:not([hidden]) [aria-label="Note body"]`)'),'prepared folder note body');
   await ui('document.querySelector(`.working-surface:not([hidden]) [aria-label="Note body"]`).focus()');
   await reopened.webContents.insertText('# Folder field note\n\nSynthetic folder writing.');
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .connected-document-tools [role=status]")?.textContent==="Saved"'),'folder note saved');
