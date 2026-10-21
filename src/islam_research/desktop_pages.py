@@ -6,7 +6,7 @@ from . import database as db,workspace_store as workspace
 from .desktop_sources import _receipt,_commit
 
 ACTIVE="""WITH active AS (
- SELECT n.id,n.title,n.thought_type,n.revision,n.updated_at,n.links,n.body FROM research.notebook_entries n
+ SELECT n.id,n.title,n.thought_type,n.revision,n.updated_at,n.links FROM research.notebook_entries n
  WHERE n.state='active'
  AND NOT EXISTS(SELECT 1 FROM research.workspace_note_trash t WHERE t.entry_id=n.id AND t.state='trashed')
  AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed')
@@ -59,6 +59,8 @@ def prepare_child(c,*,request_uuid,parent_id,actor):
 
 
 def apply_prepared_parent(c,*,request_uuid,entry_id,actor):
+    # Historical cutover rehearsals intentionally run the pre-desktop schema.
+    if c.execute("SELECT to_regclass('research.desktop_page_intents') AS name").fetchone()['name'] is None:return
     intent=c.execute('SELECT * FROM research.desktop_page_intents WHERE request_uuid=%s',(request_uuid,)).fetchone()
     if intent:
         if intent['changed_by']!=actor:raise ValueError('Page intent belongs to another actor')

@@ -48,7 +48,7 @@ app.whenReady().then(async()=>{
   await until(()=>reopened.webContents.executeJavaScript('document.querySelector(".working-surface:not([hidden]) .cm-content")?.textContent.includes("Synthetic offline Markdown")'),'last document reopened');
   await fs.writeFile(config.resultFile,JSON.stringify({nativeElectron:true,realPostgresql:true,rendererIsolation:true,dirtyCloseProtected:true,reloadAndReopen:true,externalNetworkDenied:true}),{mode:0o600});
   // Local reference -> body-first source writing -> retained Markdown file.
-  const ui=code=>reopened.webContents.executeJavaScript(code);
+  const ui=async code=>{try{return await reopened.webContents.executeJavaScript(code);}catch(error){throw new Error('Synthetic UI step: '+code.slice(0,180)+' :: '+error.message);}};
   const click=label=>ui(`[...document.querySelectorAll('.working-surface:not([hidden]) button,.connected-nav button')].find(b=>b.textContent===${JSON.stringify(label)}).click()`);
   await click('Library');await until(()=>ui('!![...document.querySelectorAll(".working-surface:not([hidden]) button")].find(b=>b.textContent==="Add a source")'),'local library');
   await click('Add a source');await until(()=>ui('!!document.querySelector(".working-surface:not([hidden]) .desktop-add-source")'),'desktop quick reference');
