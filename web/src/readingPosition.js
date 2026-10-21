@@ -17,7 +17,9 @@ export function readingPointRect(root,position){
   const doc=root.ownerDocument,walker=doc.createTreeWalker(root,4);let left=position,node;
   while((node=walker.nextNode())){const chars=Array.from(node.textContent);if(left<=chars.length){
     const range=doc.createRange(),offset=chars.slice(0,left).join('').length;range.setStart(node,offset);range.setEnd(node,Math.min(node.length,offset+(left<chars.length?chars[left].length:0)));
-    return range.getBoundingClientRect();
+    if(!node.parentElement?.closest('[data-source-syntax]'))return range.getBoundingClientRect();
+    let visible;while((visible=walker.nextNode())){if(!visible.parentElement?.closest('[data-source-syntax]')&&visible.length){range.setStart(visible,0);range.setEnd(visible,1);return range.getBoundingClientRect();}}
+    return root.getBoundingClientRect();
   }left-=chars.length;}
   return null;
 }
