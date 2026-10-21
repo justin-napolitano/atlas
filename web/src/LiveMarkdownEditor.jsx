@@ -1,7 +1,7 @@
 import React,{forwardRef,useContext,useEffect,useId,useImperativeHandle,useLayoutEffect,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
 import {createRoot} from 'react-dom/client';
-import {Compartment,EditorState,StateEffect,StateField} from '@codemirror/state';
+import {Compartment,EditorState,StateEffect,StateField,Prec} from '@codemirror/state';
 import {Decoration,EditorView,WidgetType,keymap,placeholder as hint} from '@codemirror/view';
 import {defaultKeymap,history,historyKeymap} from '@codemirror/commands';
 import NotebookMarkdown from './NotebookMarkdown.jsx';
@@ -75,7 +75,7 @@ const LiveMarkdownEditor=forwardRef(function LiveMarkdownEditor({value,onChange,
       EditorView.contentAttributes.of({'aria-label':label,'aria-multiline':'true',dir:'auto',spellcheck:'true'}),
       editable.current.of([EditorView.editable.of(!disabled),EditorState.readOnly.of(disabled)]),
       EditorState.transactionFilter.of(transaction=>transaction.newDoc.length>options.current.maxLength?[]:transaction),hint(placeholder),blocks,
-      EditorView.domEventHandlers({focus:focusChanged,blur:focusChanged,keydown:event=>{
+      Prec.highest(EditorView.domEventHandlers({focus:focusChanged,blur:focusChanged,keydown:event=>{
         const menu=popup.current;
         if(menu?.wiki&&!event.isComposing){
           if(event.key==='Escape'){event.preventDefault();dismissed.current=menu.wiki.raw+':'+menu.wiki.from;setWiki(null);return true;}
@@ -85,7 +85,7 @@ const LiveMarkdownEditor=forwardRef(function LiveMarkdownEditor({value,onChange,
           }
         }
         options.current.onKeyDown?.(event);return event.defaultPrevented;
-      }}),
+      }})),
       EditorView.updateListener.of(update=>{
         cache.set(sessionKey,update.state);
         if(update.docChanged&&!external.current){const picked=update.transactions.flatMap(tr=>tr.effects).find(effect=>effect.is(insertedPage))?.value;options.current.onChange(update.state.doc.toString(),{pageLink:picked});}
