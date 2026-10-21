@@ -46,7 +46,7 @@ export function propertyCompletion(source,cursor,notes=[]){
  const tags=/^tags:[ \t]*\[?(?:[^\]\n]*,[ \t]*)?([\p{L}\p{N}_/-]*)$/u.exec(line);
  if(tags){const known=[...new Set(notes.flatMap(note=>markdownProperties(note.body||'').tags))].sort();return result(cursor-tags[1].length,tags[1],known);}
  const key=/^([a-z]*)$/.exec(line);
- if(key)return result(start,key[1],['type: ','tags: []','aliases: []'].filter(v=>!new RegExp('^'+v.split(':')[0]+':','m').test(source.slice(range.start,range.end))));
+ if(key&&key[1])return result(start,key[1],['type: ','tags: []','aliases: []'].filter(v=>!new RegExp('^'+v.split(':')[0]+':','m').test(source.slice(range.start,range.end))));
  return null;
 }
 export function frontmatterEdit(source,type='note'){
