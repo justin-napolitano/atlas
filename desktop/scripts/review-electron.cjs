@@ -76,7 +76,8 @@ app.whenReady().then(async()=>{
   // Separate rapid synthetic journeys across the unchanged API request window.
   await pause(61000);
   await ui('document.querySelector(".workspace-sidebar-new").click()');
-  await until(()=>ui('document.activeElement?.getAttribute("aria-label")==="Note body"'),'parent page body focus');
+  await until(()=>ui('!!document.querySelector(`.working-surface:not([hidden]) [aria-label="Note body"]`)'),'parent page editor');
+  await ui('document.querySelector(`.working-surface:not([hidden]) [aria-label="Note body"]`).focus()');
   await reopened.webContents.insertText('# Parent research page\n\nA synthetic parent.');
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .connected-document-tools [role=status]")?.textContent==="Saved"'),'saved parent page');
   const parentId=await ui('new URL(location.href).searchParams.get("entry_id")');
@@ -120,4 +121,13 @@ app.whenReady().then(async()=>{
   if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'linked-pages.png'),(await reopened.webContents.capturePage()).toPNG());
   await fs.writeFile(config.resultFile,JSON.stringify({nativeElectron:true,realPostgresql:true,rendererIsolation:true,dirtyCloseProtected:true,reloadAndReopen:true,externalNetworkDenied:true,referenceCapture:true,sourceWriting:true,localFileReading:true,pageHierarchy:true,stableWikiCompletion:true,backlinks:true,renameAndMove:true}),{mode:0o600});
   reopened.destroy();app.exit(0);
-}).catch(async error=>{await fs.writeFile(path.join(root,'electron-failure.txt'),String(error.stack),{mode:0o600});app.exit(1);});
+}).catch(async error=>{
+  let diagnostic='';
+  const window=electron.BrowserWindow.getAllWindows()[0];
+  if(window&&!window.isDestroyed()){
+    diagnostic=await window.webContents.executeJavaScript('JSON.stringify({route:location.search,active:document.activeElement?.getAttribute("aria-label"),text:document.querySelector(".working-surface:not([hidden])")?.innerText.slice(0,2500)})').catch(()=> '');
+    const config=await privateJSON(process.env.ATLAS_ELECTRON_TEST_CONFIG);
+    if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'page-review-failure.png'),(await window.webContents.capturePage()).toPNG());
+  }
+  await fs.writeFile(path.join(root,'electron-failure.txt'),String(error.stack)+'\n'+diagnostic,{mode:0o600});app.exit(1);
+});
