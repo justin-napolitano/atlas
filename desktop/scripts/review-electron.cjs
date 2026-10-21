@@ -82,7 +82,8 @@ app.whenReady().then(async()=>{
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .connected-document-tools [role=status]")?.textContent==="Saved"'),'saved parent page');
   const parentId=await ui('new URL(location.href).searchParams.get("entry_id")');
   await click('＋ Subpage');
-  await until(()=>ui('new URL(location.href).searchParams.get("entry_id")!=='+JSON.stringify(parentId)+'&&document.activeElement?.getAttribute("aria-label")==="Note body"'),'prepared subpage opens body first');
+  await until(()=>ui('new URL(location.href).searchParams.get("entry_id")!=='+JSON.stringify(parentId)+'&&!!document.querySelector(`.working-surface:not([hidden]) [aria-label="Note body"]`)'),'prepared subpage opens body first');
+  await ui('document.querySelector(`.working-surface:not([hidden]) [aria-label="Note body"]`).focus()');
   await reopened.webContents.insertText('# Child research page\n\nRelated to [[Parent re');
   await until(()=>ui('!![...document.querySelectorAll(".page-wiki-completion [role=option]")].find(row=>row.textContent.includes("Parent research page"))'),'global page completion');
   reopened.webContents.sendInputEvent({type:'keyDown',keyCode:'Return'});reopened.webContents.sendInputEvent({type:'keyUp',keyCode:'Return'});
