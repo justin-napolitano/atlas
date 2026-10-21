@@ -7,11 +7,11 @@ const anchor=row=>Object.fromEntries(['record_id','document_id','annotation_id',
 
 /** One body authority. Sessions live outside disposable views and never in browser storage. */
 export class ConnectedWriting {
-  constructor(api,{row=null,requestUUID=crypto.randomUUID(),value=null,recovery=null,onChanged=()=>{},delay=800}={}){
+  constructor(api,{row=null,requestUUID=crypto.randomUUID(),value=null,recovery=null,anchorValue=null,onChanged=()=>{},delay=800}={}){
     Object.assign(this,{api,row,requestUUID,onChanged,delay});
     this.id=row?.id||'urn:research:notebook:'+requestUUID;
     this.value=value?structuredClone(value):row?fields(row):fields({title_mode:'automatic'});
-    this.anchor=anchor(row||recovery||{});this.recoveries=new Map();
+    this.anchor=anchor(row||recovery||anchorValue||{});this.recoveries=new Map();
     this.queue=new RecoveryQueue({identity:requestUUID,revision:row?.revision||0,delay,write:sent=>this.write(sent)});
     this.queue.subscribe(()=>this.onChanged(this));
     if(recovery){

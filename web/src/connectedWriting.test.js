@@ -26,6 +26,16 @@ test('manual names survive editing the first line',async()=>{
  const f=fake(),note=new ConnectedWriting(f.api,{delay:100000});note.edit({title:'Chosen name',body:'Opening'});await note.flush();note.edit({body:'Different opening'});await note.flush();assert.equal(note.row.title,'Chosen name');
 });
 
+test('source-level writing saves its source and durable draft without a fabricated document or selection',async()=>{
+ const f=fake(),note=new ConnectedWriting(f.api,{delay:100000,anchorValue:{record_id:'synthetic:reference'}});
+ note.edit({body:'## A source-level question',thought_type:'question'});await note.flush();
+ assert.equal(note.saved,true);assert.equal(note.row.record_id,'synthetic:reference');
+ assert.equal(note.row.document_id,null);assert.equal(note.row.annotation_id,null);assert.equal(note.row.reading_position,null);
+ assert.equal(note.row.thought_type,'question');assert.equal([...f.drafts.values()][0].record_id,'synthetic:reference');
+ note.edit({body:'A changed source-level question'});await note.flush();assert.equal(note.row.revision,2);
+ assert.equal(note.row.record_id,'synthetic:reference');
+});
+
 test('resume adopts newer confirmed writing but preserves a competing local draft',async()=>{
  const f=fake(),note=new ConnectedWriting(f.api,{delay:100000});note.edit({body:'Initial body'});await note.flush();
  const cloud={...note.row,body:'Changed on another device',title:'Changed on another device',revision:2};assert.equal(note.adopt(cloud),true);assert.equal(note.value.body,cloud.body);assert.equal(note.saved,true);

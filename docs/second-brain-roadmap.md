@@ -49,6 +49,10 @@ underneath, rather than a prolonged required-project UI or hidden default projec
 Owner-approved planning direction, 2026-10-20: make a reference useful before any
 file import. Contract: [metadata-first sources and private documents](features/metadata-first-sources.md).
 These are planned deliveries under #100/#88, not implemented upload capabilities.
+PR #227 now supplies a local implementation candidate; the
+[delivery ledger](features/local-source-delivery.md) records its actual scope and
+verification. The source-file slice supports bounded UTF-8 Markdown/plain text;
+general PDF/EPUB/OCR ingestion remains deferred.
 
 Scope amendment: #222–225 target the **installed local Electron app only**, using
 its bundled owner service, PostgreSQL and private local files. Offline desktop

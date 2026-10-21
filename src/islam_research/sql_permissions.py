@@ -9,6 +9,7 @@ from psycopg import sql
 
 
 READ_TABLES = (
+    "desktop_requests", "desktop_artifacts",
     "workspace_legacy_collections",
     "workspace_collections", "workspace_collection_items", "workspace_saved_views", "workspace_connections", "workspace_investigations", "workspace_reflections", "workspace_organization_history",
     "workspace_reading_desks", "workspace_reading_desk_revisions", "workspace_quran_places", "workspace_quran_reading_progress", "workspace_quran_progress_revisions", "workspace_gutenberg_places", "workspace_annotation_trash", "workspace_annotation_trash_history",
@@ -41,6 +42,8 @@ OWNER_FUNCTIONS = (
     "research.withdraw_publication(text,integer,text,text)",
 )
 INSERT_COLUMNS = {
+    "desktop_requests": "request_uuid input_sha256 result changed_by",
+    "desktop_artifacts": "id sha256 bytes filename media_type record_id entry_id document_ids rights_basis changed_by",
     "workspace_collections": "id title state creation_sha256 changed_by",
     "workspace_collection_items": "collection_id target_kind target_id state changed_by",
     "workspace_saved_views": "id title query state creation_sha256 changed_by",
