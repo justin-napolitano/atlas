@@ -50,8 +50,10 @@ async function checkbox(label){await evaluate(`[...document.querySelectorAll('la
  await click('A loose idea العربية 😀');
  await until(()=>evaluate('!!document.querySelector(".connected-note .cm-content")'),'open original note');
  await evaluate('document.querySelector(".cm-content").focus()');
+ // Both editors have the same label; wait for the new editor before typing.
+ await evaluate('window.__previousCaptureEditor=document.activeElement;true');
  const first=await evaluate('[...window.__connectedTest.entries.keys()][0]');
- await call('Input.dispatchKeyEvent',{type:'keyDown',key:'>',code:'Period',modifiers:process.platform==='darwin'?12:10});await call('Input.dispatchKeyEvent',{type:'keyUp',key:'>',code:'Period',modifiers:process.platform==='darwin'?12:10});await until(()=>evaluate('document.activeElement?.getAttribute("aria-label")==="Note body"'),'second capture focus');
+ await call('Input.dispatchKeyEvent',{type:'keyDown',key:'>',code:'Period',modifiers:process.platform==='darwin'?12:10});await call('Input.dispatchKeyEvent',{type:'keyUp',key:'>',code:'Period',modifiers:process.platform==='darwin'?12:10});await until(()=>evaluate('document.activeElement!==window.__previousCaptureEditor&&document.activeElement?.getAttribute("aria-label")==="Note body"&&document.activeElement===document.querySelector(".working-surface:not([hidden]) .cm-content")'),'second capture focus');
  await call('Input.insertText',{text:'A second unrelated thought.'});await until(()=>evaluate('window.__connectedTest.entries.size===2'),'independent second note');
  assert.equal(await evaluate('[...window.__connectedTest.entries.values()].every(row=>row.project_id===null&&row.record_id===null&&row.document_id===null)'),true);
  await evaluate('document.querySelector(`[aria-label="New collection"]`).click()');

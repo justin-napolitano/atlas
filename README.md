@@ -7,6 +7,7 @@ The research should understand traditions in context before evaluating them. “
 ## Start here
 
 - [Persistent local workspace](docs/local-postgres-workspace.md) — real PostgreSQL-backed reading and writing on this Mac; startup, local sign-in, durability checks and the explicit limits of legacy-data import.
+- [Electron desktop](docs/electron-desktop.md) — configured local Mac app, native lifecycle and verification; [portable offline storage and sync plan](docs/desktop-offline-sync.md).
 
 - [Connected research workspace](docs/connected-research-vision.md) — latest owner-approved direction: one private workspace, effortless loose-note capture, optional collections and meaningful connections; epic #201.
 

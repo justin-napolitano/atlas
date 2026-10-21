@@ -10,12 +10,16 @@ import hashlib
 import json
 import logging
 import os
+import re
 from pathlib import Path
 import secrets
 import shutil
+import signal
+import socket
 import subprocess
 import sys
 import time
+import threading
 import webbrowser
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,21 +30,24 @@ DEFAULT_STATE = Path.home()/'.local/share/atlas'
 def private_json(path,value):
     path.parent.mkdir(parents=True,exist_ok=True,mode=0o700)
     fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
-    with os.fdopen(fd,'w') as stream: json.dump(value,stream)
+    with os.fdopen(fd,'w') as stream:
+        json.dump(value,stream);stream.flush();os.fsync(stream.fileno())
 
 
-def config(state):
+def config(state,postgres_bin=None):
     path=state/'local-config.json'
     if path.is_symlink() or path.stat().st_mode & 0o077:
         raise ValueError('Local config must be an owner-private regular file')
     value=json.loads(path.read_text())
     if value.get('format')!='atlas-local-postgres-v1':raise ValueError('Unknown local configuration')
+    if not re.fullmatch(r'atlas_research|atlas_restore_[a-f0-9]{32}',value.get('database','atlas_research')):raise ValueError('Unknown local database')
+    if postgres_bin is not None:value={**value,'postgres_bin':str(postgres_bin)}
     return value
 
 
 def admin_dsn(state,value):
     from psycopg.conninfo import make_conninfo
-    return make_conninfo(host=str(state/'socket'),port=55432,dbname='atlas_research',user=value['admin'])
+    return make_conninfo(host=str(state/'socket'),port=55432,dbname=value.get('database','atlas_research'),user=value['admin'])
 
 
 def start_database(state,value):
@@ -64,7 +71,7 @@ def initialize(args):
         value={'format':'atlas-local-postgres-v1','admin':getpass.getuser(),'postgres_bin':str(args.postgres_bin.resolve()),
             'owner_password':secrets.token_urlsafe(48),'publisher_password':secrets.token_urlsafe(48)}
         private_json(path,value)
-    value=config(state);binary=Path(value['postgres_bin'])
+    value=config(state,args.postgres_bin.resolve());binary=Path(value['postgres_bin'])
     data=state/'postgres-data';socket=state/'socket';socket.mkdir(exist_ok=True,mode=0o700);os.chmod(socket,0o700)
     if not (data/'PG_VERSION').exists():
         subprocess.run([str(binary/'initdb'),'-D',str(data),'--encoding=UTF8','--locale=C','--auth-local=peer','--auth-host=reject','--username='+value['admin']],check=True,stdout=subprocess.DEVNULL)
@@ -73,18 +80,19 @@ def initialize(args):
             stream.write("unix_socket_directories = '"+str(socket).replace("'","''")+"'\nunix_socket_permissions = 0700\n")
         (data/'pg_hba.conf').write_text('local all '+value['admin']+' peer\nlocal all all scram-sha-256\n')
     start_database(state,value)
+    name=value.get('database','atlas_research')
     with psycopg.connect(make_conninfo(host=str(socket),port=55432,dbname='postgres',user=value['admin']),autocommit=True) as c:
-        if not c.execute("SELECT 1 FROM pg_database WHERE datname='atlas_research'").fetchone():c.execute('CREATE DATABASE atlas_research')
+        if not c.execute("SELECT 1 FROM pg_database WHERE datname=%s",(name,)).fetchone():c.execute(sql.SQL('CREATE DATABASE {}').format(sql.Identifier(name)))
         for role,key in [('atlas_owner','owner_password'),('atlas_public','publisher_password')]:
             if not c.execute('SELECT 1 FROM pg_roles WHERE rolname=%s',(role,)).fetchone():
                 c.execute(sql.SQL('CREATE ROLE {} LOGIN PASSWORD {}').format(sql.Identifier(role),sql.Literal(value[key])))
-        c.execute('REVOKE ALL ON DATABASE atlas_research FROM PUBLIC')
-        c.execute('GRANT CONNECT ON DATABASE atlas_research TO atlas_owner,atlas_public')
+        c.execute(sql.SQL('REVOKE ALL ON DATABASE {} FROM PUBLIC').format(sql.Identifier(name)))
+        c.execute(sql.SQL('GRANT CONNECT ON DATABASE {} TO atlas_owner,atlas_public').format(sql.Identifier(name)))
     with db.connect(admin_dsn(state,value)) as c:
         migrations=db.migrate(c)
         configure(c,'atlas_owner','atlas_public',apply=True)
     if not (state/'local-session.json').exists():private_json(state/'local-session.json',{'launch':secrets.token_urlsafe(48),'session':secrets.token_urlsafe(48)})
-    print(json.dumps({'storage':'native_postgresql','new_migrations':len(migrations),'runtime_role':'atlas_owner','database_network_listener':False}))
+    if not getattr(args,'quiet',False):print(json.dumps({'storage':'native_postgresql','new_migrations':len(migrations),'runtime_role':'atlas_owner','database_network_listener':False}))
 
 
 def build(args):
@@ -105,16 +113,41 @@ def serve(args):
     import uvicorn
     from psycopg.conninfo import make_conninfo
     from islam_research.local_owner import LocalOwner
-    state=args.state_dir.resolve();value=config(state);start_database(state,value)
+    state=args.state_dir.resolve();value=config(state,getattr(args,'postgres_bin',None));start_database(state,value)
     credentials_path=state/'local-session.json'
     if credentials_path.is_symlink() or credentials_path.stat().st_mode & 0o077:raise ValueError('Local session file must be private')
     credentials=json.loads(credentials_path.read_text())
-    dsn=make_conninfo(host=str(state/'socket'),port=55432,dbname='atlas_research',user='atlas_owner',password=value['owner_password'])
-    app=LocalOwner(database_url=dsn,directory=Path((state/'current-frontend').read_text()),port=args.port,credentials=credentials)
+    dsn=make_conninfo(host=str(state/'socket'),port=55432,dbname=value.get('database','atlas_research'),user='atlas_owner',password=value['owner_password'])
+    managed=getattr(args,'desktop_managed',False)
+    listener=None
+    if managed:
+        listener=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        try:listener.bind(('127.0.0.1',args.port))
+        except OSError:
+            if not args.port:raise
+            listener.bind(('127.0.0.1',0))
+        listener.listen(16)
+        port=listener.getsockname()[1]
+    else:port=args.port
+    directory=getattr(args,'frontend',None) or Path((state/'current-frontend').read_text())
+    app=LocalOwner(database_url=dsn,directory=directory,port=port,credentials=credentials)
     logging.basicConfig(level=logging.WARNING,format='%(message)s')
-    print(f'Persistent local workspace: http://127.0.0.1:{args.port}/',flush=True)
-    uvicorn.run(app,host='127.0.0.1',port=args.port,access_log=False,proxy_headers=False,
-        workers=1,limit_concurrency=24,backlog=16,server_header=False,log_level='warning')
+    settings=dict(host='127.0.0.1',port=port,access_log=False,proxy_headers=False,
+        workers=1,limit_concurrency=24,backlog=16,server_header=False,log_level='warning',timeout_graceful_shutdown=10)
+    if managed:
+        server=uvicorn.Server(uvicorn.Config(app,**settings))
+        # The desktop owns this pipe. A crash/exit ends only its API, not PostgreSQL.
+        def watch_parent():
+            try:
+                while os.read(sys.stdin.fileno(),1024):pass
+            finally:server.should_exit=True
+        threading.Thread(target=watch_parent,daemon=True).start()
+        # The port is already bound by this child; no shared fixed port is trusted.
+        print(json.dumps({'kind':'atlas-local-owner','format':1,'port':port}),flush=True)
+        server.run(sockets=[listener])
+    else:
+        print(f'Persistent local workspace: http://127.0.0.1:{port}/',flush=True)
+        uvicorn.run(app,**settings)
 
 
 def open_browser(args):
@@ -160,7 +193,7 @@ def import_progress(args):
 
 
 def backup_database(args):
-    state=args.state_dir.resolve();value=config(state);start_database(state,value)
+    state=args.state_dir.resolve();value=config(state,getattr(args,'postgres_bin',None));start_database(state,value)
     directory=state/'backups';directory.mkdir(exist_ok=True,mode=0o700)
     target=directory/('atlas-postgres-'+str(time.time_ns())+'.dump')
     partial=target.with_suffix('.partial')
@@ -179,13 +212,16 @@ def main():
     init=commands.add_parser('init');init.add_argument('--postgres-bin',type=Path,required=True)
     commands.add_parser('build')
     commands.add_parser('backup')
+    managed=commands.add_parser('desktop-serve');managed.set_defaults(desktop_managed=True)
+    managed.add_argument('--port',type=int,default=0)
     migrate=commands.add_parser('import-progress')
     migrate.add_argument('--source',type=Path,required=True);migrate.add_argument('--project',required=True)
     for name in ('serve','open'):
         item=commands.add_parser(name);item.add_argument('--port',type=int,default=5187)
     args=parser.parse_args()
-    if getattr(args,'port',5187) not in range(1024,65536):parser.error('Invalid local port')
-    try:{'init':initialize,'build':build,'serve':serve,'open':open_browser,'import-progress':import_progress,'backup':backup_database}[args.command](args)
+    port=getattr(args,'port',5187)
+    if port not in range(1024,65536) and not (getattr(args,'desktop_managed',False) and port==0):parser.error('Invalid local port')
+    try:{'init':initialize,'build':build,'serve':serve,'desktop-serve':serve,'open':open_browser,'import-progress':import_progress,'backup':backup_database}[args.command](args)
     except Exception:
         # Driver exceptions can contain SQL or credentials; never dump operator state.
         parser.exit(1,'Local workspace operation failed. Existing database and preview files were retained.\n')
