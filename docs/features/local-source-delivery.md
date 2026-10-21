@@ -88,17 +88,23 @@ an assertion of external security approval.
   file validation, pagination/trash and corruption rejection.
 - API boundary tests: desktop routes absent from ordinary owner/public schemas,
   renderer flags ineffective, owner and explicit CSRF/write intent required.
-- Existing frontend unit suite: 166 passed after the initial integration.
+- Existing frontend unit suite: 166 passed after the initial integration; all six
+  connected-writing tests pass with the added source-anchor/recovery regression.
 - Production frontend build: passed after the initial integration.
 - Full existing PostgreSQL 17 regression after the initial delivery: 374 tests,
-  passed with one skipped. Follow-up metadata/reverse-link tests: 13 passed.
+  passed with one skipped. Final isolated source/metadata/file/reverse-link and
+  interrupted-registration suite: 14 passed, including deterministic section order.
 - Copied frozen runtime with native sandboxed Electron: reference capture,
   source-level Markdown autosave, local-file reading, isolated fresh PostgreSQL,
   close/reload/reopen, consistent database-plus-original-files restore, corrupt
   object/archive rejection, existing Qur’an notes/library/progress: passed.
-- Final follow-up package rebuild and CI PostgreSQL 18: pending; update this ledger
-  with actual results before release. Initial copied-runtime evidence predates the
-  final bibliography UI and reverse-link refinements.
+- Follow-up copied runtime and signed package resource tests also passed the native
+  bibliography edit, original note preservation and file reader flow. Synthetic
+  screenshots are retained only in ignored `research-library/testing/desktop-sources/`.
+- Nine native process/navigation/isolation unit tests and unchanged default
+  owner/public OpenAPI contract checks passed. Prior CI PostgreSQL 17/18, browser,
+  container, runtime/storage and graph jobs passed at `f4ea6c2`; the final follow-up
+  head's CI and rebuilt package are recorded in PR #227 rather than implied here.
 
 Do not close #222–225 from this document alone. The installed owner app is not
 replaced or restarted by test builds; review uses separate synthetic state.

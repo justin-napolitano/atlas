@@ -5,6 +5,10 @@ Status: implementation plan, 2026-10-20. Parent intake epic #88; delivery umbrel
 introduced by this document. The ordered delivery issues are listed in the
 [roadmap](../second-brain-roadmap.md#next-metadata-first-sources).
 
+Implementation candidate: [PR #227](https://github.com/justin-napolitano/islam-research/pull/227).
+See the [delivery ledger](local-source-delivery.md) for actual supported formats,
+limits, API behavior and verification; this plan alone is not evidence of delivery.
+
 ## Delivery target: local desktop only
 
 Owner scope amendment, 2026-10-20: #222–225 ship in the installed Electron app
