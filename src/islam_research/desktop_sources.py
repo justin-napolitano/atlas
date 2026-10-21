@@ -121,9 +121,14 @@ def metadata(connection,*,request_uuid,record_id,expected_revision,title,creator
 def private_root(root):
     root=Path(root)
     if not root.is_absolute() or root.parent.is_symlink():raise ValueError('Private artifact storage required')
+    created=not root.exists()
     root.mkdir(mode=0o700,exist_ok=True)
     info=root.lstat()
     if not stat.S_ISDIR(info.st_mode) or info.st_uid!=os.getuid() or info.st_mode&0o077:raise ValueError('Private artifact storage required')
+    if created:
+        fd=os.open(root.parent,os.O_RDONLY)
+        try:os.fsync(fd)
+        finally:os.close(fd)
     return root
 
 

@@ -94,6 +94,18 @@ class DesktopSourceTests(unittest.TestCase):
     def test_corrupt_original_never_confirms_a_retry(self):
         values,row=self.file();(self.root/row['sha256']).write_bytes(b'corrupt')
         with self.assertRaises(ValueError):desktop.ingest(self.c,**values)
+
+    def test_database_failure_after_durable_bytes_is_recoverable_on_exact_retry(self):
+        from unittest.mock import patch
+        values=dict(artifact_root=self.root,request_uuid=str(uuid.uuid4()),filename='synthetic.md',intent='source',
+            rights_basis='Synthetic authored fixture',content_base64=base64.b64encode(b'Synthetic orphan recovery').decode(),actor='synthetic')
+        with patch.object(desktop.db,'save_record',side_effect=RuntimeError('Synthetic interrupted registration')):
+            with self.assertRaises(RuntimeError):desktop.ingest(self.c,**values)
+        self.assertEqual(self.c.execute('SELECT count(*) AS n FROM research.desktop_requests WHERE request_uuid=%s',(values['request_uuid'],)).fetchone()['n'],0)
+        self.assertEqual(len(list(self.root.iterdir())),1)
+        result=desktop.ingest(self.c,**values)
+        self.assertTrue(desktop.ingest(self.c,**values)['replayed'])
+        self.assertEqual(len(desktop.artifacts(self.c,record_id=result['record_id'])),1)
     def test_invalid_file_or_permission_has_no_success_receipt(self):
         for patch in [dict(filename='../escape.md'),dict(filename='active.html'),dict(rights_basis=''),dict(content_base64='not base64'),dict(content_base64=base64.b64encode(b'\xff').decode()),dict(content_base64=base64.b64encode(b'a'*32769).decode())]:
             with self.assertRaises(ValueError):self.file(**patch)

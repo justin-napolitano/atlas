@@ -71,6 +71,9 @@ def backup(state,binary):
     partial.rename(target)
     local.private_json(target.with_suffix('.json'),{'format':2,'kind':'atlas-local-backup','postgres_major':17,
         'sha256':digest(target),'bytes':target.stat().st_size,'counts':counts,'artifacts':artifacts,'created_at':time.time()})
+    fd=os.open(directory,os.O_RDONLY)
+    try:os.fsync(fd)
+    finally:os.close(fd)
     return {'backup_created':True,'file':name,'cloud_backup':False}
 
 
@@ -134,6 +137,9 @@ def restore(state,binary,archive):
     # Commit selection only after all checks. Neither original nor failed DB is deleted.
     pending=state/('config-'+uuid.uuid4().hex+'.partial')
     local.private_json(pending,selected);pending.replace(state/'local-config.json')
+    fd=os.open(state,os.O_RDONLY)
+    try:os.fsync(fd)
+    finally:os.close(fd)
     return {'restored':True,'original_database_retained':True,'cloud_sync':False}
 
 
