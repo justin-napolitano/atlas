@@ -5,6 +5,28 @@ Status: implementation plan, 2026-10-20. Parent intake epic #88; delivery umbrel
 introduced by this document. The ordered delivery issues are listed in the
 [roadmap](../second-brain-roadmap.md#next-metadata-first-sources).
 
+## Delivery target: local desktop only
+
+Owner scope amendment, 2026-10-20: #222–225 ship in the installed Electron app
+with its bundled owner service, native PostgreSQL and private local files. Reference
+capture, writing, retained-text reading, search and backup/restore must work offline.
+Deliberately opening an external link or discovering an uncached book may still
+need internet; neither is required to save a reference or write notes.
+
+Hosted web UI, remote owner APIs, sign-in, deployment, cloud storage, cross-device
+delivery and cloud sync are deferred. They are not acceptance gates for these
+issues. Shared React/service modules and stable data contracts may remain reusable;
+do not fork the data model or remove existing web behavior. New ingestion/file
+capabilities must be enabled only by a trusted desktop service capability, enforced
+by the backend. Hiding a web button or trusting a renderer-supplied platform flag
+does not restrict a privileged local-file operation. A browser opened on the local
+service is not an additional supported delivery target for this milestone.
+
+Renderer/browser automation remains useful for testing the desktop frontend. It
+does not imply a hosted web release. Reuse existing regression checks for shared
+code; packaged Electron is the end-to-end product acceptance target. Public/private
+checks below preserve existing boundaries, without building new public features.
+
 ## Outcome and first release
 
 Save a reference, start writing, connect it to other thinking. A source need not
@@ -200,7 +222,9 @@ boundaries stay intact. Use synthetic isolated databases and files only.
 | Owner/private/public search and agent context | Private results require owner access; public views omit private records, snippets, paths and counts. |
 | Existing Qur’an/Gutenberg reading | Same exact notes, progress/place, shelf identities and named text resources. |
 
-Implementation evidence must cover PostgreSQL 17/18, real browser flows and the
-packaged offline Electron app where affected. No live owner database or notes may
+Implementation evidence must cover PostgreSQL 17/18 storage compatibility and the
+packaged offline Electron app, including native local-file and backup flows where
+affected. Renderer automation and shared-code regressions supplement desktop
+acceptance; hosted browser delivery is deferred. No live owner database or notes may
 be test fixtures. Do not mark an issue complete based only on unit tests or this
 document; record actual checks and remaining usability/release gates in its PR.

@@ -50,6 +50,13 @@ Owner-approved planning direction, 2026-10-20: make a reference useful before an
 file import. Contract: [metadata-first sources and private documents](features/metadata-first-sources.md).
 These are planned deliveries under #100/#88, not implemented upload capabilities.
 
+Scope amendment: #222–225 target the **installed local Electron app only**, using
+its bundled owner service, PostgreSQL and private local files. Offline desktop
+acceptance comes first. Hosted web features/APIs, deployment, sign-in, cloud object
+storage and synchronization are deferred. Keep shared contracts reusable and existing
+web behavior intact; enforce new desktop-only capabilities in the trusted service.
+Browser automation may verify the desktop renderer without making web delivery a gate.
+
 | Order | Delivery | Acceptance gate |
 | --- | --- | --- |
 | 1 | [#222 minimal references](https://github.com/justin-napolitano/islam-research/issues/222) | Save URL/identifier/title offline with stable identity, no fabricated edition, safe receipts and owner search. |

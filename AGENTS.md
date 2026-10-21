@@ -63,6 +63,10 @@ and the next-delivery table in `docs/second-brain-roadmap.md` (#222–225). Refe
 must be useful without files or invented edition metadata. Extend existing workspace
 intake/source identities; external artifacts require coordinated database-and-file
 backup/restore before shipping. The document is a plan, not implemented ingestion.
+Owner scope amendment: #222–225 target only the installed local Electron app and
+bundled owner service/database. Defer hosted web delivery, sign-in, cloud storage
+and synchronization. Preserve reusable shared contracts and existing web behavior;
+gate new desktop-only features in the trusted backend, not just renderer UI.
 
 For real local reading/writing, use `docs/local-postgres-workspace.md` and the explicit
 `scripts/local_workspace.py` launcher. The connected in-memory browser harness is

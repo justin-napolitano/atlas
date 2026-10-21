@@ -10,6 +10,8 @@ required project or invented edition. That contract supersedes the required meta
 and sequencing described below for future quick capture; the historical manual
 fallback and its receipt/privacy/identity guarantees remain implemented behavior.
 Optional managed files and Markdown import follow only after coherent backups.
+These next deliveries target the installed local Electron app and its bundled
+service/database only; hosted web delivery and cloud synchronization are deferred.
 
 This document records the implemented manual fallback. The planned default is
 [seamless catalog reading](seamless-open-catalog.md): find a source, open it, and
