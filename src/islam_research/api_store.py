@@ -26,6 +26,12 @@ from . import shared_library
 class PostgreSQLStore:
     """Keep private queries and public projection reads separate."""
 
+    def page_operation(self,operation,**values):
+        from . import desktop_pages
+        operations={name:getattr(desktop_pages,name) for name in ('listing','prepare_child','move','context','backlinks','resolve')}
+        if operation not in operations:raise ValueError('Unknown page operation')
+        with db.connect(self.dsn) as c:return operations[operation](c,**values)
+
     def desktop_operation(self,operation,**values):
         from . import desktop_sources
         operations={name:getattr(desktop_sources,name) for name in ('reference','metadata','related','ingest','artifacts')}

@@ -30,6 +30,18 @@ class Metadata(Write):
     edition:Annotated[str,Field(max_length=1000)]=''
 
 
+class PagePrepare(Write):
+    request_uuid:UUID4
+    parent_id:ID
+
+
+class PageMove(Write):
+    request_uuid:UUID4
+    entry_id:ID
+    parent_id:ID|None=None
+    expected_revision:Annotated[int,Field(strict=True,ge=0)]
+
+
 def register(router,store,owner,artifact_root):
     def write(operation,value,actor):
         fields=value.model_dump();fields.pop('owner_confirmed')
@@ -37,7 +49,31 @@ def register(router,store,owner,artifact_root):
 
     @router.get('/desktop/capabilities')
     def capabilities():
-        return dict(local_sources=True,files=True,formats=['md','markdown','txt'],max_file_bytes=32768,cloud_sync=False)
+        return dict(local_sources=True,pages=True,files=True,formats=['md','markdown','txt'],max_file_bytes=32768,cloud_sync=False)
+
+    @router.get('/desktop/pages')
+    def pages(parent_id:ID|None=None,q:Annotated[str,Query(max_length=300)]='',cursor:Annotated[str,Query(max_length=1600)]='',
+              limit:Annotated[int,Query(ge=1,le=50)]=30,all_pages:bool=False):
+        return store.page_operation('listing',parent_id=parent_id,q=q,cursor=cursor,limit=limit,all_pages=all_pages)
+
+    @router.get('/desktop/page')
+    def page(entry_id:ID):return store.page_operation('context',entry_id=entry_id)
+
+    @router.get('/desktop/pages/backlinks')
+    def backlinks(entry_id:ID,cursor:Annotated[str,Query(max_length=500)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):
+        return store.page_operation('backlinks',entry_id=entry_id,cursor=cursor,limit=limit)
+
+    @router.get('/desktop/pages/resolve')
+    def resolve(target:Annotated[str,Query(min_length=1,max_length=500)]):return store.page_operation('resolve',target=target)
+
+    @router.post('/desktop/pages/prepare',status_code=201)
+    def prepare(value:PagePrepare,actor:str=Depends(owner)):
+        return store.page_operation('prepare_child',actor=actor,request_uuid=value.request_uuid,parent_id=value.parent_id)
+
+    @router.post('/desktop/pages/parent')
+    def move(value:PageMove,actor:str=Depends(owner)):
+        return store.page_operation('move',actor=actor,request_uuid=value.request_uuid,entry_id=value.entry_id,
+            parent_id=value.parent_id,expected_revision=value.expected_revision)
 
     @router.post('/desktop/references',status_code=201)
     def reference(value:Reference,actor:str=Depends(owner)):return write('reference',value,actor)
