@@ -63,6 +63,7 @@ app.whenReady().then(async()=>{
  await until(()=>ui('!!document.querySelector(".reader-text")'),'source reopens');
  await until(()=>ui('document.querySelector(".reader-margin")?.textContent.includes("A new source-wide thought.")'),'book draft retained');
  await until(()=>ui('!!document.querySelector(`.reader-margin [aria-label="Write beside this source"] .cm-content,.reader-margin .cm-content[contenteditable="true"]`)'),'book editor ready');
+ assert.equal(await ui('parseFloat(getComputedStyle(document.querySelector(".desktop-source-writing .live-markdown-editor")).minHeight)<100'),true);
  // Presentation changes must not rewrite selectors or source bytes.
  await ui('document.querySelector(".reading-appearance-panel").open=true;document.querySelector(".reader-original-option input").click()');
  await until(()=>ui('!document.querySelector(".reader-md-heading")'),'original Markdown view');
@@ -78,7 +79,9 @@ app.whenReady().then(async()=>{
  const before=await ui(`document.querySelector(${JSON.stringify(divider)}).getAttribute('aria-valuenow')`);
  await ui(`document.querySelector(${JSON.stringify(divider)}).dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true}))`);
  await until(()=>ui(`document.querySelector(${JSON.stringify(divider)}).getAttribute('aria-valuenow')!==${JSON.stringify(before)}`),'keyboard notebook resize');
- await ui('document.querySelector(".workspace-reader").scrollTo(0,0)');await pause(200);
+ await ui('document.querySelector(".workspace-reader").scrollTo(0,0)');
+ await until(()=>ui('!document.querySelector(".reading-appearance-panel").open&&!!document.querySelector(".reader-md-heading")'),'reading presentation restored');
+ await ui('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');await pause(500);
  if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'reader-notebook-desktop.png'),(await window.webContents.capturePage()).toPNG());
  await window.setMinimumSize(0,0);await window.setContentSize(390,844);await pause(200);
  assert.equal(await ui('innerWidth'),390);
@@ -88,6 +91,7 @@ app.whenReady().then(async()=>{
  await ui('document.querySelector(".reader-margin-close").click()');
  await until(()=>ui('document.querySelector(".reader-margin").hidden'),'notebook dismissed');
  await until(()=>ui('document.activeElement===document.querySelector(".reader-margin-toggle")'),'focus returns to notebook control');
+ await ui('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');await pause(200);
  if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'reader-notebook-mobile.png'),(await window.webContents.capturePage()).toPNG());
  await fs.writeFile(config.resultFile,JSON.stringify({nativeReader:true,sourceExact:true,inertMarkup:true,formattedSelection:true,oneNotebook:true,freeLocationNote:true,wholeSourceWriting:true,inlineQuoteReturn:true,draftRetention:true,mobileLayout:true,originalMarkdown:true,zoomSizing:true,keyboardResize:true,mobileFocus:true}),{mode:0o600});window.destroy();app.exit(0);
 }).catch(async error=>{let details='';try{details=await window?.webContents.executeJavaScript('document.querySelector(".working-surface:not([hidden])")?.innerText.slice(0,2000)');if(window&&config?.screenshots)await fs.writeFile(path.join(config.screenshots,'reader-flow-failure.png'),(await window.webContents.capturePage()).toPNG());}catch{}await fs.writeFile(path.join(root,'electron-failure.txt'),String(error.stack)+'\n'+details,{mode:0o600});app.exit(1);});

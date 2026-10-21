@@ -62,3 +62,47 @@ unintended external image loads, anchor corruption and draft loss. Reuse the par
 keep syntax/source ranges, use inert fallbacks and synthetic tests. Flag any actual
 new sensitive API/parser boundary for normal review; this plan is not an assertion
 of external approval or completed acceptance.
+
+## Delivered behavior and evidence
+
+Implementation: [PR #235](https://github.com/justin-napolitano/islam-research/pull/235),
+stacked on #229. Source metadata and edition/file controls are in Source info;
+readable text follows the compact header. Reference-only items still support
+writing before an import. The one resizable notebook contains current-location
+writing, source-wide writing and exact passage notes. Unfinished writing survives
+scope/navigation changes. Library/Notebook are primary; Research retains Continue,
+Questions, Explore and collection creation. The existing folders/pages stay intact.
+
+Verified before packaging:
+
+- Frontend unit suite: **174 passed**, including exact Markdown source-range
+  reconstruction and Arabic/emoji Unicode boundaries. Production build passed.
+- GitHub browser suite, public/owner containers, lifecycle and storage boundaries:
+  passed on implementation commit 4271be0 and documentation/harness update
+  c1c6f15.
+- Copied frozen bundle, sandboxed native Electron and a fresh isolated PostgreSQL
+  database: reference creation, source-wide autosave, Markdown import, inert
+  HTML/images, exact DOM/source equality, formatted phrase selection, inline quote
+  reopening, location-note save and unfinished book writing across navigation.
+- That native run also passed Unicode note persistence, Qur’an place/progress,
+  restart, revision conflict rejection, database-plus-file backup/restore and
+  corrupt-object/tampered-archive rejection. No owner data was modified.
+- Final ad-hoc signed package: copied resources and sandboxed native Electron
+  passed the same workflow at true 390px width, 200% text sizing, Original Markdown
+  with retained marks, keyboard notebook resizing and mobile dismissal/focus return.
+  The complete fresh-database/restart/backup-restore check passed again against
+  those packaged resources. Synthetic screenshots remain ignored under
+  `research-library/testing/reader-notebook-flow/`.
+
+Limits: this is a local presentation refinement. It does not add file formats,
+remove the existing 32 KiB import limit, change note/publication authorities, or
+supply hosted sign-in/cloud sync. Formatting is conservative: unsupported or
+normalized Markdown remains literal; original bytes and selectors are authoritative.
+No automatic source rewriting, remote image loading or HTML execution is added.
+Normal code review and owner usability review remain separate from these checks.
+
+Review app: `~/Applications/Atlas Reader.app`, installed alongside the existing apps;
+`codesign --verify --deep --strict` passed on that installed copy. It uses the
+existing local owner state when the owner opens it; synthetic acceptance used a
+separate temporary state directory. Quit the current Atlas instance before opening
+this alternative build. No active app was replaced or relaunched during verification.

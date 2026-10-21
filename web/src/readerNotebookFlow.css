@@ -44,7 +44,7 @@
 .connected-source-document .desktop-source-writing h2{font:500 12px/1.5 system-ui;color:var(--muted);margin:10px 0}
 .connected-source-document .desktop-source-writing .cm-content{min-height:3rem;padding:0}
 .connected-source-document .desktop-source-writing .cm-editor{min-height:3rem}
-.connected-source-document .desktop-source-writing .live-markdown-editor{font:var(--notes-size)/var(--reading-spacing) system-ui}
+.connected-source-document .desktop-source-writing .live-markdown-editor{min-height:3rem;font:var(--notes-size)/var(--reading-spacing) system-ui}
 .connected-source-document .desktop-writing-actions{justify-content:flex-start;gap:14px;margin:4px 0 16px}
 .connected-source-document .desktop-writing-actions button{font-size:12px;color:var(--muted)}
 .source-book-note{padding:10px 0 16px;border-bottom:1px solid var(--rule)}
