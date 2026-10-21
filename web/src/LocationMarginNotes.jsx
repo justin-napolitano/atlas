@@ -104,6 +104,6 @@ export default function LocationMarginNotes({api,record,document,textRoot,drafts
     {linkError&&<p role="alert">{linkError}</p>}
     {rows.filter(row=>row.id!==fresh?.id).sort((a,b)=>a.reading_position-b.reading_position).map(row=><MarginWriting key={row.id} {...shared} active={activeId===row.id} initial={row} onLeave={settle}/>)}
     {cursor&&<button onClick={()=>load(cursor)}>Earlier margin notes</button>}
-    {!hideComposer&&<div className="location-margin-composer">{fresh?<MarginWriting key={fresh.id} {...shared} initial={fresh} onLeave={settle}/>:<textarea aria-label="Write in the margin" dir="auto" placeholder="Write a note…" rows={1} onFocus={()=>{position.current=readingPosition(textRoot.current);}} onChange={event=>start(event.target.value)}/>}</div>}
+    {(!hideComposer||fresh)&&<div className="location-margin-composer">{fresh?<MarginWriting key={fresh.id} {...shared} initial={fresh} onLeave={settle}/>:<textarea aria-label="Write in the margin" dir="auto" placeholder="Write a note…" rows={1} onFocus={()=>{position.current=readingPosition(textRoot.current);}} onChange={event=>start(event.target.value)}/>}</div>}
   </section>;
 }
