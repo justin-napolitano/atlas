@@ -21,3 +21,12 @@ test('navigation metadata tracks actual parsed Markdown without deleting explain
  assert.deepEqual(pageLinksFor('[[unknown]]',[]),[]);
  assert.deepEqual(pageLinksFor('[[note:manual|Manual]]',links),[manual]);
 });
+
+test('undo restores generated backlinks without keeping deleted links',()=>{
+ const memory=new Set(),target={id:'note:undo'};
+ const body='[[note:undo|Undo target]]';
+ const initial=pageLinksFor(body,[],target,memory);
+ const removed=pageLinksFor('',initial,null,memory);
+ assert.deepEqual(removed,[]);
+ assert.deepEqual(pageLinksFor(body,removed,null,memory),initial);
+});

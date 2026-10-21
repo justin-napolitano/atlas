@@ -87,7 +87,7 @@ app.whenReady().then(async()=>{
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .connected-document-tools [role=status]")?.textContent==="Saved"'),'linked child saved');
   const childId=await ui('new URL(location.href).searchParams.get("entry_id")');
   assert.notEqual(childId,parentId);
-  assert.equal(await ui(`fetch('/v1/workspace/note?entry_id='+encodeURIComponent(${JSON.stringify(childId)})).then(r=>r.json()).then(row=>row.body.includes(${JSON.stringify(parentId)})&&row.links.some(link=>link.id===${JSON.stringify(parentId)}))`),true);
+  assert.equal(await ui(`fetch('/v1/workspace/note?entry_id='+encodeURIComponent(${JSON.stringify(childId)})).then(async r=>{if(!r.ok)throw new Error('Page verification HTTP '+r.status);return r.json();}).then(row=>row.body.includes(${JSON.stringify(parentId)})&&row.links.some(link=>link.id===${JSON.stringify(parentId)}))`),true);
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .page-breadcrumbs")?.textContent.includes("Parent research page")'),'parent breadcrumb');
   await ui('[...document.querySelectorAll(".working-surface:not([hidden]) .page-breadcrumbs button")].find(row=>row.textContent==="Parent research page").click()');
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .page-relationships")?.textContent.includes("Linked from")'),'parent backlinks');

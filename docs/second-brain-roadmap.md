@@ -129,3 +129,12 @@ is retained for context. Its required-project organization is superseded here; i
 implemented reader/save/privacy contracts are not discarded. This documentation pass
 creates/reconciles issues and contracts only. It applies no migrations, rewrites no
 owner notes, changes no application code and restarts no preview.
+
+### Local linked pages (#228 / PR #229)
+
+Optional nesting now extends existing notebook entries rather than duplicating
+content into project folders. The single sidebar tree, child creation, breadcrumbs
+and moves accompany global `[[` page completion and backlinks. See the
+[linked-page contract](features/local-linked-pages.md) for durability, reference
+limits and remaining legacy-link indexing scope. Desktop only; cloud sync remains
+deferred. PR #229 stacks on local source intake #227.

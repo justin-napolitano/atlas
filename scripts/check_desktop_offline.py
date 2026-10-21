@@ -99,6 +99,14 @@ def main():
             linked=client.post('/v1/workspace/notes',json={'request_uuid':str(uuid.uuid4()),'body':'A source-level thought with no invented selection.',
                 'record_id':source['record_id'],'owner_confirmed':True});assert linked.status_code==201
             assert linked.json()['id'] in [r['id'] for r in client.get('/v1/desktop/source/writing',params={'record_id':source['record_id']}).json()['items']]
+            child_request=str(uuid.uuid4())
+            prepared=client.post('/v1/desktop/pages/prepare',json={'request_uuid':child_request,'parent_id':note['id'],'owner_confirmed':True})
+            assert prepared.status_code==201
+            page_child=client.post('/v1/workspace/notes',json={'request_uuid':child_request,'body':'Synthetic nested page',
+                'links':[{'kind':'entry','id':note['id'],'rationale':'Markdown page link'}],'owner_confirmed':True})
+            assert page_child.status_code==201
+            page_child=page_child.json()
+            assert client.get('/v1/desktop/page',params={'entry_id':page_child['id']}).json()['parent_id']==note['id']
             snapshot=command('backup');archive=state/'backups'/snapshot['file'];assert archive.is_file()
             backup_receipt=json.loads(archive.with_suffix('.json').read_text())
             assert backup_receipt['format']==2 and backup_receipt['artifacts'][artifact['sha256']]==len(text)
@@ -112,6 +120,8 @@ def main():
             assert command('restore',archive)['original_database_retained'] is True
             start()
             assert client.get('/v1/workspace/note',params={'entry_id':note['id']}).json()['body']==body
+            assert client.get('/v1/desktop/page',params={'entry_id':page_child['id']}).json()['parent_id']==note['id']
+            assert page_child['id'] in [row['id'] for row in client.get('/v1/desktop/pages/backlinks',params={'entry_id':note['id']}).json()['items']]
             selected_config=json.loads((state/'local-config.json').read_text())
             assert (state/selected_config['artifact_namespace']/artifact['sha256']).read_bytes()==text
             assert client.post('/v1/desktop/files',json=file_request).json()['replayed'] is True

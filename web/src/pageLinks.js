@@ -26,9 +26,9 @@ export function pageWikiText(page){
  return `[[${page.id}|${label}]]`;
 }
 /** Preserve manually explained links; generated navigation links follow actual Markdown. */
-export function pageLinksFor(body,existing=[],picked=null){
+export function pageLinksFor(body,existing=[],picked=null,remembered=new Set()){
  const manual=existing.filter(link=>!(link.kind==='entry'&&link.rationale===PAGE_LINK_REASON));
- const known=new Set(existing.filter(link=>link.kind==='entry').map(link=>link.id));if(picked)known.add(picked.id);
+ const known=remembered;for(const link of existing)if(link.kind==='entry')known.add(link.id);if(picked)known.add(picked.id);
  const seen=new Set(manual.map(link=>JSON.stringify([link.kind,link.id]))),generated=[];
  for(const {target} of wikiLinks(body)){
   const key=JSON.stringify(['entry',target]);if(!known.has(target)||seen.has(key))continue;

@@ -1,7 +1,7 @@
 # Local linked pages and optional hierarchy
 
 Owner request: 2026-10-20. Target: the installed local Electron app; hosted web and
-cloud sync stay deferred. Extends #95/#97 and the local source delivery #227.
+cloud sync stay deferred. Extends #95/#97 and the local source delivery #227. Tracked in issue #228 and PR #229.
 
 ## Contract before implementation
 
@@ -56,3 +56,21 @@ private title/backlink leakage and parsed-text injection. Bound traversal and qu
 results, enforce cycles/revisions in SQL, keep owner-only registration and existing
 safe Markdown/CSP. Imported text remains data. This document records requirements,
 not an assertion of external review or completed acceptance.
+
+## Delivery and current limits
+
+The desktop implementation supplies the sidebar page tree, breadcrumbs, subpage
+creation, searchable moves, `[[` completion and linked-from lists. Page placement
+and history are separate from note body revisions. The existing 25 explicit
+references per note limit remains; Markdown beyond that remains in the body but
+is not promised a canonical backlink. Picker-created links are indexed together
+with autosave. Legacy title-only or pasted links remain navigable through global
+resolution; automatic indexing of every pasted/legacy token is deferred. Undo in
+an open editor retains the identities needed to restore generated backlinks.
+
+Verification uses synthetic data, not owner notes. Eight PostgreSQL page/API
+contracts cover cycles, depth, concurrent moves, retries, Trash/restore, title
+ambiguity and local-only registration. Native package verification additionally
+exercises link completion, rename-safe navigation, parent moves, and coordinated
+backup/restore. Consult PR #229 for the latest actual run results; this document
+is not a claim that every planned acceptance case has an automated UI test.
