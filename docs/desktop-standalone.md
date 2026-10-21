@@ -58,3 +58,88 @@ Threat boundaries: untrusted text remains in the isolated sandboxed renderer; on
 the trusted main/service can reach private state. Startup and restore are privileged
 operations and must reject foreign paths/artifacts. Store no credentials in packaged
 files or renderer globals. Existing CSRF/CSP/role/publication restrictions remain.
+
+## Using the local app
+
+Open `~/Applications/Atlas.app`. Reading, notes, source versions, highlights, revisions,
+library and reading progress use the existing owner database. The installed app now
+contains its own Python/API runtime and PostgreSQL 17.11 tools; it does not launch a
+Python interpreter from the checkout. Discovery and books not yet retained still
+require internet. The pinned complete Qur’an and retained reading snapshots do not.
+
+The native **File → Back Up Research Now** command creates a consistent snapshot in
+the private `~/.local/share/atlas/backups` directory and can open that folder. Atlas
+also makes a daily snapshot at startup and backs up before pending schema changes.
+These contain saved database state; unfinished editor changes must finish saving first.
+
+**File → Restore Local Backup…** accepts a snapshot and checksum receipt created in
+this installation's private backups directory. It checks bytes/digest, restores into
+a new database, compares all private table counts, reapplies and audits least-privilege
+grants, validates migrations, then changes the selected database atomically. It retains
+the original database and makes a pre-restore backup. Corrupt or foreign archives do
+not become selected. Restore restarts Atlas through its normal unsaved-writing guard.
+Other separately launched browser API processes keep their previous database until
+restarted; restore does not silently repoint those processes.
+
+Replacing the application bundle leaves the data directory intact. A rollback copy
+of the initial configured shell is retained under the ignored local build directory.
+No migration from older JSON preview notes is implied; that is still #216.
+
+## Build and verification
+
+Build tools live in their own environment; do not synchronize dependencies into a
+shared `.venv` belonging to another worktree:
+
+```sh
+env UV_PROJECT_ENVIRONMENT=research-library/desktop-build-env uv sync --frozen --extra api --extra database --group desktop-build --python 3.12
+research-library/desktop-build-env/bin/python scripts/build_desktop_runtime.py --postgres /path/to/verified/Postgres.app/Contents/Versions/17
+cd desktop
+npm ci
+node node_modules/electron/install.js
+npm run package
+```
+
+The native engine source is official [Postgres.app 2.9.6, PostgreSQL 17.11](https://github.com/PostgresApp/PostgresApp/releases/tag/v2.9.6).
+The verified `Postgres-2.9.6-17.dmg` SHA-256 is
+`b38bb00b8c8702a568270aab85995c550f7f93d1503b818efdc5ff9a519b7168`.
+The builder copies only core tools, required built-in modules and the actual dynamic
+library dependency closure. Relative library links must remain inside the copied
+package; packaging fails if deep/strict signature verification fails.
+
+Evidence from the configured Mac:
+
+- Nine Node policy/process tests pass, including direct frozen-service launch without
+  a Python/checkout environment. Four restore/filesystem gate tests and ten local
+  authentication/owner-frontend tests pass. Dependency audit reports zero findings.
+- `scripts/check_desktop_offline.py --electron` passes from a copied resources folder
+  with spaces, clean state and stripped environment. Actual native sandboxed Electron,
+  fresh PostgreSQL and real HTTP APIs verify Markdown, located Qur’an notes, library,
+  progress/place, dirty-close protection, reload/reopen, restart, CAS rejection,
+  consistent snapshots, verified restore and rejection of archive tampering.
+- The same offline storage/restart/restore test passes again against resources copied
+  from the final signed `.app`. No test writes to owner research.
+- The final and installed Mac bundles pass `codesign --verify --deep --strict`.
+  The installed app's bundled service reports ready against the existing local data.
+- Node and Python boundary checks run in CI. Native Mac packaging and the full frozen
+  PostgreSQL/Electron checks above are local evidence, not cross-platform CI claims.
+
+No cloud services, uploads, hosted owner sign-in, synchronization, public release,
+notarization or automatic updates were configured in this pass. Current artifact is
+the build Mac's x64 application; other architectures/fresh OS versions need their own
+build and installation verification. [PyInstaller's packaging model](https://pyinstaller.org/en/stable/operating-mode.html)
+documents the bundled interpreter and platform-specific distribution boundary.
+
+## Security review record
+
+Security-sensitive process, session, storage, restoration and build-dependency changes
+require human review in PR #219 before merge/public distribution. This table records
+design risks and mitigations, not an independent security-audit result.
+
+| STRIDE concern | Inherent impact | Boundary and mitigation |
+| --- | --- | --- |
+| Spoofed owner/service | High | Owned socket/child announcement; private session cookie; exact loopback host/origin |
+| Tampered import or upgrade | High | Own verified snapshots only; new-database restore; migration checksums/major gates; original retained |
+| Unattributable changes | Medium | Existing actors, revisions and compare-and-swap behavior preserved |
+| Private data disclosure | High | Private external data directory; no research/credentials packaged or logged; sandbox renderer with no Node/IPC |
+| Corrupt state or interrupted exit | High | Atomic DB writes, recovery, daily snapshots, guarded close, no in-place restore |
+| Renderer/native privilege escalation | High | Isolation/sandbox/permission denial; bounded navigation/downloads; no arbitrary shell or SQL bridge |

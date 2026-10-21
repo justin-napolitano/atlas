@@ -4,11 +4,12 @@
 local storage and synchronize with the hosted research service. This is the next
 desktop milestone, not a capability supplied by the initial Electron wrapper.
 
-## Proposed storage contract
+## Future synchronization contract
 
-- Embedded SQLite belongs in the desktop user-data directory; installing an app
-  must not require installing or administering PostgreSQL. SQLite is a proposed
-  local engine, not a change to the hosted PostgreSQL authority.
+- The self-contained offline build (#221) bundles and manages native PostgreSQL to
+  preserve the existing storage semantics. The user does not install/administer it.
+  Embedded SQLite remains a possible future port after store compatibility is proved;
+  synchronization does not itself require changing the local database engine.
 - Save notes, annotations, source/edition identities, library membership and reading
   progress locally first. Atomically commit each edit and its outbound operation.
   Keep large downloaded texts/files in a managed content store, referenced by digest.
@@ -35,9 +36,9 @@ desktop milestone, not a capability supplied by the initial Electron wrapper.
 1. Inventory existing API contracts and PostgreSQL-specific behavior. Specify the
    shared record/operation model, SQLite schema/migrations, revision and deletion
    rules. Evaluate existing sync engines before committing to a custom protocol.
-2. Add local storage behind the existing workspace API contract and prove existing
-   reader/editor/recovery tests against it. Include crash-safe migrations, consistent
-   backup/restore and a reviewed, reversible import of current local PostgreSQL data.
+2. Preserve the self-contained local storage behind the existing workspace API.
+   If a lighter engine is selected later, prove reader/editor/recovery compatibility,
+   crash-safe migrations, consistent backup/restore and reversible import first.
 3. Add authenticated server change feed and idempotent push/pull, preserving CAS,
    ownership and exact annotations. Do not weaken production IAP to test desktop auth.
 4. Prove two devices: edit offline, terminate/restart, reconnect, retry a lost response,
@@ -47,10 +48,10 @@ desktop milestone, not a capability supplied by the initial Electron wrapper.
    least-privilege native access and tested upgrades. No checkout or system Python
    dependency. Verify fresh-machine installation and offline cold launch explicitly.
 
-Current Electron milestone uses this Mac's existing native PostgreSQL and installed
-checkout/runtime. It does not ship SQLite, synchronize devices, or provide a portable
-installer. It must continue working while the next milestone is developed; do not
-silently migrate the live owner database.
+The offline milestone is specified in [desktop-standalone.md](desktop-standalone.md).
+Cloud synchronization is explicitly deferred at the owner's request until the hosted
+applications are deployed. No sync protocol, remote upload or SQLite migration is
+implicitly implemented by the Electron package.
 
 Reference: SQLite documents embedded application storage and local caching of server
 data as supported use cases: <https://www.sqlite.org/whentouse.html>.

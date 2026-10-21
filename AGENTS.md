@@ -66,11 +66,12 @@ loopback development session. The legacy preview progress importer is deliberate
 progress/place-only; do not claim old notes, highlights or library state migrated.
 Use synthetic isolated databases for testing, never the live owner database.
 
-Electron is the selected desktop shell; see `docs/electron-desktop.md`. Its initial
-configured Mac build reuses local PostgreSQL and must not silently migrate the live
-owner database. Embedded desktop storage and hosted synchronization are separately
-planned in `docs/desktop-offline-sync.md` (#220). Do not claim an Electron wrapper
-alone supplies portable installation, cloud synchronization or a second storage engine.
+Electron is the selected desktop shell; see `docs/electron-desktop.md` and the current
+`docs/desktop-standalone.md` (#221). Bundle/manage native PostgreSQL and a frozen owner
+service for the offline Mac app; preserve the existing data and storage semantics.
+SQLite is a possible later port, not an implemented feature. Hosted synchronization
+is explicitly deferred in `docs/desktop-offline-sync.md` (#220) until web deployment.
+Do not claim an Electron wrapper alone supplies portable installation or cloud sync.
 
 For workspace ownership, capture and organization work, first read `docs/connected-research-vision.md`, `docs/features/connected-workspace-contract.md` and `docs/adr/0005-connected-owner-workspace.md`. They supersede required project selection and project-owned writing as the target model. Deliver one owner workspace, independent loose notes, optional collections/saved views and a coherent UI reset; preserve exact identities, private defaults and save/recovery/publication authorities. Global authoring/migration is implemented under #202/#207–211; read `docs/features/connected-workspace-delivery.md` for actual verification and remaining hosted gates. Keep projects as immutable legacy context, never a required owner-navigation step.
 

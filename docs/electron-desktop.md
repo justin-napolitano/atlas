@@ -1,6 +1,9 @@
 # Electron desktop milestone
 
-Owner selected Electron, 2026-10-20. Reuse the existing reader, Markdown editor,
+Owner selected Electron, 2026-10-20. **Current packaging contract:**
+[self-contained offline Mac build](desktop-standalone.md), issue #221. The initial
+configured-checkout shell described below is historical; cloud sync is deferred (#220).
+Reuse the existing reader, Markdown editor,
 owner APIs, recovery and PostgreSQL authorities. This milestone is a local Mac
 application for the configured machine. A self-contained signed installer, automatic
 updates, full legacy-note migration (#216), hosted release (#42) and cross-device
@@ -78,7 +81,8 @@ Open `~/Applications/Atlas.app` normally. The native window uses the same local
 PostgreSQL database as the browser workspace. Browser service 5187 remains independent.
 Closing the Mac window leaves Atlas available in the Dock; Cmd+Q quits its owned API.
 
-Development commands from this checkout:
+Initial development-shell commands from this checkout (standalone packaging now
+also requires the frozen resources build described in the linked contract):
 
 ```sh
 cd desktop
