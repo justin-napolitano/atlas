@@ -82,7 +82,15 @@ def restore(state,binary,archive):
     with psycopg.connect(local.admin_dsn(state,selected)) as c:
         if database_counts(c)!=receipt['counts']:raise ValueError('Restored record counts did not match the snapshot')
     with db.connect(local.admin_dsn(state,selected)) as c:
-        db.migrate(c);configure(c,'atlas_owner','atlas_public',apply=True)
+        db.migrate(c)
+        # --no-acl excludes old machine/role grants. PostgreSQL otherwise gives
+        # restored functions default PUBLIC EXECUTE; restore the original deny
+        # boundary before applying and auditing the explicit runtime grant plan.
+        c.execute('REVOKE ALL ON SCHEMA research,research_public FROM PUBLIC')
+        c.execute('REVOKE ALL ON ALL TABLES IN SCHEMA research,research_public FROM PUBLIC')
+        c.execute('REVOKE ALL ON ALL FUNCTIONS IN SCHEMA research,research_public FROM PUBLIC')
+        c.execute('REVOKE ALL ON ALL SEQUENCES IN SCHEMA research,research_public FROM PUBLIC')
+        configure(c,'atlas_owner','atlas_public',apply=True)
     # Commit selection only after all checks. Neither original nor failed DB is deleted.
     pending=state/('config-'+uuid.uuid4().hex+'.partial')
     local.private_json(pending,selected);pending.replace(state/'local-config.json')

@@ -21,7 +21,14 @@ async function main(){
       appBundleId:'org.researchatlas.desktop',appCategoryType:'public.app-category.education',asar:true,overwrite:true,prune:true,
       ignore:[/^\/offline($|\/)/]};
     // Packager copies by basename; rename the resource tree in its staging area.
-    const offline=path.join(staging,'offline');await fs.cp(resources,offline,{recursive:true});options.extraResource=[offline];
+    const offline=path.join(staging,'offline');await fs.cp(resources,offline,{recursive:true,verbatimSymlinks:true});options.extraResource=[offline];
+    // Packager's default extra-resource copy resolves links into staging paths.
+    // Re-copy with relative links preserved before its signing step.
+    options.afterCopyExtraResources=[async({buildPath})=>{
+      const destination=path.join(buildPath,'Atlas.app/Contents/Resources/offline');
+      await fs.rm(destination,{recursive:true,force:true});
+      await fs.cp(offline,destination,{recursive:true,verbatimSymlinks:true});
+    }];
     if(process.platform==='darwin'){
       // Local ad-hoc signature seals the bundle without a Developer ID account.
       // Ad-hoc development builds have no Team ID for hardened-runtime library
@@ -37,6 +44,7 @@ async function main(){
       await fs.rm(iconset,{recursive:true});await fs.rm(png);
     }
     const paths=await packager(options);
+    if(process.platform==='darwin')for(const output of paths)execFileSync('/usr/bin/codesign',['--verify','--deep','--strict',path.join(output,'Atlas.app')],{stdio:'pipe'});
     console.log(JSON.stringify({kind:'offline_desktop',output:paths,bundledRuntime:true,bundledDatabase:true,cloudSync:false,signature:process.platform==='darwin'?'ad-hoc':'none',notarized:false}));
   }finally{await fs.rm(staging,{recursive:true,force:true});}
 }
