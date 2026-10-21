@@ -25,6 +25,7 @@ The research should understand traditions in context before evaluating them. “
 - `docs/seamless-open-catalog.md` — planned unified open catalog, direct reading, and durable notes without a mandatory import step.
 - [Metadata-first source plan](docs/features/metadata-first-sources.md) — local Electron app next: save references and write connected notes immediately, then add private files and Markdown import; ordered issues #222–225. Hosted web delivery is deferred.
 - [Local linked pages](docs/features/local-linked-pages.md) — desktop page nesting, stable Markdown links and backlinks; issue #228 / PR #229.
+- [Reader and unified notebook](docs/features/reader-notebook-flow.md) — compact source reading, safe formatted Markdown and one adjacent notebook; epic #231 / PR #235.
 - [Local note folders](docs/features/local-note-folders.md) — real folders, inline naming, sidebar drag/drop and keyboard moves; issue #230 / PR #229.
 - [Local source intake delivery](docs/features/local-source-delivery.md) — PR #227 implements desktop references, source-linked writing, revision-safe bibliography, bounded Markdown/text imports and database-plus-file restore; actual limits and verification.
 - `docs/research-library-vision.md` — library, reader, commentary and portable notes as one product, with a versioned arXiv reading pilot planned.

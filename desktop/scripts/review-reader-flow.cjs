@@ -11,7 +11,7 @@ let window,config;
 app.whenReady().then(async()=>{
  config=await privateJSON(process.env.ATLAS_ELECTRON_TEST_CONFIG);
  const host=new DesktopHost(electron,{}, {backendFactory:async()=>({origin:config.origin,credentials:config.credentials,stop:async()=>{}}),confirmDiscard:()=>false,preferencesFile:path.join(root,'reader-window.json')});
- window=await host.open();window.webContents.setBackgroundThrottling(false);
+ window=await host.open();window.setTitle("Atlas — synthetic reader review");window.webContents.setBackgroundThrottling(false);
  const ui=async code=>{try{return await window.webContents.executeJavaScript(code);}catch(error){throw Error(code.slice(0,120)+' :: '+error.message);}};
  const click=text=>ui(`[...document.querySelectorAll('.working-surface:not([hidden]) button,.connected-nav button')].find(row=>row.textContent===${JSON.stringify(text)}).click()`);
  await until(()=>ui('!!document.querySelector(".connected-nav")'),'workspace');
@@ -26,9 +26,9 @@ app.whenReady().then(async()=>{
  await until(()=>ui('document.querySelector(".desktop-source-writing [role=status]")?.textContent==="Saved"'),'source-wide note saved');
  const sourceId=await ui('new URL(location.href).searchParams.get("record")');
  const source='# A readable chapter\n\nAn **important idea** with العربية 😀 and `code`.\n\n'+Array.from({length:10},(_,i)=>'Paragraph '+(i+1)+'. Synthetic reading material about careful interpretation.').join('\n\n')+'\n\n<script>window.syntheticExecuted=true</script>\n![inert image](https://example.invalid/pixel)';
- await ui(`(()=>{const field=document.querySelector('input[type=file]'),transfer=new DataTransfer();transfer.items.add(new File([${JSON.stringify(source)}],'reader-flow.md',{type:'text/markdown'}));field.files=transfer.files;field.dispatchEvent(new Event('change',{bubbles:true}));})()`);
- await until(()=>ui('document.querySelector(".desktop-file-import")?.textContent.includes("reader-flow.md")'),'chosen file');
- await ui('document.querySelector(".desktop-file-import input[type=checkbox]").click()');await click('Keep locally');
+ await ui(`(()=>{const field=document.querySelector('.working-surface:not([hidden]) input[type=file]'),transfer=new DataTransfer();transfer.items.add(new File([${JSON.stringify(source)}],'reader-flow.md',{type:'text/markdown'}));field.files=transfer.files;field.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+ await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .desktop-file-import")?.textContent.includes("reader-flow.md")'),'chosen file');
+ await ui('document.querySelector(".working-surface:not([hidden]) .desktop-file-import input[type=checkbox]").click()');await click('Keep locally');
  await until(()=>ui('!!document.querySelector(".reader-text .reader-md-heading")'),'formatted Markdown');
  assert.equal(await ui('document.querySelector(".reader-text").textContent'),source);
  assert.equal(await ui('document.querySelectorAll(".reader-text img,.reader-text script").length'),0);
@@ -37,7 +37,7 @@ app.whenReady().then(async()=>{
  assert.equal(await ui('!!document.querySelector(".connected-source-document>.desktop-source-writing")'),false);
  assert.equal(await ui('document.querySelector(".reader-text").getBoundingClientRect().top<250'),true);
  assert.equal(await ui('getComputedStyle(document.querySelector(".reader-text")).overflowY'), 'visible');
- assert.equal(await ui('document.querySelector(".reader-margin").textContent.includes("A synthetic thought about the whole source.")'),true);
+ await until(()=>ui('document.querySelector(".reader-margin").textContent.includes("A synthetic thought about the whole source.")'),'book writing loads');
  const documentId=await ui('new URL(location.href).searchParams.get("document")');
  // Select actual source text inside formatting; selectors must retain original Unicode offsets.
  await ui(`(()=>{const span=document.querySelector('.reader-md-strong'),walker=document.createTreeWalker(span,NodeFilter.SHOW_TEXT);let node;while(node=walker.nextNode()){if(!node.parentElement.closest('[hidden]'))break;}const range=document.createRange();range.selectNodeContents(node);const selection=getSelection();selection.removeAllRanges();selection.addRange(range);document.dispatchEvent(new Event('selectionchange'));})()`);
@@ -54,6 +54,7 @@ app.whenReady().then(async()=>{
  await ui('document.querySelector(`[aria-label="Write in the margin"]`).focus()');await window.webContents.insertText('A loose thought at this reading location.');
  await until(()=>ui('document.querySelector(".location-margin-note")?.textContent.includes("Saved")'),'loose note saved');
  await click('Book notes');await until(()=>ui('!!document.querySelector(`[aria-label="Write beside this source"]`)'),'book note editor');
+ await click('Another note');
  await ui('document.querySelector(`[aria-label="Write beside this source"]`).focus()');
  await window.webContents.insertText('A new source-wide thought.');
  await click('Notebook');await until(()=>ui('!!document.querySelector(".connected-document")'),'leave while writing');
@@ -61,12 +62,32 @@ app.whenReady().then(async()=>{
  await ui(`history.pushState(null,'','?view=source&record='+encodeURIComponent(${JSON.stringify(sourceId)})+'&document='+encodeURIComponent(${JSON.stringify(documentId)}));dispatchEvent(new PopStateEvent('popstate'));`);
  await until(()=>ui('!!document.querySelector(".reader-text")'),'source reopens');
  await until(()=>ui('document.querySelector(".reader-margin")?.textContent.includes("A new source-wide thought.")'),'book draft retained');
+ await until(()=>ui('!!document.querySelector(`.reader-margin [aria-label="Write beside this source"] .cm-content,.reader-margin .cm-content[contenteditable="true"]`)'),'book editor ready');
+ // Presentation changes must not rewrite selectors or source bytes.
+ await ui('document.querySelector(".reading-appearance-panel").open=true;document.querySelector(".reader-original-option input").click()');
+ await until(()=>ui('!document.querySelector(".reader-md-heading")'),'original Markdown view');
+ assert.equal(await ui('document.querySelector(".reader-text").textContent'),source);
+ assert.equal(await ui('document.querySelector("mark.is-selected").textContent'),'important idea');
+ await ui('document.querySelector(".reader-original-option input").click()');
+ await until(()=>ui('!!document.querySelector(".reader-md-heading")'),'formatted view returns');
+ await ui('(()=>{const range=document.querySelector(`[aria-label="Reading zoom"]`);Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set.call(range,"200");range.dispatchEvent(new Event("input",{bubbles:true}));range.dispatchEvent(new Event("change",{bubbles:true}));})()');
+ await until(()=>ui('getComputedStyle(document.querySelector(".reader-text")).fontSize==="44px"'),'200 percent text sizing');
+ assert.equal(await ui('document.documentElement.scrollWidth<=innerWidth+2'),true);
+ await click('Reset reading preferences');await ui('document.querySelector(".reading-appearance-panel").open=false');
+ const divider='.reader-desk > [role=separator]';
+ const before=await ui(`document.querySelector(${JSON.stringify(divider)}).getAttribute('aria-valuenow')`);
+ await ui(`document.querySelector(${JSON.stringify(divider)}).dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true}))`);
+ await until(()=>ui(`document.querySelector(${JSON.stringify(divider)}).getAttribute('aria-valuenow')!==${JSON.stringify(before)}`),'keyboard notebook resize');
+ await ui('document.querySelector(".workspace-reader").scrollTo(0,0)');await pause(200);
  if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'reader-notebook-desktop.png'),(await window.webContents.capturePage()).toPNG());
- await window.setContentSize(390,844);await pause(200);
+ await window.setMinimumSize(0,0);await window.setContentSize(390,844);await pause(200);
+ assert.equal(await ui('innerWidth'),390);
  assert.equal(await ui('document.documentElement.scrollWidth<=innerWidth+2'),true);
  const toggle=await ui('document.querySelector(".reader-margin-toggle").getAttribute("aria-expanded")');if(toggle==='false')await ui('document.querySelector(".reader-margin-toggle").click()');
  assert.equal(await ui('document.querySelector(".reader-margin").getBoundingClientRect().width<=innerWidth'),true);
  await ui('document.querySelector(".reader-margin-close").click()');
+ await until(()=>ui('document.querySelector(".reader-margin").hidden'),'notebook dismissed');
+ await until(()=>ui('document.activeElement===document.querySelector(".reader-margin-toggle")'),'focus returns to notebook control');
  if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'reader-notebook-mobile.png'),(await window.webContents.capturePage()).toPNG());
- await fs.writeFile(config.resultFile,JSON.stringify({nativeReader:true,sourceExact:true,inertMarkup:true,formattedSelection:true,oneNotebook:true,freeLocationNote:true,wholeSourceWriting:true,inlineQuoteReturn:true,draftRetention:true,mobileLayout:true}),{mode:0o600});window.destroy();app.exit(0);
+ await fs.writeFile(config.resultFile,JSON.stringify({nativeReader:true,sourceExact:true,inertMarkup:true,formattedSelection:true,oneNotebook:true,freeLocationNote:true,wholeSourceWriting:true,inlineQuoteReturn:true,draftRetention:true,mobileLayout:true,originalMarkdown:true,zoomSizing:true,keyboardResize:true,mobileFocus:true}),{mode:0o600});window.destroy();app.exit(0);
 }).catch(async error=>{let details='';try{details=await window?.webContents.executeJavaScript('document.querySelector(".working-surface:not([hidden])")?.innerText.slice(0,2000)');if(window&&config?.screenshots)await fs.writeFile(path.join(config.screenshots,'reader-flow-failure.png'),(await window.webContents.capturePage()).toPNG());}catch{}await fs.writeFile(path.join(root,'electron-failure.txt'),String(error.stack)+'\n'+details,{mode:0o600});app.exit(1);});
