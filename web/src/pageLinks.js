@@ -3,6 +3,14 @@ import remarkParse from 'remark-parse';
 import {wikiLinks} from './notebookMarkdown.js';
 
 export const PAGE_LINK_REASON='Markdown page link';
+/** Follow a link under the cursor, excluding code/escaped/link contexts. */
+export function wikiTargetAt(source,cursor){
+ const start=source.lastIndexOf('[[',cursor);if(start<0)return null;
+ const end=source.indexOf(']]',start+2);if(end+2<cursor||end<0)return null;
+ const raw=source.slice(start+2,end),target=raw.split('|')[0].trim();
+ if(!target||raw.includes('\n'))return null;
+ return wikiCompletion(source,start+2)?.from===start?target:null;
+}
 export function wikiCompletion(source,cursor){
  if(!Number.isInteger(cursor)||cursor<0||cursor>source.length)return null;
  const line=source.slice(source.lastIndexOf('\n',cursor-1)+1,cursor),match=/\[\[([^\[\]\n|]{0,200})$/.exec(line);

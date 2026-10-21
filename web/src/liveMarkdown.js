@@ -1,8 +1,9 @@
 import {unified} from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
+import remarkFrontmatter from 'remark-frontmatter';
 
-const parser=unified().use(remarkParse).use(remarkGfm);
+const parser=unified().use(remarkParse).use(remarkGfm).use(remarkFrontmatter);
 
 /** Parse presentation ranges without serializing or rewriting the owner's Markdown. */
 export function markdownBlocks(source){

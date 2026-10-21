@@ -1,7 +1,8 @@
+import {frontmatterRange} from './markdownProperties.js';
 import {RecoveryQueue,recoveryFingerprint as fingerprint} from './recoveryQueue.js';
 
 const equal=(a,b)=>fingerprint(a)===fingerprint(b);
-export const captureTitle=body=>body.split('\n').find(line=>line.trim())?.replace(/^\s{0,3}#{1,6}\s+/,'').trim().slice(0,300)||'Untitled note';
+export const captureTitle=body=>{const range=frontmatterRange(body);const text=range?body.slice(range.to):body;return text.split('\n').find(line=>line.trim())?.replace(/^\s{0,3}#{1,6}\s+/,'').trim().slice(0,300)||'Untitled note';};
 const fields=row=>({body:row.body||'',title:row.title_mode==='automatic'?'':row.title||'',thought_type:row.thought_type||'note',links:row.links||[],state:row.state||'active'});
 const anchor=row=>Object.fromEntries(['record_id','document_id','annotation_id','reading_position'].map(key=>[key,row[key]??null]));
 

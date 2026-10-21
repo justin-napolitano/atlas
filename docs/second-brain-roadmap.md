@@ -166,3 +166,10 @@ boundaries. Folder-first alphabetical order, inline creation/rename, note creati
 inside folders, drag/drop and keyboard Move share the existing explorer. See the
 [folder contract](features/local-note-folders.md). Cloud sync and manual sibling
 ordering remain deferred.
+
+## Keyboard-first property editing — #240
+
+Follow [the keyboard Markdown contract](features/keyboard-markdown-properties.md):
+optional frontmatter, type/tag completion and keyboard wiki-link navigation in
+the existing editor. Preserve body/CAS/recovery authority. Workspace-wide tag
+facets and alias resolution are follow-up work, not implemented by this slice.
