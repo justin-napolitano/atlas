@@ -73,6 +73,8 @@ app.whenReady().then(async()=>{
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .desktop-source-availability")?.textContent.includes("Saved reading text")'),'retained local source');
   await until(()=>ui('document.querySelector(".working-surface:not([hidden]) .source-reader")?.textContent.includes("Synthetic original from the desktop.")'),'actual imported reader');
   if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'retained-file-reader.png'),(await reopened.webContents.capturePage()).toPNG());
+  // Separate rapid synthetic journeys across the unchanged API request window.
+  await pause(61000);
   await ui('document.querySelector(".workspace-sidebar-new").click()');
   await until(()=>ui('document.activeElement?.getAttribute("aria-label")==="Note body"'),'parent page body focus');
   await reopened.webContents.insertText('# Parent research page\n\nA synthetic parent.');

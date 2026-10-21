@@ -80,7 +80,7 @@ def main():
                 config=root/'review.json';receipt=root/'review-result.json'
                 config.write_text(json.dumps({'origin':origin,'credentials':keys,'resultFile':str(receipt),'screenshots':str(args.artifacts.resolve())}));config.chmod(0o600)
                 result=subprocess.run([str(ROOT/'desktop/node_modules/.bin/electron'),str(ROOT/'desktop/scripts/review-electron.cjs')],
-                    env={**os.environ,'ATLAS_ELECTRON_TEST_CONFIG':str(config)},capture_output=True,timeout=90)
+                    env={**os.environ,'ATLAS_ELECTRON_TEST_CONFIG':str(config)},capture_output=True,timeout=180)
                 if result.returncode!=0 and (root/'electron-failure.txt').exists():
                     raise AssertionError('Synthetic native review: '+(root/'electron-failure.txt').read_text())
                 assert result.returncode==0 and all(json.loads(receipt.read_text()).values()), 'Native copied-bundle review failed'
