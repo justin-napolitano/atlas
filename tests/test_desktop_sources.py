@@ -38,6 +38,18 @@ class DesktopSourceTests(unittest.TestCase):
         distinct=desktop.reference(self.c,**{**values,'request_uuid':str(uuid.uuid4()),'distinct_reason':'Different declared edition'})
         self.assertNotEqual(row['record_id'],distinct['record_id'])
         with self.assertRaises(ValueError):self.reference(reference='https://user:password@example.invalid/document')
+
+    def test_metadata_revision_history_and_lost_response_replay_preserve_note_selectors(self):
+        _,source=self.reference()
+        values=dict(request_uuid=str(uuid.uuid4()),record_id=source['record_id'],expected_revision=1,
+            title='Synthetic corrected title',creators='Synthetic author',edition='Owner-declared edition',actor='synthetic')
+        first=desktop.metadata(self.c,**values)
+        self.assertEqual(first['revision'],2)
+        self.assertTrue(desktop.metadata(self.c,**values)['replayed'])
+        with self.assertRaises(db.RevisionConflict):desktop.metadata(self.c,**{**values,'request_uuid':str(uuid.uuid4())})
+        row=workspace.source(self.c,record_id=source['record_id'])['record']
+        self.assertEqual(row['attributes']['source_intake']['review_effect'],'none')
+        self.assertEqual(row['review_state'],'pending')
     def test_related_notes_are_original_ids_questions_and_pagination_respects_trash(self):
         _,row=self.reference();_,other=self.reference()
         note=workspace.create_note(self.c,request_uuid=str(uuid.uuid4()),body='Independent synthetic thought',actor='synthetic')
@@ -52,6 +64,15 @@ class DesktopSourceTests(unittest.TestCase):
         self.assertIsNone(workspace.note(self.c,note['id'])['record_id'])
         workspace.trash(self.c,entry_id=note['id'],target_revision=1,expected_revision=0,state='trashed',actor='synthetic')
         self.assertEqual(desktop.related(self.c,record_id=other['record_id'])['items'],[])
+
+    def test_reverse_associations_and_explicit_note_links_are_in_source_writing(self):
+        _,source=self.reference()
+        loose=workspace.create_note(self.c,request_uuid=str(uuid.uuid4()),body='Synthetic reverse association',actor='synthetic')
+        workspace_graph.create(self.c,entity='connection',request_uuid=str(uuid.uuid4()),from_kind='record',from_id=source['record_id'],
+            to_kind='entry',to_id=loose['id'],relation='personal_association',rationale='Personal context only',attribution='',evidence_annotation_id=None,state='tentative',actor='synthetic')
+        linked=workspace.create_note(self.c,request_uuid=str(uuid.uuid4()),body='Synthetic linked question',thought_type='question',actor='synthetic',
+            links=[dict(kind='record',id=source['record_id'],rationale='Background for this question')])
+        self.assertEqual({r['id'] for r in desktop.related(self.c,record_id=source['record_id'])['items']},{loose['id'],linked['id']})
     def test_original_bytes_immutable_text_selector_and_replay_survive_edited_note(self):
         data='# Original\r\n\nSynthetic العربية 😀'.encode()
         values,row=self.file(content_base64=base64.b64encode(data).decode())

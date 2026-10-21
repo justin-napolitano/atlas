@@ -21,6 +21,15 @@ class File(Write):
     record_id:ID|None=None
 
 
+class Metadata(Write):
+    request_uuid:UUID4
+    record_id:ID
+    expected_revision:Annotated[int,Field(strict=True,ge=1)]
+    title:Annotated[str,Field(min_length=1,max_length=2000)]
+    creators:Annotated[str,Field(max_length=2000)]=''
+    edition:Annotated[str,Field(max_length=1000)]=''
+
+
 def register(router,store,owner,artifact_root):
     def write(operation,value,actor):
         fields=value.model_dump();fields.pop('owner_confirmed')
@@ -36,6 +45,9 @@ def register(router,store,owner,artifact_root):
     @router.get('/desktop/source/writing')
     def related(record_id:ID,cursor:Annotated[str,Query(max_length=1200)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):
         return store.desktop_operation('related',record_id=record_id,cursor=cursor,limit=limit)
+
+    @router.post('/desktop/source/metadata')
+    def metadata(value:Metadata,actor:str=Depends(owner)):return write('metadata',value,actor)
 
     @router.post('/desktop/files',status_code=201)
     def ingest(value:File,actor:str=Depends(owner)):

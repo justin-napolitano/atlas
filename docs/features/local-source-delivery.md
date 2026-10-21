@@ -19,8 +19,14 @@ tables, preserving all legacy intake receipt hashes and required-field contracts
 References have unresolved bibliography; URLs/DOIs are labels until corrected,
 not claimed titles or verified editions. No metadata lookup or fetch is performed.
 
-`/desktop/source/writing` pages the existing book notebook; it does not duplicate
-writing bodies. Existing connections can link loose writing to a source. Exact
+`/desktop/source/metadata` uses a UUID receipt and expected source revision to
+correct owner-declared title/creators/edition without retargeting reading versions
+or changing review status. The optional Bibliography area preserves conflicting
+drafts for explicit comparison. URL pointers remain searchable after title edits.
+
+`/desktop/source/writing` combines the existing book notebook with explicitly
+linked writing/questions in either direction; it does not duplicate writing bodies.
+Existing connections can link loose writing to a source. Exact
 passage notes retain existing document/digest/selector authorities.
 
 `/desktop/files` accepts UUIDv4, basename, base64 bytes, `intent` source/note,
@@ -84,8 +90,15 @@ an assertion of external security approval.
   renderer flags ineffective, owner and explicit CSRF/write intent required.
 - Existing frontend unit suite: 166 passed after the initial integration.
 - Production frontend build: passed after the initial integration.
-- Packaged desktop, coordinated backup/restore, whole storage regression and final
-  assembled UI checks: pending; update this ledger with actual results before release.
+- Full existing PostgreSQL 17 regression after the initial delivery: 374 tests,
+  passed with one skipped. Follow-up metadata/reverse-link tests: 13 passed.
+- Copied frozen runtime with native sandboxed Electron: reference capture,
+  source-level Markdown autosave, local-file reading, isolated fresh PostgreSQL,
+  close/reload/reopen, consistent database-plus-original-files restore, corrupt
+  object/archive rejection, existing Qur’an notes/library/progress: passed.
+- Final follow-up package rebuild and CI PostgreSQL 18: pending; update this ledger
+  with actual results before release. Initial copied-runtime evidence predates the
+  final bibliography UI and reverse-link refinements.
 
 Do not close #222–225 from this document alone. The installed owner app is not
 replaced or restarted by test builds; review uses separate synthetic state.

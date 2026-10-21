@@ -28,7 +28,7 @@ class PostgreSQLStore:
 
     def desktop_operation(self,operation,**values):
         from . import desktop_sources
-        operations={name:getattr(desktop_sources,name) for name in ('reference','related','ingest','artifacts')}
+        operations={name:getattr(desktop_sources,name) for name in ('reference','metadata','related','ingest','artifacts')}
         if operation not in operations:raise ValueError('Unknown desktop operation')
         with db.connect(self.dsn) as c:return operations[operation](c,**values)
 

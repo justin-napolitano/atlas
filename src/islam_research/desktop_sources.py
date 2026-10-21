@@ -47,7 +47,7 @@ def reference(connection,*,request_uuid,reference,actor,existing_source_record_i
         request,digest,old=_receipt(connection,request_uuid,actor,value,'reference-v1')
         if old:return {**old['result'],'replayed':True}
         # Serialize equal identity candidates across requests without merging them.
-        for key in sorted(k for k in keys if k):connection.execute('SELECT pg_advisory_xact_lock(184514,hashtext(%s))',('desktop-identity:'+key,))
+        for key in sorted(k for k in keys if k):connection.execute('SELECT pg_advisory_xact_lock(184514,hashtext(%s))',('workspace:owner:'+key,))
         if existing_source_record_id:
             if not workspace.source(connection,record_id=existing_source_record_id):raise ValueError('Source unavailable')
             record_id=existing_source_record_id
@@ -72,8 +72,50 @@ def related(connection,*,record_id,cursor='',limit=30):
     db._text(cursor,'cursor',1200,empty=True)
     if type(limit) is not int or not 1<=limit<=50:raise ValueError('Invalid page size')
     item=source['library']
-    rows=shared_library.notes(connection,item['item_id'],cursor=cursor,limit=limit+1) if item else []
+    if not item:return dict(items=[],next_cursor=None)
+    # Reuse existing reading-note projections, then include all explicitly linked
+    # loose writing in either direction. Associations are not evidence claims.
+    rows=connection.execute('WITH base AS ('+shared_library.NOTES_SQL+'''SELECT * FROM notes), linked AS (
+      SELECT 'entry:'||n.id AS note_key,'entry' AS item_kind,n.id,n.title,n.body,n.thought_type,n.revision,
+        n.project_id AS origin_project_id,n.document_id,n.annotation_id,n.reading_position
+      FROM research.notebook_entries n WHERE n.state='active' AND (
+       EXISTS(SELECT 1 FROM research.workspace_connections x WHERE x.state<>'withdrawn' AND
+        ((x.from_kind='entry' AND x.from_id=n.id AND x.to_kind='record' AND x.to_id=%s) OR
+         (x.to_kind='entry' AND x.to_id=n.id AND x.from_kind='record' AND x.from_id=%s))) OR
+       EXISTS(SELECT 1 FROM jsonb_array_elements(n.links) l WHERE l->>'kind'='record' AND l->>'id'=%s))
+       AND NOT EXISTS(SELECT 1 FROM research.workspace_note_trash t WHERE t.entry_id=n.id AND t.state='trashed')
+       AND NOT EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed')
+    ), combined AS (
+      SELECT note_key,item_kind,id,title,body,thought_type,revision,project_id AS origin_project_id,document_id,annotation_id,reading_position FROM base
+      UNION SELECT * FROM linked
+      UNION SELECT 'record:'||r.id,'record',r.id,r.title,r.summary,'question',r.revision,r.project_id,NULL,NULL,NULL
+       FROM research.records r WHERE r.kind='question' AND r.deleted_at IS NULL AND r.review_state<>'withdrawn'
+       AND EXISTS(SELECT 1 FROM research.workspace_connections x WHERE x.state<>'withdrawn' AND
+        ((x.from_kind='record' AND x.from_id=r.id AND x.to_kind='record' AND x.to_id=%s) OR
+         (x.to_kind='record' AND x.to_id=r.id AND x.from_kind='record' AND x.from_id=%s)))
+    ) SELECT * FROM combined WHERE note_key>%s ORDER BY note_key LIMIT %s''',
+      ([item['item_id']],record_id,record_id,record_id,record_id,record_id,cursor,limit+1)).fetchall()
     return dict(items=rows[:limit],next_cursor=rows[limit-1]['note_key'] if len(rows)>limit else None)
+
+
+def metadata(connection,*,request_uuid,record_id,expected_revision,title,creators,edition,actor):
+    for value,name,size in [(title,'title',2000),(creators,'creators',2000),(edition,'edition',1000)]:
+        db._text(value,name,size,empty=name!='title')
+    if type(expected_revision) is not int or expected_revision<1:raise ValueError('Supply the saved source revision')
+    value=dict(record_id=record_id,expected_revision=expected_revision,title=title,creators=creators,edition=edition)
+    with connection.transaction():
+        request,digest,old=_receipt(connection,request_uuid,actor,value,'metadata-v1')
+        if old:return {**old['result'],'replayed':True}
+        source=workspace.source(connection,record_id=record_id)
+        if not source:raise ValueError('Source unavailable')
+        row=source['record']
+        if row['revision']!=expected_revision:raise db.RevisionConflict(row)
+        attributes={**row['attributes']}
+        attributes['source_intake']={**attributes.get('source_intake',{}),'creators':creators,'edition':edition,
+            'title_status':'owner_declared','metadata_origin':'owner_declared','review_effect':'none'}
+        updated=db.save_record(connection,record_id=record_id,project_id=row['project_id'],kind=row['kind'],title=title,
+            summary=row['summary'],attributes=attributes,actor=actor,expected_revision=expected_revision)
+        return _commit(connection,request,digest,dict(record_id=record_id,revision=updated['revision']),actor)
 
 
 def private_root(root):

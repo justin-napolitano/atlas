@@ -11,4 +11,5 @@
 .desktop-writing-actions{display:flex;justify-content:flex-end;margin:.5rem 0 1.5rem}
 .desktop-source-availability{max-width:72ch;margin:1rem auto;padding:0 1.5rem;color:var(--muted,#aaa)}
 .desktop-source-availability a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+.desktop-source-details{margin-top:1rem}.desktop-source-details label{display:block;margin:.75rem 0}.desktop-source-details input{display:block;width:100%;box-sizing:border-box;font:inherit;color:inherit;background:transparent;border:0;border-bottom:1px solid var(--line,#444);padding:.4rem 0}
 @media(max-width:600px){.desktop-add-source form{align-items:stretch;flex-direction:column}.desktop-source-writing{padding:0 .75rem}}

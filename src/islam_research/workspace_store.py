@@ -127,7 +127,7 @@ def sources(connection,*,q='',cursor='',limit=30,collection_id='',reading_status
     rows=connection.execute("""SELECT id,project_id,kind,title,summary,attributes,revision,updated_at
       FROM research.records WHERE workspace_id='owner' AND kind IN ('source','work','edition')
       AND deleted_at IS NULL AND review_state<>'withdrawn' AND id>%s
-      AND strpos(lower(title||' '||summary||' '||coalesce(attributes->>'creators','')||' '||coalesce(attributes->'source_intake'->>'creators','')||' '||coalesce(attributes->'source_intake'->>'identifier','')),lower(%s))>0
+      AND strpos(lower(title||' '||summary||' '||coalesce(attributes->>'creators','')||' '||coalesce(attributes->'source_intake'->>'creators','')||' '||coalesce(attributes->'source_intake'->>'identifier','')||' '||coalesce(attributes->'source_intake'->>'source_url','')),lower(%s))>0
       AND (%s='' OR EXISTS(SELECT 1 FROM research.workspace_collection_items m JOIN research.workspace_collections g ON g.id=m.collection_id WHERE m.target_kind='record' AND m.target_id=research.records.id AND m.collection_id=%s AND m.state='active' AND g.state='active'))
       AND (%s='' OR EXISTS(SELECT 1 FROM research.library_source_bindings b JOIN research.library_items i ON i.id=b.item_id WHERE b.source_record_id=research.records.id AND i.on_shelf AND i.reading_status=%s)) ORDER BY id LIMIT %s""",(cursor,q,collection_id,collection_id,reading_status,reading_status,limit+1)).fetchall()
     return dict(items=rows[:limit],next_cursor=rows[limit-1]['id'] if len(rows)>limit else None)
@@ -180,7 +180,7 @@ def search(connection,*,q,limit=20):
     if type(limit) is not int or not 1<=limit<=30:raise ValueError('Invalid search limit')
     writing=notes(connection,q=q,limit=limit)
     records=connection.execute("""SELECT id,project_id,kind,title,summary,revision FROM research.records
-      WHERE deleted_at IS NULL AND review_state<>'withdrawn' AND (strpos(lower(title||' '||summary||' '||coalesce(attributes->>'creators','')||' '||coalesce(attributes->'source_intake'->>'creators','')||' '||coalesce(attributes->'source_intake'->>'identifier','')),lower(%s))>0 OR EXISTS(SELECT 1 FROM research.personal_states p WHERE p.record_id=research.records.id AND strpos(lower(p.note),lower(%s))>0)) ORDER BY id LIMIT %s""",(q,q,limit+1)).fetchall()
+      WHERE deleted_at IS NULL AND review_state<>'withdrawn' AND (strpos(lower(title||' '||summary||' '||coalesce(attributes->>'creators','')||' '||coalesce(attributes->'source_intake'->>'creators','')||' '||coalesce(attributes->'source_intake'->>'identifier','')||' '||coalesce(attributes->'source_intake'->>'source_url','')),lower(%s))>0 OR EXISTS(SELECT 1 FROM research.personal_states p WHERE p.record_id=research.records.id AND strpos(lower(p.note),lower(%s))>0)) ORDER BY id LIMIT %s""",(q,q,limit+1)).fetchall()
     annotations=connection.execute("""SELECT a.id,a.project_id,a.document_id,a.exact,a.revision,d.locator,d.edition,d.source_record_id
       FROM research.reading_annotations a JOIN research.reading_documents d ON d.id=a.document_id JOIN research.records r ON r.id=d.source_record_id
       WHERE r.deleted_at IS NULL AND r.review_state<>'withdrawn' AND strpos(lower(a.exact||' '||a.body),lower(%s))>0
