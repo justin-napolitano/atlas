@@ -76,6 +76,7 @@ class PageTests(unittest.TestCase):
     def test_concurrent_opposite_moves_cannot_form_a_cycle(self):
         from concurrent.futures import ThreadPoolExecutor
         a=self.note();b=self.note()
+        self.c.commit()  # Publish fixtures before independent client transactions.
         def run(entry,parent):
             try:
                 with db.connect(os.environ['RESEARCH_TEST_DATABASE_URL']) as c:
