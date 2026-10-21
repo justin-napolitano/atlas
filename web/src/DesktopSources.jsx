@@ -1,7 +1,9 @@
-import React,{useEffect,useRef,useState} from 'react';
+import React,{useContext,useEffect,useRef,useState} from 'react';
 import LiveMarkdownEditor from './LiveMarkdownEditor.jsx';
 import {ConnectedWriting} from './connectedWriting.js';
 import './desktopSources.css';
+import {PageLinkContext} from './LocalPages.jsx';
+import {pageLinksFor} from './pageLinks.js';
 
 export function LocalFileImport({api,recordId=null,onCreated,drafts,changed}){
  const input=useRef(null),pending=useRef(null),uncertain=useRef(false),[file,setFile]=useState(null),[permitted,setPermitted]=useState(false),[error,setError]=useState(''),[busy,setBusy]=useState(false),[intent,setIntent]=useState('source');
@@ -76,6 +78,7 @@ export function SourceDetails({api,record,onSaved,drafts,changed}){
 }
 
 export function DesktopSourceWriting({api,record,sessions,changed,onOpen}){
+ const pageSupport=useContext(PageLinkContext).enabled;
  const [,render]=useState(0),[rows,setRows]=useState([]),[cursor,setCursor]=useState(null),[error,setError]=useState(''),editorState=useRef(new Map());
  if(!composers.has(sessions))composers.set(sessions,new Map());const cache=composers.get(sessions);
  function create(type='note'){
@@ -87,7 +90,7 @@ export function DesktopSourceWriting({api,record,sessions,changed,onOpen}){
  useEffect(()=>{let live=true;api.request('desktop/source/writing',{record_id:record.id,limit:20}).then(page=>{if(live){setRows(page.items);setCursor(page.next_cursor);}}).catch(err=>{if(live)setError(err.message);});return()=>{live=false;};},[record.id,revision]);
  async function more(){try{const page=await api.request('desktop/source/writing',{record_id:record.id,cursor,limit:20});setRows(old=>[...old,...page.items]);setCursor(page.next_cursor);}catch(err){setError(err.message);}}
  return <section className="desktop-source-writing"><header><h2>Your writing</h2><small role="status">{session.saved?'Saved':session.queue.status.phase==='saving'?'Saving…':session.dirty?'Unsaved':''}</small></header>
- <LiveMarkdownEditor value={session.value.body} onChange={body=>{session.edit({body});render(n=>n+1);}} sessionStore={editorState.current} sessionKey={session.id} label="Write beside this source" placeholder="Write a thought or question…"/>
+ <LiveMarkdownEditor value={session.value.body} onChange={(body,detail)=>{session.edit({body,...(pageSupport?{links:pageLinksFor(body,session.value.links,detail?.pageLink)}:{})});render(n=>n+1);}} pageLinks={pageSupport} sessionStore={editorState.current} sessionKey={session.id} label="Write beside this source" placeholder="Write a thought or question…"/>
  {['error','conflict'].includes(session.queue.status.phase)&&<div role="alert"><p>{session.queue.status.error?.message||'Your writing is retained. Retry saving.'}</p><button onClick={()=>session.retry()}>Retry exact save</button>{session.queue.status.current&&<><details><summary>Compare the saved version</summary><pre>{session.queue.status.current.body}</pre></details><button onClick={()=>session.resolve('mine')}>Keep my version as a new revision</button><button onClick={()=>session.resolve('cloud')}>Use saved version</button></>}</div>}
  <div className="desktop-writing-actions">{session.row&&<button disabled={!session.saved} onClick={()=>{create();render(n=>n+1);}}>Another note</button>}<button disabled={session.dirty} onClick={()=>{if(session.row)create('question');else session.value.thought_type='question';render(n=>n+1);}}>Write a question</button></div>
  {rows.filter(row=>row.id!==session.id).map(row=><button className="connected-result" key={row.note_key} onClick={()=>onOpen({kind:row.item_kind,id:row.id,origin_project_id:row.origin_project_id})}><span>{row.title||row.locator||'Reading note'}</span><small>{row.thought_type||row.item_kind}{row.locator?' · '+row.locator:''}</small></button>)}
