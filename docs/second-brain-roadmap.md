@@ -13,6 +13,23 @@ later, or never. See [product vision](connected-research-vision.md),
 [interaction/acceptance contracts](features/connected-workspace-contract.md), and
 [ownership ADR 0005](adr/0005-connected-owner-workspace.md).
 
+## Next delivery: private GitHub vault and Tasks
+
+Owner-approved 2026-10-21. [Epic #242](https://github.com/justin-napolitano/islam-research/issues/242),
+[contract](features/private-github-vault.md), [ADR 0006](adr/0006-private-github-vault.md).
+One private content repo holds Markdown context; its Issues hold actionable work.
+The initial repo scaffold is complete. Sync, Tasks and `/task` remain to be built;
+no owner notes have been uploaded. This advances local GitHub sync, while hosted
+GCP app sync and autonomous execution stay deferred.
+
+| Order | Issue | Delivery gate |
+| --- | --- | --- |
+| 1 | #243 portable format/IDs | Schemas and exact synthetic round-trip, with unsupported state explicit |
+| 2 | #244 native private connection | Pinned account/repo, protected credentials, no upload until reviewed preview |
+| 3 | #245 Markdown round-trip | Offline intents, CAS/three-way conflicts, exact IDs/bodies/links and fresh-instance proof |
+| 4 | #246 Tasks and `/task` | Keyboard capture/search/navigation; one intended issue through uncertainty and restart |
+| 5 | #247 backups/native acceptance | Issue/comment snapshots, restore and full synthetic desktop journey before real upload |
+
 ## Current software and preservation baseline
 
 The Qur’an/Markdown workspace, word meanings, personal progress, keyboard advancement,

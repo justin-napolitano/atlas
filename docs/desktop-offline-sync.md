@@ -4,6 +4,14 @@
 local storage and synchronize with the hosted research service. This is the next
 desktop milestone, not a capability supplied by the initial Electron wrapper.
 
+## Scope amendment — 2026-10-21
+
+Local GitHub vault sync is now authorized under [epic #242](https://github.com/justin-napolitano/islam-research/issues/242).
+The [private-vault contract](features/private-github-vault.md) and [ADR 0006](adr/0006-private-github-vault.md)
+supersede the blanket sync deferral below for this transport only. Hosted GCP service
+sync remains deferred. The private repository is scaffolded; no runtime sync,
+automatic upload or owner-data migration is implemented yet.
+
 ## Future synchronization contract
 
 - The self-contained offline build (#221) bundles and manages native PostgreSQL to
