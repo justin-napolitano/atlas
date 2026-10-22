@@ -63,6 +63,13 @@ Primary writing, classification and page-link actions must work without mouse
 clicks. Reuse Cmd/Ctrl+N and search; suggestions support arrows, Tab/Enter and
 Escape. Preserve ordinary text editing, IME, focus, undo and exact autosave.
 
+For the next private-vault/task integration, read `docs/features/private-github-vault.md`
+and ADR 0006 first. Epic #242 advances local Electron GitHub vault sync despite the
+older blanket cloud-sync deferral; hosted GCP sync and autonomous execution remain
+deferred. Keep private content/configuration outside this public code repository.
+The initial private repo is scaffolded only; no notes are uploaded or runtime sync
+enabled. Require an explicit reviewed first-sync selection and synthetic acceptance.
+
 For source intake and local document work, read `docs/features/metadata-first-sources.md`
 and the next-delivery table in `docs/second-brain-roadmap.md` (#222–225). References
 must be useful without files or invented edition metadata. Extend existing workspace
