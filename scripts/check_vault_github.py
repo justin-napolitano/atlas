@@ -18,7 +18,7 @@ sys.path.insert(0,str(ROOT/'src'))
 
 def main():
     from psycopg.conninfo import make_conninfo
-    from islam_research import database as db,workspace_store as workspace,vault_connection as connection,vault_sync as sync,vault_format as codec
+    from islam_research import database as db,workspace_store as workspace,vault_connection as connection,vault_sync as sync,vault_format as codec,vault_tasks as tasks
     from islam_research.github_native import NativeGitHub,GitHubUnavailable
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--repository',required=True)
     args=parser.parse_args()
@@ -46,7 +46,17 @@ def main():
                 assert plan['actions'][0]['action']=='pull'
                 assert sync.apply(c,plan_id=plan['id'],actor='synthetic:integration',remote=remote)['state']=='confirmed'
                 assert workspace.note(c,note['id'])['body'].encode()==external_body
-                print(json.dumps(dict(real_github=True,private_fixture_only=True,atomic_commit=True,replay=True,external_markdown_pull=True,exact_unicode=True,owner_data_accessed=False)))
+                # Use a separate private synthetic issue, never the actual vault.
+                task=tasks.create(c,request_uuid=str(uuid.uuid4()),title='Synthetic Atlas task protocol',body='Synthetic fixture only محفوظ',actor='synthetic:integration')['task']
+                first=tasks.sync_tasks(c,actor='synthetic:integration',remote=remote);assert first['more_pending']==0
+                confirmed=tasks.detail(c,task_id=str(task['id']))['task'];assert confirmed['remote_number']
+                tasks.sync_tasks(c,actor='synthetic:integration',remote=remote)
+                comment=remote.request('repos/'+args.repository+'/issues/'+str(confirmed['remote_number'])+'/comments',method='POST',payload=dict(body='Synthetic issue comment backup fixture'))['data']
+                cached=tasks.refresh_comments(c,task_id=str(task['id']),remote=remote);assert any(row['id']==comment['id'] for row in cached['comments'])
+                tasks.change_state(c,request_uuid=str(uuid.uuid4()),task_id=str(task['id']),expected_revision=confirmed['revision'],state='closed',actor='synthetic:integration')
+                assert tasks.sync_tasks(c,actor='synthetic:integration',remote=remote)['more_pending']==0
+                assert tasks.detail(c,task_id=str(task['id']))['task']['remote_snapshot']['state']=='closed'
+                print(json.dumps(dict(real_github=True,issue_create_and_replay=True,state_only_update=True,comment_cache=True,private_fixture_only=True,atomic_commit=True,replay=True,external_markdown_pull=True,exact_unicode=True,owner_data_accessed=False)))
         finally:subprocess.run([str(binary/'pg_ctl'),'-D',str(data),'-m','fast','-w','stop'],check=True,stdout=subprocess.DEVNULL)
 
 

@@ -124,11 +124,16 @@ def main():
             assert page_child.status_code==201
             page_child=page_child.json()
             assert client.get('/v1/desktop/page',params={'entry_id':page_child['id']}).json()['parent_id']==note['id']
+            task_value={'request_uuid':str(uuid.uuid4()),'title':'Frozen offline task','body':'Synthetic task محفوظ','owner_confirmed':True}
+            task=client.post('/v1/desktop/tasks',json=task_value);assert task.status_code==200
+            task=task.json()['task'];assert task['write_state']=='pending'
+            assert client.post('/v1/desktop/tasks',json=task_value).json()['replayed'] is True
             typed_notes=[r for kind in ['skill','principle'] for r in client.get('/v1/workspace/notes',params={'thought_type':kind}).json()['items']]
             snapshot=command('backup');archive=state/'backups'/snapshot['file'];assert archive.is_file()
             backup_receipt=json.loads(archive.with_suffix('.json').read_text())
             assert backup_receipt['format']==2 and backup_receipt['artifacts'][artifact['sha256']]==len(text)
             stop();start()
+            assert client.get('/v1/desktop/tasks/detail',params={'task_id':task['id']}).json()['task']['body']==task_value['body']
             assert client.get('/v1/workspace/note',params={'entry_id':note['id']}).json()['body']==body
             for typed in typed_notes:
                 restored=client.get('/v1/workspace/note',params={'entry_id':typed['id']}).json()
@@ -140,6 +145,7 @@ def main():
             stop()
             assert command('restore',archive)['original_database_retained'] is True
             start()
+            assert client.get('/v1/desktop/tasks/detail',params={'task_id':task['id']}).json()['task']['body']==task_value['body']
             assert client.get('/v1/workspace/note',params={'entry_id':note['id']}).json()['body']==body
             for typed in typed_notes:
                 restored=client.get('/v1/workspace/note',params={'entry_id':typed['id']}).json()
@@ -169,7 +175,7 @@ def main():
                 assert (state/file).stat().st_mode&0o077==0
             print(json.dumps({'copied_bundle':True,'checkout_required':False,'fresh_database':True,'unicode_markdown':True,
                 'located_quran_notes':True,'library_and_progress':True,'restart':True,'conflict_rejected':True,
-                'consistent_backup_and_restore':True,'original_files_restored':True,'reference_only_notes':True,
+                'offline_tasks_restart_and_restore':True,'consistent_backup_and_restore':True,'original_files_restored':True,'reference_only_notes':True,
                 'corrupt_object_restore_rejected':True,'tampered_backup_rejected':True,'native_electron':args.electron,'owner_data_modified':False}))
         finally:
             if client:client.close()

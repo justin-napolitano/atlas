@@ -48,6 +48,7 @@ app.whenReady().then(async()=>{
  await until(()=>ui('document.querySelector(`'+active+' input[aria-label="Task title"]`)?.value==="Follow the evidence"'),'task draft context');press('Tab');
  await ui('document.querySelector(`'+active+' input[aria-label="Task title"]`).focus()');press('Return');
  await until(()=>ui('document.querySelector(`'+active+' .connected-task-detail`)?.textContent.includes("Open context page")'),'task to page linkage');
+ await fs.writeFile(path.join(config.screenshots,'tasks-desktop.png'),(await window.webContents.capturePage()).toPNG());
  await ui('[...document.querySelectorAll("'+active+' button")].find(row=>row.textContent==="Open context page").focus()');press('Return');
  await until(()=>ui('document.querySelector("'+active+'")?.textContent.includes("Synthetic task context")'),'return to original page');
  await ui('[...document.querySelectorAll(".connected-sidebar-footer button")].find(row=>row.textContent==="Private vault").focus()');press('Return');
@@ -58,5 +59,5 @@ app.whenReady().then(async()=>{
  await window.setMinimumSize(0,0);window.setContentSize(390,844);await pause(200);
  assert.equal(await ui('innerWidth'),390);assert.equal(await ui('document.documentElement.scrollWidth<=innerWidth+2'),true);
  await fs.writeFile(path.join(config.screenshots,'vault-mobile.png'),(await window.webContents.capturePage()).toPNG());
- await fs.writeFile(config.resultFile,JSON.stringify({nativeVault:true,keyboardConnect:true,keyboardPreview:true,coverageVisible:true,reload:true,mobile:true}),{mode:0o600});window.destroy();app.exit(0);
+ await fs.writeFile(config.resultFile,JSON.stringify({nativeVault:true,keyboardConnect:true,keyboardPreview:true,coverageVisible:true,reload:true,mobile:true,...(config.tasks?{keyboardTaskCapture:true,taskSync:true,slashTask:true,contextReturn:true}:{})}),{mode:0o600});window.destroy();app.exit(0);
 }).catch(async error=>{try{if(window&&config?.screenshots)await fs.writeFile(path.join(config.screenshots,'vault-failure.png'),(await window.webContents.capturePage()).toPNG());}catch{}await fs.writeFile(path.join(root,'electron-failure.txt'),String(error.stack),{mode:0o600});app.exit(1);});

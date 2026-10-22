@@ -19,10 +19,10 @@ def _uuid(value):
     return parsed
 
 
-def listing(c,*,q='',state='',limit=50,remote=None):
+def listing(c,*,q='',state='',context_entry_id=None,limit=50,remote=None):
     if state not in ('','open','closed') or not isinstance(q,str) or len(q)>300 or not 1<=limit<=50:raise ValueError('Invalid task filter')
     rows=c.execute('''SELECT * FROM research.vault_tasks WHERE (%s='' OR state=%s)
-      AND strpos(lower(title||' '||body||' '||coalesce(remote_snapshot->>'body','')),lower(%s))>0 ORDER BY updated_at DESC,id LIMIT %s''',(state,state,q,limit+1)).fetchall()
+      AND (%s::text IS NULL OR context_entry_id=%s) AND strpos(lower(title||' '||body||' '||coalesce(remote_snapshot->>'body','')),lower(%s))>0 ORDER BY updated_at DESC,id LIMIT %s''',(state,state,context_entry_id,context_entry_id,q,limit+1)).fetchall()
     return dict(items=rows[:limit],more_available=len(rows)>limit,coverage='Cached tasks; refresh GitHub to fetch remote changes')
 
 

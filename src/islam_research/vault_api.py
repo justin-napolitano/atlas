@@ -77,8 +77,8 @@ def register(router,store,owner,*,remote=None):
     def apply(value:Apply,actor:str=Depends(owner)):return operation('apply',plan_id=value.plan_id,actor=actor)
 
     @router.get('/desktop/tasks')
-    def tasks(actor:str=Depends(owner),q:Annotated[str,Query(max_length=300)]='',state:Annotated[str,Query(pattern='^(open|closed)?$')]=''):
-        return operation('task_listing',q=q,state=state)
+    def tasks(actor:str=Depends(owner),q:Annotated[str,Query(max_length=300)]='',state:Annotated[str,Query(pattern='^(open|closed)?$')]='',context_entry_id:ID|None=None):
+        return operation('task_listing',q=q,state=state,context_entry_id=context_entry_id)
 
     @router.get('/desktop/tasks/detail')
     def task(task_id:UUID4,actor:str=Depends(owner)):return operation('task_detail',task_id=task_id)
