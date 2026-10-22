@@ -1,6 +1,7 @@
 # ADR 0006: private Markdown vault and GitHub Issues
 
-Status: accepted direction, 2026-10-21; runtime implementation planned under #242.
+Status: accepted direction, 2026-10-21; first local delivery under #242 in PRs #249–252.
+See [verified behavior and remaining gates](../features/private-github-vault-delivery.md).
 
 ## Decision
 

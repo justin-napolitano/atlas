@@ -1,8 +1,9 @@
 # Private GitHub vault and task workspace
 
-Owner-approved direction, 2026-10-21. Status: contracts and private repository
-scaffold only. No note upload, remote issue ingestion, Tasks UI, `/task` command,
-background sync or owner-data migration is implemented by this document.
+Owner-approved direction, 2026-10-21. Contracts below define the target. The local
+first delivery is implemented in stacked PRs #249–252; see the [delivery record](private-github-vault-delivery.md)
+for verified behavior and remaining gates. No owner-data migration or automatic
+background sync has been enabled.
 
 ## Outcome and scope
 

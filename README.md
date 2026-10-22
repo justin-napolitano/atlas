@@ -164,3 +164,6 @@ saved views, explained connections and dated reasons. Start with the
 [interaction contracts](docs/features/connected-workspace-contract.md).
 Hosted owner sign-in, two-device/backup proof and scholarly/owner reading acceptance
 remain separate gates; a local review or passing CI does not establish them.
+
+Private GitHub vault first delivery: [behavior, verification and remaining gates](docs/features/private-github-vault-delivery.md). Local reviewed sync and Tasks are
+implemented in stacked PRs #249–252; owner data is not automatically exported.
