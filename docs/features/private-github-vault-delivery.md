@@ -1,7 +1,9 @@
 # Private vault first delivery
 
-2026-10-21. Local desktop implementation, stacked PRs #249–252. The owner's
-installed app and actual private vault have not been switched or migrated.
+2026-10-21. Local desktop implementation, stacked PRs #249–252. The local app was
+updated with the editor fix in PR #253 after a normal quit, pre-update database
+backup and retention of the previous bundle. The actual private vault has not
+been connected or populated with owner notes.
 
 ## Available behavior
 
@@ -62,7 +64,8 @@ The epic stays open until these gates and the owner's review are complete.
   Review artifact: `research-library/desktop-build/Atlas-darwin-x64/Atlas.app`.
   It bundles the runtime/database and contains no owner data. It is a local
   development build, not notarized distribution. The installed owner app is not
-  replaced or restarted by packaging.
+  replaced or restarted by packaging itself; the later PR #253 installation is
+  recorded above.
 
 Security review covers private binding/visibility changes, fixed-host native CLI
 arguments, sanitized credential environment/output, owner/session/origin/CSRF checks,
