@@ -11,7 +11,11 @@ WORKSPACE='owner'
 
 
 def derived_title(body):
-    for line in body.splitlines():
+    lines=body.splitlines()
+    if lines and lines[0].rstrip(' \t')=='---':
+        closing=next((i for i,line in enumerate(lines[1:],1) if line.rstrip(' \t') in ('---','...')),None)
+        lines=lines[closing+1:] if closing is not None else []
+    for line in lines:
         if line.strip():return re.sub(r'^\s{0,3}#{1,6}\s+','',line).strip()[:300] or 'Untitled note'
     return 'Untitled note'
 

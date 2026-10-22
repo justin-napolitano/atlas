@@ -26,3 +26,5 @@
 .margin-markdown .live-markdown-editor .notebook-markdown table{font-size:.85em}
 .margin-markdown .live-markdown-editor .cm-content:focus-visible{outline:none;box-shadow:none}
 .margin-markdown .live-markdown-editor .live-markdown-block{padding-bottom:.7em}
+
+.notebook-markdown .markdown-properties{font:14px/1.6 ui-monospace,monospace;color:var(--muted,#aaa);background:transparent;border:0;padding:0;margin:0 0 1.5em;white-space:pre-wrap;overflow-wrap:anywhere}

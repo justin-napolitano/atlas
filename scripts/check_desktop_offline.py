@@ -25,8 +25,9 @@ def main():
     parser.add_argument('--artifacts',type=Path,default=ROOT/'research-library/testing/desktop-sources')
     parser.add_argument('--skills-flow',action='store_true',help='Run synthetic standalone skill/principle native acceptance')
     parser.add_argument('--shortcut-flow',action='store_true',help='Run focused native New Page shortcut acceptance')
+    parser.add_argument('--properties-flow',action='store_true',help='Run keyboard-first Markdown properties native acceptance')
     args=parser.parse_args()
-    if args.reader_flow or args.skills_flow or args.shortcut_flow:args.electron=True
+    if args.reader_flow or args.skills_flow or args.shortcut_flow or args.properties_flow:args.electron=True
     # Short, private socket path; executable location includes spaces deliberately.
     with tempfile.TemporaryDirectory(prefix='atlas-offline-',dir='/private/tmp') as temporary:
         root=Path(temporary);resources=root/'Copied app resources';state=root/'state'
@@ -82,12 +83,13 @@ def main():
             if args.electron:
                 args.artifacts.mkdir(parents=True,exist_ok=True,mode=0o700)
                 config=root/'review.json';receipt=root/'review-result.json'
-                config.write_text(json.dumps({'origin':origin,'credentials':keys,'resultFile':str(receipt),'screenshots':str(args.artifacts.resolve()),'shortcutOnly':args.shortcut_flow}));config.chmod(0o600)
-                result=subprocess.run([str(ROOT/'desktop/node_modules/.bin/electron'),str(ROOT/('desktop/scripts/review-skills-flow.cjs' if args.skills_flow or args.shortcut_flow else 'desktop/scripts/review-reader-flow.cjs' if args.reader_flow else 'desktop/scripts/review-electron.cjs'))],
+                config.write_text(json.dumps({'origin':origin,'credentials':keys,'resultFile':str(receipt),'screenshots':str(args.artifacts.resolve()),'shortcutOnly':args.shortcut_flow,'propertiesOnly':args.properties_flow}));config.chmod(0o600)
+                result=subprocess.run([str(ROOT/'desktop/node_modules/.bin/electron'),str(ROOT/('desktop/scripts/review-skills-flow.cjs' if args.skills_flow or args.shortcut_flow or args.properties_flow else 'desktop/scripts/review-reader-flow.cjs' if args.reader_flow else 'desktop/scripts/review-electron.cjs'))],
                     env={**os.environ,'ATLAS_ELECTRON_TEST_CONFIG':str(config)},capture_output=True,timeout=300)
                 if result.returncode!=0 and (root/'electron-failure.txt').exists():
                     raise AssertionError('Synthetic native review: '+(root/'electron-failure.txt').read_text())
                 assert result.returncode==0 and all(json.loads(receipt.read_text()).values()), 'Native copied-bundle review failed'
+                if args.properties_flow:shutil.copyfile(receipt,args.artifacts/'keyboard-properties.json')
             # The native journey and following storage checks share the unchanged
             # per-owner request budget. Respect a full rate window before continuing.
             for attempt in range(13):

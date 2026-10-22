@@ -21,6 +21,34 @@ app.whenReady().then(async()=>{
  const saved=()=>until(()=>ui('document.querySelector("'+active+' .connected-document-tools [role=status]")?.textContent==="Saved"'),'real autosave');
  const note=id=>ui(`fetch('/v1/workspace/note?entry_id='+encodeURIComponent(${JSON.stringify(id)})).then(r=>r.json())`);
  const write=async text=>{await until(()=>ui('!!document.querySelector(`'+active+' [aria-label="Note body"]`)'),'blank editor');await ui('document.querySelector(`'+active+' [aria-label="Note body"]`).focus()');await window.webContents.insertText(text);};
+ if(config.propertiesOnly){
+ const press=(keyCode,modifiers=[])=>{window.webContents.sendInputEvent({type:'keyDown',keyCode,modifiers});window.webContents.sendInputEvent({type:'keyUp',keyCode,modifiers});};
+ const mod=process.platform==='darwin'?'meta':'control';
+ await electron.Menu.getApplicationMenu().items[0].submenu.items[0].click();
+ await write('---\ntags: [reading]\n---\n\n# Synthetic tag source');await saved();
+ const target=await ui('new URL(location.href).searchParams.get("entry_id")');
+ assert.equal((await note(target)).title,'Synthetic tag source');
+ await electron.Menu.getApplicationMenu().items[0].submenu.items[0].click();
+ await write('---');press('Return');await pause(100);await window.webContents.insertText('sk');
+ await until(()=>ui('!![...document.querySelectorAll(".page-wiki-completion [role=option]")].find(row=>row.textContent==="skill")'),'type completion');press('Tab');await saved();
+ const id=await ui('new URL(location.href).searchParams.get("entry_id")');assert.equal((await note(id)).thought_type,'skill');
+ await ui('document.querySelector(`'+active+' [aria-label="Note body"]`).focus()');press('A',[mod]);await window.webContents.insertText('# Synthetic command\n\n/type pri');
+ await until(()=>ui('!![...document.querySelectorAll(".page-wiki-completion [role=option]")].find(row=>row.textContent==="principle")'),'change role from keyboard');if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'keyboard-type-completion.png'),(await window.webContents.capturePage()).toPNG());press('Tab');await saved();assert.equal((await note(id)).thought_type,'principle');assert.ok((await note(id)).body.includes('# Synthetic command'));assert.ok(!(await note(id)).body.includes('/type'));
+ // Replace a synthetic draft to test unfinished YAML and learned-tag completion.
+ press('A',[mod]);await window.webContents.insertText('---\ntype: principle\ntags: [read');
+ await until(()=>ui('!![...document.querySelectorAll(".page-wiki-completion [role=option]")].find(row=>row.textContent==="reading")'),'tag completion');press('Tab');
+ await window.webContents.insertText(']\n---\n\n# Synthetic properties\n\n[[Synthetic tag');
+ await until(()=>ui('!![...document.querySelectorAll(".page-wiki-completion [role=option]")].find(row=>row.textContent.includes("Synthetic tag source"))'),'wiki completion');press('Return');await saved();
+ const row=await note(id);assert.equal(row.thought_type,'principle');assert.equal(row.title,'Synthetic properties');assert.ok(row.body.includes('tags: [reading]'));assert.ok(row.links.some(link=>link.id===target));assert.ok(row.body.includes(target));
+ await pause(600);await window.webContents.insertText(' temporary writing');await saved();
+ press('Z',[mod]);await saved();assert.equal((await note(id)).body,row.body);
+ press('Z',[mod,'shift']);await saved();assert.equal((await note(id)).body,row.body+' temporary writing');
+ press('Z',[mod]);await saved();assert.equal((await note(id)).body,row.body);
+ press('Return',[mod]);await until(()=>ui('new URL(location.href).searchParams.get("entry_id")==='+JSON.stringify(target)),'keyboard follows stable page link');
+ const reloaded=new Promise(resolve=>window.webContents.once('did-finish-load',resolve));window.webContents.reload();await reloaded;await until(()=>ui('!!document.querySelector(".connected-nav")'),'reload');await until(()=>ui('document.querySelector(`'+active+' [aria-label="Note body"]`)?.textContent.includes("Synthetic tag source")'),'reloaded document renders');assert.equal((await note(id)).body,row.body);
+ if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'keyboard-properties.png'),(await window.webContents.capturePage()).toPNG());
+ await fs.writeFile(config.resultFile,JSON.stringify({keyboardProperties:true,slashType:true,typeCompletion:true,typeConversion:true,tagCompletion:true,wikiCompletion:true,keyboardFollow:true,undoRedo:true,exactReload:true}),{mode:0o600});window.destroy();app.exit(0);return;
+ }
  if(config.shortcutOnly){
  // Exercise the actual native accelerator while writing; the previous page must survive.
  await electron.Menu.getApplicationMenu().items[0].submenu.items[0].click();

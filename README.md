@@ -25,6 +25,7 @@ The research should understand traditions in context before evaluating them. “
 - `docs/seamless-open-catalog.md` — planned unified open catalog, direct reading, and durable notes without a mandatory import step.
 - [Metadata-first source plan](docs/features/metadata-first-sources.md) — local Electron app next: save references and write connected notes immediately, then add private files and Markdown import; ordered issues #222–225. Hosted web delivery is deferred.
 - [Local linked pages](docs/features/local-linked-pages.md) — desktop page nesting, stable Markdown links and backlinks; issue #228 / PR #229.
+- [Keyboard-first Markdown properties](docs/features/keyboard-markdown-properties.md) — inline type/tag suggestions and keyboard page links; #240.
 - [Freeform skills and principles](docs/features/freeform-skills-principles.md) — ordinary standalone Markdown pages, optional types and evidence links; epic #236.
 - [Reader and unified notebook](docs/features/reader-notebook-flow.md) — compact source reading, safe formatted Markdown and one adjacent notebook; epic #231 / PR #235.
 - [Local note folders](docs/features/local-note-folders.md) — real folders, inline naming, sidebar drag/drop and keyboard moves; issue #230 / PR #229.
