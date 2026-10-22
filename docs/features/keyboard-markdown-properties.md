@@ -32,6 +32,14 @@ Ignore code, HTML and unfinished frontmatter. Source claims still require the
 existing exact-source workflow and are excluded from this freeform command.
 The owner authorized a normal quit/reopen into the completed latest build.
 
+Delivery: 179 frontend tests pass. Synthetic native acceptance confirms `/type`
+classification from ordinary writing, preservation of surrounding text, stable
+links, tags, undo/redo and exact reload. Frozen restart, CAS and backup/restore
+checks pass. Installed the signed build at `~/Applications/Atlas.app`, retaining
+the earlier stable bundle as `Atlas Previous 58bdc5f.app`. Normally quit the old
+Atlas Keyboard.app and opened the updated stable app at the owner's request.
+No owner note contents were inspected or used as test fixtures.
+
 ## Authority and preservation
 
 PostgreSQL stores body, role, links and revisions using existing CAS, frozen
