@@ -58,8 +58,11 @@ The epic stays open until these gates and the owner's review are complete.
   exact replay, restart, coordinated database/file backup and restore, original
   artifact verification, and rejection of corrupt/tampered restores. Nine Electron
   backend/policy tests pass outside the localhost-restricting sandbox.
-- Final ad-hoc app packaging/signature is recorded below after completion. The
-  installed owner app is not replaced by this packaging step.
+- Final local app packaging and deep/strict ad-hoc signature verification pass.
+  Review artifact: `research-library/desktop-build/Atlas-darwin-x64/Atlas.app`.
+  It bundles the runtime/database and contains no owner data. It is a local
+  development build, not notarized distribution. The installed owner app is not
+  replaced or restarted by packaging.
 
 Security review covers private binding/visibility changes, fixed-host native CLI
 arguments, sanitized credential environment/output, owner/session/origin/CSRF checks,
