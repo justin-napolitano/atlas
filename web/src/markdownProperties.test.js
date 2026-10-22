@@ -58,3 +58,10 @@ test('/type changes metadata and removes only its command in one undoable edit',
  const complex='---\ntype: [skill]\n---\n/type';assert.equal(typeCommandCompletion(complex,complex.length),null);
  for(const source of ['```md\n/type sk','    /type sk','Text /type sk','---\ntype: [unfinished\n---\n/type sk'])assert.equal(typeCommandCompletion(source,source.length),null,source);
 });
+
+ test('/task offers a context action only in ordinary text',async()=>{
+ const {taskCommandCompletion}=await import('./markdownProperties.js');
+ const source='My context\n\n/task Review evidence';const menu=taskCommandCompletion(source,source.length);
+ assert.equal(menu.items[0].insert,'Review evidence');assert.equal(source.slice(menu.from,menu.to),'/task Review evidence');
+ for(const text of ['```\n/task Review','    /task Review','inline /task Review','---\ntype: note\n/task Review'])assert.equal(taskCommandCompletion(text,text.length),null,text);
+ });

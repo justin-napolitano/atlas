@@ -32,6 +32,26 @@ app.whenReady().then(async()=>{
  await ui('[...document.querySelectorAll("'+active+' button")].find(row=>row.textContent==="Apply reviewed changes").focus()');press('Return');
  await until(()=>ui('document.querySelector(`'+active+' [aria-label="Reviewed sync"]`)?.textContent.includes("This sync is confirmed.")'),'reviewed sync confirmation');
  }
+
+ if(config.tasks){
+ await ui('[...document.querySelectorAll(".connected-nav button")].find(row=>row.textContent==="Tasks").focus()');press('Return');
+ await until(()=>ui('!!document.querySelector(`'+active+' input[aria-label="Task title"]`)'),'task capture');
+ await ui('document.querySelector(`'+active+' input[aria-label="Task title"]`).focus()');await window.webContents.insertText('Synthetic native task');press('Return');
+ await until(()=>ui('document.querySelector(`'+active+' .connected-task-detail`)?.textContent.includes("Saved locally")'),'durable local task capture');
+ await ui('[...document.querySelectorAll("'+active+' button")].find(row=>row.textContent==="Sync tasks").focus()');press('Return');
+ await until(()=>ui('document.querySelector(`'+active+' .connected-task-detail`)?.textContent.includes("Confirmed on GitHub")'),'task confirmed');
+ await ui('document.querySelector(".connected-new-note").focus()').catch(()=>{});
+ window.webContents.sendInputEvent({type:'keyDown',keyCode:'n',modifiers:['meta']});window.webContents.sendInputEvent({type:'keyUp',keyCode:'n',modifiers:['meta']});
+ await until(()=>ui('!!document.querySelector(`'+active+' .cm-content[aria-label="Note body"]`)'),'new page');
+ await ui('document.querySelector(`'+active+' .cm-content[aria-label="Note body"]`).focus()');await window.webContents.insertText('Synthetic task context\n\n/task Follow the evidence');
+ await until(()=>ui('!!document.querySelector(`[aria-label="Create task"] [role="option"]`)'),'/task completion');press('Return');
+ await until(()=>ui('document.querySelector(`'+active+' input[aria-label="Task title"]`)?.value==="Follow the evidence"'),'task draft context');press('Tab');
+ await ui('document.querySelector(`'+active+' input[aria-label="Task title"]`).focus()');press('Return');
+ await until(()=>ui('document.querySelector(`'+active+' .connected-task-detail`)?.textContent.includes("Open context page")'),'task to page linkage');
+ await ui('[...document.querySelectorAll("'+active+' button")].find(row=>row.textContent==="Open context page").focus()');press('Return');
+ await until(()=>ui('document.querySelector("'+active+'")?.textContent.includes("Synthetic task context")'),'return to original page');
+ await ui('[...document.querySelectorAll(".connected-sidebar-footer button")].find(row=>row.textContent==="Private vault").focus()');press('Return');
+ }
  await pause(200);await fs.writeFile(path.join(config.screenshots,'vault-desktop.png'),(await window.webContents.capturePage()).toPNG());
  const loaded=new Promise(resolve=>window.webContents.once('did-finish-load',resolve));window.webContents.reload();await loaded;
  await until(()=>ui('document.querySelector("'+active+'")?.textContent.includes("Connected as synthetic-owner")'),'connection survives reload');

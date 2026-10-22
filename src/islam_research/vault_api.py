@@ -26,6 +26,25 @@ class Apply(Write):
     plan_id:UUID4
 
 
+class CreateTask(Write):
+    request_uuid:UUID4
+    title:Annotated[str,Field(min_length=1,max_length=300)]
+    body:Annotated[str,Field(max_length=20000)]=''
+    context_entry_id:ID|None=None
+    context_revision:Annotated[int,Field(strict=True,ge=1)]|None=None
+
+
+class TaskState(Write):
+    request_uuid:UUID4
+    task_id:UUID4
+    expected_revision:Annotated[int,Field(strict=True,ge=1)]
+    state:Annotated[str,Field(pattern='^(open|closed)$')]
+
+
+class TaskComments(Write):
+    task_id:UUID4
+
+
 def register(router,store,owner,*,remote=None):
     transport=remote or NativeGitHub()
     def operation(name,**values):
@@ -56,3 +75,27 @@ def register(router,store,owner,*,remote=None):
 
     @router.post('/desktop/vault/apply')
     def apply(value:Apply,actor:str=Depends(owner)):return operation('apply',plan_id=value.plan_id,actor=actor)
+
+    @router.get('/desktop/tasks')
+    def tasks(actor:str=Depends(owner),q:Annotated[str,Query(max_length=300)]='',state:Annotated[str,Query(pattern='^(open|closed)?$')]=''):
+        return operation('task_listing',q=q,state=state)
+
+    @router.get('/desktop/tasks/detail')
+    def task(task_id:UUID4,actor:str=Depends(owner)):return operation('task_detail',task_id=task_id)
+
+    @router.post('/desktop/tasks')
+    def create_task(value:CreateTask,actor:str=Depends(owner)):
+        return operation('task_create',**value.model_dump(exclude={'owner_confirmed'}),actor=actor)
+
+    @router.post('/desktop/tasks/state')
+    def task_state(value:TaskState,actor:str=Depends(owner)):
+        return operation('task_change_state',**value.model_dump(exclude={'owner_confirmed'}),actor=actor)
+
+    @router.post('/desktop/tasks/sync')
+    def sync_tasks(value:Write,actor:str=Depends(owner)):return operation('task_sync_tasks',actor=actor)
+
+    @router.post('/desktop/tasks/refresh')
+    def refresh_tasks(value:Write,actor:str=Depends(owner)):return operation('task_refresh')
+
+    @router.post('/desktop/tasks/comments')
+    def comments(value:TaskComments,actor:str=Depends(owner)):return operation('task_refresh_comments',task_id=value.task_id)

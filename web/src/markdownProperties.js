@@ -85,3 +85,14 @@ export function typeCommandEdit(source,query,type){
  const added=metadata.insert.length-((metadata.to??metadata.from)-metadata.from);
  return {changes:[metadata,{from:query.from,to:query.to,insert:''}],selection:{anchor:query.from+added},scrollIntoView:true};
 }
+
+/** A task action is offered only on an ordinary standalone Markdown line. */
+export function taskCommandCompletion(source,cursor){
+ const start=source.lastIndexOf('\n',cursor-1)+1,line=source.slice(start,cursor);
+ const match=/^\/task(?:[ \t]+([^\n]{0,300}))?$/.exec(line);
+ if(!match)return null;
+ const properties=markdownProperties(source);
+ if(properties.range&&start<properties.range.to)return null;
+ if(markdownBlocks(source).some(block=>['code','html'].includes(block.type)&&start>=block.from&&cursor<=block.to))return null;
+ return {from:start,to:cursor,cursor,raw:line,kind:'task-command',items:[{id:'create-task',title:'Create task'+(match[1]?' · '+match[1]:''),insert:match[1]||''}]};
+}

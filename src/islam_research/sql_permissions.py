@@ -10,7 +10,7 @@ from psycopg import sql
 
 READ_TABLES = (
     "vault_connections",
-    "vault_sync_pages", "vault_sync_plans",
+    "vault_sync_pages", "vault_sync_plans", "vault_tasks", "vault_task_operations", "vault_issue_comments",
     "desktop_page_positions", "desktop_page_intents", "desktop_page_history", "desktop_folders", "desktop_folder_history",
     "desktop_requests", "desktop_artifacts",
     "workspace_legacy_collections",
@@ -45,6 +45,9 @@ OWNER_FUNCTIONS = (
     "research.withdraw_publication(text,integer,text,text)",
 )
 INSERT_COLUMNS = {
+    "vault_tasks": "id creation_sha256 title body context_entry_id context_revision context_page state repository_id remote_id remote_number remote_node_id remote_snapshot write_state created_by",
+    "vault_task_operations": "id task_id input_sha256 kind payload created_by",
+    "vault_issue_comments": "repository_id issue_id comment_id snapshot",
     "vault_connections": "workspace_id repository repository_id account_id account_login branch connected_by",
     "vault_sync_pages": "entry_id base_page confirmed_head dirty_revision confirmed_revision selected_by",
     "vault_sync_plans": "id input_sha256 repository_id account_id branch base_head payload created_by",
@@ -95,6 +98,9 @@ INSERT_COLUMNS = {
     "publication_previews": "id project_id record_ids relation_ids inputs payload payload_sha256 created_by",
 }
 UPDATE_COLUMNS = {
+    "vault_tasks": "title state revision repository_id remote_id remote_number remote_node_id remote_snapshot write_state status_note updated_at",
+    "vault_task_operations": "state",
+    "vault_issue_comments": "snapshot",
     "vault_sync_pages": "base_page confirmed_head confirmed_revision updated_at",
     "vault_sync_plans": "state commit_sha updated_at",
     "desktop_page_positions": "parent_id folder_id revision changed_by",
