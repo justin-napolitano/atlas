@@ -26,6 +26,12 @@ from . import shared_library
 class PostgreSQLStore:
     """Keep private queries and public projection reads separate."""
 
+    def vault_operation(self,operation,**values):
+        from . import vault_connection
+        operations={name:getattr(vault_connection,name) for name in ('status','connect','preview')}
+        if operation not in operations:raise ValueError('Unknown vault operation')
+        with db.connect(self.dsn) as c:return operations[operation](c,**values)
+
     def folder_operation(self,operation,**values):
         from . import desktop_folders
         operations={name:getattr(desktop_folders,name) for name in ('tree','change')}

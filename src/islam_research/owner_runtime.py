@@ -71,12 +71,12 @@ class FrontendBoundary(RequestBoundary):
         return await super().__call__(scope, receive, frontend_send)
 
 
-def create_owner_app(settings=None, *, store=None, verifier=None, directory=None, desktop_artifact_root=None):
+def create_owner_app(settings=None, *, store=None, verifier=None, directory=None, desktop_artifact_root=None, desktop_github=None):
     """Use real IAP verification in production; injectable keys/stores are tests only."""
     settings = settings or Settings.from_env()
     if settings.mode != "owner": raise ValueError("Owner runtime requires owner mode")
     verifier = verifier or IAPVerifier(settings.iap_audience, settings.owner_subject)
-    api = create_app(settings, store=store, verifier=verifier,desktop_artifact_root=desktop_artifact_root)
+    api = create_app(settings, store=store, verifier=verifier,desktop_artifact_root=desktop_artifact_root,desktop_github=desktop_github)
     files = load_frontend(directory or os.environ.get("RESEARCH_OWNER_FRONTEND", "/app/frontend"))
     frontend = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     frontend.add_middleware(FrontendBoundary, requests_per_minute=120)

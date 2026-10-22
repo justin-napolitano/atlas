@@ -34,7 +34,7 @@ class LocalVerifier:
 
 
 class LocalOwner:
-    def __init__(self, *, database_url, directory, port, credentials, store=None,desktop_artifact_root=None):
+    def __init__(self, *, database_url, directory, port, credentials, store=None,desktop_artifact_root=None,desktop_github=None):
         if type(port) is not int or not 1024 <= port <= 65535:
             raise ValueError('Invalid local port')
         if set(credentials) != {'launch', 'session'} or any(
@@ -50,7 +50,7 @@ class LocalOwner:
             iap_audience='/projects/local-development-only',
             owner_origin=f'https://127.0.0.1:{port}')
         self.application = create_owner_app(self.settings, store=store,
-            verifier=LocalVerifier(credentials['session']), directory=directory,desktop_artifact_root=desktop_artifact_root)
+            verifier=LocalVerifier(credentials['session']), directory=directory,desktop_artifact_root=desktop_artifact_root,desktop_github=desktop_github)
 
     async def __call__(self, scope, receive, send):
         if scope['type'] == 'lifespan':

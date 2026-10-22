@@ -60,7 +60,7 @@ def register(router,store,owner,artifact_root):
 
     @router.get('/desktop/capabilities')
     def capabilities():
-        return dict(local_sources=True,pages=True,folders=True,files=True,formats=['md','markdown','txt'],max_file_bytes=32768,cloud_sync=False)
+        return dict(local_sources=True,pages=True,folders=True,files=True,github_vault=True,formats=['md','markdown','txt'],max_file_bytes=32768,cloud_sync=False)
 
     @router.get('/desktop/tree')
     def tree(folder_id:ID|None=None,parent_id:ID|None=None,q:Annotated[str,Query(max_length=300)]='',

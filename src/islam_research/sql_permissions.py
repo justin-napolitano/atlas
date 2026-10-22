@@ -9,6 +9,7 @@ from psycopg import sql
 
 
 READ_TABLES = (
+    "vault_connections",
     "desktop_page_positions", "desktop_page_intents", "desktop_page_history", "desktop_folders", "desktop_folder_history",
     "desktop_requests", "desktop_artifacts",
     "workspace_legacy_collections",
@@ -43,6 +44,7 @@ OWNER_FUNCTIONS = (
     "research.withdraw_publication(text,integer,text,text)",
 )
 INSERT_COLUMNS = {
+    "vault_connections": "workspace_id repository repository_id account_id account_login branch connected_by",
     "desktop_page_positions": "entry_id parent_id folder_id changed_by",
     "desktop_folders": "id title parent_id changed_by",
     "desktop_page_intents": "request_uuid parent_id folder_id changed_by",
