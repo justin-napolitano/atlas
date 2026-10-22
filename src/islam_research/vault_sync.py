@@ -157,7 +157,7 @@ def _commit(remote,binding,row):
             additions.extend(dict(path=path,contents=base64.b64encode(content).decode('ascii')) for path,content in codec.encode_page(item['local']).items())
     if not additions:return row['base_head']
     payload=dict(query=COMMIT_MUTATION,variables=dict(input=dict(clientMutationId=str(row['id']),
-        branch=dict(repositoryNameWithOwner=binding['repository'],refName=binding['branch']),expectedHeadOid=row['base_head'],
+        branch=dict(repositoryNameWithOwner=binding['repository'],branchName=binding['branch']),expectedHeadOid=row['base_head'],
         message=dict(headline='Atlas vault sync '+str(row['id'])),fileChanges=dict(additions=additions))))
     if len(json.dumps(payload).encode())>1_900_000:raise GitHubUnavailable('Selected pages exceed the commit batch size; preview a smaller selection',409)
     value=remote.request('graphql',method='POST',payload=payload)['data']

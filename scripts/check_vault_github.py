@@ -39,7 +39,7 @@ def main():
                 assert sync.apply(c,plan_id=plan['id'],actor='synthetic:integration',remote=remote)['commit_sha']==pushed['commit_sha']
                 _,body=codec.paths(note['id']);external_body=b'# Synthetic external editor\n\nSynthetic Markdown edit only.'
                 payload=dict(query=sync.COMMIT_MUTATION,variables=dict(input=dict(clientMutationId=str(uuid.uuid4()),
-                    branch=dict(repositoryNameWithOwner=args.repository,refName='main'),expectedHeadOid=pushed['commit_sha'],
+                    branch=dict(repositoryNameWithOwner=args.repository,branchName='main'),expectedHeadOid=pushed['commit_sha'],
                     message=dict(headline='Synthetic external Markdown edit'),fileChanges=dict(additions=[dict(path=body,contents=base64.b64encode(external_body).decode())]))))
                 response=remote.request('graphql',method='POST',payload=payload)['data'];assert not response.get('errors')
                 plan=sync.prepare(c,request_uuid=str(uuid.uuid4()),entries=[dict(id=note['id'],revision=1)],actor='synthetic:integration',remote=remote)

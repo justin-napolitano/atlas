@@ -33,6 +33,7 @@ class FakeVault(FakeGitHub):
         if '/commits?' in path:self.calls.append((path,options));return dict(data=copy.deepcopy(self.commits[:30]))
         if path=='graphql':
             self.calls.append((path,options));self.posts+=1;value=options['payload']['variables']['input']
+            assert set(value['branch'])=={'repositoryNameWithOwner','branchName'}
             if value['expectedHeadOid']!=self.head:raise GitHubUnavailable('Synthetic expected-head conflict',409)
             if self.during_commit:self.during_commit()
             patch={row['path']:base64.b64decode(row['contents']) for row in value['fileChanges']['additions']}
