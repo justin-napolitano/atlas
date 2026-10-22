@@ -4,6 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const os=require('node:os');
 const {DesktopHost}=require('./src/host.cjs');
+const {newPageMenuItem}=require('./src/page-command.cjs');
 
 app.setName('Atlas');
 app.enableSandbox();
@@ -45,7 +46,7 @@ else{
       };
       host.requestQuit();
     };
-    const template=[...(process.platform==='darwin'?[{role:'appMenu'}]:[]),{label:'File',submenu:[{role:'close'},...(app.isPackaged?[{type:'separator'},{label:'Back Up Research Now',click:backup},{label:'Restore Local Backup…',click:restore}]:[])]},
+    const template=[...(process.platform==='darwin'?[{role:'appMenu'}]:[]),{label:'File',submenu:[newPageMenuItem(host),{type:'separator'},{role:'close'},...(app.isPackaged?[{type:'separator'},{label:'Back Up Research Now',click:backup},{label:'Restore Local Backup…',click:restore}]:[])]},
       {role:'editMenu'},{label:'View',submenu:[{role:'reload'},{type:'separator'},{role:'resetZoom'},{role:'zoomIn'},{role:'zoomOut'},{type:'separator'},{role:'togglefullscreen'}]},{role:'windowMenu'}];
     Menu.setApplicationMenu(Menu.buildFromTemplate(template));
     await host.open();

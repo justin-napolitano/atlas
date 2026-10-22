@@ -19,7 +19,7 @@ def rollback(connection,*,apply=False):
             connection.execute(sql.SQL('LOCK TABLE research.{} IN ACCESS EXCLUSIVE MODE').format(sql.Identifier(table)))
         for table in CORE:
             if connection.execute(sql.SQL('SELECT 1 FROM research.{} WHERE project_id IS NULL LIMIT 1').format(sql.Identifier(table))).fetchone():raise ValueError('Native workspace activity exists; plan an export/restore instead')
-        if connection.execute("SELECT 1 FROM research.notebook_entries WHERE title_mode<>'manual' OR thought_type IN ('decision','principle') LIMIT 1").fetchone():raise ValueError('New workspace metadata exists; plan an export/restore instead')
+        if connection.execute("SELECT 1 FROM research.notebook_entries WHERE title_mode<>'manual' OR thought_type IN ('decision','principle','skill') LIMIT 1").fetchone():raise ValueError('New workspace metadata exists; plan an export/restore instead')
         if connection.execute('SELECT 1 FROM research.workspace_note_trash LIMIT 1').fetchone():raise ValueError('Native tombstone activity exists')
         result=dict(migration=MIGRATION,eligible=True,applied=apply)
         if not apply:return result

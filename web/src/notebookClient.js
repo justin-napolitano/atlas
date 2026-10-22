@@ -1,6 +1,6 @@
 /** Notebook drafts remain in the shared page-memory map; server rows are authoritative. */
-export const thoughtTypes=['note','question','source_claim','interpretation','objection','decision','principle'];
-export const thoughtLabel=kind=>({note:'Note',question:'Question',source_claim:'Source claim to check',interpretation:'My interpretation',objection:'Objection',decision:'Decision',principle:'Principle',passage_note:'Passage note',record_note:'Reading record note'}[kind] || kind);
+export const thoughtTypes=['note','question','source_claim','interpretation','objection','decision','principle','skill'];
+export const thoughtLabel=kind=>({note:'Note',question:'Question',source_claim:'Source claim to check',interpretation:'My interpretation',objection:'Objection',decision:'Decision',principle:'Principle',skill:'Skill',passage_note:'Passage note',record_note:'Reading record note'}[kind] || kind);
 export const notebookKey=(projectId,id='new')=>`notebook:${JSON.stringify([projectId,id])}`;
 export const notebookMetadata=row=>Object.fromEntries(['thought_type','title','body','links','state'].map(key=>[key,key==='links'?(row.links || []).map(({kind,id,rationale})=>({kind,id,rationale})):row[key] ?? (key==='state'?'active':'')]));
 export function newThought(anchor={}){return {request_uuid:crypto.randomUUID(),thought_type:'note',title:'',body:'',links:[],state:'active',

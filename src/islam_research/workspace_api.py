@@ -5,7 +5,7 @@ from pydantic import BaseModel,ConfigDict,Field,field_validator
 
 ID=Annotated[str,Field(min_length=1,max_length=500,pattern=r'^[^\x00-\x1f\x7f]+$')]
 Revision=Annotated[int,Field(strict=True,ge=0)]
-Kind=Literal['note','question','source_claim','interpretation','objection','decision','principle']
+Kind=Literal['note','question','source_claim','interpretation','objection','decision','principle','skill']
 UUID4=Annotated[str,Field(pattern=r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')]
 
 class Input(BaseModel):
@@ -120,7 +120,7 @@ def register_workspace(router,store,owner):
         return store.workspace_operation(operation,actor=actor,**fields)
 
     @router.get('/workspace/notes')
-    def notes(q:Annotated[str,Query(max_length=300)]='',thought_type:Literal['','note','question','source_claim','interpretation','objection','decision','principle']='',cursor:Annotated[str,Query(max_length=1200)]='',limit:Annotated[int,Query(ge=1,le=50)]=30,trashed:bool=False):
+    def notes(q:Annotated[str,Query(max_length=300)]='',thought_type:Literal['','note','question','source_claim','interpretation','objection','decision','principle','skill']='',cursor:Annotated[str,Query(max_length=1200)]='',limit:Annotated[int,Query(ge=1,le=50)]=30,trashed:bool=False):
         return store.workspace_operation('notes',q=q,thought_type=thought_type,cursor=cursor,limit=limit,trashed=trashed)
 
     @router.get('/workspace/note')

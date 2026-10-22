@@ -88,6 +88,15 @@ navigation to Library/Notebook with secondary research routes and the existing f
 No hosted delivery or cloud sync is added. Review and native acceptance evidence
 belongs in that contract; keep these issues open until the implementation is merged.
 
+## Next: freeform skills and principles
+
+Owner-approved #236, storage #237 and interface #238 extend the existing notebook
+under #96/#87/#97. Skills and principles are standalone Markdown pages, optionally
+linked to one another or evidence. No assessments, stages, scores, templates or
+required connections. [Contract and acceptance](features/freeform-skills-principles.md)
+are recorded before implementation. Reuse existing note IDs, body/revision/recovery
+authorities, folders, links and search. Local Electron delivery; cloud sync deferred.
+
 ## Reused scope and changed priorities
 
 - #87 remains the connected-notebook umbrella; #88 remains source intake. #101 keeps
