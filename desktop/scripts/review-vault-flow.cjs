@@ -13,7 +13,7 @@ app.whenReady().then(async()=>{
  const host=new DesktopHost(electron,{}, {backendFactory:async()=>({origin:config.origin,credentials:config.credentials,stop:async()=>{}}),confirmDiscard:()=>false,preferencesFile:path.join(root,'window.json')});
  Menu.setApplicationMenu(Menu.buildFromTemplate([{role:'editMenu'}]));window=await host.open();window.setTitle('Atlas — synthetic vault review');window.webContents.setBackgroundThrottling(false);
  const ui=code=>window.webContents.executeJavaScript(code),active='.working-surface:not([hidden])';
- const press=keyCode=>{window.webContents.sendInputEvent({type:'keyDown',keyCode});if(keyCode==='Return')window.webContents.sendInputEvent({type:'char',keyCode:'\r'});window.webContents.sendInputEvent({type:'keyUp',keyCode});};
+ const press=keyCode=>{window.webContents.sendInputEvent({type:'keyDown',keyCode});if(keyCode==='Return'||keyCode==='Space')window.webContents.sendInputEvent({type:'char',keyCode:keyCode==='Return'?'\r':' '});window.webContents.sendInputEvent({type:'keyUp',keyCode});};
  await until(()=>ui('!![...document.querySelectorAll(".connected-sidebar-footer button")].find(row=>row.textContent==="Private vault")'),'native vault capability');
  await ui('[...document.querySelectorAll(".connected-sidebar-footer button")].find(row=>row.textContent==="Private vault").focus()');press('Return');
  await until(()=>ui('!!document.querySelector("'+active+' input[placeholder=\\"owner/repository\\"]")'),'connection form');
@@ -22,8 +22,16 @@ app.whenReady().then(async()=>{
  await ui('[...document.querySelectorAll("'+active+' button")].find(row=>row.textContent==="Preview my pages").focus()');press('Return');
  await until(()=>ui('document.querySelector("'+active+' [aria-label=\\"Vault preview\\"]")?.textContent.includes("Synthetic eligible note")'),'bounded preview');
  assert.equal(await ui('document.querySelector("'+active+'").textContent.includes("Legacy project context is not portable yet")'),true);
- assert.equal(await ui('document.querySelector("'+active+'").textContent.includes("no pages uploaded")'),true);
+ assert.equal(await ui('document.querySelector("'+active+'").textContent.includes("Nothing uploads until you review")'),true);
  assert.equal(await ui('document.querySelectorAll("'+active+' [aria-label=\\"Vault preview\\"] button").length>=2'),true);
+ if(config.sync){
+ await ui('document.querySelector(`'+active+' input[aria-label="Sync Synthetic eligible note"]`).focus()');press('Space');
+ await until(()=>ui('document.querySelector(`'+active+' input[aria-label="Sync Synthetic eligible note"]`)?.checked'),'page selected by keyboard');
+ await ui('[...document.querySelectorAll("'+active+' button")].find(row=>row.textContent==="Review sync").focus()');press('Return');
+ await until(()=>ui('document.querySelector(`'+active+' [aria-label="Reviewed sync"]`)?.textContent.includes("Send to GitHub")'),'frozen sync review');
+ await ui('[...document.querySelectorAll("'+active+' button")].find(row=>row.textContent==="Apply reviewed changes").focus()');press('Return');
+ await until(()=>ui('document.querySelector(`'+active+' [aria-label="Reviewed sync"]`)?.textContent.includes("This sync is confirmed.")'),'reviewed sync confirmation');
+ }
  await pause(200);await fs.writeFile(path.join(config.screenshots,'vault-desktop.png'),(await window.webContents.capturePage()).toPNG());
  const loaded=new Promise(resolve=>window.webContents.once('did-finish-load',resolve));window.webContents.reload();await loaded;
  await until(()=>ui('document.querySelector("'+active+'")?.textContent.includes("Connected as synthetic-owner")'),'connection survives reload');

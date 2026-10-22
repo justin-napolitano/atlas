@@ -27,7 +27,7 @@ class NativeGitHub:
         self.executable=executable
 
     def request(self,path,*,method='GET',payload=None,headers=None):
-        if not re.fullmatch(r'(?:user|repos/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_./%?=&-]+)?)',path) or '..' in path:
+        if not re.fullmatch(r'(?:graphql|user|repos/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_./%?=&-]+)?)',path) or '..' in path:
             raise ValueError('Unsupported GitHub API path')
         if method not in {'GET','POST','PATCH'}:raise ValueError('Unsupported GitHub method')
         executable=self.executable or next((str(p) for p in (Path('/opt/homebrew/bin/gh'),Path('/usr/local/bin/gh')) if p.is_file()),None)
