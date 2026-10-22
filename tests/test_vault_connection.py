@@ -89,7 +89,9 @@ class VaultAPITests(unittest.TestCase):
         base.APIBoundaryTests.setUp(self)
         for mode in ('owner','public'):
             app=create_app(self.settings if mode=='owner' else Settings('synthetic',mode='public'),store=base.MemoryBoundaryStore(),verifier=self.verifier)
-            with TestClient(app) as client:self.assertEqual(client.get('/v1/desktop/vault',headers=base.APIBoundaryTests.headers(self)).status_code,404)
+            with TestClient(app) as client:
+                for path in ('/v1/desktop/vault','/v1/desktop/tasks'):
+                    self.assertEqual(client.get(path,headers=base.APIBoundaryTests.headers(self)).status_code,404)
         app=create_app(self.settings,store=base.MemoryBoundaryStore(),verifier=self.verifier,desktop_artifact_root=Path('/synthetic/objects'),desktop_github=FakeGitHub())
         with TestClient(app) as client:
             value=dict(repository='synthetic-owner/private-vault',owner_confirmed=True)
@@ -101,3 +103,10 @@ class VaultAPITests(unittest.TestCase):
                 self.assertEqual(call.call_args.kwargs['actor'],base.OWNER)
                 self.assertEqual(client.post('/v1/desktop/vault/connect',headers=headers,json={**value,'token':'synthetic'}).status_code,422)
                 self.assertEqual(client.get('/v1/desktop/vault/preview?limit=51',headers=headers).status_code,422)
+
+                task=dict(request_uuid=str(uuid.uuid4()),title='Synthetic API task',owner_confirmed=True)
+                self.assertEqual(client.post('/v1/desktop/tasks',json=task).status_code,401)
+                self.assertEqual(client.post('/v1/desktop/tasks',headers=missing,json=task).status_code,403)
+                self.assertEqual(client.post('/v1/desktop/tasks',headers=headers,json=task).status_code,200)
+                self.assertEqual(call.call_args.args[0],'task_create')
+                self.assertEqual(client.post('/v1/desktop/tasks',headers=headers,json={**task,'repository':'other/private'}).status_code,422)

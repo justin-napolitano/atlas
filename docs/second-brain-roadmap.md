@@ -190,3 +190,12 @@ Follow [the keyboard Markdown contract](features/keyboard-markdown-properties.md
 optional frontmatter, type/tag completion and keyboard wiki-link navigation in
 the existing editor. Preserve body/CAS/recovery authority. Workspace-wide tag
 facets and alias resolution are follow-up work, not implemented by this slice.
+
+## Private GitHub vault — #242
+
+PRs #249–252 deliver portable standalone pages, reviewed manual Markdown sync and
+offline issue-backed Tasks with `/task`. See the [delivery record](features/private-github-vault-delivery.md)
+for evidence, limits and remaining #247 issue/comment export/restore gates. The
+owner's installed app/vault have not been migrated. Hosted/cloud app sync and
+autonomous execution remain deferred; this local GitHub scope supersedes the older
+blanket sync deferral.

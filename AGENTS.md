@@ -67,8 +67,9 @@ For the next private-vault/task integration, read `docs/features/private-github-
 and ADR 0006 first. Epic #242 advances local Electron GitHub vault sync despite the
 older blanket cloud-sync deferral; hosted GCP sync and autonomous execution remain
 deferred. Keep private content/configuration outside this public code repository.
-The initial private repo is scaffolded only; no notes are uploaded or runtime sync
-enabled. Require an explicit reviewed first-sync selection and synthetic acceptance.
+Read `docs/features/private-github-vault-delivery.md` for implemented behavior and
+remaining gates. The actual owner vault is still scaffold-only; no owner notes have
+been uploaded or automatic runtime sync enabled. Require an explicit reviewed first-sync selection and synthetic acceptance.
 
 For source intake and local document work, read `docs/features/metadata-first-sources.md`
 and the next-delivery table in `docs/second-brain-roadmap.md` (#222–225). References
