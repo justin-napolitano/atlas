@@ -31,6 +31,7 @@ def main():
     parser.add_argument('--sync',action='store_true')
     parser.add_argument('--tasks',action='store_true')
     parser.add_argument('--properties',action='store_true')
+    parser.add_argument('--toc',action='store_true')
     parser.add_argument('--artifacts',type=Path,default=ROOT/'research-library/testing/vault-connection')
     args=parser.parse_args();args.artifacts.mkdir(parents=True,exist_ok=True,mode=0o700)
     logging.disable(logging.CRITICAL)
@@ -63,11 +64,11 @@ def main():
                 time.sleep(.05)
             assert server.started
             config=root/'review.json';receipt=root/'result.json'
-            config.write_text(json.dumps(dict(origin=f'http://127.0.0.1:{port}',credentials=credentials,screenshots=str(args.artifacts.resolve()),resultFile=str(receipt),sync=args.sync,tasks=args.tasks,propertiesOnly=args.properties)));config.chmod(0o600)
-            result=subprocess.run([str(ROOT/'desktop/node_modules/.bin/electron'),str(ROOT/('desktop/scripts/review-skills-flow.cjs' if args.properties else 'desktop/scripts/review-vault-flow.cjs'))],env={**os.environ,'ATLAS_ELECTRON_TEST_CONFIG':str(config)},capture_output=True,timeout=180)
+            config.write_text(json.dumps(dict(origin=f'http://127.0.0.1:{port}',credentials=credentials,screenshots=str(args.artifacts.resolve()),resultFile=str(receipt),sync=args.sync,tasks=args.tasks,propertiesOnly=args.properties,tocOnly=args.toc)));config.chmod(0o600)
+            result=subprocess.run([str(ROOT/'desktop/node_modules/.bin/electron'),str(ROOT/('desktop/scripts/review-skills-flow.cjs' if args.properties or args.toc else 'desktop/scripts/review-vault-flow.cjs'))],env={**os.environ,'ATLAS_ELECTRON_TEST_CONFIG':str(config)},capture_output=True,timeout=180)
             if result.returncode and (root/'electron-failure.txt').exists():raise AssertionError((root/'electron-failure.txt').read_text())
             assert result.returncode==0 and all(json.loads(receipt.read_text()).values())
-            if not args.properties:assert remote.calls
+            if not (args.properties or args.toc):assert remote.calls
             if args.sync:
                 from islam_research.vault_format import paths
                 assert remote.posts==1 and remote.files[paths(note['id'])[1]]==note['body'].encode()

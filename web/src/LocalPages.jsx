@@ -101,9 +101,9 @@ export function PageHeader({api,session,onOpen,onCapture,onChanged,epoch}){
 }
 
 export function PageRelationships({api,entryId,onOpen,epoch}){
- const [children,setChildren]=useState(null),[backlinks,setBacklinks]=useState(null),[error,setError]=useState(''),[version,setVersion]=useState(0);
+ const [page,setPage]=useState(null),[error,setError]=useState(''),[version,setVersion]=useState(0);
  useSurfaceResume(()=>setVersion(n=>n+1));
- useEffect(()=>{let live=true;Promise.all([api.request('desktop/pages',{parent_id:entryId,limit:20}),api.request('desktop/pages/backlinks',{entry_id:entryId,limit:20})]).then(([child,back])=>{if(live){setChildren(child);setBacklinks(back);setError('');}}).catch(err=>{if(live)setError(err.message);});return()=>{live=false;};},[entryId,epoch,version]);
- async function more(kind){const page=kind==='children'?children:backlinks;try{const next=await api.request(kind==='children'?'desktop/pages':'desktop/pages/backlinks',{...(kind==='children'?{parent_id:entryId}:{entry_id:entryId}),cursor:page.next_cursor,limit:20});(kind==='children'?setChildren:setBacklinks)(old=>({...next,items:[...new Map([...old.items,...next.items].map(row=>[row.id,row])).values()]}));}catch(err){setError(err.message);}}
- return <section className="page-relationships">{[['children',children,'Subpages'],['backlinks',backlinks,'Linked from']].map(([kind,page,label])=>!!page?.items.length&&<div key={kind}><h2>{label}</h2>{page.items.map(row=><button className="page-related-link" key={row.id} onClick={()=>onOpen({kind:'entry',id:row.id})}>↗ {row.title}</button>)}{page.next_cursor&&<button onClick={()=>more(kind)}>More {label.toLowerCase()}</button>}</div>)}{error&&<p role="alert">{error}</p>}</section>;
+ useEffect(()=>{let live=true;api.request('desktop/pages/backlinks',{entry_id:entryId,limit:20}).then(row=>{if(live){setPage(row);setError('');}}).catch(err=>{if(live)setError(err.message);});return()=>{live=false;};},[entryId,epoch,version]);
+ async function more(){try{const next=await api.request('desktop/pages/backlinks',{entry_id:entryId,cursor:page.next_cursor,limit:20});setPage(old=>({...next,items:[...old.items,...next.items]}));}catch(err){setError(err.message);}}
+ return <section className="page-relationships">{!!page?.items.length&&<div><h2>Linked from</h2>{page.items.map(row=><button className="page-related-link" key={row.id} onClick={()=>onOpen({kind:'entry',id:row.id})}>↗ {row.title}</button>)}{page.next_cursor&&<button onClick={more}>More links</button>}</div>}{error&&<p role="alert">{error}</p>}</section>;
 }

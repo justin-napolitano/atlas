@@ -21,6 +21,31 @@ app.whenReady().then(async()=>{
  const saved=()=>until(()=>ui('document.querySelector("'+active+' .connected-document-tools [role=status]")?.textContent==="Saved"'),'real autosave');
  const note=id=>ui(`fetch('/v1/workspace/note?entry_id='+encodeURIComponent(${JSON.stringify(id)})).then(r=>r.json())`);
  const write=async text=>{await until(()=>ui('!!document.querySelector(`'+active+' [aria-label="Note body"]`)'),'blank editor');await ui('document.querySelector(`'+active+' [aria-label="Note body"]`).focus()');await window.webContents.insertText(text);};
+
+ if(config.tocOnly){
+ const press=(keyCode,modifiers=[])=>{window.webContents.sendInputEvent({type:'keyDown',keyCode,modifiers});window.webContents.sendInputEvent({type:'keyUp',keyCode,modifiers});};
+ const mod=process.platform==='darwin'?'meta':'control';
+ await electron.Menu.getApplicationMenu().items[0].submenu.items[0].click();await write('# Synthetic contents parent');await saved();
+ const parent=await ui('new URL(location.href).searchParams.get("entry_id")');
+ assert.equal(await ui('!!document.querySelector("'+active+' .subpage-contents")'),false);
+ press('ArrowDown',[mod]);press('Return');press('Return');await window.webContents.insertText('/toc');
+ await until(()=>ui('!!document.querySelector(`[aria-label="Insert contents"] [role="option"]`)'),'/toc suggestion');press('Tab');await saved();
+ await ui('document.querySelector(`'+active+' [aria-label="Note properties"]`).focus()');
+ await until(()=>ui('document.querySelector("'+active+' .subpage-contents")?.textContent.includes("Subpages will appear here.")'),'empty optional contents');
+ await click('＋ Subpage');await until(()=>ui('new URL(location.href).searchParams.get("entry_id")!=='+JSON.stringify(parent)),'child page opened');await write('# Synthetic child page');await saved();
+ const child=await ui('new URL(location.href).searchParams.get("entry_id")');
+ await ui('[...document.querySelectorAll("'+active+' .page-breadcrumbs button")].find(row=>row.textContent==="Synthetic contents parent").click()');
+ await until(()=>ui('document.querySelector("'+active+' .subpage-contents")?.textContent.includes("Synthetic child page")'),'live child list');
+ await ui('document.querySelector("'+active+' .subpage-contents button").focus()');window.webContents.sendInputEvent({type:'keyDown',keyCode:'Return'});window.webContents.sendInputEvent({type:'char',keyCode:'\r'});window.webContents.sendInputEvent({type:'keyUp',keyCode:'Return'});
+ await until(()=>ui('new URL(location.href).searchParams.get("entry_id")==='+JSON.stringify(child)),'keyboard follows child');
+ assert.equal(await ui('!!document.querySelector("'+active+' .subpage-contents")'),false);
+ await ui('[...document.querySelectorAll("'+active+' .page-breadcrumbs button")].find(row=>row.textContent==="Synthetic contents parent").click()');
+ const loaded=new Promise(resolve=>window.webContents.once('did-finish-load',resolve));window.webContents.reload();await loaded;
+ await until(()=>ui('document.querySelector("'+active+' .subpage-contents")?.textContent.includes("Synthetic child page")'),'contents survives reload');
+ assert.ok((await note(parent)).body.includes('<!-- atlas:subpages -->'));assert.equal((await note(child)).body,'# Synthetic child page');
+ if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'optional-subpage-contents.png'),(await window.webContents.capturePage()).toPNG());
+ await fs.writeFile(config.resultFile,JSON.stringify({optionalContents:true,keyboardInsert:true,noAutomaticContents:true,liveChildren:true,keyboardFollow:true,reload:true,exactBody:true}),{mode:0o600});window.destroy();app.exit(0);return;
+ }
  if(config.propertiesOnly){
  const press=(keyCode,modifiers=[])=>{window.webContents.sendInputEvent({type:'keyDown',keyCode,modifiers});window.webContents.sendInputEvent({type:'keyUp',keyCode,modifiers});};
  const mod=process.platform==='darwin'?'meta':'control';

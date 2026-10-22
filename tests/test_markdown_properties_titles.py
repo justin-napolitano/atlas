@@ -11,3 +11,7 @@ class MarkdownTitles(unittest.TestCase):
         self.assertEqual(derived_title('---\ntype: skill'),'Untitled note')
         self.assertEqual(derived_title('---\ntype: [unfinished\n---\n# محفوظ'),'محفوظ')
         self.assertEqual(derived_title('ordinary writing\n---'),'ordinary writing')
+
+    def test_subpage_contents_is_not_an_automatic_title(self):
+        self.assertEqual(derived_title('<!-- atlas:subpages -->\n\n# A real title'),'A real title')
+        self.assertEqual(derived_title('<!-- atlas:subpages -->'),'Untitled note')

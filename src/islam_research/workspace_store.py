@@ -16,6 +16,7 @@ def derived_title(body):
         closing=next((i for i,line in enumerate(lines[1:],1) if line.rstrip(' \t') in ('---','...')),None)
         lines=lines[closing+1:] if closing is not None else []
     for line in lines:
+        if line.strip()=='<!-- atlas:subpages -->':continue
         if line.strip():return re.sub(r'^\s{0,3}#{1,6}\s+','',line).strip()[:300] or 'Untitled note'
     return 'Untitled note'
 
