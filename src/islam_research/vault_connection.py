@@ -40,10 +40,15 @@ def verify(remote,repository,branch,*,binding=None):
 def status(c,*,remote=None):
     """Local metadata only; loading the workspace never fetches or uploads notes."""
     row=c.execute("SELECT * FROM research.vault_connections WHERE workspace_id='owner'").fetchone()
-    return dict(connection=row,sync_enabled=False,uploads_enabled=False,auth_provider='installed-github-cli',capability='connection-preview')
+    pending=c.execute('SELECT count(*) AS n FROM research.vault_sync_pages WHERE dirty_revision>confirmed_revision').fetchone()['n']
+    latest=c.execute("SELECT id,state,updated_at FROM research.vault_sync_plans WHERE state IN ('dispatching','confirmed','conflict') ORDER BY updated_at DESC LIMIT 1").fetchone()
+    pending_plan=c.execute("SELECT id,state FROM research.vault_sync_plans WHERE state='dispatching' ORDER BY updated_at LIMIT 1").fetchone()
+    return dict(connection=row,sync_enabled=False,uploads_enabled=True,manual_sync_available=True,pending_pages=pending,last_sync=latest,
+                pending_plan=pending_plan,auth_provider='installed-github-cli',capability='reviewed-markdown-sync')
 
 
 def connect(c,*,repository,branch,actor,remote=None):
+    target(repository,branch)
     remote=remote or NativeGitHub()
     old=status(c)['connection']
     if old and (old['repository'].lower()!=repository.lower() or old['branch']!=branch):
@@ -78,5 +83,5 @@ def preview(c,*,cursor='',limit=30,remote=None):
             except (ValueError,KeyError):reason='Page metadata needs reconciliation before it can be exported'
         items.append(dict(id=row['id'],title=row['title'],revision=row['revision'],eligible=reason is None,reason=reason,
                           linked_page_ids=[link['id'] for link in row.get('links',[]) if link.get('kind')=='entry']))
-    return dict(items=items,next_cursor=page['next_cursor'],head_sha=verified['head_sha'],uploaded=0,uploads_enabled=False,
+    return dict(items=items,next_cursor=page['next_cursor'],head_sha=verified['head_sha'],uploaded=0,uploads_enabled=True,
                 coverage='This page only; no upload selection has been applied')

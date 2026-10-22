@@ -56,7 +56,7 @@ class ConnectionTests(unittest.TestCase):
         self.assertEqual(self.connect()['connection']['revision'],1)
         preview=vault.preview(self.c,remote=self.remote,limit=50)
         item=next(item for item in preview['items'] if item['id']==row['id']);self.assertTrue(item['eligible']);self.assertNotIn('body',item)
-        self.assertEqual(preview['uploaded'],0);self.assertFalse(preview['uploads_enabled'])
+        self.assertEqual(preview['uploaded'],0);self.assertTrue(preview['uploads_enabled'])
         self.assertEqual(workspace.note(self.c,row['id'])['revision'],1);self.assertTrue(all(not options for _,options in self.remote.calls))
         self.remote.private=False
         with self.assertRaises(GitHubUnavailable):vault.preview(self.c,remote=self.remote)

@@ -28,6 +28,7 @@ def main():
     from test_vault_connection import FakeGitHub
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--frontend',type=Path,required=True)
+    parser.add_argument('--sync',action='store_true')
     parser.add_argument('--artifacts',type=Path,default=ROOT/'research-library/testing/vault-connection')
     args=parser.parse_args();args.artifacts.mkdir(parents=True,exist_ok=True,mode=0o700)
     logging.disable(logging.CRITICAL)
@@ -46,6 +47,9 @@ def main():
                 notebook.create(c,project_id=project,request_uuid=str(uuid.uuid4()),thought_type='note',title='Synthetic legacy note',body='Synthetic legacy context',links=[],actor='synthetic')
             listener=socket.socket();listener.bind(('127.0.0.1',0));port=listener.getsockname()[1]
             credentials={key:secrets.token_urlsafe(48) for key in ('launch','session')};remote=FakeGitHub()
+            if args.sync:
+                from test_vault_sync import FakeVault
+                remote=FakeVault()
             app=LocalOwner(database_url=dsn,directory=args.frontend,port=port,credentials=credentials,desktop_artifact_root=root/'objects',desktop_github=remote)
             server=uvicorn.Server(uvicorn.Config(app,access_log=False,log_level='critical',lifespan='off'))
             thread=threading.Thread(target=lambda:server.run(sockets=[listener]),daemon=True);thread.start()
@@ -54,15 +58,19 @@ def main():
                 time.sleep(.05)
             assert server.started
             config=root/'review.json';receipt=root/'result.json'
-            config.write_text(json.dumps(dict(origin=f'http://127.0.0.1:{port}',credentials=credentials,screenshots=str(args.artifacts.resolve()),resultFile=str(receipt))));config.chmod(0o600)
+            config.write_text(json.dumps(dict(origin=f'http://127.0.0.1:{port}',credentials=credentials,screenshots=str(args.artifacts.resolve()),resultFile=str(receipt),sync=args.sync)));config.chmod(0o600)
             result=subprocess.run([str(ROOT/'desktop/node_modules/.bin/electron'),str(ROOT/'desktop/scripts/review-vault-flow.cjs')],env={**os.environ,'ATLAS_ELECTRON_TEST_CONFIG':str(config)},capture_output=True,timeout=180)
             if result.returncode and (root/'electron-failure.txt').exists():raise AssertionError((root/'electron-failure.txt').read_text())
             assert result.returncode==0 and all(json.loads(receipt.read_text()).values())
-            assert remote.calls and all(not options for _,options in remote.calls)
+            assert remote.calls
+            if args.sync:
+                from islam_research.vault_format import paths
+                assert remote.posts==1 and remote.files[paths(note['id'])[1]]==note['body'].encode()
+            else:assert all(not options for _,options in remote.calls)
             with db.connect(dsn) as c:
                 current=workspace.note(c,note['id']);assert current['body']==note['body'] and current['revision']==note['revision']
-            (args.artifacts/'receipt.json').write_text(json.dumps({**json.loads(receipt.read_text()),'noRemoteMutations':True,'notesUnchanged':True,'ownerDataAccessed':False}))
-            print('Native vault connection/preview passed; no remote writes or owner data accessed.')
+            (args.artifacts/'receipt.json').write_text(json.dumps({**json.loads(receipt.read_text()),'onlyReviewedSyntheticMutation':bool(args.sync),'noRemoteMutations':not args.sync,'notesUnchanged':True,'ownerDataAccessed':False}))
+            print('Native vault journey passed; owner data and actual GitHub were not accessed.')
         finally:
             if server:server.should_exit=True
             if thread:thread.join(10)

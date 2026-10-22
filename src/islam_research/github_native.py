@@ -27,7 +27,7 @@ class NativeGitHub:
         self.executable=executable
 
     def request(self,path,*,method='GET',payload=None,headers=None):
-        if not re.fullmatch(r'(?:user|repos/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_./%?=&-]+)?)',path) or '..' in path:
+        if not re.fullmatch(r'(?:graphql|user|repos/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_./%?=&-]+)?)',path) or '..' in path:
             raise ValueError('Unsupported GitHub API path')
         if method not in {'GET','POST','PATCH'}:raise ValueError('Unsupported GitHub method')
         executable=self.executable or next((str(p) for p in (Path('/opt/homebrew/bin/gh'),Path('/usr/local/bin/gh')) if p.is_file()),None)
@@ -62,7 +62,8 @@ class NativeGitHub:
         if status in (401,403,404):raise GitHubUnavailable('GitHub access could not be confirmed; reconnect the same private account and repository',403)
         if status==304:return dict(status=status,headers=response_headers,data=None)
         if status in (409,412,422):raise GitHubUnavailable('GitHub changed or rejected the operation; refresh before resolving it',409)
-        if status<200 or status>=300 or result.returncode:raise GitHubUnavailable()
+        if status<200 or status>=300:raise GitHubUnavailable()
         try:parsed=json.loads(body) if body else None
         except (UnicodeError,json.JSONDecodeError,RecursionError):raise GitHubUnavailable('GitHub returned an unsupported response') from None
+        if result.returncode and not (path=='graphql' and isinstance(parsed,dict) and parsed.get('errors')):raise GitHubUnavailable()
         return dict(status=status,headers=response_headers,data=parsed)
