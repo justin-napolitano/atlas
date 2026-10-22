@@ -14,3 +14,13 @@ test('transactions preserve source with undo, redo and mixed-script insertion',(
  const offset=source.indexOf('العَرَبِيَّة');state=state.update({changes:{from:offset,to:offset,insert:'ملاحظة '},selection:{anchor:offset+7}}).state;
  assert.ok(state.doc.toString().includes('ملاحظة العَرَبِيَّة'));assert.equal(undo(target),true);assert.equal(state.doc.toString(),source);assert.equal(redo(target),true);assert.ok(state.doc.toString().includes('ملاحظة العَرَبِيَّة'));
 });
+
+test('rendered blocks leave blank lines and the trailing writing position editable',()=>{
+ for(const text of ['---\ntype: principle\n---\n','---\ntype: principle\n---\n\n','# Heading\n\n','Paragraph\n\nNext paragraph\n']){
+  const blocks=markdownBlocks(text);
+  for(const block of blocks){assert.equal(text.slice(block.from,block.renderTo),block.source);assert.equal(block.renderTo,block.to);}
+  assert.ok(blocks.at(-1).renderTo<text.length,'trailing newline stays outside every widget');
+ }
+ const text='---\ntype: principle\n---\n\nBody';const blocks=markdownBlocks(text);
+ assert.equal(text.slice(blocks[0].renderTo,blocks[1].from),'\n\n');
+});

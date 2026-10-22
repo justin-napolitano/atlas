@@ -34,6 +34,15 @@ app.whenReady().then(async()=>{
  const id=await ui('new URL(location.href).searchParams.get("entry_id")');assert.equal((await note(id)).thought_type,'skill');
  await ui('document.querySelector(`'+active+' [aria-label="Note body"]`).focus()');press('A',[mod]);await window.webContents.insertText('# Synthetic command\n\n/type pri');
  await until(()=>ui('!![...document.querySelectorAll(".page-wiki-completion [role=option]")].find(row=>row.textContent==="principle")'),'change role from keyboard');if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'keyboard-type-completion.png'),(await window.webContents.capturePage()).toPNG());press('Tab');await saved();assert.equal((await note(id)).thought_type,'principle');assert.ok((await note(id)).body.includes('# Synthetic command'));assert.ok(!(await note(id)).body.includes('/type'));
+ // A formatted metadata-only page must leave its following lines editable.
+ press('A',[mod]);await window.webContents.insertText('---\ntype: principle\n---');
+ press('ArrowDown',[mod]);press('Return');press('Return');await window.webContents.insertText('Synthetic writing below properties');await saved();
+ assert.equal((await note(id)).body,'---\ntype: principle\n---\n\nSynthetic writing below properties');
+ // Leaving the document formatted and returning to its last blank line also works.
+ await ui('document.querySelector(`'+active+' [aria-label="Note properties"]`).focus()');
+ await ui('document.querySelector(`'+active+' [aria-label="Note body"]`).focus()');
+ press('ArrowDown',[mod]);press('Return');await window.webContents.insertText('A second line');await saved();
+ assert.ok((await note(id)).body.endsWith('Synthetic writing below properties\nA second line'));
  // Replace a synthetic draft to test unfinished YAML and learned-tag completion.
  press('A',[mod]);await window.webContents.insertText('---\ntype: principle\ntags: [read');
  await until(()=>ui('!![...document.querySelectorAll(".page-wiki-completion [role=option]")].find(row=>row.textContent==="reading")'),'tag completion');press('Tab');
@@ -47,7 +56,7 @@ app.whenReady().then(async()=>{
  press('Return',[mod]);await until(()=>ui('new URL(location.href).searchParams.get("entry_id")==='+JSON.stringify(target)),'keyboard follows stable page link');
  const reloaded=new Promise(resolve=>window.webContents.once('did-finish-load',resolve));window.webContents.reload();await reloaded;await until(()=>ui('!!document.querySelector(".connected-nav")'),'reload');await until(()=>ui('document.querySelector(`'+active+' [aria-label="Note body"]`)?.textContent.includes("Synthetic tag source")'),'reloaded document renders');assert.equal((await note(id)).body,row.body);
  if(config.screenshots)await fs.writeFile(path.join(config.screenshots,'keyboard-properties.png'),(await window.webContents.capturePage()).toPNG());
- await fs.writeFile(config.resultFile,JSON.stringify({keyboardProperties:true,slashType:true,typeCompletion:true,typeConversion:true,tagCompletion:true,wikiCompletion:true,keyboardFollow:true,undoRedo:true,exactReload:true}),{mode:0o600});window.destroy();app.exit(0);return;
+ await fs.writeFile(config.resultFile,JSON.stringify({keyboardProperties:true,writingBelowFrontmatter:true,slashType:true,typeCompletion:true,typeConversion:true,tagCompletion:true,wikiCompletion:true,keyboardFollow:true,undoRedo:true,exactReload:true}),{mode:0o600});window.destroy();app.exit(0);return;
  }
  if(config.shortcutOnly){
  // Exercise the actual native accelerator while writing; the previous page must survive.
