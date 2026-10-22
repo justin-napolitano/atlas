@@ -196,6 +196,7 @@ facets and alias resolution are follow-up work, not implemented by this slice.
 PRs #249–252 deliver portable standalone pages, reviewed manual Markdown sync and
 offline issue-backed Tasks with `/task`. See the [delivery record](features/private-github-vault-delivery.md)
 for evidence, limits and remaining #247 issue/comment export/restore gates. The
-owner's installed app/vault have not been migrated. Hosted/cloud app sync and
+local app was updated with PR #253; the actual private vault has not been
+populated with owner notes. Hosted/cloud app sync and
 autonomous execution remain deferred; this local GitHub scope supersedes the older
 blanket sync deferral.

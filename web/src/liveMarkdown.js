@@ -9,7 +9,9 @@ const parser=unified().use(remarkParse).use(remarkGfm).use(remarkFrontmatter);
 export function markdownBlocks(source){
   const nodes=parser.parse(source).children;
   const definitions=nodes.filter(node=>['definition','footnoteDefinition'].includes(node.type)).map(node=>source.slice(node.position.start.offset,node.position.end.offset)).join('\n\n');
-  return nodes.map((node,index)=>({from:node.position.start.offset,to:node.position.end.offset,renderTo:nodes[index+1]?.position.start.offset??source.length,type:node.type,
+  // Keep separators and the trailing writing position outside rendered widgets.
+  // Replacing newlines can swallow the caret when Enter starts a new line.
+  return nodes.map(node=>({from:node.position.start.offset,to:node.position.end.offset,renderTo:node.position.end.offset,type:node.type,
     source:source.slice(node.position.start.offset,node.position.end.offset),definitions}));
 }
 
