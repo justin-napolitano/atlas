@@ -31,14 +31,14 @@ class PostgreSQLStore:
         from . import vault_sync
         from . import vault_tasks
         operations={name:getattr(vault_connection,name) for name in ('status','connect','preview')}
-        operations.update({name:getattr(vault_sync,name) for name in ('prepare','get_plan','versions','apply')})
+        operations.update({name:getattr(vault_sync,name) for name in ('prepare','get_plan','versions','apply','backups','restore_preview')})
         operations.update({'task_'+name:getattr(vault_tasks,name) for name in ('listing','detail','create','change_state','sync_tasks','refresh','refresh_comments')})
         if operation not in operations:raise ValueError('Unknown vault operation')
         with db.connect(self.dsn) as c:
             # A sync dispatch intent must commit before its outbound request.
             # The operation owns this connection; explicit transactions remain
             # atomic, while remote calls never inherit an implicit outer txn.
-            if operation in {'prepare','get_plan','apply','task_sync_tasks','task_refresh','task_refresh_comments'}:c.autocommit=True
+            if operation in {'prepare','get_plan','apply','backups','restore_preview','task_sync_tasks','task_refresh','task_refresh_comments'}:c.autocommit=True
             return operations[operation](c,**values)
 
     def folder_operation(self,operation,**values):

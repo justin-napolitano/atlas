@@ -165,5 +165,8 @@ saved views, explained connections and dated reasons. Start with the
 Hosted owner sign-in, two-device/backup proof and scholarly/owner reading acceptance
 remain separate gates; a local review or passing CI does not establish them.
 
-Private GitHub vault first delivery: [behavior, verification and remaining gates](docs/features/private-github-vault-delivery.md). Local reviewed sync and Tasks are
-implemented in stacked PRs #249–252; owner data is not automatically exported.
+Private GitHub vault: [behavior, verification and remaining gates](docs/features/private-github-vault-delivery.md).
+Local Tasks and reviewed delivery began in PRs #249–252. Epic #256 makes note delivery
+[application-owned Markdown backups](docs/features/app-owned-backups.md), with exact
+coverage receipts and read-only historical recovery inspection. Application notes
+remain authoritative; owner data is not automatically exported.

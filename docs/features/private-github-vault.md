@@ -1,15 +1,17 @@
 # Private GitHub vault and task workspace
 
-Owner-approved direction, 2026-10-21. Contracts below define the target. The local
+Owner-approved direction, updated 2026-10-24 by #255/#256 and
+[ADR 0007](../adr/0007-app-owned-markdown-backups.md). Application notes remain
+authoritative; private Markdown is backup/export. The local
 first delivery is implemented in stacked PRs #249–252; see the [delivery record](private-github-vault-delivery.md)
 for verified behavior and remaining gates. No owner-data migration or automatic
 background sync has been enabled.
 
 ## Outcome and scope
 
-One private content repository holds the owner's portable Markdown context; its
-GitHub Issues hold actionable work. Atlas remains an offline-first reader, writing
-surface and searchable graph over that material. Life administration, loose ideas,
+One private content repository holds selected portable Markdown backups; its
+GitHub Issues hold actionable work. Atlas remains the offline-first reader and
+authoritative writing surface. Life administration, loose ideas,
 research and agent assignments share identities without requiring projects.
 
 Application source remains in its existing open-source repository. Vault location,
@@ -23,21 +25,22 @@ multi-user permissions and autonomous agents remain deferred. No direct remote S
 
 ## Authorities
 
-| Material | Authority after an explicitly reviewed first sync | Atlas responsibility |
+| Material | Authority | Atlas responsibility |
 | --- | --- | --- |
-| Page body | Exact UTF-8 Markdown in Git | Durable offline edits, three-way sync, search/live editor |
-| Page identity/name/type/links | Versioned page record, with valid known frontmatter projected by the existing classification contract | Preserve UUID, optional metadata and unknown YAML |
+| Page body | Application storage | Durable offline edits, exact-byte selected Markdown backups, conflict preservation |
+| Page identity/name/type/links | Application record, with valid known frontmatter projected by the existing classification contract | Preserve UUID, optional metadata and unknown YAML in versioned exports |
+| Drafts and revisions | Application storage | Independent recovery; excluded from selected Markdown coverage |
 | Task title/body/open-or-closed state | GitHub Issue | Cached local view, queued CAS-aware changes, context links |
 | Task comments | GitHub issue comments | Attributable discussion; edits retain remote identities |
 | Issue snapshots | Derived API export | Offline search/backup; never an independently edited authority |
-| Editions, quotes, locators and progress | Existing local records until a separately proven portable representation is delivered | Never remap anchors or claim reader-state migration |
+| Editions, quotes, locators and progress | Application records | Never remap anchors or claim reader-state migration |
 | Agent output | Attributable proposed findings/run records | Owner acceptance stays separate from the proposal |
 
-Existing PostgreSQL records remain authoritative until per-record cutover is proven.
-The first connection does not change authority or upload anything automatically.
-After cutover local writes are pending edits against the last acknowledged remote
-base, not a second independently edited cloud copy. Local revision and Git object
-identity are distinct values. Do not derive one from the other.
+Existing PostgreSQL records remain authoritative. There is no Git-authoritative
+cutover. The first connection does not change authority or upload anything
+automatically. Remote file edits never automatically change application writing.
+Any future import is a separate explicitly reviewed action. Local revision and Git
+object identity are distinct values. Do not derive one from the other.
 
 Frontmatter stays optional. Initially round-trip body bytes with a versioned
 `.atlas/pages/<uuid>.json` record containing stable ID, safe relative Markdown path,
@@ -52,6 +55,8 @@ type edits are one logical page operation; conflicting inputs require resolution
   Human display titles are not identity. Human-readable paths and physical folder
   moves can follow once mapping/rename acceptance is proved.
 - `.atlas/pages/<uuid>.json` maps that file to the original page ID and metadata.
+- `.atlas/backups/<operation-uuid>.json` records exact-byte coverage and source
+  revisions. The [backup contract](app-owned-backups.md) defines its limits.
 - `.atlas/issues/<repository-id>/<issue-node-id>.json` holds derived issue snapshots;
   comments have stable IDs, timestamps and authors. Git clone alone is not backup
   for GitHub API state. Snapshot writes never create new GitHub issues.
@@ -71,8 +76,8 @@ deletion propagation is deferred until its explicit tombstone contract is tested
    account ID + repository ID, verify private visibility and permission, show an
    initial inventory/diff without reading unnecessary content. Explicit owner action
    chooses which existing pages to upload. Review what is unsupported or excluded.
-2. **Markdown round-trip.** Pull/push standalone pages with exact bytes, identities,
-   classification, stable page links, draft/revision recovery and conflict safety.
+2. **Markdown backup.** Export standalone pages with exact bytes, identities,
+   classification, stable page links and conflict safety. Keep drafts/revisions local.
    Report coverage; source-bound records are not portable until their dependencies
    can be imported without changing bindings. Do not claim all readings are synced.
 3. **Tasks and `/task`.** One Tasks destination in the existing sidebar. Keyboard
@@ -82,9 +87,10 @@ deletion propagation is deferred until its explicit tombstone contract is tested
    files/page IDs rather than copying every linked page. Existing questions remain
    pages unless explicitly made actionable. Remote task edits and closure return to
    the same task in Atlas; an unsynced draft is clearly not yet a GitHub issue.
-4. **Portability proof.** Issue/comment snapshots and a second fresh local instance
-   reconstruct supported notes/tasks with exact IDs and links. Test interruptions,
-   access loss, changed remote visibility, restores and independently edited copies.
+4. **Portability proof.** Read-only historical snapshot inspection and synthetic
+   fresh-database import prove supported page recovery. Issue/comment snapshots
+   and task reconstruction remain #247. Test interruptions, access loss, changed
+   remote visibility and independently edited copies; never replay tasks on inspection.
 
 An agent consuming tasks and executing them is a later, separately authorized
 feature. A note or issue is context, never blanket authority to run commands.
@@ -111,9 +117,10 @@ feature. A note or issue is context, never blanket authority to run commands.
 - Track the last acknowledged content hash, Git blob/ref identity, issue update
   identity, local revision and pending operation separately. Remote ref updates use
   non-forced expected-base updates. There is no force push or last-writer overwrite.
-- Local-only change can push; remote-only change can pull using local CAS; matching
-  changes converge; different changes on both sides preserve both and need explicit
-  resolution. A later acknowledgement cannot replace newer local typing.
+- Local changes can export against the recorded remote base; matching files can
+  receive coverage receipts. Remote differences preserve both and need explicit
+  resolution. Backups never pull. A later acknowledgement cannot replace newer
+  local typing or confirm a newer unsent revision.
 - GitHub issue creation is not treated as inherently idempotent. Record a stable
   operation marker plus a durable receipt; a lost acknowledgement enters uncertain
   state and is reconciled against remote records before any repeat POST. Uncertain
@@ -161,7 +168,8 @@ the owner's actual vault or notebook as a test fixture. Verify:
 1. Correct private account/repo binding; public/wrong-account/changed-visibility and
    missing-permission writes rejected; hosted/public APIs cannot reach vault routes.
 2. Exact Unicode/RTL/Markdown/frontmatter, stable IDs, titles, roles and links survive
-   push, direct file edits, pull, rename/missing detection and fresh-instance import.
+   backup and synthetic fresh-instance import. Direct file edits become conflicts;
+   rename/missing detection never silently reassigns identities.
 3. Offline capture, held responses, process restart, unknown GitHub creation outcome,
    duplicate delivery and rate limits preserve writing and create one intended issue.
 4. Concurrent Markdown and issue changes preserve both versions; pending new typing

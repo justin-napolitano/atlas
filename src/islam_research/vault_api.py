@@ -76,6 +76,14 @@ def register(router,store,owner,*,remote=None):
     @router.post('/desktop/vault/apply')
     def apply(value:Apply,actor:str=Depends(owner)):return operation('apply',plan_id=value.plan_id,actor=actor)
 
+    @router.get('/desktop/vault/backups')
+    def backups(actor:str=Depends(owner),cursor:UUID4|None=None,limit:Annotated[int,Query(ge=1,le=10)]=10):
+        return operation('backups',cursor=cursor or '',limit=limit)
+
+    @router.get('/desktop/vault/restore-preview')
+    def restore_preview(backup_id:UUID4,actor:str=Depends(owner),commit_sha:Annotated[str,Query(pattern='^([0-9a-f]{40})?$')]=''):
+        return operation('restore_preview',backup_id=backup_id,commit_sha=commit_sha)
+
     @router.get('/desktop/tasks')
     def tasks(actor:str=Depends(owner),q:Annotated[str,Query(max_length=300)]='',state:Annotated[str,Query(pattern='^(open|closed)?$')]='',context_entry_id:ID|None=None):
         return operation('task_listing',q=q,state=state,context_entry_id=context_entry_id)

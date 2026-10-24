@@ -90,7 +90,7 @@ class VaultAPITests(unittest.TestCase):
         for mode in ('owner','public'):
             app=create_app(self.settings if mode=='owner' else Settings('synthetic',mode='public'),store=base.MemoryBoundaryStore(),verifier=self.verifier)
             with TestClient(app) as client:
-                for path in ('/v1/desktop/vault','/v1/desktop/tasks'):
+                for path in ('/v1/desktop/vault','/v1/desktop/tasks','/v1/desktop/vault/backups','/v1/desktop/vault/restore-preview?backup_id='+str(uuid.uuid4())):
                     self.assertEqual(client.get(path,headers=base.APIBoundaryTests.headers(self)).status_code,404)
         app=create_app(self.settings,store=base.MemoryBoundaryStore(),verifier=self.verifier,desktop_artifact_root=Path('/synthetic/objects'),desktop_github=FakeGitHub())
         with TestClient(app) as client:
@@ -103,6 +103,16 @@ class VaultAPITests(unittest.TestCase):
                 self.assertEqual(call.call_args.kwargs['actor'],base.OWNER)
                 self.assertEqual(client.post('/v1/desktop/vault/connect',headers=headers,json={**value,'token':'synthetic'}).status_code,422)
                 self.assertEqual(client.get('/v1/desktop/vault/preview?limit=51',headers=headers).status_code,422)
+                self.assertEqual(client.get('/v1/desktop/vault/backups').status_code,401)
+                self.assertEqual(client.get('/v1/desktop/vault/backups?limit=11',headers=headers).status_code,422)
+                self.assertEqual(client.get('/v1/desktop/vault/backups',headers=headers).status_code,200)
+                self.assertEqual(call.call_args.args[0],'backups')
+                backup_id=str(uuid.uuid4())
+                self.assertEqual(client.get('/v1/desktop/vault/restore-preview?backup_id='+backup_id).status_code,401)
+                self.assertEqual(client.get('/v1/desktop/vault/restore-preview?backup_id=invalid',headers=headers).status_code,422)
+                self.assertEqual(client.get('/v1/desktop/vault/restore-preview?backup_id='+backup_id+'&commit_sha=invalid',headers=headers).status_code,422)
+                self.assertEqual(client.get('/v1/desktop/vault/restore-preview?backup_id='+backup_id,headers=headers).status_code,200)
+                self.assertEqual(call.call_args.args[0],'restore_preview')
 
                 task=dict(request_uuid=str(uuid.uuid4()),title='Synthetic API task',owner_confirmed=True)
                 self.assertEqual(client.post('/v1/desktop/tasks',json=task).status_code,401)

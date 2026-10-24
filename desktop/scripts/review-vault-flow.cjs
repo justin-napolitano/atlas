@@ -27,10 +27,17 @@ app.whenReady().then(async()=>{
  if(config.sync){
  await ui('document.querySelector(`'+active+' input[aria-label="Sync Synthetic eligible note"]`).focus()');press('Space');
  await until(()=>ui('document.querySelector(`'+active+' input[aria-label="Sync Synthetic eligible note"]`)?.checked'),'page selected by keyboard');
- await ui('[...document.querySelectorAll("'+active+' button")].find(row=>row.textContent==="Review sync").focus()');press('Return');
- await until(()=>ui('document.querySelector(`'+active+' [aria-label="Reviewed sync"]`)?.textContent.includes("Send to GitHub")'),'frozen sync review');
- await ui('[...document.querySelectorAll("'+active+' button")].find(row=>row.textContent==="Apply reviewed changes").focus()');press('Return');
- await until(()=>ui('document.querySelector(`'+active+' [aria-label="Reviewed sync"]`)?.textContent.includes("This sync is confirmed.")'),'reviewed sync confirmation');
+ await ui('[...document.querySelectorAll("'+active+' button")].find(row=>row.textContent==="Review backup").focus()');press('Return');
+ await until(()=>ui('document.querySelector(`'+active+' [aria-label="Reviewed backup"]`)?.textContent.includes("Send to GitHub")'),'frozen sync review');
+ await ui('[...document.querySelectorAll("'+active+' button")].find(row=>row.textContent==="Back up selected pages").focus()');press('Return');
+ await until(()=>ui('document.querySelector(`'+active+' [aria-label="Reviewed backup"]`)?.textContent.includes("These saved revisions are backed up.")'),'reviewed sync confirmation');
+ assert.equal(await ui('document.querySelector(`'+active+' [aria-label="Backup coverage"]`)?.textContent.includes("Confirmed coverage: 1 of 1")'),true);
+ await until(()=>ui('[...document.querySelectorAll("'+active+' button")].some(row=>row.textContent==="Inspect recovery"&&!row.disabled)'),'recovery control ready after confirmation refresh');
+ await ui('[...document.querySelectorAll("'+active+' button")].find(row=>row.textContent==="Inspect recovery").focus()');press('Return');
+ await until(()=>ui('document.querySelector(`'+active+' [aria-label="Read-only recovery preview"]`)?.textContent.includes("Matches current writing")'),'read-only exact recovery preview');
+ assert.equal(await ui('document.querySelector(`'+active+' [aria-label="Read-only recovery preview"]`)?.textContent.includes("No notes, revisions, drafts, tasks or pending operations were changed")'),true);
+ assert.equal(await ui('document.activeElement?.getAttribute("aria-label")==="Read-only recovery preview"'),true);
+ await fs.writeFile(path.join(config.screenshots,'backup-recovery-desktop.png'),(await window.webContents.capturePage()).toPNG());
  }
 
  if(config.tasks){
@@ -59,5 +66,5 @@ app.whenReady().then(async()=>{
  await window.setMinimumSize(0,0);window.setContentSize(390,844);await pause(200);
  assert.equal(await ui('innerWidth'),390);assert.equal(await ui('document.documentElement.scrollWidth<=innerWidth+2'),true);
  await fs.writeFile(path.join(config.screenshots,'vault-mobile.png'),(await window.webContents.capturePage()).toPNG());
- await fs.writeFile(config.resultFile,JSON.stringify({nativeVault:true,keyboardConnect:true,keyboardPreview:true,coverageVisible:true,reload:true,mobile:true,...(config.tasks?{keyboardTaskCapture:true,taskSync:true,slashTask:true,contextReturn:true}:{})}),{mode:0o600});window.destroy();app.exit(0);
-}).catch(async error=>{try{if(window&&config?.screenshots)await fs.writeFile(path.join(config.screenshots,'vault-failure.png'),(await window.webContents.capturePage()).toPNG());}catch{}await fs.writeFile(path.join(root,'electron-failure.txt'),String(error.stack),{mode:0o600});app.exit(1);});
+ await fs.writeFile(config.resultFile,JSON.stringify({nativeVault:true,keyboardConnect:true,keyboardPreview:true,coverageVisible:true,reload:true,mobile:true,...(config.sync?{verifiedBackupCoverage:true,readOnlyRecovery:true}:{}),...(config.tasks?{keyboardTaskCapture:true,taskSync:true,slashTask:true,contextReturn:true}:{})}),{mode:0o600});window.destroy();app.exit(0);
+}).catch(async error=>{let detail='';try{if(window&&config?.screenshots){await fs.writeFile(path.join(config.screenshots,'vault-failure.png'),(await window.webContents.capturePage()).toPNG());detail='\nSynthetic renderer: '+await window.webContents.executeJavaScript('document.querySelector(".working-surface:not([hidden])")?.textContent');}}catch{}await fs.writeFile(path.join(root,'electron-failure.txt'),String(error.stack)+detail,{mode:0o600});app.exit(1);});

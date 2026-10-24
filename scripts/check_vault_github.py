@@ -43,9 +43,10 @@ def main():
                     message=dict(headline='Synthetic external Markdown edit'),fileChanges=dict(additions=[dict(path=body,contents=base64.b64encode(external_body).decode())]))))
                 response=remote.request('graphql',method='POST',payload=payload)['data'];assert not response.get('errors')
                 plan=sync.prepare(c,request_uuid=str(uuid.uuid4()),entries=[dict(id=note['id'],revision=1)],actor='synthetic:integration',remote=remote)
-                assert plan['actions'][0]['action']=='pull'
-                assert sync.apply(c,plan_id=plan['id'],actor='synthetic:integration',remote=remote)['state']=='confirmed'
-                assert workspace.note(c,note['id'])['body'].encode()==external_body
+                assert plan['actions'][0]['action']=='conflict'
+                assert workspace.note(c,note['id'])['body']==note['body']
+                recovery=sync.restore_preview(c,backup_id=pushed['id'],commit_sha=pushed['commit_sha'],remote=remote)
+                assert recovery['read_only'] and recovery['restored']==0 and recovery['items'][0]['action']=='matches'
                 # Use a separate private synthetic issue, never the actual vault.
                 task=tasks.create(c,request_uuid=str(uuid.uuid4()),title='Synthetic Atlas task protocol',body='Synthetic fixture only محفوظ',actor='synthetic:integration')['task']
                 first=tasks.sync_tasks(c,actor='synthetic:integration',remote=remote);assert first['more_pending']==0
@@ -56,7 +57,7 @@ def main():
                 tasks.change_state(c,request_uuid=str(uuid.uuid4()),task_id=str(task['id']),expected_revision=confirmed['revision'],state='closed',actor='synthetic:integration')
                 assert tasks.sync_tasks(c,actor='synthetic:integration',remote=remote)['more_pending']==0
                 assert tasks.detail(c,task_id=str(task['id']))['task']['remote_snapshot']['state']=='closed'
-                print(json.dumps(dict(real_github=True,issue_create_and_replay=True,state_only_update=True,comment_cache=True,private_fixture_only=True,atomic_commit=True,replay=True,external_markdown_pull=True,exact_unicode=True,owner_data_accessed=False)))
+                print(json.dumps(dict(real_github=True,issue_create_and_replay=True,state_only_update=True,comment_cache=True,private_fixture_only=True,atomic_commit=True,replay=True,remote_edit_preserved=True,read_only_recovery=True,exact_unicode=True,owner_data_accessed=False)))
         finally:subprocess.run([str(binary/'pg_ctl'),'-D',str(data),'-m','fast','-w','stop'],check=True,stdout=subprocess.DEVNULL)
 
 
