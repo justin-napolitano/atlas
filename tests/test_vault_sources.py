@@ -167,7 +167,7 @@ class SourceBackupTests(unittest.TestCase):
         from pathlib import Path
         from islam_research import desktop_sources
         raw=b'Only synthetic original bytes, retained separately.'
-        with tempfile.TemporaryDirectory(prefix='atlas-source-artifact-',dir='/private/tmp') as directory:
+        with tempfile.TemporaryDirectory(prefix='atlas-source-artifact-') as directory:
             artifact=desktop_sources.ingest(self.c,artifact_root=Path(directory)/'objects',request_uuid=str(uuid.uuid4()),filename='synthetic-original.txt',
                 content_base64=base64.b64encode(raw).decode(),intent='source',rights_basis='Synthetic authored fixture',actor='synthetic')
             note=workspace.create_note(self.c,request_uuid=str(uuid.uuid4()),body='Synthetic note about an original.',actor='synthetic',record_id=artifact['record_id'],document_id=artifact['document_id'],reading_position=0)
