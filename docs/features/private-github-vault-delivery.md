@@ -1,5 +1,9 @@
 # Private vault first delivery
 
+The [source-context extension](source-context-backups.md) under #258 adds bounded
+source-aware notebook/reader-annotation backups and exact citation companions.
+Historical standalone-only exclusions and verification below describe earlier slices.
+
 ## Application-owned backup update (#256)
 
 The current branch supersedes the earlier bidirectional page delivery below.

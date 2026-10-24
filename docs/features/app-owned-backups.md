@@ -4,6 +4,11 @@ Epic #256, owner direction #255, [ADR 0007](../adr/0007-app-owned-markdown-backu
 This extends the existing local Electron private-vault connection. Application
 storage remains authoritative for all notes and reading.
 
+Source-bound notes and reader annotations are supported by the bounded
+[source-context extension](source-context-backups.md) under #258. The version-1
+standalone profile and exclusions below remain valid for historical snapshots;
+source-aware batches use page/receipt format 2 with explicit context coverage.
+
 ## Reviewed delivery
 
 Select at most ten saved standalone pages in Markdown backups, then review exact

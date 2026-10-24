@@ -29,6 +29,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--frontend',type=Path,required=True)
     parser.add_argument('--sync',action='store_true')
+    parser.add_argument('--source-context',action='store_true',help='Review synthetic source-bound notes and passage annotations')
     parser.add_argument('--tasks',action='store_true')
     parser.add_argument('--properties',action='store_true')
     parser.add_argument('--toc',action='store_true')
@@ -45,7 +46,16 @@ def main():
             dsn=make_conninfo(host=str(socket_dir),port=55441,dbname='postgres')
             with db.connect(dsn) as c:
                 db.migrate(c)
-                note=workspace.create_note(c,request_uuid=str(uuid.uuid4()),body='Synthetic eligible note\n\nPrivate synthetic text',actor='synthetic')
+                binding={}
+                if args.source_context:
+                    from islam_research import passage_store
+                    source_id='urn:research:source:'+str(uuid.uuid4())
+                    db.save_record(c,record_id=source_id,project_id=None,kind='source',title='Synthetic citation source',actor='synthetic',attributes={'source_intake':{'creators':'Synthetic author'}})
+                    doc=passage_store.create_document(c,project_id=None,source_record_id=source_id,edition='Synthetic edition',locator='Chapter 2, page 7',representation_url='',text='Synthetic exact passage with Arabic محفوظ.',actor='synthetic')
+                    quote='Synthetic exact passage'
+                    mark=passage_store.create_annotation(c,annotation_uuid=str(uuid.uuid4()),project_id=None,document_id=doc['id'],text_sha256=doc['text_sha256'],start=0,end=len(quote),exact=quote,capture_kind='comment',body='Synthetic reader annotation.',actor='synthetic')
+                    binding=dict(record_id=source_id,document_id=doc['id'],annotation_id=mark['id'])
+                note=workspace.create_note(c,request_uuid=str(uuid.uuid4()),body='Synthetic eligible note\n\nPrivate synthetic text',actor='synthetic',**binding)
                 project='synthetic:legacy';db.create_project(c,project,'Synthetic legacy')
                 notebook.create(c,project_id=project,request_uuid=str(uuid.uuid4()),thought_type='note',title='Synthetic legacy note',body='Synthetic legacy context',links=[],actor='synthetic')
             listener=socket.socket();listener.bind(('127.0.0.1',0));port=listener.getsockname()[1]
@@ -53,7 +63,7 @@ def main():
             if args.tasks:
                 from test_vault_tasks import FakeIssues
                 remote=FakeIssues()
-            elif args.sync:
+            elif args.sync or args.source_context:
                 from test_vault_sync import FakeVault
                 remote=FakeVault()
             app=LocalOwner(database_url=dsn,directory=args.frontend,port=port,credentials=credentials,desktop_artifact_root=root/'objects',desktop_github=remote)
@@ -64,19 +74,19 @@ def main():
                 time.sleep(.05)
             assert server.started
             config=root/'review.json';receipt=root/'result.json'
-            config.write_text(json.dumps(dict(origin=f'http://127.0.0.1:{port}',credentials=credentials,screenshots=str(args.artifacts.resolve()),resultFile=str(receipt),sync=args.sync,tasks=args.tasks,propertiesOnly=args.properties,tocOnly=args.toc)));config.chmod(0o600)
+            config.write_text(json.dumps(dict(origin=f'http://127.0.0.1:{port}',credentials=credentials,screenshots=str(args.artifacts.resolve()),resultFile=str(receipt),sync=args.sync or args.source_context,sourceContext=args.source_context,tasks=args.tasks,propertiesOnly=args.properties,tocOnly=args.toc)));config.chmod(0o600)
             result=subprocess.run([str(ROOT/'desktop/node_modules/.bin/electron'),str(ROOT/('desktop/scripts/review-skills-flow.cjs' if args.properties or args.toc else 'desktop/scripts/review-vault-flow.cjs'))],env={**os.environ,'ATLAS_ELECTRON_TEST_CONFIG':str(config)},capture_output=True,timeout=180)
             if result.returncode and (root/'electron-failure.txt').exists():raise AssertionError((root/'electron-failure.txt').read_text())
             assert result.returncode==0 and all(json.loads(receipt.read_text()).values())
             if not (args.properties or args.toc):assert remote.calls
-            if args.sync:
+            if args.sync or args.source_context:
                 from islam_research.vault_format import paths
-                assert remote.posts==1 and remote.files[paths(note['id'])[1]]==note['body'].encode()
+                assert remote.posts==(2 if args.source_context else 1) and remote.files[paths(note['id'])[1]]==note['body'].encode()
             elif not args.tasks:assert all(not options for _,options in remote.calls)
             if args.tasks:assert remote.issue_posts==1
             with db.connect(dsn) as c:
                 current=workspace.note(c,note['id']);assert current['body']==note['body'] and current['revision']==note['revision']
-            (args.artifacts/'receipt.json').write_text(json.dumps({**json.loads(receipt.read_text()),'onlyReviewedSyntheticMutation':bool(args.sync),'noRemoteMutations':not args.sync,'notesUnchanged':True,'ownerDataAccessed':False}))
+            (args.artifacts/'receipt.json').write_text(json.dumps({**json.loads(receipt.read_text()),'onlyReviewedSyntheticMutation':bool(args.sync or args.source_context),'noRemoteMutations':not (args.sync or args.source_context),'notesUnchanged':True,'ownerDataAccessed':False}))
             print('Native vault journey passed; owner data and actual GitHub were not accessed.')
         finally:
             if server:server.should_exit=True

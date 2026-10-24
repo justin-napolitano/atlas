@@ -67,6 +67,9 @@ For the private-vault/task integration, read `docs/features/private-github-vault
 `docs/features/app-owned-backups.md` and ADR 0007 first. Epic #256 supersedes
 ADR 0006's note cutover: application storage owns notes and reading; GitHub Markdown
 is a reviewed backup/export. Remote file edits never automatically change writing.
+Read `docs/features/source-context-backups.md` for #258's bounded source-aware
+profile. Preserve exact note bytes, source/edition IDs and passage fingerprints;
+never invent missing originals or re-anchor quotations during backup/recovery.
 Epic #242 advances local Electron GitHub vault integration despite the
 older blanket cloud-sync deferral; hosted GCP sync and autonomous execution remain
 deferred. Keep private content/configuration outside this public code repository.

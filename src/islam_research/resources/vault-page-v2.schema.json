@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:atlas:vault-page:2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "id",
+    "path",
+    "title",
+    "title_mode",
+    "thought_type",
+    "state",
+    "links",
+    "item_kind",
+    "source_context",
+    "citation_path"
+  ],
+  "properties": {
+    "format": {
+      "const": 2,
+      "type": "integer"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^urn:research:(notebook|annotation):[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "path": {
+      "type": "string",
+      "pattern": "^(notes|annotations)/[0-9a-f-]{36}\\.md$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "title_mode": {
+      "enum": [
+        "automatic",
+        "manual"
+      ]
+    },
+    "thought_type": {
+      "enum": [
+        "note",
+        "question",
+        "interpretation",
+        "objection",
+        "decision",
+        "principle",
+        "skill",
+        "source_claim"
+      ]
+    },
+    "state": {
+      "const": "active"
+    },
+    "links": {
+      "type": "array",
+      "maxItems": 25,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "id",
+          "rationale"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "entry",
+              "record",
+              "annotation"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        }
+      }
+    },
+    "item_kind": {
+      "enum": [
+        "entry",
+        "annotation"
+      ]
+    },
+    "source_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "binding",
+        "sources",
+        "documents",
+        "annotations"
+      ],
+      "properties": {
+        "format": {
+          "const": 1,
+          "type": "integer"
+        },
+        "binding": {
+          "type": "object"
+        },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 26
+        },
+        "documents": {
+          "type": "array",
+          "maxItems": 26
+        },
+        "annotations": {
+          "type": "array",
+          "maxItems": 26
+        }
+      }
+    },
+    "citation_path": {
+      "type": "string",
+      "pattern": "^citations/(note|annotation)-[0-9a-f-]{36}\\.md$"
+    }
+  }
+}
