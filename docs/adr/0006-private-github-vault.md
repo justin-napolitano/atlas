@@ -3,6 +3,10 @@
 Status: accepted direction, 2026-10-21; first local delivery under #242 in PRs #249–252.
 See [verified behavior and remaining gates](../features/private-github-vault-delivery.md).
 
+Note authority and bidirectional page sync are superseded by
+[ADR 0007](0007-app-owned-markdown-backups.md) under #255/#256. The decision below
+records the earlier direction; task authority and privacy boundaries still apply.
+
 ## Decision
 
 Use one private content repository for portable Markdown context and its GitHub

@@ -1,5 +1,31 @@
 # Private vault first delivery
 
+## Application-owned backup update (#256)
+
+The current branch supersedes the earlier bidirectional page delivery below.
+Application storage owns notes and reading. Reviewed selected-page delivery is
+export-only, with versioned exact-byte coverage manifests, commit verification and
+read-only historical recovery inspection in the existing desktop UI. Remote edits
+remain conflicts. Source-bound records, reader state, drafts/history, original files
+and task/comment API state are explicitly outside this Markdown coverage. See
+[the backup contract](app-owned-backups.md) and [ADR 0007](../adr/0007-app-owned-markdown-backups.md).
+
+This update does not connect the owner's repository, upload owner data, migrate
+live records, enable automatic polling or deploy hosted/device synchronization.
+Portable task/comment recovery remains #247. The earlier verification below is
+historical evidence for PRs #249–253, not a claim that remote pulls still run.
+
+Current verification: the full Python suite passed 429 tests with one expected
+skip on disposable PostgreSQL; the final expanded vault subset passed 30 tests.
+All 184 frontend tests, nine native host tests, the production owner frontend build
+and the API contract check passed. Synthetic Electron acceptance confirmed reviewed
+backup coverage, read-only exact snapshot recovery, reload and 390px overflow.
+Additional legacy-plan and remote-metadata-formatting regressions pass. Packaging
+and final delivery evidence are tracked in #256; these checks do not install or
+restart the owner's app.
+
+## Earlier delivery record
+
 2026-10-21. Local desktop implementation, stacked PRs #249–252. The local app was
 updated with the editor fix in PR #253 after a normal quit, pre-update database
 backup and retention of the previous bundle. The actual private vault has not
