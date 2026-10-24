@@ -88,6 +88,7 @@ import mutation button is introduced here.
 
 Migration 0038 enrolls existing notebook entries or annotations in the same backup
 queue. A trigger enforces an existing target and immutable enrollment identity;
+typed foreign keys also prevent deleting an enrolled notebook entry or annotation.
 annotation edits advance pending revisions in their own save transaction. There is
 no owner-content rewrite. A related lookup fix uses null-safe project comparison so
 workspace-wide Qur’an notes retain their existing scope metadata.

@@ -145,6 +145,11 @@ class SourceBackupTests(unittest.TestCase):
         self.assertEqual(passages.annotation(self.c,None,mark['id'])['annotation']['revision'],2)
         with self.assertRaises(db.psycopg.errors.CheckViolation):
             self.c.execute('INSERT INTO research.vault_sync_pages(entry_id,dirty_revision,selected_by) VALUES(%s,1,%s)',(codec.PREFIX+str(uuid.uuid4()),'synthetic'))
+        enrollment=self.c.execute('SELECT notebook_entry_id,annotation_id FROM research.vault_sync_pages WHERE entry_id=%s',(mark['id'],)).fetchone()
+        self.assertIsNone(enrollment['notebook_entry_id']);self.assertEqual(enrollment['annotation_id'],mark['id'])
+        with self.assertRaises(db.psycopg.errors.ForeignKeyViolation),self.c.transaction():
+            self.c.execute('DELETE FROM research.reading_annotation_revisions WHERE annotation_id=%s',(mark['id'],))
+            self.c.execute('DELETE FROM research.reading_annotations WHERE id=%s',(mark['id'],))
 
     def test_catalog_authors_and_translator_are_retained_without_arbitrary_attributes(self):
         db.save_record(self.c,record_id=self.source['record_id'],project_id=None,kind='source',title='Synthetic catalog work',expected_revision=1,actor='synthetic',
