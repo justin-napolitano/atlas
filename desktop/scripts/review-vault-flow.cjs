@@ -36,6 +36,7 @@ app.whenReady().then(async()=>{
  await ui('[...document.querySelectorAll("'+active+' button")].find(row=>row.textContent==="Inspect recovery").focus()');press('Return');
  await until(()=>ui('document.querySelector(`'+active+' [aria-label="Read-only recovery preview"]`)?.textContent.includes("Matches current writing")'),'read-only exact recovery preview');
  assert.equal(await ui('document.querySelector(`'+active+' [aria-label="Read-only recovery preview"]`)?.textContent.includes("No notes, revisions, drafts, tasks or pending operations were changed")'),true);
+ assert.equal(await ui('document.activeElement?.getAttribute("aria-label")==="Read-only recovery preview"'),true);
  await fs.writeFile(path.join(config.screenshots,'backup-recovery-desktop.png'),(await window.webContents.capturePage()).toPNG());
  }
 
