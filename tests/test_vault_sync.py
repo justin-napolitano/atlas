@@ -211,3 +211,5 @@ class VaultSyncTests(unittest.TestCase):
             payload=jsonb_set(payload-'mode'-'receipt','{actions,0,action}','\"pull\"') WHERE id=%s""",(blocked['id'],))
         with self.assertRaises(GitHubUnavailable):self.apply(blocked)
         self.assertEqual(self.remote.posts,1)
+        self.assertEqual(sync.get_plan(self.c,plan_id=blocked['id'])['state'],'conflict')
+        self.assertEqual(self.plan(other)['state'],'prepared')

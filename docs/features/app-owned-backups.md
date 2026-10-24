@@ -59,8 +59,10 @@ through the existing codec to prove recovery fidelity without touching owner dat
 
 Prepared legacy plans cannot apply after this authority change. Already-dispatching
 push-only legacy operations can reconcile their existing commit, but have no new
-verified receipt; legacy plans containing pulls cannot run. Existing records remain
-preserved for review. New backup selections use `app-backup-v1` mode.
+verified receipt; legacy plans containing pulls cannot run. Resolving an in-flight
+legacy pull marks its operation as a retained conflict, releasing the pending-plan
+gate so a new backup can be reviewed. Existing records remain preserved for review.
+New backup selections use `app-backup-v1` mode.
 
 ## Boundaries and verification
 

@@ -225,6 +225,8 @@ def apply(c,*,plan_id,actor,remote=None):
         if row['state']=='conflict':raise GitHubUnavailable('Resolve the retained versions and create a fresh preview',409)
         legacy=row['payload'].get('mode')!=MODE
         if legacy and (row['state']!='dispatching' or any(item['action']=='pull' for item in row['payload']['actions'])):
+            if row['state']=='dispatching':
+                with c.transaction():c.execute("UPDATE research.vault_sync_plans SET state='conflict',updated_at=clock_timestamp() WHERE id=%s",(identifier,))
             raise GitHubUnavailable('This legacy preview cannot change application writing. Review a new backup selection.',409)
         if any(item['action']=='conflict' for item in row['payload']['actions']) or not any(item['action'] in {'push','unchanged'} for item in row['payload']['actions']):raise GitHubUnavailable('This selection needs review; no files were uploaded',409)
         binding=connection.status(c)['connection']
