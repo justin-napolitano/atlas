@@ -170,3 +170,6 @@ Local Tasks and reviewed delivery began in PRs #249–252. Epic #256 makes note 
 [application-owned Markdown backups](docs/features/app-owned-backups.md), with exact
 coverage receipts and read-only historical recovery inspection. Application notes
 remain authoritative; owner data is not automatically exported.
+The [source-context extension](docs/features/source-context-backups.md) retains
+citations, editions and exact passage bindings alongside supported exported notes;
+original documents remain separately managed.

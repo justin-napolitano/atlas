@@ -36,7 +36,7 @@ def get(connection,project_id,entry_id):
         (EXISTS(SELECT 1 FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id AND t.state='trashed') OR EXISTS(SELECT 1 FROM research.workspace_note_trash t WHERE t.entry_id=n.id AND t.state='trashed')) AS trashed,
         coalesce((SELECT t.revision FROM research.note_trash t WHERE t.project_id=n.project_id AND t.target_kind='entry' AND t.target_id=n.id),(SELECT t.revision FROM research.workspace_note_trash t WHERE t.entry_id=n.id),0) AS trash_revision,
         d.edition,d.locator,d.text_sha256,a.exact AS selected_quote,a.start_pos,a.end_pos,to_jsonb(q) AS quran_context
-        FROM research.notebook_entries n LEFT JOIN research.quran_note_contexts q ON q.project_id=n.project_id AND q.entry_id=n.id LEFT JOIN research.records r ON (n.project_id IS NULL OR r.project_id=n.project_id) AND r.id=n.record_id
+        FROM research.notebook_entries n LEFT JOIN research.quran_note_contexts q ON q.project_id IS NOT DISTINCT FROM n.project_id AND q.entry_id=n.id LEFT JOIN research.records r ON (n.project_id IS NULL OR r.project_id=n.project_id) AND r.id=n.record_id
         LEFT JOIN research.reading_documents d ON (n.project_id IS NULL OR d.project_id=n.project_id) AND d.id=n.document_id
         LEFT JOIN research.reading_annotations a ON (n.project_id IS NULL OR a.project_id=n.project_id) AND a.id=n.annotation_id
         WHERE (%s::text IS NULL OR n.project_id IS NOT DISTINCT FROM %s) AND n.id=%s''',(project_id,project_id,entry_id)).fetchone()

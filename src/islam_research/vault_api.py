@@ -59,8 +59,8 @@ def register(router,store,owner,*,remote=None):
         return operation('connect',repository=value.repository,branch=value.branch,actor=actor)
 
     @router.get('/desktop/vault/preview')
-    def preview(actor:str=Depends(owner),cursor:Annotated[str,Query(max_length=1000)]='',limit:Annotated[int,Query(ge=1,le=50)]=30):
-        return operation('preview',cursor=cursor,limit=limit)
+    def preview(actor:str=Depends(owner),cursor:Annotated[str,Query(max_length=1000)]='',limit:Annotated[int,Query(ge=1,le=50)]=30,kind:Annotated[str,Query(pattern='^(entry|annotation)$')]='entry'):
+        return operation('preview',cursor=cursor,limit=limit,kind=kind)
 
     @router.post('/desktop/vault/plan')
     def prepare(value:Prepare,actor:str=Depends(owner)):

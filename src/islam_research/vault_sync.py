@@ -8,7 +8,7 @@ import re
 import uuid
 from urllib.parse import quote
 
-from . import database as db,vault_format as codec,vault_connection as connection,workspace_store as workspace,vault_receipt as receipts
+from . import database as db,vault_format as codec,vault_connection as connection,vault_receipt as receipts,vault_context as context
 from .github_native import GitHubUnavailable,NativeGitHub
 
 MAX_PAGES=10
@@ -20,7 +20,7 @@ COMMIT_MUTATION='''mutation AtlasCommit($input: CreateCommitOnBranchInput!) {
 
 def _page(row):
     files=codec.encode_page(row);manifest,body=codec.paths(row['id'])
-    return codec.decode_page(manifest,files[manifest],body,files[body])
+    return codec.decode_page(manifest,files[manifest],body,files[body],citation=files.get(codec.citation_path(row['id'])))
 
 
 def decide(local,remote,base):
@@ -42,7 +42,7 @@ def _snapshot(remote,binding,head):
     for item in tree['tree']:
         if not isinstance(item,dict) or not isinstance(item.get('path'),str):raise GitHubUnavailable('Invalid vault inventory',409)
         path=item.get('path','')
-        if path.startswith(('.atlas/pages/','notes/','.atlas/backups/')):
+        if path.startswith(('.atlas/pages/','notes/','.atlas/backups/','.atlas/annotations/','annotations/','citations/')):
             if path in result:raise GitHubUnavailable('Duplicate vault path',409)
             result[path]=item
     return result
@@ -63,15 +63,21 @@ def _read_file(remote,binding,item,maximum):
 
 def _page_files(remote,binding,inventory,entry_id):
     metadata,body=codec.paths(entry_id)
-    return {metadata:_read_file(remote,binding,inventory.get(metadata),codec.MAX_MANIFEST_BYTES),
-            body:_read_file(remote,binding,inventory.get(body),codec.MAX_MARKDOWN_BYTES)}
+    files={metadata:_read_file(remote,binding,inventory.get(metadata),codec.MAX_MANIFEST_BYTES),
+           body:_read_file(remote,binding,inventory.get(body),codec.MAX_MARKDOWN_BYTES)}
+    try:value=json.loads(files[metadata])
+    except (ValueError,RecursionError):raise GitHubUnavailable('Invalid backup page metadata',409) from None
+    if isinstance(value,dict) and value.get('format')==2:
+        citation=codec.citation_path(entry_id)
+        files[citation]=_read_file(remote,binding,inventory.get(citation),codec.MAX_MARKDOWN_BYTES*4)
+    return files
 
 
 def _remote_page(remote,binding,inventory,entry_id):
     metadata,body=codec.paths(entry_id)
     if not any(path in inventory for path in (metadata,body)):return None
     files=_page_files(remote,binding,inventory,entry_id)
-    try:return codec.decode_page(metadata,files[metadata],body,files[body])
+    try:return codec.decode_page(metadata,files[metadata],body,files[body],citation=files.get(codec.citation_path(entry_id)))
     except (ValueError,RecursionError):raise GitHubUnavailable('Unsupported or conflicting vault page metadata; both copies were retained',409) from None
 
 
@@ -94,7 +100,8 @@ def _verify_export(remote,binding,row,commit):
 
 def _summary(row):
     return dict(id=str(row['id']),state=row['state'],base_head=row['base_head'],commit_sha=row['commit_sha'],
-                actions=[{key:item.get(key) for key in ('id','title','action','reason','revision')} for item in row['payload']['actions']],
+                actions=[{**{key:item.get(key) for key in ('id','title','action','reason','revision')},
+                          'source_context':(item.get('local') or {}).get('source_context')} for item in row['payload']['actions']],
                 remote_coverage=row['payload'].get('remote_coverage','Selected pages only'),created_at=row['created_at'],
                 mode=row['payload'].get('mode','legacy'),coverage=row['payload'].get('receipt'),
                 receipt_verified=row['state']=='confirmed' and row['payload'].get('mode')==MODE)
@@ -142,13 +149,13 @@ def prepare(c,*,request_uuid,entries,include_remote=False,actor,remote=None):
     if not selected:raise ValueError('Select at least one saved application page')
     actions=[]
     for entry_id,revision in selected.items():
-        row=workspace.note(c,entry_id)
+        row=context.local(c,entry_id)
         if row and row['revision']!=revision:raise GitHubUnavailable('Local writing changed; refresh the page selection',409)
         if revision is not None and not row:raise GitHubUnavailable('A selected page is unavailable',409)
-        reason=codec.exclusion(row) if row else None
+        reason='Trash or withdrawn writing remains local' if row and (row.get('trashed') or row.get('state')!='active') else ('Legacy project context is not portable yet' if row and row.get('project_id') is not None else None)
         if reason:actions.append(dict(id=entry_id,title=row['title'],revision=revision,action='excluded',reason=reason));continue
-        try:local=_page(row) if row else None
-        except ValueError:actions.append(dict(id=entry_id,title=row['title'],revision=revision,action='excluded',reason='Reconcile page metadata before syncing'));continue
+        try:local=_page(context.portable(c,row)) if row else None
+        except ValueError:actions.append(dict(id=entry_id,title=row['title'],revision=revision,action='excluded',reason='Source context or page metadata is unsupported; retained locally'));continue
         other=_remote_page(remote,binding,inventory,entry_id)
         base=c.execute('SELECT base_page FROM research.vault_sync_pages WHERE entry_id=%s',(entry_id,)).fetchone()
         action=decide(local,other,base['base_page'] if base else None)
@@ -158,7 +165,7 @@ def prepare(c,*,request_uuid,entries,include_remote=False,actor,remote=None):
     available_remote={codec.PREFIX+path.rsplit('/',1)[1][:-5] for path in inventory if re.fullmatch(r'\.atlas/pages/[0-9a-f-]{36}\.json',path)}
     pushed={item['id'] for item in actions if item['action']=='push'}
     for item in actions:
-        if item['action']=='push' and any(link['id'] not in available_remote|pushed for link in item['local']['links']):
+        if item['action']=='push' and any(link['kind']=='entry' and link['id'] not in available_remote|pushed for link in item['local']['links']):
             item.update(action='conflict',reason='Select linked pages too, so their identities remain available')
     receipt=receipts.make(str(request),actions) if any(item['action']!='excluded' for item in actions) else None
     with c.transaction():
@@ -236,8 +243,8 @@ def apply(c,*,plan_id,actor,remote=None):
             with c.transaction():
                 for item in row['payload']['actions']:
                     if item['action']=='excluded':continue
-                    local=workspace.note(c,item['id'])
-                    if (local['revision'] if local else None)!=item['revision'] or (local and (codec.exclusion(local) or _page(local)!=item['local'])):
+                    local=context.local(c,item['id'])
+                    if (local['revision'] if local else None)!=item['revision'] or (local and (_page(context.portable(c,local))!=item['local'])):
                         raise GitHubUnavailable('Local writing changed; preview it again before uploading',409)
                 if checked['head_sha']!=row['base_head']:raise GitHubUnavailable('Vault changed; create a fresh preview',409)
                 for item in row['payload']['actions']:
@@ -258,9 +265,11 @@ def apply(c,*,plan_id,actor,remote=None):
         with c.transaction():
             for item in row['payload']['actions']:
                 if item['action']=='excluded':continue
-                current=workspace.note(c,item['id']);page=item['local']
+                current=context.local(c,item['id']);page=item['local']
                 if page is not None and current:
-                    confirmed=current['revision'] if not codec.exclusion(current) and _page(current)==page else item['revision'] or 0
+                    try:unchanged=_page(context.portable(c,current))==page
+                    except ValueError:unchanged=False
+                    confirmed=current['revision'] if unchanged else item['revision'] or 0
                     c.execute('''INSERT INTO research.vault_sync_pages(entry_id,base_page,confirmed_head,dirty_revision,confirmed_revision,selected_by)
                       VALUES(%s,%s,%s,%s,%s,%s) ON CONFLICT(entry_id) DO UPDATE SET base_page=excluded.base_page,
                       confirmed_head=excluded.confirmed_head,confirmed_revision=excluded.confirmed_revision,updated_at=clock_timestamp()''',
@@ -316,16 +325,19 @@ def restore_preview(c,*,backup_id,commit_sha='',remote=None):
     except (ValueError,KeyError):raise GitHubUnavailable('Backup bytes do not match their coverage receipt; no writing was changed',409) from None
     items=[]
     for item in coverage['pages']:
-        page=pages[item['id']];local=workspace.note(c,item['id']);reason=codec.exclusion(local) if local else None
-        if reason:action='blocked'
-        elif local:
-            try:action='matches' if _page(local)==page else 'conflict'
+        page=pages[item['id']];local=context.local(c,item['id']);reason=None
+        if local:
+            try:action='matches' if _page(context.portable(c,local))==page else 'conflict'
             except ValueError:action='blocked';reason='Current page metadata needs reconciliation'
             if action=='conflict':reason='Current writing differs; both versions stay unchanged'
         else:action='would_create'
-        if any(link['id'] not in pages and workspace.note(c,link['id']) is None for link in page['links']):
+        if page.get('source_context'):
+            problem=context.dependency_problem(c,page['source_context'])
+            if problem:action='blocked';reason=problem
+        if any(link['kind']=='entry' and link['id'] not in pages and context.local(c,link['id']) is None for link in page['links']):
             action='blocked';reason='A linked page is outside this backup and unavailable locally'
         items.append(dict(id=item['id'],title=page['title'],application_revision=item['application_revision'],
-                          current_revision=local['revision'] if local else None,action=action,reason=reason))
+                          current_revision=local['revision'] if local else None,action=action,reason=reason,
+                          source_context=page.get('source_context'),citation=context.citation(page['source_context']).decode() if page.get('source_context') else None))
     return dict(id=backup_id,commit_sha=commit,read_only=True,coverage=coverage,items=items,
                 restored=0,message='Inspection only. No notes, revisions, drafts, tasks or pending operations were changed.')
