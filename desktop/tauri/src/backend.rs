@@ -242,11 +242,21 @@ mod tests {
         fs::set_permissions(&service, fs::Permissions::from_mode(0o700)).unwrap();
         let http = thread::spawn(move || {
             let (mut stream, _) = listener.accept().unwrap();
-            let mut bytes = [0; 4096];
-            let n = stream.read(&mut bytes).unwrap();
-            let request = std::str::from_utf8(&bytes[..n]).unwrap();
-            assert!(request.contains("GET /health/ready HTTP/1.1"));
-            assert!(request.contains("Cookie: atlas_local_owner=synthetic-session-token-"));
+            stream
+                .set_read_timeout(Some(Duration::from_secs(5)))
+                .unwrap();
+            let mut bytes = Vec::new();
+            while !bytes.ends_with(b"\r\n\r\n") {
+                let mut byte = [0];
+                stream.read_exact(&mut byte).unwrap();
+                bytes.push(byte[0]);
+                assert!(bytes.len() <= 8192);
+            }
+            let request = std::str::from_utf8(&bytes).unwrap();
+            assert!(request.starts_with("GET /health/ready HTTP/1.1\r\n"));
+            assert!(request.lines().filter_map(|line| line.split_once(':')).any(|(name, value)| {
+                name.eq_ignore_ascii_case("cookie") && value.trim() == "atlas_local_owner=synthetic-session-token-bbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }));
             let body = r#"{"status":"ready"}"#;
             write!(
                 stream,
