@@ -58,7 +58,8 @@ def main():
         parser.error('Icon staging directory already exists')
     iconset.mkdir()
     png = iconset/'atlas.png'
-    shutil.copy2(ROOT/'desktop/tauri/icons/icon.png', png)
+    # Keep the Dock artwork separate from Tauri's small embedded window icon.
+    shutil.copy2(ROOT/'desktop/tauri/icons/app.png', png)
     for size in [16, 32, 128, 256, 512]:
         for scale in [1, 2]:
             target = iconset/f'icon_{size}x{size}{"@2x" if scale == 2 else ""}.png'
