@@ -24,16 +24,28 @@ def main():
     root=resources();args.postgres_bin=root/'postgres/bin';args.frontend=root/'frontend'
     args.desktop_managed=True;args.quiet=True
     try:
-        storage.bootstrap(args)
-        if args.command=='backup':
-            import json
-            print(json.dumps(storage.backup(args.state_dir,args.postgres_bin)),flush=True)
-        elif args.command=='restore':
-            import json
-            print(json.dumps(storage.restore(args.state_dir,args.postgres_bin,args.archive)),flush=True)
-        else:
-            try:local.serve(args)
-            finally:storage.stop_owned(args.state_dir,args.postgres_bin)
+        import json
+        if json.loads((root/'build.json').read_text()).get('kind')=='offline-local-sqlite':
+            import desktop_sqlite as embedded
+            if args.command=='restore':
+                print(json.dumps(embedded.restore(args.state_dir,args.archive)),flush=True)
+            else:
+                with embedded.service_lease(args.state_dir):
+                    embedded.bootstrap(args)
+                    if args.command=='backup':print(json.dumps(embedded.backup(args.state_dir)),flush=True)
+                    else:
+                        args.sqlite=True
+                        local._serve(args)
+            return
+        with storage.service_lease(args.state_dir,args.postgres_bin,shutdown=args.command=='serve'):
+            storage.bootstrap(args)
+            if args.command=='backup':
+                import json
+                print(json.dumps(storage.backup(args.state_dir,args.postgres_bin)),flush=True)
+            elif args.command=='restore':
+                import json
+                print(json.dumps(storage.restore(args.state_dir,args.postgres_bin,args.archive)),flush=True)
+            else:local.serve(args)
     except Exception:
         # Credentials and owner content must never enter native logs or errors.
         parser.exit(1,'Atlas could not start its private local storage. Existing research is unchanged.\n')

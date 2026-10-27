@@ -6,6 +6,7 @@ from islam_research import database as db,desktop_folders as folders,desktop_pag
 
 @unittest.skipUnless(os.environ.get('RESEARCH_TEST_DATABASE_URL'),'Requires isolated PostgreSQL')
 class FolderTests(unittest.TestCase):
+    def separate_connection(self):return db.connect(os.environ['RESEARCH_TEST_DATABASE_URL'])
     def setUp(self):self.c=db.connect(os.environ['RESEARCH_TEST_DATABASE_URL']);db.migrate(self.c)
     def tearDown(self):self.c.close()
     def folder(self,parent=None,title=None):
@@ -82,7 +83,7 @@ class FolderTests(unittest.TestCase):
         a=self.folder();b=self.folder();self.c.commit()
         def attempt(entry,parent):
             try:
-                with db.connect(os.environ['RESEARCH_TEST_DATABASE_URL']) as c:
+                with self.separate_connection() as c:
                     folders.change(c,request_uuid=str(uuid.uuid4()),folder_id=entry['id'],parent_id=parent['id'],expected_revision=1,action='move',actor='synthetic')
                 return 'moved'
             except db.psycopg.errors.CheckViolation:return 'cycle'

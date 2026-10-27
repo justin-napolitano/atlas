@@ -52,6 +52,11 @@ Start with `README.md`, `methods/source-evaluation.md`, and `graph/schema.md`.
 
 ## Hosted platform implementation
 
+For the local Tauri desktop, the owner's 2026-10-27 decision selects SQLite under
+`docs/adr/0008-embedded-desktop-sqlite.md`. Preserve IDs, exact writing, history,
+source provenance and verified-copy migration/restore. Hosted PostgreSQL remains
+the separate deployment target below; do not provision a server for local use.
+
 The product roadmap is GitHub issue #84 and `docs/second-brain-roadmap.md`; the current organization/capture reset is #201. GitHub issue #30 and `docs/adr/0002-hosted-research-and-ossie.md` remain the technical/hosting umbrella. Implement PostgreSQL on GCP for durable hosted authoring, one human owner/editor, and anonymous read-only access to explicitly published research. The earlier local-only storage constraint is superseded for application state. Until a validated graph migration lands, `graph/research.ttl` remains the authoritative curated graph; preserve its IDs and export/validation semantics rather than creating two independently edited authorities.
 
 Keep the first corpus bounded by `methods/corpus-scope.md` and its versioned pilot manifest. Apply `methods/editorial-review.md` to source, passage, claim, definition, and publication changes. An implementation pass is not a new scholarly review; never promote existing metadata/abstract review to full-argument verification. Agent outputs are attributable proposals and do not acquire human-reviewed or public status automatically.
@@ -95,7 +100,9 @@ loopback development session. The legacy preview progress importer is deliberate
 progress/place-only; do not claim old notes, highlights or library state migrated.
 Use synthetic isolated databases for testing, never the live owner database.
 
-Electron is the selected desktop shell; see `docs/electron-desktop.md` and the current
+Tauri is the selected replacement desktop shell (owner decision 2026-10-26); see
+`docs/tauri-desktop.md`. Keep the Electron implementation available for rollback
+until native acceptance passes. Preserve the storage contracts in `docs/electron-desktop.md` and the current
 `docs/desktop-standalone.md` (#221). Bundle/manage native PostgreSQL and a frozen owner
 service for the offline Mac app; preserve the existing data and storage semantics.
 SQLite is a possible later port, not an implemented feature. Hosted synchronization

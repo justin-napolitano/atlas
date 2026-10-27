@@ -27,12 +27,18 @@ class RevisionConflict(Exception):
 
 def connect(dsn: str) -> psycopg.Connection:
     """Open a bounded connection; callers must close it and handle transactions."""
+    if dsn.startswith('sqlite:'):
+        from .sqlite.connection import Connection
+        return Connection(dsn.removeprefix('sqlite:'))
     return psycopg.connect(dsn, connect_timeout=10, row_factory=dict_row,
                            options="-c statement_timeout=10000 -c lock_timeout=5000")
 
 
 def migrate(connection: psycopg.Connection) -> list[str]:
     """Apply immutable, checksummed migrations under one transaction/advisory lock."""
+    if getattr(connection,'backend',None)=='sqlite':
+        from .sqlite.connection import migrate as migrate_sqlite
+        return migrate_sqlite(connection)
     applied = []
     with connection.transaction():
         connection.execute("SELECT pg_advisory_xact_lock(729117421)")

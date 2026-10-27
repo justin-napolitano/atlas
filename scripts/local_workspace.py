@@ -110,14 +110,25 @@ def build(args):
 
 
 def serve(args):
+    import desktop_storage as storage
+    with storage.service_lease(args.state_dir):
+        return _serve(args)
+
+
+def _serve(args):
     import uvicorn
     from psycopg.conninfo import make_conninfo
     from islam_research.local_owner import LocalOwner
-    state=args.state_dir.resolve();value=config(state,getattr(args,'postgres_bin',None));start_database(state,value)
+    state=args.state_dir.resolve();embedded=getattr(args,'sqlite',False)
+    if embedded:
+        import desktop_sqlite
+        value=desktop_sqlite.config(state)
+    else:
+        value=config(state,getattr(args,'postgres_bin',None));start_database(state,value)
     credentials_path=state/'local-session.json'
     if credentials_path.is_symlink() or credentials_path.stat().st_mode & 0o077:raise ValueError('Local session file must be private')
     credentials=json.loads(credentials_path.read_text())
-    dsn=make_conninfo(host=str(state/'socket'),port=55432,dbname=value.get('database','atlas_research'),user='atlas_owner',password=value['owner_password'])
+    dsn='sqlite:'+str(state/value['database']) if embedded else make_conninfo(host=str(state/'socket'),port=55432,dbname=value.get('database','atlas_research'),user='atlas_owner',password=value['owner_password'])
     managed=getattr(args,'desktop_managed',False)
     listener=None
     if managed:
@@ -132,7 +143,8 @@ def serve(args):
     directory=getattr(args,'frontend',None) or Path((state/'current-frontend').read_text())
     artifact_namespace=value.get('artifact_namespace','artifacts')
     if not re.fullmatch(r'artifacts(?:-[a-f0-9]{32})?',artifact_namespace):raise ValueError('Invalid local artifact namespace')
-    app=LocalOwner(database_url=dsn,directory=directory,port=port,credentials=credentials,
+    if embedded:from islam_research.sqlite.store import SQLiteStore
+    app=LocalOwner(database_url=dsn,directory=directory,port=port,credentials=credentials,store=SQLiteStore(state/value['database']) if embedded else None,
         desktop_artifact_root=state/artifact_namespace if managed else None)
     logging.basicConfig(level=logging.WARNING,format='%(message)s')
     settings=dict(host='127.0.0.1',port=port,access_log=False,proxy_headers=False,

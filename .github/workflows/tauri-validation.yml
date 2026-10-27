@@ -1,0 +1,31 @@
+name: Tauri desktop boundaries
+
+on:
+  pull_request:
+    paths: ['desktop/tauri/**', 'scripts/package_tauri.py', 'scripts/check_desktop_offline.py', '.github/workflows/tauri-validation.yml']
+  push:
+    branches: [main]
+    paths: ['desktop/tauri/**', 'scripts/package_tauri.py', 'scripts/check_desktop_offline.py', '.github/workflows/tauri-validation.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  native-policy:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - run: rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
+      - run: cargo +1.99.1 fmt --manifest-path desktop/tauri/Cargo.toml -- --check
+      - run: cargo +1.99.1 test --locked --manifest-path desktop/tauri/Cargo.toml
+      - run: cargo +1.99.1 check --locked --features native-review --manifest-path desktop/tauri/Cargo.toml
+      - run: cargo +1.99.1 clippy --locked --all-targets --features native-review --manifest-path desktop/tauri/Cargo.toml -- -D warnings
+      - run: python3 -m py_compile scripts/package_tauri.py scripts/check_desktop_offline.py
+  dependencies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - run: cargo install cargo-audit --version 0.22.2 --locked
+      - run: cargo audit --file desktop/tauri/Cargo.lock

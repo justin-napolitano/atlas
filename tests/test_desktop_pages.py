@@ -6,6 +6,7 @@ from islam_research import database as db,desktop_pages as pages,workspace_store
 
 @unittest.skipUnless(os.environ.get('RESEARCH_TEST_DATABASE_URL'),'Requires isolated PostgreSQL')
 class PageTests(unittest.TestCase):
+    def separate_connection(self):return db.connect(os.environ['RESEARCH_TEST_DATABASE_URL'])
     def setUp(self):self.c=db.connect(os.environ['RESEARCH_TEST_DATABASE_URL']);db.migrate(self.c)
     def tearDown(self):self.c.close()
     def note(self,title=None,**patch):
@@ -79,7 +80,7 @@ class PageTests(unittest.TestCase):
         self.c.commit()  # Publish fixtures before independent client transactions.
         def run(entry,parent):
             try:
-                with db.connect(os.environ['RESEARCH_TEST_DATABASE_URL']) as c:
+                with self.separate_connection() as c:
                     pages.move(c,request_uuid=str(uuid.uuid4()),entry_id=entry['id'],parent_id=parent['id'],expected_revision=0,actor='synthetic')
                 return True
             except db.psycopg.errors.CheckViolation:return False

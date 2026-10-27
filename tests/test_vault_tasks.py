@@ -28,6 +28,7 @@ class FakeIssues(FakeVault):
 
 @unittest.skipUnless(os.environ.get('RESEARCH_TEST_DATABASE_URL'),'Requires isolated PostgreSQL')
 class TaskTests(unittest.TestCase):
+    def separate_connection(self):return db.connect(os.environ['RESEARCH_TEST_DATABASE_URL'])
     def setUp(self):
         self.c=db.connect(os.environ['RESEARCH_TEST_DATABASE_URL']);db.migrate(self.c);self.c.commit();self.c.autocommit=True
         for table in ['vault_issue_comments','vault_task_operations','vault_tasks','vault_sync_plans','vault_sync_pages','vault_connections']:self.c.execute('DELETE FROM research.'+table)
@@ -38,7 +39,7 @@ class TaskTests(unittest.TestCase):
     def test_offline_capture_exact_replay_restart_and_state_cas(self):
         identifier=str(uuid.uuid4());value=dict(request_uuid=identifier,title='Synthetic محفوظ',body='# Evidence',actor='synthetic')
         first=tasks.create(self.c,**value);self.assertTrue(tasks.create(self.c,**value)['replayed']);self.assertFalse(self.remote.calls)
-        with db.connect(os.environ['RESEARCH_TEST_DATABASE_URL']) as other:self.assertEqual(tasks.detail(other,task_id=identifier)['task']['body'],'# Evidence')
+        with self.separate_connection() as other:self.assertEqual(tasks.detail(other,task_id=identifier)['task']['body'],'# Evidence')
         with self.assertRaises(db.RevisionConflict):tasks.create(self.c,**{**value,'title':'Different'})
         update=dict(request_uuid=str(uuid.uuid4()),task_id=identifier,expected_revision=1,state='closed',actor='synthetic')
         self.assertEqual(tasks.change_state(self.c,**update)['task']['revision'],2)

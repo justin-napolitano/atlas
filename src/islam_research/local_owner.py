@@ -43,6 +43,7 @@ class LocalOwner:
         self.origin = f'http://127.0.0.1:{port}'
         self.host = f'127.0.0.1:{port}'
         self.credentials = credentials
+        self.storage = 'local_sqlite' if database_url.startswith('sqlite:') else 'local_postgresql'
         self.launch_attempts = deque()
         # Settings' HTTPS requirement remains intact for every production entrypoint.
         # Only this local gate translates a separately verified loopback origin.
@@ -93,7 +94,7 @@ class LocalOwner:
             except (ValueError,TypeError,asyncio.TimeoutError): valid = False
             if not valid:
                 return await self.reply(JSONResponse({'detail':'Local launch credential required'},401),scope,receive,send)
-            response = JSONResponse({'authenticated':True,'storage':'local_postgresql'})
+            response = JSONResponse({'authenticated':True,'storage':self.storage})
             response.set_cookie(COOKIE,self.credentials['session'],httponly=True,
                 samesite='strict',max_age=2592000,path='/')
             return await self.reply(response,scope,receive,send)

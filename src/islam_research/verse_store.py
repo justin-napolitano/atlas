@@ -119,7 +119,7 @@ def create(connection, *, request_uuid, project_id, annotation_id, chapter, ayah
         marker_start=marker_start, marker_end=marker_end, actor=actor, metadata=metadata)
     digest = model.fingerprint(payload)
     with connection.transaction():
-        if connection.execute("SHOW transaction_isolation").fetchone()["transaction_isolation"] != "read committed":
+        if getattr(connection,'backend',None)!='sqlite' and connection.execute("SHOW transaction_isolation").fetchone()["transaction_isolation"] != "read committed":
             raise ValueError("Verse material retries require READ COMMITTED isolation")
         connection.execute("SELECT pg_advisory_xact_lock(184514,hashtext(%s))", (str(request_id),))
         previous = connection.execute("SELECT project_id,creation_sha256,revision FROM research.verse_materials WHERE id=%s", (material_id,)).fetchone()
@@ -212,7 +212,7 @@ def import_pilot(connection, *, request_uuid, project_id, chapter, ayah, rationa
     creation=dict(request_uuid=str(request),project_id=project_id,annotation_id=annotation_id,chapter=chapter,ayah_start=ayah,ayah_end=ayah,
         material_kind="arabic_text",link_kind="representation",citation_basis="none",citation_id=None,marker_start=None,marker_end=None,actor=actor,**metadata)
     with connection.transaction():
-        if connection.execute("SHOW transaction_isolation").fetchone()["transaction_isolation"]!="read committed":
+        if getattr(connection,'backend',None)!='sqlite' and connection.execute("SHOW transaction_isolation").fetchone()["transaction_isolation"]!="read committed":
             raise ValueError("Pilot import retries require READ COMMITTED isolation")
         connection.execute("SELECT pg_advisory_xact_lock(184514,hashtext(%s))",(str(request),))
         previous=connection.execute("SELECT * FROM research.verse_materials WHERE id=%s",(material_id,)).fetchone()
