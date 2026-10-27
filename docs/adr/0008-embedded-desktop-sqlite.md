@@ -99,3 +99,30 @@ PostgreSQL migration with exact-content verification. Native copied-bundle
 acceptance exercises save/reload/restart, full surah reading, export, unsaved-close
 protection, renderer/network isolation and database-plus-artifact recovery. Final
 installation evidence is recorded separately without owner content.
+
+## Local installation evidence, 2026-10-27
+
+The signed Tauri/SQLite build from `9f6a76b` is installed and its authenticated
+owner service is ready. All 86 owner application tables passed migration count,
+content fingerprint, integrity, foreign-key and reopen checks. The previous
+PostgreSQL app, original database, PostgreSQL backup and private migration
+snapshot are retained locally. After confirming no other Atlas service or
+database clients remained, the retired server was stopped gracefully. The
+SQLite workspace remained ready afterward.
+
+The app occupies 61.7 MiB versus the retained PostgreSQL build's 175.4 MiB, about
+65% smaller. All 179 release resource files match the signed installed resources.
+Deep/strict ad-hoc signature checks pass; the app is not notarized or publicly
+distributed. This build still includes Python and does not claim general RAM or
+startup benchmarks.
+
+Final native review used fresh synthetic SQLite state twice. The window/ready
+observations were 486/7,689 ms initially and 304/3,537 ms on restart while other
+build work was running. Both journeys passed writing, export, complete surah
+reading and isolation checks; frozen database-plus-original-file restore and
+corruption/tamper rejection passed. These are synthetic developer checks, not
+a new scholarly or human usability review.
+
+The subsequent native test-only fix reads complete HTTP headers and compares
+header names case-insensitively. It addresses the ARM CI fixture's header framing
+and casing assumption; installed runtime code is unchanged.
