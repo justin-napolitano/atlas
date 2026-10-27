@@ -132,8 +132,20 @@ synthetic tests. Current validation evidence is recorded below as checks complet
   `zbus_names`, `glib`). None appears in the resolved x64 macOS dependency tree;
   their other-platform warnings remain visible rather than suppressed.
 
-Production package/signature and installation evidence will be added after the
-release artifact is built. Native menu-dialog choices, physical keyboard routing,
+The production app is installed at `~/Applications/Atlas.app`; its authenticated
+local service reports ready. The optimized shell is 4.5 MiB and the signed app
+bundle is 175 MiB, versus 464 MiB for the previous Electron bundle. The embedded
+window icon is 256 px; full-size Dock artwork remains separate. All 875 offline
+runtime files match the signed-bundle resources that passed the copied-runtime
+check. Deep/strict ad-hoc signature verification passes. A backup created with the
+previous runtime and the previous Electron app are retained locally. Returning to
+an older schema may require recovery from the matching pre-upgrade snapshot;
+retaining an executable does not authorize forcing a schema downgrade.
+
+All PR checks passed, including native policy, dependencies, browser, containers,
+storage boundaries, graph validation, and PostgreSQL 17/18 contracts.
+
+Native menu-dialog choices, physical keyboard routing,
 and owner usability remain manual acceptance items; the synthetic build substitutes
 fixture destinations and the conservative Keep Writing choice for native dialogs.
 
