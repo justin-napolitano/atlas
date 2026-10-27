@@ -1,5 +1,8 @@
 # Self-contained offline Mac build
 
+The owner's [2026-10-27 SQLite decision](adr/0008-embedded-desktop-sqlite.md)
+supersedes the database selection in this original PostgreSQL build record.
+
 Owner request, 2026-10-20: complete local installation without cloud synchronization.
 The initial configured-checkout Electron shell is superseded by this packaging target.
 

@@ -32,6 +32,9 @@ test = [
 semantic = [
     "jsonschema==4.26.0",
 ]
+desktop-sqlite = [
+    "sqlglot==30.25.0",
+]
 
 [project.scripts]
 islam-research = "islam_research.cli:main"
@@ -43,4 +46,4 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.setuptools.package-data]
-islam_research = ["migrations/*.sql", "policies/*.json", "resources/*.json", "resources/*.txt"]
+islam_research = ["migrations/*.sql", "policies/*.json", "resources/*.json", "resources/*.txt", "sqlite/*.sql", "sqlite/*.json"]

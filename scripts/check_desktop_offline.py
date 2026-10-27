@@ -38,6 +38,8 @@ def main():
         root=Path(temporary);resources=root/'Copied app resources';state=root/'state'
         shutil.copytree(args.resources,resources,symlinks=True)
         service=resources/'runtime/atlas-service/atlas-service';binary=resources/'postgres/bin'
+        embedded=json.loads((resources/'build.json').read_text())['kind']=='offline-local-sqlite'
+        config_name='sqlite-config.json' if embedded else 'local-config.json'
         env={key:os.environ[key] for key in ['HOME','USER','LOGNAME','TMPDIR'] if key in os.environ}
         env['PATH']='/usr/bin:/bin';child=client=None
         def start():
@@ -94,7 +96,7 @@ def main():
                 for launch in range(2):
                     result=subprocess.run([str(args.tauri.resolve()),'--review',str(config)],cwd=root,env=env,capture_output=True,timeout=240)
                     evidence=json.loads(receipt.read_text()) if receipt.exists() else {'failed':'Native process did not produce a receipt'}
-                    assert result.returncode==0 and evidence.get('nativeTauri'), evidence
+                    assert result.returncode==0 and evidence.get('nativeTauri'), {'evidence':evidence,'returncode':result.returncode,'synthetic_diagnostics':result.stderr.decode(errors='replace')[-3000:]}
                     assert evidence['processRestart']==bool(launch), evidence
                     print(json.dumps(evidence),flush=True)
             if args.electron:
@@ -148,7 +150,7 @@ def main():
             typed_notes=[r for kind in ['skill','principle'] for r in client.get('/v1/workspace/notes',params={'thought_type':kind}).json()['items']]
             snapshot=command('backup');archive=state/'backups'/snapshot['file'];assert archive.is_file()
             backup_receipt=json.loads(archive.with_suffix('.json').read_text())
-            assert backup_receipt['format']==2 and backup_receipt['artifacts'][artifact['sha256']]==len(text)
+            assert backup_receipt['format']==(3 if embedded else 2) and backup_receipt['artifacts'][artifact['sha256']]==len(text)
             stop();start()
             assert client.get('/v1/desktop/tasks/detail',params={'task_id':task['id']}).json()['task']['body']==task_value['body']
             assert client.get('/v1/workspace/note',params={'entry_id':note['id']}).json()['body']==body
@@ -170,25 +172,25 @@ def main():
             assert client.get('/v1/desktop/page',params={'entry_id':page_child['id']}).json()['parent_id']==note['id']
             assert page_child['id'] in [row['id'] for row in client.get('/v1/desktop/pages/backlinks',params={'entry_id':note['id']}).json()['items']]
             assert client.get('/v1/desktop/page',params={'entry_id':note['id']}).json()['folder_id']==folder['id']
-            selected_config=json.loads((state/'local-config.json').read_text())
+            selected_config=json.loads((state/config_name).read_text())
             assert (state/selected_config['artifact_namespace']/artifact['sha256']).read_bytes()==text
             assert client.post('/v1/desktop/files',json=file_request).json()['replayed'] is True
             assert client.get('/v1/library/shelf').json()['items']
             assert client.get('/v1/quran/place').json()['ayah']==59
             assert len([row for row in client.get('/v1/quran/progress').json()['items'] if row['is_read']])==1
-            selected=json.loads((state/'local-config.json').read_text())['database']
+            selected=json.loads((state/config_name).read_text())['database']
             stop()
             # An incomplete object archive fails before changing selected state.
             object_path=archive.with_suffix('.objects')/artifact['sha256'];original=object_path.read_bytes();object_path.write_bytes(b'corrupt')
             bad=subprocess.run([str(service),'--state-dir',str(state),'--archive',str(archive),'restore'],cwd=root,env=env,capture_output=True,timeout=60)
-            assert bad.returncode!=0 and json.loads((state/'local-config.json').read_text())['database']==selected
+            assert bad.returncode!=0 and json.loads((state/config_name).read_text())['database']==selected
             object_path.write_bytes(original)
             # Tampering never selects a different database or erases research.
             with archive.open('ab') as stream:stream.write(b'tamper')
             bad=subprocess.run([str(service),'--state-dir',str(state),'--archive',str(archive),'restore'],cwd=root,env=env,capture_output=True,timeout=60)
             assert bad.returncode!=0
-            assert json.loads((state/'local-config.json').read_text())['database']==selected
-            for file in ['local-config.json','local-session.json']:
+            assert json.loads((state/config_name).read_text())['database']==selected
+            for file in [config_name,'local-session.json']:
                 assert (state/file).stat().st_mode&0o077==0
             print(json.dumps({'copied_bundle':True,'checkout_required':False,'fresh_database':True,'unicode_markdown':True,
                 'located_quran_notes':True,'library_and_progress':True,'restart':True,'conflict_rejected':True,

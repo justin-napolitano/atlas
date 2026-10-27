@@ -6,6 +6,8 @@ The research should understand traditions in context before evaluating them. “
 
 ## Start here
 
+- [Embedded desktop SQLite](docs/adr/0008-embedded-desktop-sqlite.md) — selected for the next lighter Tauri build; verified migration, private backups and hosted PostgreSQL boundary.
+
 - [Persistent local workspace](docs/local-postgres-workspace.md) — real PostgreSQL-backed reading and writing on this Mac; startup, local sign-in, durability checks and the explicit limits of legacy-data import.
 - [Tauri desktop](docs/tauri-desktop.md) — replacement Mac shell with a visible opening state and the existing offline service/database; [Electron rollback](docs/electron-desktop.md) and [offline storage contract](docs/desktop-standalone.md).
 

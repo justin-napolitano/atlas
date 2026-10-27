@@ -143,8 +143,17 @@ pub fn run(app: tauri::AppHandle, window: WebviewWindow, config: Config) {
             )?;
             evaluate(&window, "document.querySelector('.working-surface:not([hidden]) .library-book-title').click();true")?;
             until(&window, "document.querySelectorAll('.working-surface:not([hidden]) [data-ayah]').length===176", "Complete Quran did not open")?;
+            let manifest: serde_json::Value =
+                serde_json::from_slice(&std::fs::read(config.resources.join("build.json"))?)?;
+            let sqlite = manifest["kind"] == "offline-local-sqlite";
+            if sqlite
+                && (!config.state.join("sqlite-config.json").is_file()
+                    || config.state.join("postgres-data").exists())
+            {
+                return Err("Synthetic SQLite storage selection did not match the bundle".into());
+            }
             Ok(
-                serde_json::json!({"nativeTauri":true,"realPostgresql":true,"openingWindowMs":opening_ms,"workspaceReadyMs":ready_ms,"rendererIsolation":true,"dirtyCloseProtected":true,"unicodeWritingReloaded":true,"processRestart":restarted,"nativeExport":true,"externalNetworkDenied":true,"unsafePopupDenied":true,"completeQuran":true,"ownerDataModified":false}),
+                serde_json::json!({"nativeTauri":true,"realPostgresql":!sqlite,"realSqlite":sqlite,"openingWindowMs":opening_ms,"workspaceReadyMs":ready_ms,"rendererIsolation":true,"dirtyCloseProtected":true,"unicodeWritingReloaded":true,"processRestart":restarted,"nativeExport":true,"externalNetworkDenied":true,"unsafePopupDenied":true,"completeQuran":true,"ownerDataModified":false}),
             )
         })();
         let success = result.is_ok();

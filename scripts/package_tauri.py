@@ -24,7 +24,7 @@ def main():
         parser.error('This verified packaging path targets macOS only')
     resources = args.resources.resolve()
     binary = ROOT/'desktop/tauri/target/release/atlas-desktop'
-    for path in [binary, resources/'runtime/atlas-service/atlas-service', resources/'frontend/owner-manifest.json', resources/'postgres/bin/postgres']:
+    for path in [binary, resources/'runtime/atlas-service/atlas-service', resources/'frontend/owner-manifest.json']:
         if not path.is_file():
             parser.error('Build the release shell and offline runtime first')
     info=json.loads(subprocess.check_output([str(binary),'--build-info'],text=True))
@@ -35,8 +35,10 @@ def main():
     if set(p.name for p in resources.iterdir()) - {'runtime', 'frontend', 'postgres', 'build.json', 'POSTGRES-CREDITS.rtf'}:
         parser.error('Unexpected file in offline resources')
     build = json.loads((resources/'build.json').read_text())
-    if build.get('kind') != 'offline-local-postgresql' or build.get('ownerDataIncluded') is not False:
+    if build.get('kind') not in {'offline-local-postgresql','offline-local-sqlite'} or build.get('ownerDataIncluded') is not False:
         parser.error('Expected the offline resource builder manifest')
+    if (resources/'postgres').exists() != (build['kind']=='offline-local-postgresql'):
+        parser.error('Database resources differ from declared storage engine')
     output = args.output.resolve()
     if output.exists():
         parser.error('Choose a new output directory; existing app was retained')
@@ -72,6 +74,7 @@ def main():
     subprocess.run(['/usr/bin/codesign', '--force', '--deep', '--sign', '-', str(output)], check=True)
     subprocess.run(['/usr/bin/codesign', '--verify', '--deep', '--strict', str(output)], check=True)
     print(json.dumps({'app': str(output), 'shell': 'tauri', 'bundledRuntime': True, 'bundledDatabase': True,
+                      'databaseEngine': 'sqlite' if build['kind']=='offline-local-sqlite' else 'postgresql',
                       'signature': 'ad-hoc', 'notarized': False, 'ownerDataIncluded': False}))
 
 

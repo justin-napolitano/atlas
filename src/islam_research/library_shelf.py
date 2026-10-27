@@ -23,7 +23,7 @@ def page(connection,*,project_id='',q='',state='',cursor='',limit=30,continuing=
     after=_cursor(cursor)
     # Exact saved-document resume only, never a max-position guess across editions.
     # Lateral joins are one fixed query, followed by a batch note count query.
-    rows=connection.execute('''SELECT i.*,r.title,r.project_id AS origin_project_id,r.id AS record_id,
+    query='''SELECT i.*,r.title,r.project_id AS origin_project_id,r.id AS record_id,
       r.attributes,e.label AS edition_label,
       (r.deleted_at IS NULL AND r.review_state<>'withdrawn') AS source_available,
       target.document_id,target.locator,target.text_sha256,target.position,
@@ -59,8 +59,12 @@ def page(connection,*,project_id='',q='',state='',cursor='',limit=30,continuing=
       AND (strpos(lower(r.title),lower(%s))>0 OR strpos(lower(coalesce(r.attributes->>'creators','')),lower(%s))>0)
       AND (NOT %s OR (i.reading_status='reading' AND coalesce(qp.updated_at,gp.updated_at,target.read_at) IS NOT NULL))
       AND (%s::timestamptz IS NULL OR (i.retained_at,i.id)<(%s::timestamptz,%s))
-      ORDER BY CASE WHEN %s THEN coalesce(qp.updated_at,gp.updated_at,target.read_at) END DESC NULLS LAST,i.retained_at DESC,i.id DESC LIMIT %s''',
-      (state,state,project_id,project_id,q.strip(),q.strip(),continuing,after[0] if after else None,after[0] if after else None,after[1] if after else '',continuing,limit+1)).fetchall()
+      ORDER BY CASE WHEN %s THEN coalesce(qp.updated_at,gp.updated_at,target.read_at) END DESC NULLS LAST,i.retained_at DESC,i.id DESC LIMIT %s'''
+    parameters=(state,state,project_id,project_id,q.strip(),q.strip(),continuing,after[0] if after else None,after[0] if after else None,after[1] if after else '',continuing,limit+1)
+    if getattr(connection,'backend',None)=='sqlite':
+        from .sqlite.shelf import shelf_rows
+        rows=shelf_rows(connection,parameters)
+    else:rows=connection.execute(query,parameters).fetchall()
     visible=rows[:limit]
     counts=connection.execute(shared_library.NOTES_SQL+'SELECT item_id,count(DISTINCT note_key) AS n FROM notes GROUP BY item_id',([r['id'] for r in visible],)).fetchall() if visible else []
     counts={r['item_id']:r['n'] for r in counts}

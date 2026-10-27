@@ -1,5 +1,9 @@
 # Tauri desktop migration
 
+The owner's subsequent [SQLite decision](adr/0008-embedded-desktop-sqlite.md)
+supersedes the local PostgreSQL storage choice below. The native shell contracts
+and retained PostgreSQL recovery build still apply.
+
 Owner decision: 2026-10-26. Replace the Electron shell with Tauri while preserving
 the existing local PostgreSQL database, frozen Python service, source identities,
 writing/recovery, backups, and editor. This supersedes the Electron shell selection
@@ -151,15 +155,8 @@ fixture destinations and the conservative Keep Writing choice for native dialogs
 
 ## SQLite follow-up
 
-For the local single-owner app, SQLite is the next storage candidate to evaluate.
-It embeds in the service and removes database-server startup and packaging;
-MySQL would retain a separate server. The current resource breakdown is about
-116 MiB PostgreSQL, 53 MiB frozen Python and 1.4 MiB UI. These are local build
-measurements, not promised savings from an unimplemented port.
-
-The existing PostgreSQL JSONB/search/triggers/roles, revision conflicts, stable IDs,
-backup-plus-artifact restore and source bindings must be mapped and verified before
-any storage switch. Keep PostgreSQL authoritative until that migration is reviewed;
-this Tauri change does not create a second database authority. See SQLite's
-[application-storage guidance](https://www.sqlite.org/whentouse.html) and
-[embedded/serverless architecture](https://www.sqlite.org/serverless.html).
+The local owner selected SQLite on 2026-10-27. The implementation, preserved
+contracts, hosted boundary and migration checks are recorded in
+[ADR 0008](adr/0008-embedded-desktop-sqlite.md). The original Tauri/PostgreSQL build
+above is retained for recovery. SQLite embeds in the service and removes the
+116 MiB PostgreSQL server resources; Python and the existing UI remain bundled.

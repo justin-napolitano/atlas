@@ -24,6 +24,19 @@ def main():
     root=resources();args.postgres_bin=root/'postgres/bin';args.frontend=root/'frontend'
     args.desktop_managed=True;args.quiet=True
     try:
+        import json
+        if json.loads((root/'build.json').read_text()).get('kind')=='offline-local-sqlite':
+            import desktop_sqlite as embedded
+            if args.command=='restore':
+                print(json.dumps(embedded.restore(args.state_dir,args.archive)),flush=True)
+            else:
+                with embedded.service_lease(args.state_dir):
+                    embedded.bootstrap(args)
+                    if args.command=='backup':print(json.dumps(embedded.backup(args.state_dir)),flush=True)
+                    else:
+                        args.sqlite=True
+                        local._serve(args)
+            return
         with storage.service_lease(args.state_dir,args.postgres_bin,shutdown=args.command=='serve'):
             storage.bootstrap(args)
             if args.command=='backup':

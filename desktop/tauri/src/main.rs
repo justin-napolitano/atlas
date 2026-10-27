@@ -439,12 +439,30 @@ fn main() {
     if option.as_deref() == Some("--review") && !cfg!(feature = "native-review") {
         std::process::exit(2);
     }
-    let app = tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
-            if app.try_state::<Arc<Host>>().is_some_and(|host| host.busy.load(Ordering::SeqCst) || host.closing.load(Ordering::SeqCst)) { return; }
-            if let Some(window) = app.get_webview_window("main") { let _ = window.show(); let _ = window.unminimize(); let _ = window.set_focus(); }
+    let builder = tauri::Builder::default();
+    #[cfg(feature = "native-review")]
+    let synthetic = review::active();
+    #[cfg(not(feature = "native-review"))]
+    let synthetic = false;
+    // Synthetic review must never forward to the installed owner's instance.
+    // Its marked private fixture is already enforced by review::configuration.
+    let builder = if synthetic {
+        builder
+    } else {
+        builder.plugin(tauri_plugin_single_instance::init(|app, _, _| {
+            if app.try_state::<Arc<Host>>().is_some_and(|host| {
+                host.busy.load(Ordering::SeqCst) || host.closing.load(Ordering::SeqCst)
+            }) {
+                return;
+            }
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
         }))
-        .setup(|app| {
+    };
+    let app = builder.setup(|app| {
             let home = app.path().home_dir()?;
             let resources = app.path().resource_dir()?;
             #[cfg(feature = "native-review")]

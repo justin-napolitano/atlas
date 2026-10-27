@@ -79,7 +79,7 @@ def capture(connection,*,request_uuid,project_id,annotation_id,start,end,entry,r
                  representation_id=representation_id,concept=concept,sense_id=sense_id,sense_scope=sense_scope,rationale=rationale,actor=actor)
     digest=model.fingerprint(payload)
     with connection.transaction():
-        if connection.execute("SHOW transaction_isolation").fetchone()["transaction_isolation"]!="read committed":
+        if getattr(connection,'backend',None)!='sqlite' and connection.execute("SHOW transaction_isolation").fetchone()["transaction_isolation"]!="read committed":
             raise ValueError("Lexicon capture retries require READ COMMITTED isolation")
         # READ COMMITTED: separate post-lock read sees a concurrent completed retry.
         connection.execute("SELECT pg_advisory_xact_lock(184513,hashtext(%s))",(str(request_id),))
@@ -224,9 +224,9 @@ def senses(connection,project_id,concept_id,cursor,limit):
         p.written_rep,p.language_tag,p.script_tag,p.transliteration_scheme FROM research.lexicon_senses s
         JOIN research.lexicon_entries e ON e.project_id=s.project_id AND e.id=s.entry_id
         JOIN research.records c ON c.project_id=s.project_id AND c.id=s.concept_id
-        LEFT JOIN LATERAL(SELECT r.* FROM research.lexicon_representations r
+        LEFT JOIN research.lexicon_representations p ON p.id=(SELECT r.id FROM research.lexicon_representations r
             JOIN research.lexicon_forms f ON f.project_id=r.project_id AND f.id=r.form_id
-            WHERE f.project_id=e.project_id AND f.entry_id=e.id ORDER BY r.id LIMIT 1) p ON true
+            WHERE f.project_id=e.project_id AND f.entry_id=e.id ORDER BY r.id LIMIT 1)
         WHERE s.project_id=%s AND s.concept_id=%s AND s.id>%s AND s.state='active' AND c.deleted_at IS NULL
         ORDER BY s.id LIMIT %s""",(project_id,concept_id,cursor,limit)).fetchall()
 
