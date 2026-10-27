@@ -24,16 +24,15 @@ def main():
     root=resources();args.postgres_bin=root/'postgres/bin';args.frontend=root/'frontend'
     args.desktop_managed=True;args.quiet=True
     try:
-        storage.bootstrap(args)
-        if args.command=='backup':
-            import json
-            print(json.dumps(storage.backup(args.state_dir,args.postgres_bin)),flush=True)
-        elif args.command=='restore':
-            import json
-            print(json.dumps(storage.restore(args.state_dir,args.postgres_bin,args.archive)),flush=True)
-        else:
-            try:local.serve(args)
-            finally:storage.stop_owned(args.state_dir,args.postgres_bin)
+        with storage.service_lease(args.state_dir,args.postgres_bin,shutdown=args.command=='serve'):
+            storage.bootstrap(args)
+            if args.command=='backup':
+                import json
+                print(json.dumps(storage.backup(args.state_dir,args.postgres_bin)),flush=True)
+            elif args.command=='restore':
+                import json
+                print(json.dumps(storage.restore(args.state_dir,args.postgres_bin,args.archive)),flush=True)
+            else:local.serve(args)
     except Exception:
         # Credentials and owner content must never enter native logs or errors.
         parser.exit(1,'Atlas could not start its private local storage. Existing research is unchanged.\n')

@@ -1,5 +1,7 @@
 """Local offline boot, snapshot backups and non-destructive restore."""
 import hashlib
+from contextlib import contextmanager
+import fcntl
 from importlib.resources import files
 import json
 import os
@@ -11,6 +13,39 @@ import time
 import uuid
 
 import local_workspace as local
+
+
+@contextmanager
+def service_lease(state,binary=None,shutdown=False):
+    """Protect idle APIs from another host stopping their database.
+
+    SQL connections are short-lived; an idle live API is absent from
+    pg_stat_activity. Advisory locks also exclude shutdown during startup and
+    disappear automatically on a crash.
+    """
+    if not state.exists():state.mkdir(parents=True,mode=0o700)
+    private(state,True)
+    descriptor=os.open(state/'desktop-services.lock',os.O_CREAT|os.O_RDWR|os.O_NOFOLLOW,0o600)
+    try:
+        info=os.fstat(descriptor)
+        if info.st_uid!=os.getuid() or info.st_mode&0o077 or not stat.S_ISREG(info.st_mode):
+            raise ValueError('Private service lease required')
+        fcntl.flock(descriptor,fcntl.LOCK_SH)
+        may_stop=shutdown
+        if shutdown and (state/'postgres-data/PG_VERSION').exists():
+            # A pre-existing running cluster may have an older browser/Electron
+            # consumer without a lease. Never adopt shutdown ownership of it.
+            status=subprocess.run([str(binary/'pg_ctl'),'-D',str(state/'postgres-data'),'status'],
+                stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,check=False)
+            may_stop=status.returncode==3
+        try:yield
+        finally:
+            fcntl.flock(descriptor,fcntl.LOCK_UN)
+            if may_stop:
+                try:fcntl.flock(descriptor,fcntl.LOCK_EX|fcntl.LOCK_NB)
+                except BlockingIOError:pass
+                else:stop_owned(state,binary)
+    finally:os.close(descriptor)
 
 
 def artifact_root(state,value):

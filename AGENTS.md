@@ -95,7 +95,9 @@ loopback development session. The legacy preview progress importer is deliberate
 progress/place-only; do not claim old notes, highlights or library state migrated.
 Use synthetic isolated databases for testing, never the live owner database.
 
-Electron is the selected desktop shell; see `docs/electron-desktop.md` and the current
+Tauri is the selected replacement desktop shell (owner decision 2026-10-26); see
+`docs/tauri-desktop.md`. Keep the Electron implementation available for rollback
+until native acceptance passes. Preserve the storage contracts in `docs/electron-desktop.md` and the current
 `docs/desktop-standalone.md` (#221). Bundle/manage native PostgreSQL and a frozen owner
 service for the offline Mac app; preserve the existing data and storage semantics.
 SQLite is a possible later port, not an implemented feature. Hosted synchronization

@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 _original_path=sys.path[:]
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
@@ -57,6 +58,26 @@ class DesktopStorageTests(unittest.TestCase):
         link=self.state/'redirect';link.symlink_to(self.directory,target_is_directory=True)
         args=argparse.Namespace(state_dir=link,postgres_bin=Path('/not-a-binary'))
         with self.assertRaises(ValueError):storage.bootstrap(args)
+
+    def test_idle_service_lease_prevents_other_host_shutdown(self):
+        with patch.object(storage,'stop_owned') as stop:
+            with storage.service_lease(self.state):
+                with storage.service_lease(self.state,Path('/synthetic-engine'),shutdown=True):pass
+                stop.assert_not_called()
+            with storage.service_lease(self.state,Path('/synthetic-engine'),shutdown=True):pass
+            stop.assert_called_once_with(self.state,Path('/synthetic-engine'))
+
+    def test_symlinked_or_public_service_lock_is_rejected(self):
+        lock=self.state/'desktop-services.lock';lock.symlink_to(self.receipt)
+        with self.assertRaises(OSError),storage.service_lease(self.state):pass
+        lock.unlink();lock.write_text('');lock.chmod(0o644)
+        with self.assertRaises(ValueError),storage.service_lease(self.state):pass
+
+    def test_preexisting_running_cluster_without_leases_is_retained(self):
+        data=self.state/'postgres-data';data.mkdir(mode=0o700);(data/'PG_VERSION').write_text('17')
+        with patch.object(storage.subprocess,'run',return_value=argparse.Namespace(returncode=0)),patch.object(storage,'stop_owned') as stop:
+            with storage.service_lease(self.state,Path('/synthetic-engine'),shutdown=True):pass
+            stop.assert_not_called()
 
 
 if __name__=='__main__':unittest.main()

@@ -21,12 +21,17 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--resources',type=Path,default=ROOT/'research-library/desktop-resources')
     parser.add_argument('--electron',action='store_true')
+    parser.add_argument('--tauri',type=Path,help='Separate native-review Tauri binary; uses synthetic state only')
     parser.add_argument('--reader-flow',action='store_true',help='Run the focused synthetic reader/notebook native review')
     parser.add_argument('--artifacts',type=Path,default=ROOT/'research-library/testing/desktop-sources')
     parser.add_argument('--skills-flow',action='store_true',help='Run synthetic standalone skill/principle native acceptance')
     parser.add_argument('--shortcut-flow',action='store_true',help='Run focused native New Page shortcut acceptance')
     parser.add_argument('--properties-flow',action='store_true',help='Run keyboard-first Markdown properties native acceptance')
     args=parser.parse_args()
+    if args.tauri:
+        info=json.loads(subprocess.check_output([str(args.tauri.resolve()),'--build-info'],text=True))
+        if info.get('shell')!='tauri' or info.get('nativeReview') is not True:
+            parser.error('--tauri requires the separate native-review build; the owner app cannot be used for tests')
     if args.reader_flow or args.skills_flow or args.shortcut_flow or args.properties_flow:args.electron=True
     # Short, private socket path; executable location includes spaces deliberately.
     with tempfile.TemporaryDirectory(prefix='atlas-offline-',dir='/private/tmp') as temporary:
@@ -80,6 +85,18 @@ def main():
             target=client.get('/v1/library/resolve',params={'item_id':item['id'],'document_id':margin['binding']['document']['id']}).json()
             assert client.put('/v1/library/item',json={'item_id':item['id'],'expected_revision':item['revision'],'on_shelf':True,
                 'reading_status':'reading','preferred_edition_id':target['edition_id'],'owner_confirmed':True}).status_code==200
+            if args.tauri:
+                # Test overrides are compiled out of the installable release binary.
+                # This marker and bounded paths are checked by the native harness.
+                (root/'.atlas-tauri-synthetic').write_text('isolated-test-only')
+                config=root/'tauri-review.json';receipt=root/'tauri-result.json'
+                config.write_text(json.dumps({'resources':str(resources),'state':str(state),'resultFile':str(receipt)}));config.chmod(0o600)
+                for launch in range(2):
+                    result=subprocess.run([str(args.tauri.resolve()),'--review',str(config)],cwd=root,env=env,capture_output=True,timeout=240)
+                    evidence=json.loads(receipt.read_text()) if receipt.exists() else {'failed':'Native process did not produce a receipt'}
+                    assert result.returncode==0 and evidence.get('nativeTauri'), evidence
+                    assert evidence['processRestart']==bool(launch), evidence
+                    print(json.dumps(evidence),flush=True)
             if args.electron:
                 args.artifacts.mkdir(parents=True,exist_ok=True,mode=0o700)
                 config=root/'review.json';receipt=root/'review-result.json'
@@ -176,7 +193,7 @@ def main():
             print(json.dumps({'copied_bundle':True,'checkout_required':False,'fresh_database':True,'unicode_markdown':True,
                 'located_quran_notes':True,'library_and_progress':True,'restart':True,'conflict_rejected':True,
                 'offline_tasks_restart_and_restore':True,'consistent_backup_and_restore':True,'original_files_restored':True,'reference_only_notes':True,
-                'corrupt_object_restore_rejected':True,'tampered_backup_rejected':True,'native_electron':args.electron,'owner_data_modified':False}))
+                'corrupt_object_restore_rejected':True,'tampered_backup_rejected':True,'native_electron':args.electron,'native_tauri':bool(args.tauri),'owner_data_modified':False}))
         finally:
             if client:client.close()
             if child and child.poll() is None:

@@ -27,6 +27,7 @@ api = [
 ]
 test = [
     "httpx==0.28.1",
+    "httpx2==2.16.0 ; python_full_version >= '3.11'",
 ]
 semantic = [
     "jsonschema==4.26.0",

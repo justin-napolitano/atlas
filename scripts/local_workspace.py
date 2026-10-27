@@ -110,6 +110,12 @@ def build(args):
 
 
 def serve(args):
+    import desktop_storage as storage
+    with storage.service_lease(args.state_dir):
+        return _serve(args)
+
+
+def _serve(args):
     import uvicorn
     from psycopg.conninfo import make_conninfo
     from islam_research.local_owner import LocalOwner
