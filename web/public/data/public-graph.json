@@ -99,7 +99,12 @@
       ],
       "role": "",
       "locator": "",
-      "links": []
+      "links": [
+        {
+          "url": "https://example.invalid/source-1",
+          "label": "example.invalid"
+        }
+      ]
     },
     {
       "id": "https://islam-research.local/id/example-source-2",
@@ -113,7 +118,12 @@
       ],
       "role": "",
       "locator": "",
-      "links": []
+      "links": [
+        {
+          "url": "https://example.invalid/source-2",
+          "label": "example.invalid"
+        }
+      ]
     },
     {
       "id": "https://islam-research.local/id/example-source-3",
@@ -127,19 +137,24 @@
       ],
       "role": "",
       "locator": "",
-      "links": []
+      "links": [
+        {
+          "url": "https://example.invalid/source-3",
+          "label": "example.invalid"
+        }
+      ]
     }
   ],
   "edges": [
     {
-      "from": "https://islam-research.local/id/example-evidence-1",
-      "to": "https://islam-research.local/id/example-source-1",
-      "label": "source"
-    },
-    {
-      "from": "https://islam-research.local/id/example-claim-1",
+      "from": "https://islam-research.local/id/example-claim-2",
       "to": "https://islam-research.local/id/example-question",
       "label": "addressesQuestion"
+    },
+    {
+      "from": "https://islam-research.local/id/example-evidence-3",
+      "to": "https://islam-research.local/id/example-source-3",
+      "label": "wasDerivedFrom"
     },
     {
       "from": "https://islam-research.local/id/example-claim-2",
@@ -147,18 +162,28 @@
       "label": "evidence"
     },
     {
-      "from": "https://islam-research.local/id/example-evidence-1",
-      "to": "https://islam-research.local/id/example-source-1",
-      "label": "wasDerivedFrom"
-    },
-    {
       "from": "https://islam-research.local/id/example-evidence-2",
       "to": "https://islam-research.local/id/example-source-2",
       "label": "source"
     },
     {
+      "from": "https://islam-research.local/id/example-evidence-1",
+      "to": "https://islam-research.local/id/example-source-1",
+      "label": "source"
+    },
+    {
       "from": "https://islam-research.local/id/example-evidence-2",
       "to": "https://islam-research.local/id/example-source-2",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/example-claim-3",
+      "to": "https://islam-research.local/id/example-evidence-3",
+      "label": "evidence"
+    },
+    {
+      "from": "https://islam-research.local/id/example-evidence-1",
+      "to": "https://islam-research.local/id/example-source-1",
       "label": "wasDerivedFrom"
     },
     {
@@ -167,27 +192,17 @@
       "label": "evidence"
     },
     {
+      "from": "https://islam-research.local/id/example-claim-3",
+      "to": "https://islam-research.local/id/example-question",
+      "label": "addressesQuestion"
+    },
+    {
       "from": "https://islam-research.local/id/example-evidence-3",
       "to": "https://islam-research.local/id/example-source-3",
       "label": "source"
     },
     {
-      "from": "https://islam-research.local/id/example-claim-3",
-      "to": "https://islam-research.local/id/example-evidence-3",
-      "label": "evidence"
-    },
-    {
-      "from": "https://islam-research.local/id/example-evidence-3",
-      "to": "https://islam-research.local/id/example-source-3",
-      "label": "wasDerivedFrom"
-    },
-    {
-      "from": "https://islam-research.local/id/example-claim-2",
-      "to": "https://islam-research.local/id/example-question",
-      "label": "addressesQuestion"
-    },
-    {
-      "from": "https://islam-research.local/id/example-claim-3",
+      "from": "https://islam-research.local/id/example-claim-1",
       "to": "https://islam-research.local/id/example-question",
       "label": "addressesQuestion"
     }
