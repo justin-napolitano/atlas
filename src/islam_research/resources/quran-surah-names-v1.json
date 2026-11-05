@@ -1,0 +1,693 @@
+{
+  "source_url": "https://tanzil.net/res/text/metadata/quran-data.xml",
+  "source_sha256": "8867c1d88191472adec9db694b3cd9f135b1a2ef580574d32cf888dcb22c5c7a",
+  "accessed_on": "2026-10-18",
+  "attribution": "Tanzil Quran Metadata, (C) 2008-2009 Tanzil.info",
+  "license": "CC BY (version not specified in metadata)",
+  "chapters": [
+    {
+      "chapter": 1,
+      "label": "Al-Faatiha",
+      "arabic_label": "الفاتحة",
+      "english_label": "The Opening"
+    },
+    {
+      "chapter": 2,
+      "label": "Al-Baqara",
+      "arabic_label": "البقرة",
+      "english_label": "The Cow"
+    },
+    {
+      "chapter": 3,
+      "label": "Aal-i-Imraan",
+      "arabic_label": "آل عمران",
+      "english_label": "The Family of Imraan"
+    },
+    {
+      "chapter": 4,
+      "label": "An-Nisaa",
+      "arabic_label": "النساء",
+      "english_label": "The Women"
+    },
+    {
+      "chapter": 5,
+      "label": "Al-Maaida",
+      "arabic_label": "المائدة",
+      "english_label": "The Table"
+    },
+    {
+      "chapter": 6,
+      "label": "Al-An'aam",
+      "arabic_label": "الأنعام",
+      "english_label": "The Cattle"
+    },
+    {
+      "chapter": 7,
+      "label": "Al-A'raaf",
+      "arabic_label": "الأعراف",
+      "english_label": "The Heights"
+    },
+    {
+      "chapter": 8,
+      "label": "Al-Anfaal",
+      "arabic_label": "الأنفال",
+      "english_label": "The Spoils of War"
+    },
+    {
+      "chapter": 9,
+      "label": "At-Tawba",
+      "arabic_label": "التوبة",
+      "english_label": "The Repentance"
+    },
+    {
+      "chapter": 10,
+      "label": "Yunus",
+      "arabic_label": "يونس",
+      "english_label": "Jonas"
+    },
+    {
+      "chapter": 11,
+      "label": "Hud",
+      "arabic_label": "هود",
+      "english_label": "Hud"
+    },
+    {
+      "chapter": 12,
+      "label": "Yusuf",
+      "arabic_label": "يوسف",
+      "english_label": "Joseph"
+    },
+    {
+      "chapter": 13,
+      "label": "Ar-Ra'd",
+      "arabic_label": "الرعد",
+      "english_label": "The Thunder"
+    },
+    {
+      "chapter": 14,
+      "label": "Ibrahim",
+      "arabic_label": "ابراهيم",
+      "english_label": "Abraham"
+    },
+    {
+      "chapter": 15,
+      "label": "Al-Hijr",
+      "arabic_label": "الحجر",
+      "english_label": "The Rock"
+    },
+    {
+      "chapter": 16,
+      "label": "An-Nahl",
+      "arabic_label": "النحل",
+      "english_label": "The Bee"
+    },
+    {
+      "chapter": 17,
+      "label": "Al-Israa",
+      "arabic_label": "الإسراء",
+      "english_label": "The Night Journey"
+    },
+    {
+      "chapter": 18,
+      "label": "Al-Kahf",
+      "arabic_label": "الكهف",
+      "english_label": "The Cave"
+    },
+    {
+      "chapter": 19,
+      "label": "Maryam",
+      "arabic_label": "مريم",
+      "english_label": "Mary"
+    },
+    {
+      "chapter": 20,
+      "label": "Taa-Haa",
+      "arabic_label": "طه",
+      "english_label": "Taa-Haa"
+    },
+    {
+      "chapter": 21,
+      "label": "Al-Anbiyaa",
+      "arabic_label": "الأنبياء",
+      "english_label": "The Prophets"
+    },
+    {
+      "chapter": 22,
+      "label": "Al-Hajj",
+      "arabic_label": "الحج",
+      "english_label": "The Pilgrimage"
+    },
+    {
+      "chapter": 23,
+      "label": "Al-Muminoon",
+      "arabic_label": "المؤمنون",
+      "english_label": "The Believers"
+    },
+    {
+      "chapter": 24,
+      "label": "An-Noor",
+      "arabic_label": "النور",
+      "english_label": "The Light"
+    },
+    {
+      "chapter": 25,
+      "label": "Al-Furqaan",
+      "arabic_label": "الفرقان",
+      "english_label": "The Criterion"
+    },
+    {
+      "chapter": 26,
+      "label": "Ash-Shu'araa",
+      "arabic_label": "الشعراء",
+      "english_label": "The Poets"
+    },
+    {
+      "chapter": 27,
+      "label": "An-Naml",
+      "arabic_label": "النمل",
+      "english_label": "The Ant"
+    },
+    {
+      "chapter": 28,
+      "label": "Al-Qasas",
+      "arabic_label": "القصص",
+      "english_label": "The Stories"
+    },
+    {
+      "chapter": 29,
+      "label": "Al-Ankaboot",
+      "arabic_label": "العنكبوت",
+      "english_label": "The Spider"
+    },
+    {
+      "chapter": 30,
+      "label": "Ar-Room",
+      "arabic_label": "الروم",
+      "english_label": "The Romans"
+    },
+    {
+      "chapter": 31,
+      "label": "Luqman",
+      "arabic_label": "لقمان",
+      "english_label": "Luqman"
+    },
+    {
+      "chapter": 32,
+      "label": "As-Sajda",
+      "arabic_label": "السجدة",
+      "english_label": "The Prostration"
+    },
+    {
+      "chapter": 33,
+      "label": "Al-Ahzaab",
+      "arabic_label": "الأحزاب",
+      "english_label": "The Clans"
+    },
+    {
+      "chapter": 34,
+      "label": "Saba",
+      "arabic_label": "سبإ",
+      "english_label": "Sheba"
+    },
+    {
+      "chapter": 35,
+      "label": "Faatir",
+      "arabic_label": "فاطر",
+      "english_label": "The Originator"
+    },
+    {
+      "chapter": 36,
+      "label": "Yaseen",
+      "arabic_label": "يس",
+      "english_label": "Yaseen"
+    },
+    {
+      "chapter": 37,
+      "label": "As-Saaffaat",
+      "arabic_label": "الصافات",
+      "english_label": "Those drawn up in Ranks"
+    },
+    {
+      "chapter": 38,
+      "label": "Saad",
+      "arabic_label": "ص",
+      "english_label": "The letter Saad"
+    },
+    {
+      "chapter": 39,
+      "label": "Az-Zumar",
+      "arabic_label": "الزمر",
+      "english_label": "The Groups"
+    },
+    {
+      "chapter": 40,
+      "label": "Al-Ghaafir",
+      "arabic_label": "غافر",
+      "english_label": "The Forgiver"
+    },
+    {
+      "chapter": 41,
+      "label": "Fussilat",
+      "arabic_label": "فصلت",
+      "english_label": "Explained in detail"
+    },
+    {
+      "chapter": 42,
+      "label": "Ash-Shura",
+      "arabic_label": "الشورى",
+      "english_label": "Consultation"
+    },
+    {
+      "chapter": 43,
+      "label": "Az-Zukhruf",
+      "arabic_label": "الزخرف",
+      "english_label": "Ornaments of gold"
+    },
+    {
+      "chapter": 44,
+      "label": "Ad-Dukhaan",
+      "arabic_label": "الدخان",
+      "english_label": "The Smoke"
+    },
+    {
+      "chapter": 45,
+      "label": "Al-Jaathiya",
+      "arabic_label": "الجاثية",
+      "english_label": "Crouching"
+    },
+    {
+      "chapter": 46,
+      "label": "Al-Ahqaf",
+      "arabic_label": "الأحقاف",
+      "english_label": "The Dunes"
+    },
+    {
+      "chapter": 47,
+      "label": "Muhammad",
+      "arabic_label": "محمد",
+      "english_label": "Muhammad"
+    },
+    {
+      "chapter": 48,
+      "label": "Al-Fath",
+      "arabic_label": "الفتح",
+      "english_label": "The Victory"
+    },
+    {
+      "chapter": 49,
+      "label": "Al-Hujuraat",
+      "arabic_label": "الحجرات",
+      "english_label": "The Inner Apartments"
+    },
+    {
+      "chapter": 50,
+      "label": "Qaaf",
+      "arabic_label": "ق",
+      "english_label": "The letter Qaaf"
+    },
+    {
+      "chapter": 51,
+      "label": "Adh-Dhaariyat",
+      "arabic_label": "الذاريات",
+      "english_label": "The Winnowing Winds"
+    },
+    {
+      "chapter": 52,
+      "label": "At-Tur",
+      "arabic_label": "الطور",
+      "english_label": "The Mount"
+    },
+    {
+      "chapter": 53,
+      "label": "An-Najm",
+      "arabic_label": "النجم",
+      "english_label": "The Star"
+    },
+    {
+      "chapter": 54,
+      "label": "Al-Qamar",
+      "arabic_label": "القمر",
+      "english_label": "The Moon"
+    },
+    {
+      "chapter": 55,
+      "label": "Ar-Rahmaan",
+      "arabic_label": "الرحمن",
+      "english_label": "The Beneficent"
+    },
+    {
+      "chapter": 56,
+      "label": "Al-Waaqia",
+      "arabic_label": "الواقعة",
+      "english_label": "The Inevitable"
+    },
+    {
+      "chapter": 57,
+      "label": "Al-Hadid",
+      "arabic_label": "الحديد",
+      "english_label": "The Iron"
+    },
+    {
+      "chapter": 58,
+      "label": "Al-Mujaadila",
+      "arabic_label": "المجادلة",
+      "english_label": "The Pleading Woman"
+    },
+    {
+      "chapter": 59,
+      "label": "Al-Hashr",
+      "arabic_label": "الحشر",
+      "english_label": "The Exile"
+    },
+    {
+      "chapter": 60,
+      "label": "Al-Mumtahana",
+      "arabic_label": "الممتحنة",
+      "english_label": "She that is to be examined"
+    },
+    {
+      "chapter": 61,
+      "label": "As-Saff",
+      "arabic_label": "الصف",
+      "english_label": "The Ranks"
+    },
+    {
+      "chapter": 62,
+      "label": "Al-Jumu'a",
+      "arabic_label": "الجمعة",
+      "english_label": "Friday"
+    },
+    {
+      "chapter": 63,
+      "label": "Al-Munaafiqoon",
+      "arabic_label": "المنافقون",
+      "english_label": "The Hypocrites"
+    },
+    {
+      "chapter": 64,
+      "label": "At-Taghaabun",
+      "arabic_label": "التغابن",
+      "english_label": "Mutual Disillusion"
+    },
+    {
+      "chapter": 65,
+      "label": "At-Talaaq",
+      "arabic_label": "الطلاق",
+      "english_label": "Divorce"
+    },
+    {
+      "chapter": 66,
+      "label": "At-Tahrim",
+      "arabic_label": "التحريم",
+      "english_label": "The Prohibition"
+    },
+    {
+      "chapter": 67,
+      "label": "Al-Mulk",
+      "arabic_label": "الملك",
+      "english_label": "The Sovereignty"
+    },
+    {
+      "chapter": 68,
+      "label": "Al-Qalam",
+      "arabic_label": "القلم",
+      "english_label": "The Pen"
+    },
+    {
+      "chapter": 69,
+      "label": "Al-Haaqqa",
+      "arabic_label": "الحاقة",
+      "english_label": "The Reality"
+    },
+    {
+      "chapter": 70,
+      "label": "Al-Ma'aarij",
+      "arabic_label": "المعارج",
+      "english_label": "The Ascending Stairways"
+    },
+    {
+      "chapter": 71,
+      "label": "Nooh",
+      "arabic_label": "نوح",
+      "english_label": "Noah"
+    },
+    {
+      "chapter": 72,
+      "label": "Al-Jinn",
+      "arabic_label": "الجن",
+      "english_label": "The Jinn"
+    },
+    {
+      "chapter": 73,
+      "label": "Al-Muzzammil",
+      "arabic_label": "المزمل",
+      "english_label": "The Enshrouded One"
+    },
+    {
+      "chapter": 74,
+      "label": "Al-Muddaththir",
+      "arabic_label": "المدثر",
+      "english_label": "The Cloaked One"
+    },
+    {
+      "chapter": 75,
+      "label": "Al-Qiyaama",
+      "arabic_label": "القيامة",
+      "english_label": "The Resurrection"
+    },
+    {
+      "chapter": 76,
+      "label": "Al-Insaan",
+      "arabic_label": "الانسان",
+      "english_label": "Man"
+    },
+    {
+      "chapter": 77,
+      "label": "Al-Mursalaat",
+      "arabic_label": "المرسلات",
+      "english_label": "The Emissaries"
+    },
+    {
+      "chapter": 78,
+      "label": "An-Naba",
+      "arabic_label": "النبإ",
+      "english_label": "The Announcement"
+    },
+    {
+      "chapter": 79,
+      "label": "An-Naazi'aat",
+      "arabic_label": "النازعات",
+      "english_label": "Those who drag forth"
+    },
+    {
+      "chapter": 80,
+      "label": "Abasa",
+      "arabic_label": "عبس",
+      "english_label": "He frowned"
+    },
+    {
+      "chapter": 81,
+      "label": "At-Takwir",
+      "arabic_label": "التكوير",
+      "english_label": "The Overthrowing"
+    },
+    {
+      "chapter": 82,
+      "label": "Al-Infitaar",
+      "arabic_label": "الإنفطار",
+      "english_label": "The Cleaving"
+    },
+    {
+      "chapter": 83,
+      "label": "Al-Mutaffifin",
+      "arabic_label": "المطففين",
+      "english_label": "Defrauding"
+    },
+    {
+      "chapter": 84,
+      "label": "Al-Inshiqaaq",
+      "arabic_label": "الإنشقاق",
+      "english_label": "The Splitting Open"
+    },
+    {
+      "chapter": 85,
+      "label": "Al-Burooj",
+      "arabic_label": "البروج",
+      "english_label": "The Constellations"
+    },
+    {
+      "chapter": 86,
+      "label": "At-Taariq",
+      "arabic_label": "الطارق",
+      "english_label": "The Morning Star"
+    },
+    {
+      "chapter": 87,
+      "label": "Al-A'laa",
+      "arabic_label": "الأعلى",
+      "english_label": "The Most High"
+    },
+    {
+      "chapter": 88,
+      "label": "Al-Ghaashiya",
+      "arabic_label": "الغاشية",
+      "english_label": "The Overwhelming"
+    },
+    {
+      "chapter": 89,
+      "label": "Al-Fajr",
+      "arabic_label": "الفجر",
+      "english_label": "The Dawn"
+    },
+    {
+      "chapter": 90,
+      "label": "Al-Balad",
+      "arabic_label": "البلد",
+      "english_label": "The City"
+    },
+    {
+      "chapter": 91,
+      "label": "Ash-Shams",
+      "arabic_label": "الشمس",
+      "english_label": "The Sun"
+    },
+    {
+      "chapter": 92,
+      "label": "Al-Lail",
+      "arabic_label": "الليل",
+      "english_label": "The Night"
+    },
+    {
+      "chapter": 93,
+      "label": "Ad-Dhuhaa",
+      "arabic_label": "الضحى",
+      "english_label": "The Morning Hours"
+    },
+    {
+      "chapter": 94,
+      "label": "Ash-Sharh",
+      "arabic_label": "الشرح",
+      "english_label": "The Consolation"
+    },
+    {
+      "chapter": 95,
+      "label": "At-Tin",
+      "arabic_label": "التين",
+      "english_label": "The Fig"
+    },
+    {
+      "chapter": 96,
+      "label": "Al-Alaq",
+      "arabic_label": "العلق",
+      "english_label": "The Clot"
+    },
+    {
+      "chapter": 97,
+      "label": "Al-Qadr",
+      "arabic_label": "القدر",
+      "english_label": "The Power, Fate"
+    },
+    {
+      "chapter": 98,
+      "label": "Al-Bayyina",
+      "arabic_label": "البينة",
+      "english_label": "The Evidence"
+    },
+    {
+      "chapter": 99,
+      "label": "Az-Zalzala",
+      "arabic_label": "الزلزلة",
+      "english_label": "The Earthquake"
+    },
+    {
+      "chapter": 100,
+      "label": "Al-Aadiyaat",
+      "arabic_label": "العاديات",
+      "english_label": "The Chargers"
+    },
+    {
+      "chapter": 101,
+      "label": "Al-Qaari'a",
+      "arabic_label": "القارعة",
+      "english_label": "The Calamity"
+    },
+    {
+      "chapter": 102,
+      "label": "At-Takaathur",
+      "arabic_label": "التكاثر",
+      "english_label": "Competition"
+    },
+    {
+      "chapter": 103,
+      "label": "Al-Asr",
+      "arabic_label": "العصر",
+      "english_label": "The Declining Day, Epoch"
+    },
+    {
+      "chapter": 104,
+      "label": "Al-Humaza",
+      "arabic_label": "الهمزة",
+      "english_label": "The Traducer"
+    },
+    {
+      "chapter": 105,
+      "label": "Al-Fil",
+      "arabic_label": "الفيل",
+      "english_label": "The Elephant"
+    },
+    {
+      "chapter": 106,
+      "label": "Quraish",
+      "arabic_label": "قريش",
+      "english_label": "Quraysh"
+    },
+    {
+      "chapter": 107,
+      "label": "Al-Maa'un",
+      "arabic_label": "الماعون",
+      "english_label": "Almsgiving"
+    },
+    {
+      "chapter": 108,
+      "label": "Al-Kawthar",
+      "arabic_label": "الكوثر",
+      "english_label": "Abundance"
+    },
+    {
+      "chapter": 109,
+      "label": "Al-Kaafiroon",
+      "arabic_label": "الكافرون",
+      "english_label": "The Disbelievers"
+    },
+    {
+      "chapter": 110,
+      "label": "An-Nasr",
+      "arabic_label": "النصر",
+      "english_label": "Divine Support"
+    },
+    {
+      "chapter": 111,
+      "label": "Al-Masad",
+      "arabic_label": "المسد",
+      "english_label": "The Palm Fibre"
+    },
+    {
+      "chapter": 112,
+      "label": "Al-Ikhlaas",
+      "arabic_label": "الإخلاص",
+      "english_label": "Sincerity"
+    },
+    {
+      "chapter": 113,
+      "label": "Al-Falaq",
+      "arabic_label": "الفلق",
+      "english_label": "The Dawn"
+    },
+    {
+      "chapter": 114,
+      "label": "An-Naas",
+      "arabic_label": "الناس",
+      "english_label": "Mankind"
+    }
+  ]
+}

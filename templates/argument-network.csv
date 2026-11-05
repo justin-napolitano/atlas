@@ -1,0 +1,4 @@
+argument_id,node_id,aif_node_type,content,scheme_name,from_node_id,to_node_id,edge_role,source_or_evidence_id,notes
+arg:[stable-id],node:[premise-id],I,"[atomic proposition]",,,,,evidence:[id],"AIF I-node: information content, attributed and scoped."
+arg:[stable-id],node:[inference-id],RA,"[inference step or reasoning scheme]","[scheme]",node:[premise-id],node:[conclusion-id],premise/conclusion,,"AIF RA-node: one or more premises, one conclusion. Add exception/counterargument nodes when relevant."
+arg:[stable-id],node:[conclusion-id],I,"[atomic proposition]",,,,conclusion,,"Link the conclusion to exact evidence and record the argument's limits."

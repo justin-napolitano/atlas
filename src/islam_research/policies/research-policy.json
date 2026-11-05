@@ -1,0 +1,324 @@
+{
+  "version": 1,
+  "name": "research_policy",
+  "execution_status": "definition_only",
+  "kind_mappings": [
+    {
+      "kind": "source",
+      "rdf_class": "https://islam-research.local/vocab/SourceRecord",
+      "status": "mapped"
+    },
+    {
+      "kind": "claim",
+      "rdf_class": "https://islam-research.local/vocab/Claim",
+      "status": "mapped"
+    },
+    {
+      "kind": "evidence",
+      "rdf_class": "https://islam-research.local/vocab/EvidenceRecord",
+      "status": "mapped"
+    },
+    {
+      "kind": "question",
+      "rdf_class": "https://islam-research.local/vocab/ResearchQuestion",
+      "status": "mapped"
+    },
+    {
+      "kind": "hypothesis",
+      "rdf_class": "https://islam-research.local/vocab/ResearcherPosition",
+      "status": "mapped"
+    },
+    {
+      "kind": "concept",
+      "rdf_class": "http://www.w3.org/2004/02/skos/core#Concept",
+      "status": "mapped"
+    },
+    {
+      "kind": "person",
+      "rdf_class": "http://www.w3.org/ns/prov#Agent",
+      "status": "mapped"
+    },
+    {
+      "kind": "work",
+      "rdf_class": null,
+      "status": "reserved"
+    },
+    {
+      "kind": "edition",
+      "rdf_class": null,
+      "status": "reserved"
+    },
+    {
+      "kind": "passage",
+      "rdf_class": null,
+      "status": "reserved"
+    },
+    {
+      "kind": "lexical_form",
+      "rdf_class": null,
+      "status": "reserved"
+    },
+    {
+      "kind": "sense",
+      "rdf_class": null,
+      "status": "reserved"
+    },
+    {
+      "kind": "definition",
+      "rdf_class": null,
+      "status": "reserved"
+    },
+    {
+      "kind": "occurrence",
+      "rdf_class": null,
+      "status": "reserved"
+    },
+    {
+      "kind": "place",
+      "rdf_class": null,
+      "status": "reserved"
+    },
+    {
+      "kind": "period",
+      "rdf_class": null,
+      "status": "reserved"
+    },
+    {
+      "kind": "tradition",
+      "rdf_class": null,
+      "status": "reserved"
+    },
+    {
+      "kind": "school",
+      "rdf_class": null,
+      "status": "reserved"
+    },
+    {
+      "kind": "event",
+      "rdf_class": null,
+      "status": "reserved"
+    },
+    {
+      "kind": "article",
+      "rdf_class": null,
+      "status": "reserved"
+    },
+    {
+      "kind": "note",
+      "rdf_class": null,
+      "status": "reserved"
+    },
+    {
+      "kind": "annotation",
+      "rdf_class": null,
+      "status": "reserved"
+    },
+    {
+      "kind": "activity",
+      "rdf_class": null,
+      "status": "reserved"
+    },
+    {
+      "kind": "record",
+      "rdf_class": null,
+      "status": "reserved"
+    }
+  ],
+  "predicates": [
+    {
+      "iri": "https://islam-research.local/vocab/addressesQuestion",
+      "from_kinds": [
+        "claim"
+      ],
+      "to_kinds": [
+        "question"
+      ],
+      "meaning": "An attributed claim addresses the scoped question; not proof of its conclusion."
+    },
+    {
+      "iri": "https://islam-research.local/vocab/evidence",
+      "from_kinds": [
+        "claim"
+      ],
+      "to_kinds": [
+        "evidence"
+      ],
+      "meaning": "The claim has a located evidence record; stance and source context still require review."
+    },
+    {
+      "iri": "https://islam-research.local/vocab/source",
+      "from_kinds": [
+        "evidence"
+      ],
+      "to_kinds": [
+        "source"
+      ],
+      "meaning": "Source representation for a located evidence record."
+    },
+    {
+      "iri": "https://islam-research.local/vocab/attributedTo",
+      "from_kinds": [
+        "claim"
+      ],
+      "to_kinds": [
+        "source",
+        "person"
+      ],
+      "meaning": "Attribution to a source or speaker; not by itself a located evidentiary argument."
+    }
+  ],
+  "traversal_profiles": [
+    {
+      "id": "question_evidence_trail",
+      "version": 1,
+      "start_kinds": [
+        "question"
+      ],
+      "end_kinds": [
+        "source"
+      ],
+      "max_depth": 3,
+      "max_nodes": 200,
+      "max_edges": 500,
+      "cycle_policy": "simple_paths",
+      "authorization": "filter_before_traversal",
+      "steps": [
+        {
+          "predicate": "https://islam-research.local/vocab/addressesQuestion",
+          "direction": "in"
+        },
+        {
+          "predicate": "https://islam-research.local/vocab/evidence",
+          "direction": "out"
+        },
+        {
+          "predicate": "https://islam-research.local/vocab/source",
+          "direction": "out"
+        }
+      ]
+    },
+    {
+      "id": "claim_attribution",
+      "version": 1,
+      "start_kinds": [
+        "claim"
+      ],
+      "end_kinds": [
+        "source",
+        "person"
+      ],
+      "max_depth": 1,
+      "max_nodes": 100,
+      "max_edges": 100,
+      "cycle_policy": "simple_paths",
+      "authorization": "filter_before_traversal",
+      "steps": [
+        {
+          "predicate": "https://islam-research.local/vocab/attributedTo",
+          "direction": "out"
+        }
+      ]
+    }
+  ],
+  "ranking_profiles": [
+    {
+      "id": "discovery_relevance",
+      "version": 1,
+      "scope": "owner",
+      "meaning": "Relevance to an explicit research query/scope, not source quality.",
+      "features": [
+        {
+          "name": "query_match",
+          "weight": 0.7
+        },
+        {
+          "name": "scope_match",
+          "weight": 0.3
+        }
+      ],
+      "missing_policy": "propagate_unknown",
+      "tie_breaker": "stable_id",
+      "status": "definition_only"
+    },
+    {
+      "id": "reading_priority",
+      "version": 1,
+      "scope": "owner",
+      "meaning": "Personal queue preference, not scholarly verification.",
+      "features": [
+        {
+          "name": "owner_priority",
+          "weight": 0.6
+        },
+        {
+          "name": "question_relevance",
+          "weight": 0.4
+        }
+      ],
+      "missing_policy": "propagate_unknown",
+      "tie_breaker": "stable_id",
+      "status": "definition_only"
+    },
+    {
+      "id": "article_complexity",
+      "version": 1,
+      "scope": "owner",
+      "meaning": "Declared reading demands; extraction/calibration still required.",
+      "features": [
+        {
+          "name": "terminology_load",
+          "weight": 0.25
+        },
+        {
+          "name": "historical_context_load",
+          "weight": 0.35
+        },
+        {
+          "name": "argument_load",
+          "weight": 0.25
+        },
+        {
+          "name": "language_load",
+          "weight": 0.15
+        }
+      ],
+      "missing_policy": "propagate_unknown",
+      "tie_breaker": "stable_id",
+      "status": "definition_only"
+    },
+    {
+      "id": "personal_preparation",
+      "version": 1,
+      "scope": "owner",
+      "meaning": "Private familiarity/preparation, not intrinsic article quality.",
+      "features": [
+        {
+          "name": "unfamiliar_concepts",
+          "weight": 0.5
+        },
+        {
+          "name": "unfamiliar_people_context",
+          "weight": 0.5
+        }
+      ],
+      "missing_policy": "propagate_unknown",
+      "tie_breaker": "stable_id",
+      "status": "definition_only"
+    },
+    {
+      "id": "graph_degree",
+      "version": 1,
+      "scope": "owner",
+      "meaning": "Unique-neighbor connectivity in an explicitly selected graph, not importance or consensus.",
+      "features": [
+        {
+          "name": "normalized_degree",
+          "weight": 1
+        }
+      ],
+      "missing_policy": "propagate_unknown",
+      "tie_breaker": "stable_id",
+      "status": "definition_only"
+    }
+  ]
+}

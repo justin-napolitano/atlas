@@ -1,0 +1,12 @@
+@prefix : <https://islam-research.local/id/> .
+@prefix ir: <https://islam-research.local/vocab/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+
+# Example structure only. Replace the sample passage, source, and locator after reading.
+:example-evidence a ir:EvidenceRecord, prov:Entity ;
+    ir:source :example-source ;
+    ir:locator "[specific page, verse, section, or other locator]" ;
+    ir:evidenceKind "paraphrase" ;
+    ir:stance "qualifies" ;
+    ir:paraphrase "[faithful paraphrase, attributed to the source]" ;
+    prov:wasDerivedFrom :example-source .

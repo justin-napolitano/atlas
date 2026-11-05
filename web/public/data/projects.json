@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "projects": [
+    {
+      "id": "atlas-example",
+      "title": "Atlas synthetic example",
+      "description": "Invented software demonstration; no personal research.",
+      "status": "example",
+      "kind": "Synthetic example",
+      "graph_data": "public-graph.json",
+      "default_view": "Map",
+      "privacy": "synthetic_examples_only"
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+# Empty Atlas graph. Import or author your own research explicitly.
+@prefix ir: <https://islam-research.local/vocab/> .

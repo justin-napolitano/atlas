@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "atlas-workbench"
+version = "0.1.0"
+description = "Local-first tools for traceable literature research and knowledge graphs"
+requires-python = ">=3.10"
+dependencies = []
+
+[dependency-groups]
+desktop-build = ["pyinstaller==6.22.3"]
+
+[project.optional-dependencies]
+graph = ["rdflib>=7,<8", "pyshacl>=0.25,<1"]
+database = [
+    "psycopg[binary]==3.3.6",
+]
+api = [
+    "rdflib>=7,<8",
+    "fastapi==0.143.2",
+    "pyjwt[crypto]==2.15.1",
+    "uvicorn==0.54.0",
+    "jsonschema==4.26.0",
+    "pyyaml==6.0.3",
+]
+test = [
+    "httpx==0.28.1",
+    "httpx2==2.16.0 ; python_full_version >= '3.11'",
+]
+semantic = [
+    "jsonschema==4.26.0",
+]
+desktop-sqlite = [
+    "sqlglot==30.25.0",
+]
+
+[project.scripts]
+atlas = "islam_research.cli:main"
+islam-research = "islam_research.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+islam_research = ["migrations/*.sql", "policies/*.json", "resources/*.json", "resources/*.txt", "sqlite/*.sql", "sqlite/*.json"]

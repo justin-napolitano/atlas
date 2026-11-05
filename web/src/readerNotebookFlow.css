@@ -1,0 +1,85 @@
+/* Source flow owns its document layout; no inset application or duplicate notebook. */
+.connected-source-document{min-width:0;padding:24px clamp(20px,3vw,44px) 80px}
+.connected-source-document .connected-reading-title{padding:0 0 18px;align-items:start}
+.connected-source-document .connected-reading-title h1{font:600 25px/1.35 system-ui;margin:0;max-width:55ch}
+.source-byline{font:14px/1.6 system-ui;color:var(--muted);margin:5px 0 0}
+.source-information{position:relative;flex-shrink:0;font:14px/1.5 system-ui}
+.source-information>summary{cursor:pointer;min-height:36px;padding:6px 2px;color:var(--muted);list-style:none}
+.source-information>summary::-webkit-details-marker{display:none}
+.source-information-content{position:absolute;z-index:100;right:0;top:100%;width:min(28rem,calc(100vw - 48px));max-height:75dvh;overflow:auto;background:var(--paper);color:var(--ink);border:1px solid var(--rule);padding:18px;box-shadow:0 8px 24px #0002}
+.source-information-content .desktop-source-availability{padding:0;margin:0;max-width:none}
+.source-information-content .desktop-source-availability>a{display:block;margin-top:.5rem}
+.source-information-content .desktop-file-import{margin-top:1rem}
+.source-reference-overview{max-width:65ch;margin:12px auto 0;font-size:16px}
+.source-reference-overview>p{color:var(--muted)}
+.source-reference-overview .desktop-source-writing{padding:0;margin:1.5rem 0}
+.connected-source-document .source-reader{padding:0;margin:0;border:0}
+.connected-source-document .source-reader .reader-heading-row{padding:0 0 12px;border:0;justify-content:flex-end;min-height:40px}
+.reader-visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}
+.connected-source-document .reader-view-actions{gap:12px;align-items:center}
+.connected-source-document .reader-margin-toggle{border:0!important}
+.connected-source-document .reader-desk{gap:12px}
+.connected-source-document .reader-page{padding:8px 20px 24px 0;position:static}
+.connected-source-document .source-reader[data-reading-flow=scroll] .reader-text{max-height:none;overflow:visible;scrollbar-gutter:auto}
+.connected-source-document .source-reader[data-reading-flow=pages] .reader-text{max-height:70dvh;overflow:auto}
+.connected-source-document .reader-text{padding:0 0 20px;font-size:var(--reading-size);line-height:var(--reading-spacing)}
+.connected-source-document .reader-margin{position:sticky;top:12px;max-height:calc(100dvh - 32px);overflow-y:auto;padding:8px 0 20px 18px;scrollbar-gutter:stable}
+.connected-source-document .reader-margin-heading{position:sticky;top:0;z-index:2;background:var(--paper);padding:0 0 12px;margin:0;border:0}
+.connected-source-document .reader-margin-heading h4{margin:0;font:600 15px/1.5 system-ui}
+.connected-source-document .reader-refresh{font-size:12px;min-height:32px}
+.reader-writing-scope{display:flex;gap:14px;align-items:center;margin-bottom:12px}
+.source-reader .reader-writing-scope button{font-size:13px;min-height:36px;border:0;border-radius:0;padding:0;color:var(--muted);background:transparent}
+.source-reader .reader-writing-scope button[aria-pressed=true]{color:var(--ink);text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:6px}
+.connected-source-document .location-margin-notes{padding:0;border:0}
+.connected-source-document .location-margin-composer{position:static;padding:6px 0 16px;border:0;background:transparent}
+.connected-source-document .location-margin-composer>textarea{border:0;min-height:3rem;padding:6px 0;color:var(--ink)}
+.connected-source-document .reader-capture{border:0;border-inline-start:2px solid var(--accent);padding:0 0 12px 12px;margin:0 0 18px;gap:8px}
+.connected-source-document .reader-capture label{font-size:13px}
+.connected-source-document .reader-capture textarea{border:0;border-radius:0;padding:6px 0;background:transparent;min-height:6rem}
+.reader-capture-options{font:12px/1.6 system-ui;color:var(--muted)}
+.reader-capture-options label{margin:8px 0}
+.connected-source-document .reader-selection-hint{margin:6px 0 20px;font-size:12px}
+.connected-source-document .reader-edition-details>summary{font-size:13px}
+.connected-source-document .desktop-source-writing{padding:0;margin:0 0 22px;max-width:none;font-size:var(--notes-size)}
+.connected-source-document .desktop-source-writing h2{font:500 12px/1.5 system-ui;color:var(--muted);margin:10px 0}
+.connected-source-document .desktop-source-writing .cm-content{min-height:3rem;padding:0}
+.connected-source-document .desktop-source-writing .cm-editor{min-height:3rem}
+.connected-source-document .desktop-source-writing .live-markdown-editor{min-height:3rem;font:var(--notes-size)/var(--reading-spacing) system-ui}
+.connected-source-document .desktop-writing-actions{justify-content:flex-start;gap:14px;margin:4px 0 16px}
+.connected-source-document .desktop-writing-actions button{font-size:12px;color:var(--muted)}
+.source-book-note{padding:10px 0 16px;border-bottom:1px solid var(--rule)}
+.source-reader .source-book-note-title{border:0;padding:0;font:600 var(--notes-size)/1.5 system-ui;min-height:32px;text-align:start}
+.source-book-note .notebook-markdown{margin-top:6px}
+.source-other-notes{font:12px/1.6 system-ui;margin:14px 0}
+.connected-source-document .connected-existing-note{width:auto;padding:0;margin:12px 0;font-size:var(--notes-size)}
+.connected-source-document .connected-existing-note .cm-content,.connected-source-document .connected-existing-note .live-markdown-editor{min-height:4rem}
+.connected-secondary-nav{font:13px/1.5 system-ui}
+.connected-secondary-nav>summary{cursor:pointer;padding:7px;color:var(--muted)}
+.connected-secondary-nav>button{padding-inline-start:18px!important;font-size:13px}
+.connected-workspace .connected-nav{margin:12px 0;gap:0}
+.connected-workspace .connected-collections,.connected-workspace .connected-saved-views{margin-top:14px}
+.connected-workspace .connected-page-tree{margin-top:16px}
+.reader-text.is-formatted-markdown{white-space:normal!important}
+.reader-md-paragraph{display:block;margin:0 0 1em}
+.reader-md-heading{display:block;font-weight:600;line-height:1.3;margin:.4em 0 .7em;font-size:1.3em}
+.reader-md-heading[data-depth='1']{font-size:1.5em}
+.reader-md-heading[data-depth='3']{font-size:1.15em}
+.reader-md-strong{font-weight:700}.reader-md-emphasis{font-style:italic}.reader-md-delete{text-decoration:line-through}
+.reader-md-inlineCode,.reader-md-code{font-family:ui-monospace,monospace;font-size:.85em;white-space:pre-wrap}
+.reader-md-code{display:block;padding:12px;border-inline-start:2px solid var(--rule);margin:1em 0}
+.reader-md-list{display:block;margin:.5em 0 1em;padding-inline-start:1.2em}
+.reader-md-listItem{display:block;position:relative;margin:.25em 0}
+.reader-md-listItem::before{content:attr(data-marker);position:absolute;inset-inline-end:calc(100% + .35em);font-size:.8em}
+.reader-md-listItem>.reader-md-paragraph{margin:0}
+.reader-md-table{display:block;margin:1em 0;font-size:.85em;overflow-wrap:anywhere}
+.reader-md-tableRow{display:grid;gap:12px;border-bottom:1px solid var(--rule)}
+.reader-md-tableCell{padding:8px 2px}.reader-md-tableRow:first-child{font-weight:700}
+.reader-md-link{color:var(--accent);text-decoration:underline}
+.reader-original-option{display:flex!important;gap:8px;align-items:center}
+.reader-original-option>input{width:auto!important}
+@media(max-width:900px){.connected-source-document{padding:18px 20px 60px}.connected-source-document .reader-page{padding-inline-end:0}.connected-source-document .reader-margin{position:fixed;top:12px;right:12px;bottom:12px;width:min(420px,calc(100vw - 24px));max-height:none;z-index:80;padding:18px;border:1px solid var(--rule);background:var(--paper);box-shadow:0 8px 36px #0003}.connected-source-document .reader-margin[hidden]{display:none}.connected-source-document .connected-reading-title h1{font-size:22px}.source-information{font-size:13px}}
+.connected-source-document .reader-toolbar.is-floating{position:fixed;z-index:110;max-width:min(540px,calc(100vw - 32px));box-sizing:border-box;margin:0;padding:6px;background:var(--paper);border:1px solid var(--rule);box-shadow:0 4px 16px #0002}
+.connected-source-document .reader-toolbar.is-floating button{font-size:13px;min-height:36px}
+.connected-source-document .reader-toolbar.is-floating .reader-selection-label{display:none}
+.source-reader .source-book-note-title{font-size:12px;font-weight:400;color:var(--muted)}
+@media(max-width:900px){.connected-source-document .reader-writing-scope button,.connected-source-document .reader-toolbar.is-floating button,.source-information>summary{min-height:44px}}

@@ -1,0 +1,98 @@
+// Same-origin signed-owner requests. Identity belongs to IAP, never localStorage.
+export class WorkspaceError extends Error {
+  constructor(status, current = null) {
+    super(status === 409 ? 'This record changed on another device.' : status === 401 || status === 403 ? 'Owner sign-in is required.' : 'Could not reach the research workspace. Your draft is still here.');
+    this.status = status;
+    this.current = current;
+  }
+}
+
+export function workspaceAPI(fetcher = globalThis.fetch) {
+  async function request(path, params = {}, value, method = 'PUT') {
+    const response = await fetcher(`/v1/${path}?${new URLSearchParams(Object.entries(params).filter(([,value])=>value!=null))}`, {
+      credentials: 'same-origin', headers: { Accept: 'application/json', ...(value ? { 'Content-Type': 'application/json', 'X-Research-Write': '1' } : {}) },
+      ...(value ? { method, body: JSON.stringify(value) } : {}),
+    });
+    if (!response.headers.get('content-type')?.includes('json')) throw new WorkspaceError(401);
+    const data = await response.json();
+    if (!response.ok) throw new WorkspaceError(response.status, response.status === 409 ? data.current : null);
+    return data;
+  }
+  return { request, save: value => request('personal-states', {}, value), post: (path,value) => request(path,{},value,'POST') };
+}
+
+const fields = ['record_id', 'project_id', 'reading', 'decision', 'note'];
+const values = row => Object.fromEntries(fields.map(key => [key, row[key]]));
+const same = (a, b) => fields.every(key => a?.[key] === b?.[key]);
+export const blankState = (record_id, project_id) => ({ record_id, project_id, reading: 'unread', decision: 'unreviewed', note: '', revision: 0, read_at: null });
+
+export class ReadingWorkspace {
+  constructor(api, changed = () => {}) { this.api = api; this.changed = changed; this.entries = new Map(); }
+  adopt(row) {
+    if (!this.entries.has(row.record_id)) this.entries.set(row.record_id, { server: row, draft: values(row), status: 'saved', current: null, pending: null, again: false });
+    else {const entry=this.entries.get(row.record_id);if(entry.status==='saved' && !entry.pending && row.project_id===entry.server.project_id && row.revision>entry.server.revision){entry.server=row;entry.draft=values(row);entry.current=null;}}
+    this.changed();
+    return this.entries.get(row.record_id);
+  }
+  edit(id, patch) {
+    const entry = this.entries.get(id);
+    if (!entry) throw new Error('Load the reading state before editing.');
+    entry.draft = { ...entry.draft, ...patch };
+    if (!entry.pending && entry.status !== 'conflict') entry.status = same(entry.draft, entry.server) ? 'saved' : 'unsaved';
+    this.changed();
+  }
+  async save(id) {
+    const entry = this.entries.get(id);
+    if (!entry || entry.status === 'conflict') return;
+    if (entry.pending) { entry.again = true; return entry.pending; }
+    const sent = { ...entry.draft };
+    entry.status = 'saving';
+    entry.pending = Promise.resolve().then(() => this.api.save({ ...sent, expected_revision: entry.server.revision }))
+      .then(row => { entry.server = row; entry.status = same(entry.draft, row) ? 'saved' : 'unsaved'; })
+      .catch(error => {
+        // A lost response can follow a successful commit. Matching current state confirms it.
+        if (error.status === 409 && error.current && same(error.current, sent)) {
+          entry.server = error.current; entry.status = same(entry.draft, entry.server) ? 'saved' : 'unsaved';
+        } else if (error.status === 409 && error.current) { entry.current = error.current; entry.status = 'conflict'; }
+        else { entry.status = 'error'; }
+      }).finally(() => {
+        entry.pending = null;
+        const again = entry.again; entry.again = false; this.changed();
+        if (again && entry.status === 'unsaved') this.save(id);
+      });
+    this.changed();
+    return entry.pending;
+  }
+  resolve(id, choice) {
+    const entry = this.entries.get(id);
+    if (!entry?.current || !['cloud', 'draft'].includes(choice)) return;
+    entry.server = entry.current; entry.current = null;
+    if (choice === 'cloud') { entry.draft = values(entry.server); entry.status = 'saved'; }
+    else { entry.status = 'unsaved'; this.save(id); }
+    this.changed();
+  }
+  hasDrafts() { return [...this.entries.values()].some(e => e.status !== 'saved'); }
+}
+
+const noteContent = state => ({ reading: state.reading, decision: state.decision, note: state.note.replaceAll('\r\n','\n') });
+async function sha(value) {
+  const bytes = await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(value)));
+  return [...new Uint8Array(bytes)].map(n => n.toString(16).padStart(2,'0')).join('');
+}
+export async function markdownDraft(record, entry) {
+  const base=noteContent(entry.server), draft=noteContent(entry.draft), revision=entry.server.revision;
+  function property(key) {
+    return (record.attributes?.rdf_properties?.[key] || []).map(value => {
+      const literal=value.match(/^"(?:[^"\\]|\\.)*"/);
+      try { return literal ? JSON.parse(literal[0]) : value.replace(/^<|>$/g,''); } catch { return value; }
+    });
+  }
+  const ir='https://islam-research.local/vocab/', dct='http://purl.org/dc/terms/';
+  const context={ title:record.title, source_urls:property(dct+'source'), citation:property(dct+'bibliographicCitation'),
+    locators:property(ir+'locator'), edition:record.attributes?.edition ?? null, question_ids:property(ir+'addressesQuestion'),
+    review_scope:record.attributes?.recorded_review_status || [] };
+  const metadata={ research_note_version:1,research_id:record.id,project_id:entry.draft.project_id,
+    base_revision:revision,base_sha256:await sha(base),
+    reading:draft.reading,screening:draft.decision,context,context_sha256:await sha(context) };
+  return `---\n${Object.entries(metadata).map(([key,value]) => `${key}: ${JSON.stringify(value)}`).join('\n')}\n---\n\n${draft.note}`;
+}

@@ -1,0 +1,155 @@
+/* One shell owns navigation, surface colors and document geometry. */
+.atlas-workspace{--paper:#faf9f6;--ink:#252321;--muted:#69645f;--rule:#dfdcd6;--wash:#eeece7;--accent:#ab3141;--accent-wash:#eeece7;--atlas-sidebar:#f1efea;--atlas-header-height:0px;--notebook-rule:var(--rule);--notebook-muted:var(--muted);width:100%;max-width:none;height:100dvh;min-height:0;margin:0;padding:0;background:var(--paper);color:var(--ink);font:14px/1.5 system-ui,sans-serif}
+:root[data-theme=dark] .atlas-workspace{--paper:#1c1c1c;--ink:#e6e3de;--muted:#aaa6a0;--rule:#333;--wash:#292929;--accent:#e27878;--accent-wash:#292929;--atlas-sidebar:#181818}
+.atlas-workspace button{font:inherit;color:inherit;background:transparent;border-radius:4px;min-height:34px;padding:6px 9px;text-decoration:none}
+.atlas-workspace button:hover{background:var(--wash);text-decoration:none}
+.atlas-workspace button:disabled{opacity:.5;cursor:default}
+.atlas-workspace :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.atlas-workspace ::selection{background:var(--accent);color:var(--paper)}
+.atlas-workspace .skip-link{z-index:120}
+.atlas-body.owner-panes{display:grid;grid-template-columns:minmax(0,var(--list-width)) 5px minmax(0,1fr);height:100%;min-height:0;border:0}
+.atlas-body>.pane-divider{border:0;background:var(--atlas-sidebar);cursor:col-resize;z-index:2}
+.atlas-body>.pane-divider::after{width:1px;background:var(--rule);left:2px}
+.atlas-body>.atlas-library{display:flex;flex-direction:column;min-width:0;max-height:none;padding:14px 12px;overflow:auto;background:var(--atlas-sidebar);border:0;scrollbar-gutter:auto}
+.workspace-sidebar-top{display:flex;align-items:center;justify-content:space-between;padding:0 4px 12px}
+.workspace-wordmark{font-weight:650;font-size:16px;letter-spacing:-.3px}
+.workspace-sidebar-top button{font-size:24px;line-height:1;min-width:34px}
+.workspace-sidebar-search,.workspace-sidebar-new{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;color:var(--muted)!important}
+.workspace-sidebar-search kbd{font:11px system-ui}
+.atlas-projects{padding:22px 0 0;min-width:0;flex:1;min-height:0;overflow:auto}
+.atlas-projects-heading{display:flex;justify-content:space-between;align-items:center;gap:6px;color:var(--muted);margin-bottom:6px}
+.atlas-projects-heading h2{font:500 12px system-ui;margin:0}
+.atlas-projects-heading button{font-size:12px}
+.atlas-project-list{display:grid;gap:10px;min-width:0}
+.atlas-project-branch>button{width:100%;text-align:start;font-weight:600;overflow-wrap:anywhere}
+.atlas-primary-nav{display:grid;padding-left:10px;gap:2px}
+.atlas-primary-nav button{text-align:start;color:var(--muted)}
+.atlas-workspace button[aria-current=page]{color:var(--ink);background:var(--wash);box-shadow:inset 2px 0 var(--accent)}
+.atlas-project-branch>button[aria-current=page]{box-shadow:none;background:transparent}
+.atlas-projects form{display:grid;gap:10px;padding:10px 0}
+.atlas-projects input{width:100%;background:var(--paper);color:var(--ink);border:1px solid var(--rule);padding:8px}
+.workspace-document-navigation{padding:10px 0 0 10px}
+.workspace-document-navigation:empty{display:none}
+.atlas-library .notebook-index{padding:0;border:0;min-width:0;font:13px/1.5 system-ui}
+.atlas-library .notebook-index input{width:100%;min-height:34px;background:transparent;color:var(--ink);border:0;border-bottom:1px solid var(--rule);padding:7px 4px;font:13px system-ui}
+.atlas-library .notebook-search{margin:0 0 6px}
+.atlas-library .notebook-search label{margin:0}
+.notebook-sidebar-items{display:grid;gap:2px}
+.atlas-library .notebook-title{display:flex;align-items:center;gap:8px;width:100%;text-align:start;font:13px/1.5 system-ui;min-height:34px}
+.notebook-file-icon{flex-shrink:0;color:var(--muted)}
+.notebook-file-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.atlas-library .notebook-tools{border:0;margin:10px 0 0;padding:0;font:12px/1.5 system-ui}
+.atlas-library .notebook-tools>summary{padding:8px;color:var(--muted);cursor:pointer}
+.notebook-collection-filters{display:grid}
+.notebook-collection-filters button{text-align:start}
+.atlas-library .notebook-tools input,.atlas-library .notebook-tools select{max-width:100%;min-width:0;background:var(--paper);color:var(--ink)}
+.atlas-library .notebook-research-questions article{padding:6px 0}
+.atlas-library .notebook-research-questions p{display:none}
+.atlas-library .notebook-research-questions h3{font-size:12px;color:var(--muted);margin-top:20px}
+.atlas-content-library{padding:10px 0 0}
+.atlas-library-tabs{display:flex;font-size:12px;gap:4px;color:var(--muted)}
+.atlas-reading-item{display:block;width:100%;text-align:start;margin-top:3px;min-width:0}
+.atlas-reading-item strong{font:500 13px/1.5 system-ui;display:block}
+.atlas-reading-item>span,.atlas-reading-item small{display:none}
+.atlas-library .workspace-result-count{font-size:11px;margin:8px;color:var(--muted)}
+.atlas-library .workspace-row{padding:8px;font-size:13px}
+.atlas-library .workspace-row strong{font:500 13px/1.5 system-ui}
+.atlas-library .workspace-search{display:grid;font-size:12px}
+.atlas-library .workspace-search label,.atlas-library .workspace-search input,.atlas-library .workspace-search select{min-width:0;max-width:100%}
+.atlas-library-empty,.atlas-library-error{padding:8px;font-size:12px;color:var(--muted)}
+.atlas-advanced-search{font-size:12px;color:var(--muted);padding:12px 8px}
+.workspace-recent{padding:12px 0;font-size:12px;color:var(--muted);flex-shrink:0;max-height:22dvh;overflow:auto}
+.workspace-recent summary{cursor:pointer;padding:8px}
+.workspace-recent button{display:flex;gap:6px;justify-content:space-between;width:100%;text-align:start;font-size:12px}
+.workspace-recent button span{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.workspace-recent small{color:var(--accent);flex-shrink:0}
+.workspace-sidebar-footer{flex-shrink:0;margin-top:0;padding-top:24px;font-size:12px;color:var(--muted)}
+.workspace-sidebar-footer>button,.workspace-sidebar-footer summary{padding:8px;cursor:pointer}
+.workspace-sidebar-footer details button,.workspace-sidebar-footer details a{display:block;padding:8px;font:12px system-ui;text-decoration:none}
+.workspace-sidebar-footer>small{display:block;padding:8px;font-size:11px}
+.atlas-body>.atlas-reading-workspace{min-width:0;height:100%;padding:38px clamp(20px,4vw,64px) 60px;overflow:auto;scrollbar-gutter:stable;background:var(--paper)}
+.atlas-reading-workspace:focus{outline:none}
+.atlas-workspace .workspace-sidebar-toggle{position:fixed;left:12px;top:10px;z-index:70;display:none;background:var(--paper);border:1px solid var(--rule);font-size:18px}
+.workspace-sidebar-scrim{display:none}
+.atlas-body.reading-focus,.is-sidebar-collapsed .atlas-body{grid-template-columns:minmax(0,1fr)}
+.atlas-body.reading-focus>.atlas-library,.atlas-body.reading-focus>.pane-divider,.is-sidebar-collapsed .atlas-library,.is-sidebar-collapsed .atlas-body>.pane-divider{display:none}
+.is-sidebar-collapsed .workspace-sidebar-toggle,.atlas-workspace:has(.reading-focus) .workspace-sidebar-toggle{display:block}
+.is-sidebar-collapsed .atlas-reading-workspace,.atlas-body.reading-focus>.atlas-reading-workspace{padding-top:56px}
+.atlas-record-heading{display:flex;align-items:start;justify-content:space-between;gap:16px;margin-bottom:12px}
+.atlas-workspace .atlas-record-heading h2{font:600 26px/1.3 system-ui;margin:4px 0 14px;letter-spacing:-.4px;max-width:55ch}
+.atlas-record-heading small{font:12px/1.5 system-ui;color:var(--muted)}
+.atlas-read-status{font-size:12px!important;flex-shrink:0;color:var(--muted)!important}
+.atlas-reading-context-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;font-size:13px;color:var(--muted)}
+.atlas-record-context,.atlas-record-notes{margin-top:24px;padding-top:12px;border-top:1px solid var(--rule)}
+.atlas-record-context>summary,.atlas-record-notes>summary{font-size:13px;color:var(--muted);cursor:pointer}
+.atlas-record-context .workspace-summary{font-size:17px;max-width:70ch;line-height:1.7}
+.atlas-view-back{font-size:12px;color:var(--muted);margin-bottom:16px}
+.atlas-empty-reading{max-width:65ch;margin:8vh auto;padding:20px}
+.atlas-empty-reading h1{font:600 28px/1.4 system-ui}
+.atlas-empty-reading p{color:var(--muted);font-size:16px}
+.atlas-empty-reading button{margin-right:8px;font-size:14px}
+.atlas-workspace .research-notebook{background:transparent;padding:0;--notebook-rule:var(--rule);--notebook-muted:var(--muted)}
+.atlas-workspace .notebook-layout{display:block;max-height:none;overflow:visible}
+.atlas-workspace .notebook-writing{display:block;padding:0;max-width:72ch;margin:0 auto;width:100%}
+.atlas-workspace .notebook-mobile-back{display:none!important}
+.atlas-workspace .notebook-with-source{min-width:0}
+.atlas-workspace .notebook-welcome{margin:16vh auto;text-align:left}
+.atlas-workspace .notebook-welcome button{background:transparent;color:var(--accent);padding:6px 0}
+.atlas-workspace .notebook-welcome p{font-size:16px}
+.atlas-workspace .notebook-heading{display:none}
+.atlas-workspace .notebook-page .notebook-note-title input,.atlas-workspace .notebook-page .notebook-note-title textarea{font:600 28px/1.35 system-ui;letter-spacing:-.4px;padding:0 0 18px;resize:none;border:0}
+.atlas-workspace .notebook-editor-toolbar{position:static;margin:0 0 12px;min-height:26px;font-size:12px;background:transparent;justify-content:flex-end}
+.atlas-workspace .notebook-context{font:13px/1.6 system-ui;color:var(--muted);margin-top:36px}
+.atlas-workspace .notebook-context>details{border:0;padding:8px 0;margin:0}
+.atlas-workspace .notebook-context>details>summary{cursor:pointer;font-size:12px}
+.atlas-workspace .notebook-links{padding:0}
+.atlas-workspace .notebook-context>details[open]{margin-top:12px}
+.atlas-workspace .notebook-save{background:transparent;color:var(--accent);font-size:12px;padding:4px 8px}
+.atlas-workspace .notebook-save:disabled{display:none}
+.atlas-workspace .source-reader .reader-toolbar{box-shadow:none;border:0;border-bottom:1px solid var(--rule);border-radius:0;padding:6px 0}
+.atlas-workspace .source-reader .reader-heading-row{margin-bottom:12px}
+.atlas-workspace .source-reader .reader-text{max-width:70ch;margin-inline:auto}
+.atlas-workspace .source-reader .reader-view-actions button{font-size:12px}
+.atlas-workspace .atlas-reading-tools{font-size:13px;margin-top:24px;color:var(--muted)}
+.atlas-reading-tools nav{display:flex;flex-wrap:wrap;gap:8px}
+.atlas-workspace .workspace-alert{position:fixed;bottom:12px;right:12px;z-index:100;max-width:min(440px,90vw);background:var(--paper);border:1px solid var(--accent);padding:16px}
+.atlas-workspace .workspace-reader-notice{font-size:13px;color:var(--muted)}
+@media(max-width:900px){
+ .atlas-workspace{height:100dvh}
+ .atlas-body.owner-panes{display:block;min-height:0;height:100%}
+ .atlas-body>.pane-divider{display:none}
+ .atlas-body>.atlas-library{display:none;position:fixed;inset:0 auto 0 0;width:min(300px,86vw);z-index:100;height:100dvh}
+ .is-library-open .atlas-body>.atlas-library{display:flex}
+ .atlas-workspace .workspace-sidebar-toggle{display:block}
+ .workspace-sidebar-scrim{display:block;position:fixed;inset:0;z-index:90;border:0;background:#0008!important;width:100%;border-radius:0!important}
+ .atlas-body>.atlas-reading-workspace{height:100%;overflow:auto;padding:62px 22px 48px}
+ .atlas-workspace .notebook-writing{padding:0}
+ .atlas-record-heading{flex-wrap:wrap;gap:4px}
+ .atlas-workspace .atlas-record-heading h2{font-size:24px}
+ .atlas-workspace .notebook-page .notebook-note-title input,.atlas-workspace .notebook-page .notebook-note-title textarea{font-size:26px}
+}
+@media(prefers-reduced-motion:reduce){.atlas-workspace *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+/* Context is an adjacent document, with a quiet resize boundary. */
+.atlas-workspace .has-source-pane .notebook-with-source{display:grid;grid-template-columns:minmax(0,1fr) 7px minmax(0,var(--context-width,46%));gap:16px;align-items:start}
+.atlas-workspace .has-source-pane .notebook-layout{min-width:0;max-height:none;overflow:visible}
+.atlas-workspace .notebook-source-pane{position:sticky;top:0;max-height:calc(100dvh - 60px);background:var(--paper);border:0;padding:0 0 0 10px;min-width:0;overflow:auto}
+.atlas-workspace .notebook-source-pane>header{font-size:12px;gap:6px;margin-bottom:12px}
+.atlas-workspace .notebook-source-pane>header span{display:none}
+.atlas-workspace .notebook-source-pane>h3{font:600 20px/1.4 system-ui;letter-spacing:0}
+.notebook-context-divider{position:sticky;top:0;height:calc(100dvh - 80px);cursor:col-resize;border-inline-start:1px solid var(--rule);touch-action:none}
+.quran-sidebar-surahs{font:13px/1.5 system-ui;color:var(--muted)}
+.quran-sidebar-surahs summary{padding:8px;cursor:pointer}
+.quran-sidebar-surahs nav{display:grid;gap:2px}
+.quran-sidebar-surahs button{text-align:start;font-size:13px}
+.atlas-workspace .notebook-note-details label:has(input[type=checkbox]){display:flex;align-items:center;gap:10px}
+.atlas-workspace .notebook-note-details input[type=checkbox]{width:auto}
+@media(max-width:900px){
+ .atlas-workspace .has-source-pane .notebook-with-source{display:block}
+ .notebook-context-divider{display:none}
+ .atlas-workspace .notebook-source-pane{position:fixed;inset:0;max-height:none;z-index:80;padding:22px;background:var(--paper);border:0;overflow:auto}
+ .atlas-workspace .notebook-source-pane>header{top:-22px;background:var(--paper);z-index:5}
+}
+
+.atlas-library>.workspace-sidebar-top,.atlas-library>.workspace-sidebar-search,.atlas-library>.workspace-sidebar-new{flex-shrink:0}
+.is-quran .atlas-body>.atlas-reading-workspace{padding-top:0}
+@media(max-width:900px){.is-quran .quran-toolbar{padding-top:56px}}

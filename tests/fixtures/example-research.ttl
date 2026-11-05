@@ -1,0 +1,16 @@
+# Entirely synthetic example. No real sources or research claims.
+@prefix : <https://islam-research.local/id/> .
+@prefix ir: <https://islam-research.local/vocab/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+:example-question a ir:ResearchQuestion ; rdfs:label "Synthetic example question" ; ir:scope "Software demonstration only" ; ir:epistemicStatus "proposed" .
+:example-source-1 a ir:SourceRecord ; rdfs:label "Synthetic example source 1" ; dct:creator "Example author 1" ; ir:reviewStatus "Synthetic fixture; full argument requires section-level review" .
+:example-claim-1 a ir:Claim ; rdfs:label "Synthetic example claim 1" ; ir:claimText "Synthetic proposition 1, not a finding" ; ir:addressesQuestion :example-question ; ir:evidence :example-evidence-1 ; ir:interpretationType "researcher_inference" ; ir:reviewStatus "machine_candidate" .
+:example-evidence-1 a ir:EvidenceRecord ; rdfs:label "Synthetic example evidence 1" ; ir:source :example-source-1 ; ir:locator "Example section 1" ; ir:evidenceKind "paraphrase" ; prov:wasDerivedFrom :example-source-1 .
+:example-source-2 a ir:SourceRecord ; rdfs:label "Synthetic example source 2" ; dct:creator "Example author 2" ; ir:reviewStatus "Synthetic fixture; full argument requires section-level review" .
+:example-claim-2 a ir:Claim ; rdfs:label "Synthetic example claim 2" ; ir:claimText "Synthetic proposition 2, not a finding" ; ir:addressesQuestion :example-question ; ir:evidence :example-evidence-2 ; ir:interpretationType "researcher_inference" ; ir:reviewStatus "machine_candidate" .
+:example-evidence-2 a ir:EvidenceRecord ; rdfs:label "Synthetic example evidence 2" ; ir:source :example-source-2 ; ir:locator "Example section 2" ; ir:evidenceKind "paraphrase" ; prov:wasDerivedFrom :example-source-2 .
+:example-source-3 a ir:SourceRecord ; rdfs:label "Synthetic example source 3" ; dct:creator "Example author 3" ; ir:reviewStatus "Synthetic fixture; full argument requires section-level review" .
+:example-claim-3 a ir:Claim ; rdfs:label "Synthetic example claim 3" ; ir:claimText "Synthetic proposition 3, not a finding" ; ir:addressesQuestion :example-question ; ir:evidence :example-evidence-3 ; ir:interpretationType "researcher_inference" ; ir:reviewStatus "machine_candidate" .
+:example-evidence-3 a ir:EvidenceRecord ; rdfs:label "Synthetic example evidence 3" ; ir:source :example-source-3 ; ir:locator "Example section 3" ; ir:evidenceKind "paraphrase" ; prov:wasDerivedFrom :example-source-3 .

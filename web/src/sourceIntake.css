@@ -1,0 +1,15 @@
+.source-intake{max-width:64rem;margin:0 auto;padding:1.5rem;line-height:1.55;overflow-wrap:anywhere}
+.source-intake header,.intake-actions{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.source-intake h2{font-size:1.8rem;margin:.2rem 0}.source-intake h3{font-size:1.15rem;margin:1.5rem 0 .5rem}
+.source-intake form,.source-intake label{display:grid;gap:.5rem}.source-intake form{gap:1rem}.source-intake label{font-size:.95rem}
+.source-intake input,.source-intake select,.source-intake textarea{box-sizing:border-box;min-width:0;max-width:100%;width:100%;padding:.65rem;border:1px solid currentColor;border-radius:0;color:inherit;background:transparent;font:inherit}
+.source-intake textarea{min-height:6rem;resize:vertical}.source-intake .intake-text{min-height:14rem;font-family:Georgia,serif;line-height:1.8}
+.source-intake button{padding:.5rem .8rem;font:inherit;cursor:pointer}.source-intake button:disabled{cursor:default;opacity:.55}
+.source-intake :focus-visible{outline:2px solid #c23b36;outline-offset:3px}
+.intake-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}.intake-steps{display:flex;list-style:none;padding:0;gap:1.5rem;flex-wrap:wrap;border-block:1px solid #888}
+.intake-steps li{padding:.5rem 0}.intake-steps [aria-current=step]{font-weight:700;border-bottom:3px solid #c23b36}
+.source-intake .intake-check{display:flex;align-items:start;gap:.7rem}.source-intake .intake-check input{width:auto;flex:0 0 auto;margin-top:.35rem}
+.source-intake dl{display:grid;grid-template-columns:minmax(8rem,1fr) 2fr;gap:.7rem 1.5rem}.source-intake dt{font-weight:bold}.source-intake dd{margin:0}
+.source-intake blockquote{white-space:pre-wrap;border-inline-start:2px solid #c23b36;margin:1rem 0;padding-inline-start:1rem}
+.intake-draft{font-size:.85rem;border-top:1px solid #888;padding-top:1rem}
+@media(max-width:640px){.source-intake{padding:1rem}.intake-grid,.source-intake dl{grid-template-columns:1fr}.source-intake dd{margin-bottom:.5rem}.intake-steps{gap:.75rem}.source-intake header{align-items:start}}

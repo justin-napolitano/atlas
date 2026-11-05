@@ -1,0 +1,196 @@
+{
+  "snapshot_id": "atlas-synthetic-example-v1",
+  "generated_at": "2026-11-05T00:00:00+00:00",
+  "curated_graph": "synthetic_example",
+  "nodes": [
+    {
+      "id": "https://islam-research.local/id/example-claim-1",
+      "label": "Synthetic example claim 1",
+      "type": "claim",
+      "status": "machine_candidate",
+      "summary": "Synthetic proposition 1, not a finding",
+      "scope": "",
+      "people": [],
+      "role": "",
+      "locator": "",
+      "links": []
+    },
+    {
+      "id": "https://islam-research.local/id/example-claim-2",
+      "label": "Synthetic example claim 2",
+      "type": "claim",
+      "status": "machine_candidate",
+      "summary": "Synthetic proposition 2, not a finding",
+      "scope": "",
+      "people": [],
+      "role": "",
+      "locator": "",
+      "links": []
+    },
+    {
+      "id": "https://islam-research.local/id/example-claim-3",
+      "label": "Synthetic example claim 3",
+      "type": "claim",
+      "status": "machine_candidate",
+      "summary": "Synthetic proposition 3, not a finding",
+      "scope": "",
+      "people": [],
+      "role": "",
+      "locator": "",
+      "links": []
+    },
+    {
+      "id": "https://islam-research.local/id/example-evidence-1",
+      "label": "Synthetic example evidence 1",
+      "type": "evidence",
+      "status": "not stated",
+      "summary": "",
+      "scope": "",
+      "people": [],
+      "role": "",
+      "locator": "Example section 1",
+      "links": []
+    },
+    {
+      "id": "https://islam-research.local/id/example-evidence-2",
+      "label": "Synthetic example evidence 2",
+      "type": "evidence",
+      "status": "not stated",
+      "summary": "",
+      "scope": "",
+      "people": [],
+      "role": "",
+      "locator": "Example section 2",
+      "links": []
+    },
+    {
+      "id": "https://islam-research.local/id/example-evidence-3",
+      "label": "Synthetic example evidence 3",
+      "type": "evidence",
+      "status": "not stated",
+      "summary": "",
+      "scope": "",
+      "people": [],
+      "role": "",
+      "locator": "Example section 3",
+      "links": []
+    },
+    {
+      "id": "https://islam-research.local/id/example-question",
+      "label": "Synthetic example question",
+      "type": "question",
+      "status": "not stated",
+      "summary": "",
+      "scope": "Software demonstration only",
+      "people": [],
+      "role": "",
+      "locator": "",
+      "links": []
+    },
+    {
+      "id": "https://islam-research.local/id/example-source-1",
+      "label": "Synthetic example source 1",
+      "type": "source",
+      "status": "Synthetic fixture; full argument requires section-level review",
+      "summary": "",
+      "scope": "",
+      "people": [
+        "Example author 1"
+      ],
+      "role": "",
+      "locator": "",
+      "links": []
+    },
+    {
+      "id": "https://islam-research.local/id/example-source-2",
+      "label": "Synthetic example source 2",
+      "type": "source",
+      "status": "Synthetic fixture; full argument requires section-level review",
+      "summary": "",
+      "scope": "",
+      "people": [
+        "Example author 2"
+      ],
+      "role": "",
+      "locator": "",
+      "links": []
+    },
+    {
+      "id": "https://islam-research.local/id/example-source-3",
+      "label": "Synthetic example source 3",
+      "type": "source",
+      "status": "Synthetic fixture; full argument requires section-level review",
+      "summary": "",
+      "scope": "",
+      "people": [
+        "Example author 3"
+      ],
+      "role": "",
+      "locator": "",
+      "links": []
+    }
+  ],
+  "edges": [
+    {
+      "from": "https://islam-research.local/id/example-evidence-1",
+      "to": "https://islam-research.local/id/example-source-1",
+      "label": "source"
+    },
+    {
+      "from": "https://islam-research.local/id/example-claim-1",
+      "to": "https://islam-research.local/id/example-question",
+      "label": "addressesQuestion"
+    },
+    {
+      "from": "https://islam-research.local/id/example-claim-2",
+      "to": "https://islam-research.local/id/example-evidence-2",
+      "label": "evidence"
+    },
+    {
+      "from": "https://islam-research.local/id/example-evidence-1",
+      "to": "https://islam-research.local/id/example-source-1",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/example-evidence-2",
+      "to": "https://islam-research.local/id/example-source-2",
+      "label": "source"
+    },
+    {
+      "from": "https://islam-research.local/id/example-evidence-2",
+      "to": "https://islam-research.local/id/example-source-2",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/example-claim-1",
+      "to": "https://islam-research.local/id/example-evidence-1",
+      "label": "evidence"
+    },
+    {
+      "from": "https://islam-research.local/id/example-evidence-3",
+      "to": "https://islam-research.local/id/example-source-3",
+      "label": "source"
+    },
+    {
+      "from": "https://islam-research.local/id/example-claim-3",
+      "to": "https://islam-research.local/id/example-evidence-3",
+      "label": "evidence"
+    },
+    {
+      "from": "https://islam-research.local/id/example-evidence-3",
+      "to": "https://islam-research.local/id/example-source-3",
+      "label": "wasDerivedFrom"
+    },
+    {
+      "from": "https://islam-research.local/id/example-claim-2",
+      "to": "https://islam-research.local/id/example-question",
+      "label": "addressesQuestion"
+    },
+    {
+      "from": "https://islam-research.local/id/example-claim-3",
+      "to": "https://islam-research.local/id/example-question",
+      "label": "addressesQuestion"
+    }
+  ],
+  "candidates": []
+}

@@ -1,0 +1,3413 @@
+{
+  "version": "0.1.1",
+  "semantic_model": [
+    {
+      "name": "research_workspace",
+      "description": "Private owner research state. Public readers consume explicit published projections, not these tables.",
+      "ai_context": {
+        "instructions": "Interpret source, owner, and machine-proposed statements separately. These definitions are metadata; execute only registered permission-scoped API operations."
+      },
+      "datasets": [
+        {
+          "name": "projects",
+          "source": "research.projects",
+          "description": "One scoped project per id.",
+          "primary_key": [
+            "id"
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "title",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "title"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "scope",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "scope"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "graph_authority",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "graph_authority"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "records",
+          "source": "research.records",
+          "description": "One stable work/edition/passage/concept/claim/note identity per row; kind and source-specific attributes retain their distinctions. Owner-global stable IDs; project_id is nullable legacy origin, not current ownership.",
+          "primary_key": [
+            "id"
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "kind",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "kind"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "title",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "title"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "summary",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "summary"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "review_state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "review_state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "origin",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "origin"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "updated_at",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "updated_at"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "workspace_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "workspace_id"
+                  }
+                ]
+              }
+            }
+          ],
+          "unique_keys": [
+            [
+              "project_id",
+              "id"
+            ]
+          ]
+        },
+        {
+          "name": "relations",
+          "source": "research.relations",
+          "description": "One explicit directed assertion; its predicate and provenance determine its meaning.",
+          "primary_key": [
+            "id"
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "from_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "from_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "predicate",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "predicate"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "to_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "to_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "provenance",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "provenance"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "review_state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "review_state"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "personal_states",
+          "source": "research.personal_states",
+          "description": "Private personal progress and screening; never a scholarly quality score.",
+          "primary_key": [
+            "record_id"
+          ],
+          "fields": [
+            {
+              "name": "record_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "record_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "reading",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "reading"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "read_at",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "read_at"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "decision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "decision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "note",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "note"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "reading_documents",
+          "source": "research.reading_documents",
+          "description": "One immutable private source-version excerpt identity. Full document text is intentionally absent from this semantic metadata contract. Owner-global stable IDs; project_id is nullable legacy origin, not current ownership.",
+          "primary_key": [
+            "id"
+          ],
+          "unique_keys": [
+            [
+              "project_id",
+              "id"
+            ]
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "source_record_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "source_record_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "edition",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "edition"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "locator",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "locator"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "representation_url",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "representation_url"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "text_sha256",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "text_sha256"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "review_scope",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "review_scope"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "workspace_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "workspace_id"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "reading_annotations",
+          "source": "research.reading_annotations",
+          "description": "One private located captured quotation and editable owner note per identity. Unicode code-point positions and source hash do not establish scholarly review. Owner-global stable IDs; project_id is nullable legacy origin, not current ownership.",
+          "primary_key": [
+            "id"
+          ],
+          "unique_keys": [
+            [
+              "project_id",
+              "id"
+            ]
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "document_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "document_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "text_sha256",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "text_sha256"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "start_pos",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "start_pos"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "end_pos",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "end_pos"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "exact",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "exact"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "capture_kind",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "capture_kind"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "body",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "body"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "mark_style",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "mark_style"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "workspace_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "workspace_id"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "scripture_citations",
+          "source": "research.scripture_citations",
+          "description": "One private owner reference decision per captured quotation and candidate key. Confirmed means resolved reference only; explicit detection, owner mapping, and interpretation remain distinct. Dismissed rows have no resolved target.",
+          "primary_key": [
+            "id"
+          ],
+          "unique_keys": [
+            [
+              "project_id",
+              "annotation_id",
+              "candidate_key"
+            ],
+            [
+              "project_id",
+              "id"
+            ]
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "annotation_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "annotation_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "document_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "document_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "text_sha256",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "text_sha256"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "candidate_key",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "candidate_key"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "detector_kind",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "detector_kind"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "profile_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "profile_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "decision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "decision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "chapter",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "chapter"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "ayah_start",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "ayah_start"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "ayah_end",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "ayah_end"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "rationale",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "rationale"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "lexicon_entries",
+          "source": "research.lexicon_entries",
+          "description": "Private owner-scoped lexical entries. Equal spellings are not identity or translation equivalence.",
+          "primary_key": [
+            "id"
+          ],
+          "unique_keys": [
+            [
+              "project_id",
+              "id"
+            ]
+          ],
+          "fields": [
+            {
+              "name": "entry_type",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "entry_type"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "scope",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "scope"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "lexicon_forms",
+          "source": "research.lexicon_forms",
+          "description": "Grammatical realizations of entries; undetermined until explicitly classified. Orthographic variants are representations, not inferred new forms.",
+          "primary_key": [
+            "id"
+          ],
+          "unique_keys": [
+            [
+              "project_id",
+              "id"
+            ]
+          ],
+          "fields": [
+            {
+              "name": "entry_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "entry_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "form_kind",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "form_kind"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "rationale",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "rationale"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "lexicon_representations",
+          "source": "research.lexicon_representations",
+          "description": "Exact original spelling and declared language/script/transliteration, linked to a located origin annotation. Normalized retrieval keys are intentionally absent.",
+          "primary_key": [
+            "id"
+          ],
+          "unique_keys": [
+            [
+              "project_id",
+              "id"
+            ]
+          ],
+          "fields": [
+            {
+              "name": "form_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "form_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "language_tag",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "language_tag"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "origin_annotation_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "origin_annotation_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "origin_end",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "origin_end"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "origin_start",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "origin_start"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "rationale",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "rationale"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "script_tag",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "script_tag"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "transliteration_scheme",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "transliteration_scheme"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "written_rep",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "written_rep"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "lexicon_senses",
+          "source": "research.lexicon_senses",
+          "description": "Private scoped entry-concept assertions, pending scholarly review. This dataset join is not a published OntoLex entailment.",
+          "primary_key": [
+            "id"
+          ],
+          "unique_keys": [
+            [
+              "project_id",
+              "id"
+            ],
+            [
+              "project_id",
+              "entry_id",
+              "concept_id"
+            ],
+            [
+              "project_id",
+              "id",
+              "concept_id"
+            ]
+          ],
+          "fields": [
+            {
+              "name": "concept_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "concept_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "entry_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "entry_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "rationale",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "rationale"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "review_state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "review_state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "scope",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "scope"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "state"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "lexicon_definitions",
+          "source": "research.lexicon_definitions",
+          "description": "Located attributed definition assertions. Source-explicit, reference gloss, owner paraphrase, and recorded machine proposals stay distinct; no automatic review promotion.",
+          "primary_key": [
+            "id"
+          ],
+          "unique_keys": [
+            [
+              "project_id",
+              "id"
+            ]
+          ],
+          "fields": [
+            {
+              "name": "annotation_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "annotation_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "attribution",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "attribution"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "attribution_person_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "attribution_person_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "body",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "body"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "concept_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "concept_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "dating_note",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "dating_note"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "definition_kind",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "definition_kind"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "proposal_activity",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "proposal_activity"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "proposal_tool",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "proposal_tool"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "proposal_version",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "proposal_version"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "rationale",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "rationale"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "review_state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "review_state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "scope",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "scope"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "sense_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "sense_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "wording_mode",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "wording_mode"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "lexicon_occurrences",
+          "source": "research.lexicon_occurrences",
+          "description": "Exact Unicode term positions relative to the captured quotation and immutable source document/hash. Private occurrences and reading dates do not assert historical influence.",
+          "primary_key": [
+            "id"
+          ],
+          "unique_keys": [
+            [
+              "project_id",
+              "id"
+            ]
+          ],
+          "fields": [
+            {
+              "name": "annotation_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "annotation_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "document_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "document_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "exact",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "exact"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "rationale",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "rationale"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "representation_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "representation_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "review_state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "review_state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "sense_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "sense_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "term_end",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "term_end"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "term_start",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "term_start"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "text_sha256",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "text_sha256"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "verse_materials",
+          "source": "research.verse_materials",
+          "description": "Private owner-declared verse material. Typed representation/citation/discussion/interpretation and immutable source target; citation_snapshot retains original evidence even when the current citation changes. Dataset joins are lineage only, not scholarly entailment.",
+          "primary_key": [
+            "id"
+          ],
+          "unique_keys": [
+            [
+              "project_id",
+              "id"
+            ]
+          ],
+          "fields": [
+            {
+              "name": "annotation_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "annotation_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "assertion_mode",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "assertion_mode"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "assertion_text",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "assertion_text"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "attribution",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "attribution"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "ayah_end",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "ayah_end"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "ayah_start",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "ayah_start"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "chapter",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "chapter"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "citation_basis",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "citation_basis"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "citation_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "citation_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "citation_snapshot",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "citation_snapshot"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "context_basis",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "context_basis"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "document_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "document_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "language_tag",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "language_tag"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "link_kind",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "link_kind"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "material_kind",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "material_kind"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "period_note",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "period_note"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "profile_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "profile_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "rationale",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "rationale"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "reading_note",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "reading_note"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "review_state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "review_state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "source_scope",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "source_scope"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "text_sha256",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "text_sha256"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "tradition_note",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "tradition_note"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "reading_desks",
+          "source": "research.reading_desks",
+          "description": "Private confirmed reading place per project. Stable source/document/annotation lineage, not a scholarly graph edge, reading comprehension score or public state.",
+          "primary_key": [
+            "project_id"
+          ],
+          "fields": [
+            {
+              "name": "annotation_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "annotation_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "document_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "document_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "end_pos",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "end_pos"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "record_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "record_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "start_pos",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "start_pos"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "updated_at",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "updated_at"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "notebook_entries",
+          "source": "research.notebook_entries",
+          "description": "Private owner thoughts with explicit source anchors and explained links. Pending review; existing passage-note bodies are not copied into these entries. Connections describe owner rationale, not scholarly entailment. Owner-global stable IDs; project_id is nullable legacy origin, not current ownership.",
+          "primary_key": [
+            "id"
+          ],
+          "unique_keys": [
+            [
+              "project_id",
+              "id"
+            ]
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "project_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "project_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "record_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "record_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "document_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "document_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "annotation_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "annotation_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "thought_type",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "thought_type"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "title",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "title"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "body",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "body"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "links",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "links"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "review_state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "review_state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "updated_at",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "updated_at"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "title_mode",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "title_mode"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "workspace_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "workspace_id"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "owner_workspaces",
+          "source": "research.owner_workspaces",
+          "description": "One private human owner workspace. It is not a project or public ACL.",
+          "primary_key": [
+            "id"
+          ],
+          "fields": [
+            {
+              "name": "created_at",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "created_at"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "title",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "title"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "workspace_collections",
+          "source": "research.workspace_collections",
+          "description": "Optional overlapping organization; references never own or publish content.",
+          "primary_key": [
+            "id"
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "title",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "title"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "updated_at",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "updated_at"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "workspace_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "workspace_id"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "workspace_collection_items",
+          "source": "research.workspace_collection_items",
+          "description": "A named collection reference to an existing typed object; removed membership preserves content.",
+          "primary_key": [
+            "collection_id",
+            "target_kind",
+            "target_id"
+          ],
+          "fields": [
+            {
+              "name": "collection_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "collection_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "target_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "target_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "target_kind",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "target_kind"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "updated_at",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "updated_at"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "workspace_saved_views",
+          "source": "research.workspace_saved_views",
+          "description": "Versioned bounded literal query definitions. Expressions are never executable permission grants.",
+          "primary_key": [
+            "id"
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "query",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "query"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "title",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "title"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "updated_at",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "updated_at"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "workspace_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "workspace_id"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "workspace_connections",
+          "source": "research.workspace_connections",
+          "description": "Explicit directed private relations. Tentative association is not scholarly support or consensus.",
+          "primary_key": [
+            "id"
+          ],
+          "fields": [
+            {
+              "name": "attribution",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "attribution"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "evidence_annotation_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "evidence_annotation_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "from_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "from_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "from_kind",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "from_kind"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "rationale",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "rationale"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "relation",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "relation"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "to_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "to_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "to_kind",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "to_kind"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "updated_at",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "updated_at"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "workspace_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "workspace_id"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "workspace_investigations",
+          "source": "research.workspace_investigations",
+          "description": "Owner-declared question state against a known question revision, separate from read/review/confidence.",
+          "primary_key": [
+            "target_kind",
+            "target_id"
+          ],
+          "fields": [
+            {
+              "name": "reason",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "reason"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "state",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "state"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "target_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "target_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "target_kind",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "target_kind"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "target_revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "target_revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "updated_at",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "updated_at"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "workspace_reflections",
+          "source": "research.workspace_reflections",
+          "description": "Immutable dated reasons and uncertainty referring to original note revisions.",
+          "primary_key": [
+            "id"
+          ],
+          "fields": [
+            {
+              "name": "created_at",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "created_at"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "entry_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "entry_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "entry_revision",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "entry_revision"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "evidence_annotation_id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "evidence_annotation_id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "id",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "id"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "reason",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "reason"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "uncertainty",
+              "expression": {
+                "dialects": [
+                  {
+                    "dialect": "ANSI_SQL",
+                    "expression": "uncertainty"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "relationships": [
+        {
+          "name": "record_project",
+          "from": "records",
+          "to": "projects",
+          "from_columns": [
+            "project_id"
+          ],
+          "to_columns": [
+            "id"
+          ]
+        },
+        {
+          "name": "relation_source",
+          "from": "relations",
+          "to": "records",
+          "from_columns": [
+            "project_id",
+            "from_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "relation_target",
+          "from": "relations",
+          "to": "records",
+          "from_columns": [
+            "project_id",
+            "to_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "personal_record",
+          "from": "personal_states",
+          "to": "records",
+          "from_columns": [
+            "project_id",
+            "record_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "reading_document_source",
+          "from": "reading_documents",
+          "to": "records",
+          "from_columns": [
+            "project_id",
+            "source_record_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "reading_annotation_document",
+          "from": "reading_annotations",
+          "to": "reading_documents",
+          "from_columns": [
+            "project_id",
+            "document_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "scripture_citation_annotation",
+          "from": "scripture_citations",
+          "to": "reading_annotations",
+          "from_columns": [
+            "project_id",
+            "annotation_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "scripture_citation_document",
+          "from": "scripture_citations",
+          "to": "reading_documents",
+          "from_columns": [
+            "project_id",
+            "document_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "lexicon_form_entry",
+          "from": "lexicon_forms",
+          "to": "lexicon_entries",
+          "from_columns": [
+            "project_id",
+            "entry_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "lexicon_representation_form",
+          "from": "lexicon_representations",
+          "to": "lexicon_forms",
+          "from_columns": [
+            "project_id",
+            "form_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "lexicon_representation_origin",
+          "from": "lexicon_representations",
+          "to": "reading_annotations",
+          "from_columns": [
+            "project_id",
+            "origin_annotation_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "lexicon_sense_entry",
+          "from": "lexicon_senses",
+          "to": "lexicon_entries",
+          "from_columns": [
+            "project_id",
+            "entry_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "lexicon_sense_concept",
+          "from": "lexicon_senses",
+          "to": "records",
+          "from_columns": [
+            "project_id",
+            "concept_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "lexicon_definition_concept",
+          "from": "lexicon_definitions",
+          "to": "records",
+          "from_columns": [
+            "project_id",
+            "concept_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "lexicon_definition_annotation",
+          "from": "lexicon_definitions",
+          "to": "reading_annotations",
+          "from_columns": [
+            "project_id",
+            "annotation_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "lexicon_definition_person",
+          "from": "lexicon_definitions",
+          "to": "records",
+          "from_columns": [
+            "project_id",
+            "attribution_person_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "lexicon_occurrence_sense",
+          "from": "lexicon_occurrences",
+          "to": "lexicon_senses",
+          "from_columns": [
+            "project_id",
+            "sense_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "lexicon_occurrence_representation",
+          "from": "lexicon_occurrences",
+          "to": "lexicon_representations",
+          "from_columns": [
+            "project_id",
+            "representation_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "lexicon_occurrence_annotation",
+          "from": "lexicon_occurrences",
+          "to": "reading_annotations",
+          "from_columns": [
+            "project_id",
+            "annotation_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "lexicon_occurrence_document",
+          "from": "lexicon_occurrences",
+          "to": "reading_documents",
+          "from_columns": [
+            "project_id",
+            "document_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "lexicon_definition_sense",
+          "from": "lexicon_definitions",
+          "to": "lexicon_senses",
+          "from_columns": [
+            "project_id",
+            "sense_id",
+            "concept_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id",
+            "concept_id"
+          ]
+        },
+        {
+          "name": "verse_material_reading_annotations",
+          "from": "verse_materials",
+          "to": "reading_annotations",
+          "from_columns": [
+            "project_id",
+            "annotation_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "verse_material_reading_documents",
+          "from": "verse_materials",
+          "to": "reading_documents",
+          "from_columns": [
+            "project_id",
+            "document_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "verse_material_scripture_citations",
+          "from": "verse_materials",
+          "to": "scripture_citations",
+          "from_columns": [
+            "project_id",
+            "citation_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "reading_place_records",
+          "from": "reading_desks",
+          "to": "records",
+          "from_columns": [
+            "project_id",
+            "record_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "reading_place_reading_documents",
+          "from": "reading_desks",
+          "to": "reading_documents",
+          "from_columns": [
+            "project_id",
+            "document_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "reading_place_reading_annotations",
+          "from": "reading_desks",
+          "to": "reading_annotations",
+          "from_columns": [
+            "project_id",
+            "annotation_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "notebook_records",
+          "from": "notebook_entries",
+          "to": "records",
+          "from_columns": [
+            "project_id",
+            "record_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "notebook_reading_documents",
+          "from": "notebook_entries",
+          "to": "reading_documents",
+          "from_columns": [
+            "project_id",
+            "document_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "notebook_reading_annotations",
+          "from": "notebook_entries",
+          "to": "reading_annotations",
+          "from_columns": [
+            "project_id",
+            "annotation_id"
+          ],
+          "to_columns": [
+            "project_id",
+            "id"
+          ]
+        },
+        {
+          "name": "records_owner_workspace",
+          "from": "records",
+          "to": "owner_workspaces",
+          "from_columns": [
+            "workspace_id"
+          ],
+          "to_columns": [
+            "id"
+          ],
+          "ai_context": {
+            "instructions": "Private owner workspace; membership never grants publication."
+          }
+        },
+        {
+          "name": "notebook_entries_owner_workspace",
+          "from": "notebook_entries",
+          "to": "owner_workspaces",
+          "from_columns": [
+            "workspace_id"
+          ],
+          "to_columns": [
+            "id"
+          ],
+          "ai_context": {
+            "instructions": "Private owner workspace; membership never grants publication."
+          }
+        },
+        {
+          "name": "reading_documents_owner_workspace",
+          "from": "reading_documents",
+          "to": "owner_workspaces",
+          "from_columns": [
+            "workspace_id"
+          ],
+          "to_columns": [
+            "id"
+          ],
+          "ai_context": {
+            "instructions": "Private owner workspace; membership never grants publication."
+          }
+        },
+        {
+          "name": "reading_annotations_owner_workspace",
+          "from": "reading_annotations",
+          "to": "owner_workspaces",
+          "from_columns": [
+            "workspace_id"
+          ],
+          "to_columns": [
+            "id"
+          ],
+          "ai_context": {
+            "instructions": "Private owner workspace; membership never grants publication."
+          }
+        },
+        {
+          "name": "workspace_collections_owner_workspace",
+          "from": "workspace_collections",
+          "to": "owner_workspaces",
+          "from_columns": [
+            "workspace_id"
+          ],
+          "to_columns": [
+            "id"
+          ],
+          "ai_context": {
+            "instructions": "Private owner workspace; membership never grants publication."
+          }
+        },
+        {
+          "name": "workspace_saved_views_owner_workspace",
+          "from": "workspace_saved_views",
+          "to": "owner_workspaces",
+          "from_columns": [
+            "workspace_id"
+          ],
+          "to_columns": [
+            "id"
+          ],
+          "ai_context": {
+            "instructions": "Private owner workspace; membership never grants publication."
+          }
+        },
+        {
+          "name": "workspace_connections_owner_workspace",
+          "from": "workspace_connections",
+          "to": "owner_workspaces",
+          "from_columns": [
+            "workspace_id"
+          ],
+          "to_columns": [
+            "id"
+          ],
+          "ai_context": {
+            "instructions": "Private owner workspace; membership never grants publication."
+          }
+        },
+        {
+          "name": "workspace_document_source",
+          "from": "reading_documents",
+          "to": "records",
+          "from_columns": [
+            "source_record_id"
+          ],
+          "to_columns": [
+            "id"
+          ],
+          "ai_context": {
+            "instructions": "Owner-global source identity including native null-origin documents; immutable origin/source guards remain authoritative."
+          }
+        },
+        {
+          "name": "workspace_annotation_document",
+          "from": "reading_annotations",
+          "to": "reading_documents",
+          "from_columns": [
+            "document_id"
+          ],
+          "to_columns": [
+            "id"
+          ],
+          "ai_context": {
+            "instructions": "Exact immutable document and Unicode selector, including native null-origin annotations."
+          }
+        },
+        {
+          "name": "workspace_collection_members",
+          "from": "workspace_collection_items",
+          "to": "workspace_collections",
+          "from_columns": [
+            "collection_id"
+          ],
+          "to_columns": [
+            "id"
+          ],
+          "ai_context": {
+            "instructions": "Organization only, not a research evidence relation."
+          }
+        },
+        {
+          "name": "workspace_reflection_entry",
+          "from": "workspace_reflections",
+          "to": "notebook_entries",
+          "from_columns": [
+            "entry_id"
+          ],
+          "to_columns": [
+            "id"
+          ],
+          "ai_context": {
+            "instructions": "Reasons cite entry_revision explicitly; the current body must not substitute for that historical revision."
+          }
+        }
+      ],
+      "metrics": [
+        {
+          "name": "record_count",
+          "expression": {
+            "dialects": [
+              {
+                "dialect": "ANSI_SQL",
+                "expression": "COUNT(DISTINCT records.id)"
+              }
+            ]
+          },
+          "description": "Count of visible records at record grain; apply permission/project filters before aggregation."
+        },
+        {
+          "name": "read_count",
+          "expression": {
+            "dialects": [
+              {
+                "dialect": "ANSI_SQL",
+                "expression": "COUNT(DISTINCT CASE WHEN personal_states.reading = 'read' THEN personal_states.record_id END)"
+              }
+            ]
+          },
+          "description": "Private owner reading progress; not evaluation or verification."
+        }
+      ],
+      "custom_extensions": [
+        {
+          "vendor_name": "COMMON",
+          "data": "{\"research_platform\": {\"policy_document\": \"../src/islam_research/policies/research-policy.json\", \"policy_version\": 1, \"authorization\": \"backend-enforced; metadata is not permission\", \"execution\": \"registered operations only; never execute model-supplied SQL\"}}"
+        },
+        {
+          "data": "{\"research_platform\": {\"authorization\": \"verified_owner_only\", \"legacy_project_id\": \"immutable optional origin; not required for new writing\", \"polymorphic_targets\": \"Resolve target kind together with stable ID before traversal. Never join by an unqualified title.\", \"registered_operations\": {\"continue\": {\"max_per_section\": 20, \"path\": \"/v1/workspace/continue\"}, \"literal_search\": {\"embedding_status\": \"not configured\", \"max_per_kind\": 30, \"path\": \"/v1/workspace/search\"}, \"neighborhood\": {\"coverage\": \"explicit private connections; no similarity acceptance\", \"max_depth\": 2, \"max_edges\": 100, \"max_nodes\": 100, \"path\": \"/v1/workspace/neighborhood\"}}, \"workspace_version\": 1}}",
+          "vendor_name": "COMMON"
+        }
+      ]
+    }
+  ]
+}

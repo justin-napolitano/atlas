@@ -1,0 +1,30 @@
+{
+  "@context": [
+    "http://www.w3.org/ns/anno.jsonld",
+    {"ir": "https://islam-research.local/vocab/"}
+  ],
+  "id": "urn:uuid:replace-with-generated-id",
+  "type": "Annotation",
+  "motivation": "commenting",
+  "body": {
+    "type": "TextualBody",
+    "value": "Brief research note; keep attributed claims in separate graph records.",
+    "purpose": "commenting",
+    "language": "en"
+  },
+  "target": {
+    "type": "SpecificResource",
+    "source": "https://example.org/source-representation",
+    "selector": {
+      "type": "TextQuoteSelector",
+      "exact": "A short, verified passage from the representation.",
+      "prefix": "Optional preceding text",
+      "suffix": "Optional following text"
+    }
+  },
+  "created": "YYYY-MM-DDThh:mm:ssZ",
+  "creator": {"type": "Person", "name": "Reviewer"},
+  "ir:locator": "Edition-specific locator, such as surah:verse, page, section, or archival reference",
+  "ir:translation": "Translation or edition identifier",
+  "ir:reviewStatus": "human_located_unreviewed_claim"
+}
