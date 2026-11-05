@@ -8,5 +8,5 @@ export const exampleSourcePreset=Object.freeze({
   intake_context:'Synthetic software example. No real article, transcription, or scholarly verification is asserted.',
   rationale:'Exercise explicit source intake and exact text preservation.',locator:'Synthetic abstract, section 1',
   text:'This invented example explains how a source can be saved alongside a note. It is not a research finding.',
-  preset_note:'Synthetic example only. Review the fields before explicitly saving.',
+  preset_note:'Synthetic software example only. Review the fields before explicitly saving.',
 });
