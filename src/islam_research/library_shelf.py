@@ -75,14 +75,8 @@ def page(connection,*,project_id='',q='',state='',cursor='',limit=30,continuing=
         row['language']=attrs.get('language',[]) if isinstance(attrs.get('language',[]),list) else []
         row['note_count']=counts.get(row['id'],0)
         row['reader']='document'
-        if row['source_available'] and row['preferred_edition_id'] and isinstance(attrs.get('quran_resource'),str) and attrs.get('quran_resource') in {'tanzil-uthmani','itani-god'}:
-            from . import quran_reader
-            _,resource=quran_reader._load(attrs['quran_resource'])
-            if attrs.get('source_sha256')==resource['sha256']:
-                row['reader']='quran';row['resource_key']=attrs['quran_resource']
-                row['resume_chapter']=row['resume_chapter'] or 1;row['resume_ayah']=row['resume_ayah'] or 1
-        elif row['book_id'] and row['source_available']:row['reader']='gutenberg'
-        row['availability']='read' if row['reader'] in {'quran','gutenberg'} else ''
+        if row['book_id'] and row['source_available']:row['reader']='gutenberg'
+        row['availability']='read' if row['reader']=='gutenberg' else ''
         row['availability']=row['availability'] or ('read' if row['document_id'] else ('choose_edition' if row['source_available'] and row['edition_count'] else 'reference' if row['source_available'] else 'unavailable'))
     next_cursor=None
     if len(rows)>limit and not continuing:

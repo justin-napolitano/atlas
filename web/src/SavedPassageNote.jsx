@@ -3,9 +3,7 @@ import NotebookMarkdown from './NotebookMarkdown.jsx';
 import MarginMarkdownEditor from './MarginMarkdownEditor.jsx';
 import {TrashAction} from './PrivateTrash.jsx';
 import {finishReadingRecovery} from './useWritingRecovery.js';
-import ScriptureCitations from './ScriptureCitations.jsx';
 import LexiconCapture from './LexiconCapture.jsx';
-import VerseLinks from './VerseLinks.jsx';
 import RecoverableDraft from './RecoverableDraft.jsx';
 import {recoverPassageWriting} from './recoverIntoEditor.js';
 
@@ -33,7 +31,7 @@ export default function SavedPassageNote({ row,sourceId,document,editor,reopen,a
     </div>
     {document&&<RecoverableDraft compact dirty={entry.body!==value.body||entry.markStyle!==(value.mark_style||'highlight')} key={value.id+':drafts'} api={api} projectId={value.project_id} recordId={sourceId} contextKind="annotation" document={document} annotation={value} body={entry.body} markStyle={entry.markStyle} baseRevision={value.revision} drafts={drafts} changed={changed} onRecover={recovered=>recoverPassageWriting(editor,{id:sourceId,project_id:value.project_id},recovered)}/>}
     <details className="margin-note-options"><summary>Note options</summary>{markControl}<small>Captured, unreviewed · revision {value.revision}</small>{action}
-      <details className="passage-research-tools"><summary>Explore this passage</summary><button onClick={()=>reopen(value,true)}>Export private annotation</button><ScriptureCitations annotation={value} sourceId={sourceId} api={api} drafts={drafts} changed={changed} navigate={navigate}/><VerseLinks api={api} projectId={value.project_id} annotation={value} drafts={drafts} changed={changed} onOpenVerse={onOpenVerse}/><LexiconCapture annotation={value} sourceId={sourceId} api={api} drafts={drafts} changed={changed} navigate={navigate}/></details>
+      <details className="passage-research-tools"><summary>Explore this passage</summary><button onClick={()=>reopen(value,true)}>Export private annotation</button><LexiconCapture annotation={value} sourceId={sourceId} api={api} drafts={drafts} changed={changed} navigate={navigate}/></details>
     </details>
   </article>;
   return <article hidden={hidden} className={`saved-passage-note${active ? ' is-active' : ''}`} data-annotation-id={value.id} tabIndex={-1} aria-label={active ? 'Selected passage note' : 'Passage note'}>
@@ -60,8 +58,8 @@ export default function SavedPassageNote({ row,sourceId,document,editor,reopen,a
     </div> : <>{value.body && <NotebookMarkdown body={value.body} notes={[]} complete={false}/>}<button className="passage-note-open" onClick={()=>editor.open(value.id)}>Edit note</button></>}
     {action}<details className="passage-research-tools"><summary>Explore this passage</summary>
     <button onClick={()=>reopen(value,true)}>Export private annotation</button>
-    <ScriptureCitations annotation={value} sourceId={sourceId} api={api} drafts={drafts} changed={changed} navigate={navigate} />
-    <VerseLinks api={api} projectId={value.project_id} annotation={value} drafts={drafts} changed={changed} onOpenVerse={onOpenVerse} />
+
+
     <LexiconCapture annotation={value} sourceId={sourceId} api={api} drafts={drafts} changed={changed} navigate={navigate} />
     </details>
   </article>;

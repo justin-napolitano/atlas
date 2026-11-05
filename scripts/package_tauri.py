@@ -48,7 +48,7 @@ def main():
     shutil.copytree(resources, destination/'offline', symlinks=True)
     plist = {
         'CFBundleName': 'Atlas', 'CFBundleDisplayName': 'Atlas',
-        'CFBundleIdentifier': 'org.researchatlas.desktop', 'CFBundleExecutable': 'atlas-desktop',
+        'CFBundleIdentifier': 'org.atlasworkspace.desktop', 'CFBundleExecutable': 'atlas-desktop',
         'CFBundlePackageType': 'APPL', 'CFBundleShortVersionString': '0.2.0',
         'CFBundleVersion': '2', 'LSMinimumSystemVersion': '11.0',
         'NSHighResolutionCapable': True,

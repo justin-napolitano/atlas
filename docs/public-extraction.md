@@ -8,8 +8,7 @@ logs. None of those histories are copied into the public repository.
 
 Application source, migrations, storage and backup tools, desktop shells,
 frontend, tests, generic contracts/templates, semantic schemas and validation
-workflows. Attributed third-party reference texts are listed in
-THIRD_PARTY_NOTICES.md.
+workflows. Third-party code and schema notices are listed in THIRD_PARTY_NOTICES.md.
 
 ## Excluded or replaced
 
@@ -20,8 +19,8 @@ THIRD_PARTY_NOTICES.md.
 - Owner-provided article abstract, collection quotations and interpretation notes.
 - Original Git history, issues, PRs, releases, workflow logs and repository secrets.
 
-The graph is empty by default. Test graph data, the collection, the source intake
-preset and static viewer examples are clearly synthetic. Startup creates an empty
+The graph is empty by default. Test graph data, the source intake preset and static viewer examples are synthetic.
+Source-specific reader controls, APIs and bundled texts have been removed. Startup creates an empty
 workspace and does not seed those examples.
 
 `islam_research` imports, RDF vocabulary IRIs and database identities remain

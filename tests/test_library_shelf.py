@@ -58,16 +58,9 @@ class LibraryShelfTests(unittest.TestCase):
         item=library.get(self.c,alias['item_id']);edition=library.resolve(self.c,item_id=item['id'],document_id=bound['document']['id'])['edition_id']
         return library.update_item(self.c,item_id=item['id'],expected_revision=1,on_shelf=True,reading_status='want_to_read',preferred_edition_id=edition,actor='synthetic')
 
-    def test_quran_and_gutenberg_use_confirmed_native_places_and_same_selected_version(self):
-        from islam_research import quran_workspace,gutenberg_store
+    def test_gutenberg_uses_confirmed_native_place_and_same_selected_version(self):
+        from islam_research import gutenberg_store
         from test_gutenberg import book
-        quran=quran_workspace.binding(self.c,project_id=self.project,resource_key='itani-god',chapter=4,ayah_start=59,ayah_end=59,actor='synthetic')
-        qitem=self.retain_bound(quran)
-        quran_workspace.save_place(self.c,project_id=self.project,resource_key='itani-god',chapter=4,ayah=83,expected_revision=0,actor='synthetic')
-        rows=shelf.page(self.c,project_id=self.project,continuing=True)['items']
-        row=next(r for r in rows if r['id']==qitem['id'])
-        self.assertEqual(row['reader'],'quran');self.assertEqual(row['resume_ayah'],83)
-        self.assertEqual(row['resource_key'],'itani-god');self.assertEqual(row['reading_status'],'reading')
         value=gutenberg_store.cache(self.c,book())
         bound=gutenberg_store.binding(self.c,project_id=self.project,book_id=value['book_id'],version=value['version'],section=0,actor='synthetic')
         gitem=self.retain_bound(bound)

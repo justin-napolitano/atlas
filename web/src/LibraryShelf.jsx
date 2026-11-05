@@ -2,16 +2,15 @@ import React,{useContext,useEffect,useRef,useState} from 'react';
 import {useModalFocus} from './useModalFocus.js';
 import {SurfaceActivity} from './surfaceActivity.js';
 import {itemUpdate,shelfTarget} from './libraryClient.js';
-import {withQuranBook} from './quranShelf.js';
 import GutenbergSearch from './GutenbergSearch.jsx';
 import './libraryShelf.css';
 const states=[['','All'],['reading','Reading'],['want_to_read','Want to read'],['finished','Finished']];
-export default function LibraryShelf({api,projects,projectId,onOpen,onOpenNote,onFindBook,includeQuran=false}){
+export default function LibraryShelf({api,projects,projectId,onOpen,onOpenNote,onFindBook}){
   const [query,setQuery]=useState(''),[filter,setFilter]=useState(''),[scope,setScope]=useState(''),[rows,setRows]=useState([]),[recent,setRecent]=useState([]),[cursor,setCursor]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[discovery,setDiscovery]=useState(false),[detail,setDetail]=useState(null),[choices,setChoices]=useState([]),[notes,setNotes]=useState(null),[noteCursor,setNoteCursor]=useState(null),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
   const active=useContext(SurfaceActivity),detailPane=useRef(null);
   useModalFocus(detailPane,active&&!!detail);
   const generation=useRef(0),detailGeneration=useRef(0),search=useRef(null),scroll=useRef(0),pending=useRef(null),membershipPending=useRef(null);
-  const books=includeQuran?withQuranBook(rows,{query,state:filter,scope}):rows;
+  const books=rows;
   async function load(append=false){const token=++generation.current;setLoading(true);setError('');
     try{const [page,cont]=await Promise.all([api.request('library/shelf',{q:query,state:filter,...(scope?{project_id:scope}:{}),...(append&&cursor?{cursor}:{}),limit:30}),api.request('library/continue',scope?{project_id:scope}:{})]);
       if(token!==generation.current)return;
@@ -38,9 +37,9 @@ export default function LibraryShelf({api,projects,projectId,onOpen,onOpenNote,o
     }catch(err){setError(err.status===409?'Project membership changed elsewhere. Close and reopen these details to review it.':err.message);}
     finally{setBusy(false);}
   }
-  function open(row){if(row.builtin&&row.quran_book){onOpen({reader:'quran'});return;}if(row.availability==='choose_edition'){inspect(row);return;}if(row.availability!=='read'){inspect(row);return;}onOpen(shelfTarget(row));}
+  function open(row){if(row.availability==='choose_edition'){inspect(row);return;}if(row.availability!=='read'){inspect(row);return;}onOpen(shelfTarget(row));}
   function close(){detailGeneration.current++;setDetail(null);setNotes(null);setError('');setBusy(false);pending.current=null;membershipPending.current=null;requestAnimationFrame(()=>document.querySelector(`[data-shelf-id="${CSS.escape(detail.id)}"]`)?.focus());}
-  function rowView(row){return <article key={row.id} className="library-book"><span className="library-book-icon" aria-hidden="true">▤</span><div className="library-book-copy"><button data-shelf-id={row.id} className="library-book-title" onClick={()=>open(row)}>{row.title}</button>{row.creators?.length>0&&<p>{Array.isArray(row.creators)?row.creators.join(' · '):row.creators}</p>}<small>{row.edition_label || 'Edition not chosen'}{row.locator?' · '+row.locator:''}{row.reader==='quran'&&!row.builtin?` · Q ${row.resume_chapter}:${row.resume_ayah}`:row.reader==='gutenberg'?` · Section ${row.book_section+1}`:''}</small>{row.availability!=='read'&&<small>{row.availability==='choose_edition'?'Choose an edition':row.availability==='unavailable'?'Source unavailable':'Reference · no reading text'}</small>}</div>{!row.builtin&&<div className="library-book-actions"><button aria-label={`Notes for ${row.title}`} onClick={()=>inspect(row,'notes')}>Notes {row.note_count}</button><button aria-label={`Details for ${row.title}`} onClick={()=>inspect(row)}>···</button></div>}</article>;}
+  function rowView(row){return <article key={row.id} className="library-book"><span className="library-book-icon" aria-hidden="true">▤</span><div className="library-book-copy"><button data-shelf-id={row.id} className="library-book-title" onClick={()=>open(row)}>{row.title}</button>{row.creators?.length>0&&<p>{Array.isArray(row.creators)?row.creators.join(' · '):row.creators}</p>}<small>{row.edition_label || 'Edition not chosen'}{row.locator?' · '+row.locator:''}{row.reader==='gutenberg'?` · Section ${row.book_section+1}`:''}</small>{row.availability!=='read'&&<small>{row.availability==='choose_edition'?'Choose an edition':row.availability==='unavailable'?'Source unavailable':'Reference · no reading text'}</small>}</div>{!row.builtin&&<div className="library-book-actions"><button aria-label={`Notes for ${row.title}`} onClick={()=>inspect(row,'notes')}>Notes {row.note_count}</button><button aria-label={`Details for ${row.title}`} onClick={()=>inspect(row)}>···</button></div>}</article>;}
   return <section className="library-shelf" aria-label="Personal library">
     <header className="library-heading"><h1>{discovery?'Find books':'Library'}</h1>{discovery?<button onClick={()=>{setDiscovery(false);requestAnimationFrame(()=>{search.current?.focus();document.querySelector('.workspace-reader')?.scrollTo(0,scroll.current);});}}>← Your library</button>:<button onClick={()=>{scroll.current=document.querySelector('.workspace-reader')?.scrollTop||0;setDiscovery(true);}}>Find books</button>}</header>
     <div hidden={!discovery}><GutenbergSearch api={api} onOpen={onFindBook}/></div>

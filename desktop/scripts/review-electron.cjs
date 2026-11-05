@@ -28,9 +28,8 @@ app.whenReady().then(async()=>{
   assert.equal(win.webContents.getLastWebPreferences().contextIsolation,true);
   assert.equal(await js('typeof require'), 'undefined');assert.equal(await js('typeof process'),'undefined');
   await js('[...document.querySelectorAll(".connected-nav button")].find(b=>b.textContent==="Library").click()');
-  await until(()=>js('!!document.querySelector(".working-surface:not([hidden]) .library-book-title")'),'real SQL shelf');
-  await js('document.querySelector(".working-surface:not([hidden]) .library-book-title").click()');
-  await until(()=>js('document.querySelectorAll(".working-surface:not([hidden]) [data-ayah]").length===176'),'complete Quran and confirmed 4:59 reading');
+  await until(()=>js('!!document.querySelector(".working-surface:not([hidden]) .library-shelf")'),'real SQL shelf');
+  assert.equal(await js('document.querySelectorAll(".working-surface:not([hidden]) .library-book-title").length'),0);
   await js('document.querySelector(".workspace-sidebar-new").click()');
   await until(()=>js('document.activeElement?.getAttribute("aria-label")==="Note body"'),'body-first Markdown focus');
   const body='## Electron persistence check\n\nSynthetic offline Markdown العربية 😀';
