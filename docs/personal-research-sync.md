@@ -58,6 +58,11 @@ is no CRDT merge. A new explicit operation with a new UUID/base revision resolve
 a reviewed edit. Snapshot budgets are 1000 visible records and 3MiB serialized
 SQL JSON; requests are limited to 512KiB and responses to 4MiB. Pending review is
 bounded at 100 entries and reports overflow instead of silently dropping entries.
+`ResolveConflict(ctx, operationID)` records explicit local review of a durable
+conflict. It hides that entry from `Pending` without deleting or changing the
+operation/receipt; the original remains replayable. Accepted and uncertain
+operations cannot be resolved this way. The caller deliberately creates a fresh
+operation if they choose to resubmit a reviewed edit against the current base.
 
 MU migration `0012_research_sync.sql` is additive after foundation+sync. Raw tables
 are inaccessible to `muthur_api`; only scoped security-definer functions are

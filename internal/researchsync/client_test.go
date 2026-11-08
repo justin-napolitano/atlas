@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	v1 "github.com/justin-napolitano/atlas/contracts/research/v1"
@@ -215,4 +216,53 @@ func TestSyntheticResearchAcceptance(t *testing.T) {
 		t.Fatal("restart cache identity")
 	}
 	t.Log("PASS real PG+HTTP+SQLite two users; exact selectors; immutable source; CAS/replay; private counts; independent progress; membership tombstone; restart pending")
+}
+
+func TestResolveOnlyDurableConflicts(t *testing.T) {
+	ctx := context.Background()
+	db, e := Open(filepath.Join(t.TempDir(), "research.sqlite"))
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer db.Close()
+	c := Client{BaseURL: "https://synthetic.invalid", OrganizationID: org, BrainID: brain, UserID: alice, DB: db, HTTP: http.DefaultClient}
+	for n, outcome := range []string{"", "accepted", "conflict"} {
+		o := v1.Operation{OperationID: ident(800 + n), GenerationID: ident(900), Record: v1.Record{ID: ident(810 + n), Kind: "collection", Visibility: "shared", Title: "Synthetic resolution"}}
+		if e = c.Queue(ctx, o); e != nil {
+			t.Fatal(e)
+		}
+		if outcome != "" {
+			r := v1.Receipt{OrganizationID: org, BrainID: brain, UserID: alice, GenerationID: o.GenerationID, OperationID: o.OperationID, Outcome: outcome, Record: o.Record}
+			r.Record.Revision = 1
+			b, _ := json.Marshal(r)
+			if _, e = db.Exec(`UPDATE research_pending SET receipt=? WHERE operation_id=?`, b, o.OperationID); e != nil {
+				t.Fatal(e)
+			}
+		}
+		e = c.ResolveConflict(ctx, o.OperationID)
+		if outcome != "conflict" {
+			if e == nil {
+				t.Fatal("non-conflict resolved")
+			}
+		} else {
+			if e != nil {
+				t.Fatal(e)
+			}
+			if e = c.ResolveConflict(ctx, o.OperationID); e != nil {
+				t.Fatal("resolution not idempotent", e)
+			}
+			r, e := c.Send(ctx, o.OperationID)
+			if !errors.Is(e, ErrConflict) || r.OperationID != o.OperationID {
+				t.Fatal("resolved immutable receipt no longer replayable", e)
+			}
+		}
+	}
+	pending, e := c.Pending(ctx)
+	if e != nil || len(pending) != 1 || pending[0].Operation.OperationID != ident(800) {
+		t.Fatal("pending resolution filter", e)
+	}
+	var count int
+	if e = db.QueryRow(`SELECT count(*) FROM research_pending`).Scan(&count); e != nil || count != 3 {
+		t.Fatal("resolution destroyed history")
+	}
 }

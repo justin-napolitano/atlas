@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	v1 "github.com/justin-napolitano/atlas/contracts/research/v1"
+	researchdb "github.com/justin-napolitano/atlas/db/researchsync"
 	_ "github.com/mattn/go-sqlite3"
 	"io"
 	"net/http"
@@ -63,7 +64,7 @@ func Open(path string) (*sql.DB, error) {
 		d.Close()
 		return nil, errors.New("existing database is not an Atlas research sidecar")
 	}
-	_, e = d.Exec(`PRAGMA application_id=1095914323; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000; CREATE TABLE IF NOT EXISTS research_identity(slot INTEGER PRIMARY KEY CHECK(slot=1),scope TEXT NOT NULL); CREATE TABLE IF NOT EXISTS research_state(scope TEXT PRIMARY KEY,generation TEXT NOT NULL,snapshot BLOB NOT NULL); CREATE TABLE IF NOT EXISTS research_pending(scope TEXT NOT NULL,operation_id TEXT NOT NULL,payload BLOB NOT NULL,receipt BLOB,PRIMARY KEY(scope,operation_id));`)
+	_, e = d.Exec(`PRAGMA application_id=1095914323; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;` + researchdb.Schema)
 	if e != nil {
 		d.Close()
 		return nil, e
@@ -241,7 +242,7 @@ func (c Client) Pending(ctx context.Context) ([]PendingItem, error) {
 	if _, e := c.endpoint("state"); e != nil {
 		return nil, e
 	}
-	rows, e := c.DB.QueryContext(ctx, `SELECT payload,receipt FROM research_pending WHERE scope=? AND (receipt IS NULL OR json_extract(receipt,'$.outcome')='conflict') ORDER BY rowid LIMIT 101`, c.scope())
+	rows, e := c.DB.QueryContext(ctx, `SELECT payload,receipt FROM research_pending p WHERE scope=? AND (receipt IS NULL OR json_extract(receipt,'$.outcome')='conflict') AND NOT EXISTS(SELECT 1 FROM research_resolved r WHERE r.scope=p.scope AND r.operation_id=p.operation_id) ORDER BY rowid LIMIT 101`, c.scope())
 	if e != nil {
 		return nil, e
 	}
@@ -268,4 +269,28 @@ func (c Client) Pending(ctx context.Context) ([]PendingItem, error) {
 		return nil, errors.New("research pending review exceeds 100 operations")
 	}
 	return out, rows.Err()
+}
+
+// ResolveConflict records explicit local review without changing the immutable
+// operation or its receipt. Uncertain and accepted operations cannot be resolved.
+func (c Client) ResolveConflict(ctx context.Context, id string) error {
+	if !v1.ValidID(id) {
+		return v1.ErrInvalid
+	}
+	if _, e := c.endpoint("state"); e != nil {
+		return e
+	}
+	_, e := c.DB.ExecContext(ctx, `INSERT INTO research_resolved(scope,operation_id) SELECT scope,operation_id FROM research_pending WHERE scope=? AND operation_id=? AND json_extract(receipt,'$.outcome')='conflict' ON CONFLICT(scope,operation_id) DO NOTHING`, c.scope(), id)
+	if e != nil {
+		return e
+	}
+	var found int
+	e = c.DB.QueryRowContext(ctx, `SELECT count(*) FROM research_resolved WHERE scope=? AND operation_id=?`, c.scope(), id).Scan(&found)
+	if e != nil {
+		return e
+	}
+	if found != 1 {
+		return v1.ErrInvalid
+	}
+	return nil
 }
