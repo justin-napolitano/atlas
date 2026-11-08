@@ -57,3 +57,27 @@ test('confirmed conflict resolution is explicit, exact, retryable and preserves 
  await assert.rejects(store.resolveConflict(),/lost/);assert.deepEqual(store.pending,original);
  await store.resolveConflict();assert.equal(store.pending,null);assert.deepEqual(store.resolvedProposals[0].operation,original);assert.deepEqual(calls[1],calls[2]);
 });
+
+test('offline cached research restores exact pending retry but blocks new mutations until a fresh load',async()=>{
+ const op={operation_id:'retained',generation_id:'g',base_revision:0,record:newRecord('collection',{title:'Exact original'})};
+ let offline=true,hasPending=true;const calls=[];
+ const client={brain:()=>'/scope',request:async(path,body)=>{
+  if(!body)return {generation_id:'g',items:[],total:0,offline,pending:hasPending?[{operation:op}]:[]};
+  calls.push(body);hasPending=false;return {operation_id:body.operation_id,generation_id:body.generation_id,outcome:'accepted',record:{...body.record,revision:1}};
+ }};
+ const store=new ResearchSession(client,'a','b');await store.load();assert.equal(store.snapshot.offline,true);assert.equal(store.uncertain,true);
+ await store.save(newRecord('collection',{title:'Different'}));assert.deepEqual(calls[0],op);
+ const draft=newRecord('collection',{title:'Retained new draft'});await assert.rejects(store.save(draft),/Load current research/);assert.equal(store.pending,null);assert.equal(calls.length,1);assert.equal(draft.title,'Retained new draft');
+ offline=false;await store.load();await store.save(draft);assert.equal(calls.length,2);
+});
+
+test('page-lifetime unload guard covers inactive scope drafts and stops warning when all scopes are clean',async()=>{
+ const {hasRetainedResearchDraft,consumeResearchForm}=await import('./researchClient.js');
+ const inactive={store:{dirty:false},form:{groupTitle:'Unsent group'}},active={store:{dirty:false},form:{sourceID:'selected-source',shared:true,group:'selected-group'}};
+ const scopes=new Map([['inactive',inactive],['active',active]]);
+ assert.equal(hasRetainedResearchDraft(scopes.values()),true);
+ consumeResearchForm(inactive.form,newRecord('collection',{title:'Unsent group'}));assert.equal(hasRetainedResearchDraft(scopes.values()),false);
+ inactive.store.dirty=true;assert.equal(hasRetainedResearchDraft(scopes.values()),true);inactive.store.dirty=false;
+ inactive.form.draft={selector:{exact:'Selected source passage'}};assert.equal(hasRetainedResearchDraft(scopes.values()),true);inactive.form.draft=null;
+ assert.equal(hasRetainedResearchDraft(scopes.values()),false);
+});

@@ -17,6 +17,7 @@ export class ResearchSession{
  async save(record,baseRevision=0){
   if(this.flight)return this.flight;
   if(!this.snapshot)throw Error('Load this brain before changing research.');
+  if(!this.pending&&this.snapshot.offline)throw Error('Load current research before starting a new change. Your local draft is retained.');
   if(!this.pending){for(const [key,max] of [['title',1000],['document',262144],['body',65536]])if(typeof record[key]==='string'&&(new TextEncoder().encode(record[key]).length>max||record[key].includes('\0')))throw Error('This '+key+' exceeds the supported text limit. Your draft is retained.');}
   this.pending??={operation_id:crypto.randomUUID(),generation_id:this.snapshot.generation_id,base_revision:baseRevision,record:structuredClone({...record,revision:0})};
   const sent=this.pending,wasUncertain=this.uncertain;
@@ -66,6 +67,9 @@ export function consumeResearchForm(form,record){
  if(record.kind==='collection'&&form.groupTitle===record.title){form.group=record.id;form.groupTitle='';}
  if(record.kind==='source'&&form.title===record.title&&form.text===record.document){form.title='';form.text='';if(!form.draft&&!form.body)form.sourceID=record.id;}
  if(record.kind==='annotation'&&form.body===record.body&&form.draft?.source_id===record.source_id&&form.draft.document_version===record.document_version&&form.draft.sha256===record.sha256&&exact(form.draft.selector)===exact(record.selector)&&!!form.shared===(record.visibility==='shared')){form.draft=null;form.body='';form.shared=false;}
+}
+export function hasRetainedResearchDraft(scopes){
+ return [...scopes].some(({store,form={}})=>store?.dirty||!!(form.draft||form.body||form.text||form.groupTitle||form.title));
 }
 export async function textHash(text){const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return [...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,'0')).join('');}
 export function newRecord(kind,fields={}){return {id:crypto.randomUUID(),revision:0,kind,visibility:kind==='annotation'||kind==='progress'?'private':'shared',deleted:false,title:'',source_id:'',document_version:'',sha256:'',collection_id:'',document:'',selector:null,body:'',position:0,...fields};}
