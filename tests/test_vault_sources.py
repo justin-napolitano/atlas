@@ -11,6 +11,7 @@ from islam_research import vault_format as codec,vault_context as context,vault_
 from islam_research.github_native import GitHubUnavailable
 from test_source_intake import payload
 from test_vault_sync import FakeVault
+from legacy_reader_fixture import synthetic_legacy_reader
 
 
 @unittest.skipUnless(os.environ.get('RESEARCH_TEST_DATABASE_URL'),'Requires isolated PostgreSQL')
@@ -127,7 +128,8 @@ class SourceBackupTests(unittest.TestCase):
         backup=self.apply(self.plan(other));self.assertEqual(backup['actions'][0]['source_context']['documents'][0]['edition'],'Synthetic edition B')
         self.assertNotEqual(second['id'],self.doc['id'])
 
-    def test_quran_scope_and_typed_source_links_preserve_real_bindings(self):
+    @synthetic_legacy_reader()
+    def test_synthetic_legacy_scope_and_typed_source_links_preserve_real_bindings(self):
         from islam_research import quran_workspace as quran
         row=quran.create_note(self.c,project_id=None,resource_key='itani-god',chapter=4,ayah_start=59,ayah_end=59,
             request_uuid=str(uuid.uuid4()),body='Synthetic verse note.',actor='synthetic')['note']
