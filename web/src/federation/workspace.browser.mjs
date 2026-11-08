@@ -26,7 +26,7 @@ try {
   // Resolve the macOS /var alias before passing private paths to the replica.
   const { realpath } = await import('node:fs/promises'); directory = await realpath(directory);
   const launchFile = join(directory, 'launch.json'), configFile = join(directory, 'config.json');
-  const config = { listen: '127.0.0.1:0', assets_dir: resolve(assets), launch_file: launchFile, accounts: ['alice', 'bob'].map((name, index) => ({ id: name, name: name === 'alice' ? 'Alice synthetic' : 'Bob synthetic', db_path: join(directory, `${name}.sqlite`), organization_id: fixture.organization_id, user_id: fixture[`${name}_user_id`], device_id: `90000000-0000-4000-8000-00000000002${index}`, origin: fixture.base_url, token_env: `ATLAS_CREDENTIAL_${name.toUpperCase()}`, create: true, upgrade_snapshot: '' })) };
+  const config = { listen: '127.0.0.1:0', assets_dir: resolve(assets), launch_file: launchFile, accounts: ['alice', 'bob'].map((name, index) => ({ id: name, name: name === 'alice' ? 'Alice synthetic' : 'Bob synthetic', db_path: join(directory, `${name}.sqlite`), organization_id: fixture.organization_id, user_id: fixture[`${name}_user_id`], device_id: `90000000-0000-4000-8000-00000000002${index}`, origin: fixture.base_url, token_env: `ATLAS_CREDENTIAL_${name.toUpperCase()}`, create: true, upgrade_snapshot: '', research_enabled: fixture.research_handshake === true })) };
   await writeFile(configFile, JSON.stringify(config), { mode: 0o600 });
   bridge = spawn(binary, ['-config', configFile], { env: { PATH: process.env.PATH, TMPDIR: process.env.TMPDIR || tmpdir(), ATLAS_CREDENTIAL_ALICE: fixture.alice_token, ATLAS_CREDENTIAL_BOB: fixture.bob_token }, stdio: ['ignore', 'pipe', 'pipe'] });
   let bridgeOutput = ''; for (const stream of [bridge.stdout, bridge.stderr]) stream.on('data', data => { bridgeOutput = (bridgeOutput + data).slice(-65536); });
@@ -88,6 +88,81 @@ try {
   stage='stable note target survives rename and explicit reopen';await alice.getByLabel('Page title',{exact:true}).fill('Renamed synthetic browser note');await saved(alice);await sync(alice);const linked=await context.newPage();const linkedURL=new URL(launch.url);linkedURL.searchParams.set('brain',fixture.brain_id);linkedURL.searchParams.set('page',pageID);await linked.goto(linkedURL.href);await linked.waitForLoadState('networkidle');await choose(linked,'alice');await sync(linked);await poll(()=>linked.getByLabel('Page title',{exact:true}).inputValue(),value=>value==='Renamed synthetic browser note','stable target did not reopen renamed note');await linked.close();
   assert.equal(await alice.locator('select,[role=menu],.source-reader,.federation-evidence,.federation-gold,.federation-chat').count(),0);
   stage = 'tombstone'; await alice.getByRole('button',{name:'Move to Trash',exact:true}).click(); await saved(alice); await sync(alice); await sync(bob); await bob.getByRole('button',{name:'Restore note',exact:true}).waitFor();
+  if (fixture.research_handshake) {
+    const desk = page => page.getByRole('region', { name: 'Research in this brain', exact: true });
+    const researchState = (page, account) => page.evaluate(async ({ account, brain }) => {
+      const response = await fetch(`/api/collaboration/accounts/${account}/brains/${brain}/research/state`, { credentials: 'same-origin' });
+      if (!response.ok) throw Error('protected research fixture read failed');
+      return response.json();
+    }, { account, brain: fixture.brain_id });
+    const researchSettled = page => poll(() => desk(page).getByRole('button', { name: 'Load research', exact: true }).isEnabled(), Boolean, 'research save did not settle');
+    stage = 'explicit shared research loading';
+    await desk(alice).getByRole('button', { name: 'Load research', exact: true }).click();
+    await desk(alice).getByLabel('Research group', { exact: true }).waitFor();
+    await desk(alice).getByLabel('Research group', { exact: true }).fill('Synthetic reading group');
+    await desk(alice).getByRole('button', { name: 'Create group', exact: true }).click();
+    await desk(alice).getByRole('button', { name: 'Synthetic reading group', exact: true }).waitFor();
+    const sourceTitle = 'Synthetic exact research text';
+    const passage = 'العربية 日本語 👩🏽‍💻';
+    const sourceText = `Synthetic research marker\n${passage} é\n\nSecond exact paragraph\n`;
+    stage = 'exact selected research source';
+    await desk(alice).getByLabel('Source title', { exact: true }).fill(sourceTitle);
+    await desk(alice).getByLabel('Text excerpt', { exact: true }).fill(sourceText);
+    await desk(alice).getByRole('button', { name: 'Share selected excerpt', exact: true }).click();
+    await desk(alice).getByRole('heading', { name: sourceTitle, exact: true }).waitFor();
+    assert.equal(await desk(alice).locator('.research-reading-text pre').textContent(), sourceText);
+    await desk(alice).getByRole('button', { name: 'Add source to selected group', exact: true }).click();
+    await researchSettled(alice);
+    const annotate = async (page, body, shared = false) => {
+      await desk(page).locator('.research-reading-text pre').evaluate((node, exact) => {
+        const text = node.firstChild, start = node.textContent.indexOf(exact), selection = window.getSelection();
+        if (!text || start < 0 || !selection) throw Error('synthetic source selection unavailable');
+        const range = document.createRange(); range.setStart(text, start); range.setEnd(text, start + exact.length);
+        selection.removeAllRanges(); selection.addRange(range);
+      }, passage);
+      await desk(page).getByRole('button', { name: 'Annotate selected passage', exact: true }).click();
+      await desk(page).getByLabel('Passage note', { exact: true }).fill(body);
+      if (shared) await desk(page).getByLabel('Share this annotation with brain members', { exact: true }).check();
+      await desk(page).getByRole('button', { name: 'Save passage note', exact: true }).click();
+      await desk(page).getByRole('paragraph').filter({ hasText: body }).waitFor();
+      await researchSettled(page);
+    };
+    stage = 'source bound private annotation and reading place';
+    const privateAlice = 'Synthetic Alice private passage note', privateBob = 'Synthetic Bob private passage note';
+    await annotate(alice, privateAlice);
+    await desk(alice).getByRole('button', { name: 'Save my reading place', exact: true }).click();
+    await researchSettled(alice);
+    const aliceState = await researchState(alice, 'alice');
+    const source = aliceState.items.find(row => row.kind === 'source' && row.title === sourceTitle);
+    const annotation = aliceState.items.find(row => row.kind === 'annotation' && row.body === privateAlice);
+    assert(source && annotation); assert.equal(source.document, sourceText);
+    assert.equal(annotation.visibility, 'private'); assert.equal(annotation.source_id, source.id);
+    assert.equal(annotation.document_version, source.document_version); assert.equal(annotation.sha256, source.sha256);
+    assert.equal(annotation.selector.exact, passage);
+    assert(aliceState.items.some(row => row.kind === 'progress' && row.source_id === source.id && row.visibility === 'private'));
+    stage = 'second actor private research isolation';
+    await desk(bob).getByRole('button', { name: 'Load research', exact: true }).click();
+    await desk(bob).getByRole('button', { name: 'Synthetic reading group', exact: true }).click();
+    await desk(bob).getByRole('button', { name: sourceTitle, exact: true }).click();
+    assert.equal(await desk(bob).locator('.research-reading-text pre').textContent(), sourceText);
+    let bobState = await researchState(bob, 'bob');
+    assert(bobState.items.some(row => row.kind === 'membership' && row.source_id === source.id));
+    assert.equal(bobState.items.some(row => row.kind === 'progress' || row.body === privateAlice), false);
+    assert.equal(await desk(bob).getByText(privateAlice, { exact: true }).count(), 0);
+    await annotate(bob, privateBob);
+    await desk(bob).getByRole('button', { name: 'Save my reading place', exact: true }).click();
+    await researchSettled(bob);
+    stage = 'explicit shared research annotation';
+    const sharedBody = 'Synthetic explicitly shared annotation';
+    await annotate(alice, sharedBody, true);
+    await desk(bob).getByRole('button', { name: 'Load research', exact: true }).click();
+    await desk(bob).getByText(sharedBody, { exact: true }).waitFor();
+    bobState = await researchState(bob, 'bob');
+    assert(bobState.items.some(row => row.kind === 'annotation' && row.body === privateBob));
+    assert(bobState.items.some(row => row.kind === 'annotation' && row.body === sharedBody && row.visibility === 'shared'));
+    assert.equal(bobState.items.some(row => row.body === privateAlice), false);
+    assert.equal((await researchState(alice, 'alice')).items.some(row => row.body === privateBob), false);
+  }
   if (fixture.revocation_handshake) { stage = 'revocation retains pending writing'; await bob.getByLabel('Page body', { exact: true }).fill(`${merged}\nUnsent before revocation`); await saved(bob); await handshake('READY_FOR_REVOCATION', 'REVOKED'); await bob.getByRole('button', { name: 'Sync now', exact: true }).click(); await poll(() => bob.locator('.federation-status').innerText(), value => value?.includes('Access revoked'), 'revocation did not settle'); assert.equal(await bob.getByRole('button', { name: 'Sync now', exact: true }).isEnabled(), false); assert.equal(await bob.getByLabel('Page body', { exact: true }).inputValue(), `${merged}\nUnsent before revocation`); }
   stage = 'browser credential boundary'; assert.equal(leakedCredential, false); assert.equal(ownerRequest, false); assert(!bridgeOutput.includes(fixture.alice_token) && !bridgeOutput.includes(fixture.bob_token));
   const storage = await context.storageState(); assert.equal(storage.origins.some(origin => origin.localStorage.length > 0), false);
