@@ -1,0 +1,27 @@
+{
+  "contract_version": "v1alpha1",
+  "upstream_repository": "https://github.com/digital-group-vaults/MU-TH-UR",
+  "upstream_commit": "048ef1cbe34b8fe91c7d3da690145b87bd7a375b",
+  "files": [
+    {
+      "upstream_path": "contracts/v1/types.go",
+      "path": "internal/federation/contracts/v1/types.go",
+      "sha256": "db67cb7232294995aa5675614142c4aa2cf4275ad570b48b97119c73eafc68b1"
+    },
+    {
+      "upstream_path": "contracts/v1/validate.go",
+      "path": "internal/federation/contracts/v1/validate.go",
+      "sha256": "f1ca5446fa66d53f4cbda72d61a2a5699b41ca140f292cb06e23ab4993789da2"
+    },
+    {
+      "upstream_path": "contracts/v1/conformance.go",
+      "path": "internal/federation/contracts/v1/conformance.go",
+      "sha256": "f8cdd4e7d1de1e84f7dd7b3de59a04eec1c45348fc772971a9ebf9ef58ecd4f7"
+    },
+    {
+      "upstream_path": "contracts/v1/testdata/cases.json",
+      "path": "testdata/federation/cases.json",
+      "sha256": "2c049db2a40b1db9047588c327e711c23e49d1f571386723d75ab7940d129101"
+    }
+  ]
+}
