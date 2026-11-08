@@ -10,6 +10,7 @@ import (
 	v1 "github.com/justin-napolitano/atlas/contracts/research/v1"
 	"net/http"
 	"net/http/cookiejar"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -116,7 +117,17 @@ func TestSyntheticResearchAcceptance(t *testing.T) {
 	if e = a.DB.QueryRow(`SELECT payload FROM research_pending WHERE operation_id=?`, r.OperationID).Scan(&payload); e != nil {
 		t.Fatal(e)
 	}
-	_ = op
+	if e = json.Unmarshal(payload, &op); e != nil {
+		t.Fatal(e)
+	}
+	op.Record.Title = "Synthetic tampered operation"
+	if e = a.Queue(ctx, op); e == nil {
+		t.Fatal("local immutable operation ID reused")
+	}
+	tampered, _ := json.Marshal(op)
+	if e = a.call(ctx, "POST", "operations", tampered, &v1.Receipt{}); e == nil {
+		t.Fatal("server accepted operation-key tamper")
+	}
 	changed := source
 	changed.Title = "Synthetic overwrite"
 	if _, e = send(a, changed, 1); e == nil {
@@ -172,6 +183,14 @@ func TestSyntheticResearchAcceptance(t *testing.T) {
 	for _, r := range sb.Items {
 		if r.ID == ident(3) || r.ID == ident(7) {
 			t.Fatal("private record leaked")
+		}
+		if r.Kind == "progress" && (r.ID != ident(8) || r.Position != 20) {
+			t.Fatal("Bob reading progress overwritten")
+		}
+	}
+	for _, r := range sa.Items {
+		if r.Kind == "progress" && (r.ID != ident(7) || r.Position != 7) {
+			t.Fatal("Alice reading progress overwritten")
 		}
 	}
 	collection := v1.Record{ID: ident(20), Kind: "collection", Visibility: "shared", Title: "Synthetic collection"}
@@ -264,5 +283,35 @@ func TestResolveOnlyDurableConflicts(t *testing.T) {
 	var count int
 	if e = db.QueryRow(`SELECT count(*) FROM research_pending`).Scan(&count); e != nil || count != 3 {
 		t.Fatal("resolution destroyed history")
+	}
+}
+
+func TestWrongAcknowledgementRetainsPending(t *testing.T) {
+	ctx := context.Background()
+	db, e := Open(filepath.Join(t.TempDir(), "research.sqlite"))
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer db.Close()
+	op := v1.Operation{OperationID: ident(950), GenerationID: ident(951), Record: v1.Record{ID: ident(952), Kind: "collection", Visibility: "shared", Title: "Synthetic exact intent"}}
+	response := v1.Receipt{OrganizationID: org, BrainID: brain, UserID: alice, GenerationID: op.GenerationID, OperationID: op.OperationID, Outcome: "accepted", Record: op.Record}
+	response.Record.Revision = 1
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _ = json.NewEncoder(w).Encode(response) }))
+	defer server.Close()
+	c := Client{BaseURL: server.URL, OrganizationID: org, BrainID: brain, UserID: alice, DB: db, HTTP: server.Client()}
+	if e = c.Queue(ctx, op); e != nil {
+		t.Fatal(e)
+	}
+	exact := response
+	for _, mutate := range []func(){func() { response.OperationID = ident(999) }, func() { response.UserID = bob }, func() { response.GenerationID = ident(999) }, func() { response.Record.Title = "Synthetic wrong content" }, func() { response.Record.Revision = 9 }} {
+		response = exact
+		mutate()
+		if _, e = c.Send(ctx, op.OperationID); e == nil {
+			t.Fatal("wrong acknowledgement accepted")
+		}
+		pending, e := c.Pending(ctx)
+		if e != nil || len(pending) != 1 || pending[0].Receipt != nil {
+			t.Fatal("uncertain operation lost after wrong acknowledgement", e)
+		}
 	}
 }
