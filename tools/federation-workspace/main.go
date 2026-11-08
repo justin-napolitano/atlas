@@ -122,7 +122,9 @@ func run() error {
 	}
 	defer listener.Close()
 	origin := "http://" + listener.Addr().String()
-	bridge, code, err := federation.NewBridge(federation.BridgeConfig{Origin: origin, Accounts: accounts, Assets: os.DirFS(config.AssetsDir), PrivateWorkspaceURL: config.PrivateWorkspaceURL})
+	research := newResearchBridge(config.Accounts)
+	defer research.close()
+	bridge, code, err := federation.NewBridge(federation.BridgeConfig{Origin: origin, Accounts: accounts, Assets: os.DirFS(config.AssetsDir), PrivateWorkspaceURL: config.PrivateWorkspaceURL, ResearchHandler: research.serve})
 	if err != nil {
 		return err
 	}

@@ -1,4 +1,5 @@
 import ConnectedWorkspace from './ConnectedWorkspace.jsx';
+import ResearchBridge from './personal/ResearchBridge.jsx';
 import React, { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import ResizablePanes from './ResizablePanes.jsx';
@@ -11,6 +12,7 @@ import ResearchSources from './ResearchSources.jsx';
 import LibraryShelf from './LibraryShelf.jsx';
 import SaveToLibrary from './SaveToLibrary.jsx';
 const GutenbergReader=lazy(()=>import('./GutenbergReader.jsx'));
+const CollaborationWorkspace=lazy(()=>import('./federation/CollaborationWorkspace.jsx'));
 import ResearchQuestions from './ResearchQuestions.jsx';
 import ProjectDirectories from './ProjectDirectories.jsx';
 import WorkingSurfaces from './WorkingSurfaces.jsx';
@@ -341,4 +343,5 @@ function Workspace() {
   </main>;
 }
 
-createRoot(document.getElementById('root')).render(new URLSearchParams(location.search).get('legacy')==='1'?<Workspace />:<ConnectedWorkspace />);
+const route=new URLSearchParams(location.search);
+createRoot(document.getElementById('root')).render(route.get('collaboration')==='1'?<Suspense fallback={<p>Opening shared workspace…</p>}><CollaborationWorkspace renderResearch={props=>props.profile?.research_enabled&&props.brain?<ResearchBridge {...props}/>:null}/></Suspense>:route.get('legacy')==='1'?<Workspace />:<ConnectedWorkspace />);

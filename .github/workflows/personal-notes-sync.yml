@@ -2,10 +2,10 @@ name: Atlas personal notes sync
 
 on:
   pull_request:
-    paths: ['go.mod', 'go.sum', 'internal/federation/**', 'tools/federation-*/**', 'testdata/federation/**', '.github/workflows/personal-notes-sync.yml']
+    paths: ['go.mod', 'go.sum', 'contracts/research/**', 'internal/researchsync/**', 'db/researchsync/**', 'internal/federation/**', 'tools/federation-*/**', 'testdata/federation/**', '.github/workflows/personal-notes-sync.yml']
   push:
     branches: [main]
-    paths: ['go.mod', 'go.sum', 'internal/federation/**', 'tools/federation-*/**', 'testdata/federation/**', '.github/workflows/personal-notes-sync.yml']
+    paths: ['go.mod', 'go.sum', 'contracts/research/**', 'internal/researchsync/**', 'db/researchsync/**', 'internal/federation/**', 'tools/federation-*/**', 'testdata/federation/**', '.github/workflows/personal-notes-sync.yml']
 
 permissions:
   contents: read
@@ -24,7 +24,7 @@ jobs:
           go-version-file: go.mod
           cache: false
       - run: go mod verify
-      - run: go test -race ./internal/federation/... ./tools/federation-...
-      - run: go vet ./internal/federation/... ./tools/federation-...
+      - run: go test -race ./internal/federation/... ./internal/researchsync/... ./contracts/research/... ./tools/federation-...
+      - run: go vet ./internal/federation/... ./internal/researchsync/... ./contracts/research/... ./tools/federation-...
       - run: go run ./tools/federation-conformance -sha256 2c049db2a40b1db9047588c327e711c23e49d1f571386723d75ab7940d129101
       - run: go build ./tools/federation-workspace ./tools/federation-replica-probe
