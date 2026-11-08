@@ -21,6 +21,7 @@ import './sourceReader.css';
 import './readerPresentation.css';
 import './readingAppearance.css';
 import './readerNotebookFlow.css';
+import {stableSourceLink,downloadWriting} from './personalResearch.js';
 
 /** Edition-bound reading surface with saved inline marks and adjacent private notes. */
 export default function SourceReader({ record, api, drafts, changed, noteEditor, navigate, initialAnnotationId = '',initialDocumentId='',initialReadingPosition=null,focused=false,onFocusChange,onOpenVerse,onReadingPlace,onBookmark,initialMarginOpen,onQuote,onOpenNotebook,catalogReading=false,notebookContent=null,initialBookWriting=false,markdownDocuments=[],rememberPosition=false }) {
@@ -276,6 +277,7 @@ export default function SourceReader({ record, api, drafts, changed, noteEditor,
           {appearance.mode==='pages'&&<nav className="reading-page-steps" aria-label="Reading pages"><button onClick={()=>turnPage(-1)}>← Previous screen</button><button onClick={()=>turnPage(1)}>Next screen →</button></nav>}
           <p className="reader-selection-hint">Select text to annotate · Alt + N to write a note <button className="reader-annotation-toggle" aria-expanded={!!selectionPreview || annotationTools} onClick={()=>setAnnotationTools(!annotationTools)}>Annotation tools</button></p>
           <details className="reader-edition-details"><summary>Reading version and source details</summary>
+            <div className="reader-portability">{!catalogReading&&<button onClick={async()=>{try{await navigator.clipboard.writeText(stableSourceLink(window.location.href,{recordId:record.id,projectId:record.project_id,documentId:document.id,annotationId:activeAnnotation,position:readingPosition(textRoot.current)}));setMessage('Link copied with this reading version and position.');}catch{setMessage('Clipboard unavailable. Your reading position is retained.');}}}>Copy link to this place</button>}<button onClick={()=>downloadWriting(document.text_body,isMarkdown?'atlas-source.md':'atlas-source.txt')}>Export saved reading text</button><p>Exports the exact saved text. Source attribution and edition details remain below.</p></div>
             <label className="reader-version">Reading version<select value={documentId} onChange={e=>{requestedAnchor.current=null;setDocumentId(e.target.value);bookmark('',e.target.value);}}>{snapshots.map(d=><option key={d.id} value={d.id}>{d.edition} · {d.locator} · {d.text_sha256.slice(0,8)}{drafts.current.has(`capture:${d.id}`) ? ' · draft' : ''}</option>)}</select></label>{cursor && <button onClick={moreSnapshots}>More saved excerpts</button>}
             <p>{document.edition}</p><p>{document.locator}</p><p>{document.review_scope}</p>
             {document.representation_url && <a href={document.representation_url} target="_blank" rel="noopener noreferrer">Open original source ↗</a>}

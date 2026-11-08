@@ -122,3 +122,17 @@
 .connected-task-capture>input { width:100%; background:transparent; color:inherit; border:0; border-bottom:1px solid var(--border); padding:.75rem 0; font:inherit; }
 .connected-task-detail { margin-block:1.5rem; padding-block:1rem; border-block:1px solid var(--border); }
 .connected-task-detail header { display:flex; gap:1rem; align-items:baseline; flex-wrap:wrap; }
+
+/* Keep the writing measure dominant; inspection tools remain quiet disclosures. */
+.connected-note-portability,.connected-search-help{font-size:13px;color:var(--muted);line-height:1.6;margin-block:18px}
+.connected-note-portability{border-top:1px solid var(--rule);padding-top:16px}
+.connected-note-portability button,.reader-portability button{margin:0 10px 8px 0}
+.connected-note-portability p,.reader-portability p{max-width:65ch}
+.connected-revision-history{border-top:1px solid var(--rule);margin-top:28px;padding-top:20px}
+.connected-revision-history>header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.connected-revision-history>p{font-size:13px;color:var(--muted);max-width:65ch}
+.connected-revision-history details{padding:12px 0;border-bottom:1px solid var(--rule)}
+.connected-revision-history pre{max-height:350px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;font-size:14px;line-height:1.7}
+.connected-result>p{margin:4px 0 0;font-size:13px;font-weight:400;line-height:1.5;color:var(--muted);max-width:70ch}
+.reader-portability{font-size:13px;margin-bottom:16px}
+@media(max-width:600px){.connected-document-tools{flex-wrap:wrap}.connected-revision-history>header{align-items:start}.connected-note-portability button{margin-bottom:12px}}
