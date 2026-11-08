@@ -25,7 +25,8 @@ export function markdownProperties(source){
   const values=doc.toJS({maxAliasCount:0});
   if(!values||Array.isArray(values)||typeof values!=='object')throw Error('Properties must be a map');
   const list=value=>(Array.isArray(value)?value:typeof value==='string'?[value]:[]).filter(v=>typeof v==='string'&&v.length<=100).slice(0,50);
-  return {status:'valid',range,type:thoughtTypes.includes(values.type)?values.type:null,tags:list(values.tags),aliases:list(values.aliases),doc};
+  const type=typeof values.type==='string'&&values.type.trim()&&values.type.length<=100&&!/[\r\n\x00-\x1f]/.test(values.type)?values.type:null;
+  return {status:'valid',range,type,tags:list(values.tags),aliases:list(values.aliases),doc};
  }catch{return {status:'invalid',range,tags:[],aliases:[]};}
 }
 export function propertyTypeChange(source,type){
