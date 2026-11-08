@@ -2,6 +2,11 @@
 
 Canonical execution tracker: https://github.com/justin-napolitano/atlas/issues/4
 
+For a fresh computer or agent session, start with
+[personal-machine-handoff.md](personal-machine-handoff.md). It records published
+branches, exact checkpoints, setup, remaining issues and the current reservation
+protocol. The initial worker reservations below are historical and released.
+
 Atlas keeps research groups, its general e-reader, source references, exact passage
 anchors, private notes and existing local storage. Generic Go collaboration and
 writing improvements are selectively ported from the reviewed sibling application.
