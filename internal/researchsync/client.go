@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	v1 "github.com/justin-napolitano/atlas/contracts/research/v1"
 	researchdb "github.com/justin-napolitano/atlas/db/researchsync"
 	_ "github.com/mattn/go-sqlite3"
@@ -21,6 +20,11 @@ import (
 )
 
 var ErrConflict = errors.New("research conflict requires review")
+
+// HTTPError permits status-based recovery without exposing remote body content.
+type HTTPError struct{ Status int }
+
+func (e *HTTPError) Error() string { return "research request was rejected" }
 
 type Client struct {
 	BaseURL, OrganizationID, BrainID, UserID string
@@ -112,7 +116,7 @@ func (c Client) call(ctx context.Context, method, action string, payload []byte,
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("research HTTP %d", resp.StatusCode)
+		return &HTTPError{Status: resp.StatusCode}
 	}
 	data, e := io.ReadAll(io.LimitReader(resp.Body, 4<<20+1))
 	if e != nil || len(data) > 4<<20 {
