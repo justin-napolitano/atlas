@@ -33,22 +33,25 @@ are not repository files. The layout check reported width 390, document width
 withheld; credentials crossed the fixture's private stdin and trusted Go bridge
 boundaries, never browser storage, URLs or test logs.
 
-## Exact command
+## Reproduction command
 
-Run from the MU checkout. These paths identify synthetic local test tools and
-builds; fixture identities and tokens are generated inside the test.
+Run from the MU checkout with Go 1.26.10 on `PATH`. Replace the tool and checkout
+placeholders with explicitly selected local paths. The command preserves the
+tested flags; fixture identities and tokens are generated inside the test.
 
 ```sh
 set -o pipefail
+ATLAS_CHECKOUT=/path/to/atlas
+CHROMIUM_EXECUTABLE='/path/to/installed/chromium'
 MUTHER_RUN_POSTGRES_TEST=1 \
 MUTHER_TEST_RESEARCH=1 \
-FATHUR_WORKSPACE_BROWSER_SCRIPT=/Users/JNA31A/Repos/jna31a_ait/.swarm/atlas-integration/web/src/federation/workspace.browser.mjs \
-ATLAS_WORKSPACE_BINARY=/private/tmp/atlas-personal-workspace \
-ATLAS_WORKSPACE_ASSETS=/Users/JNA31A/Repos/jna31a_ait/.swarm/atlas-integration/web/dist \
-PLAYWRIGHT_MODULE=/private/tmp/nucleus-backstage-poc/portal/node_modules/playwright/index.mjs \
-PLAYWRIGHT_CHROMIUM_EXECUTABLE='/Users/JNA31A/Library/Caches/ms-playwright/chromium-1234/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing' \
+FATHUR_WORKSPACE_BROWSER_SCRIPT="$ATLAS_CHECKOUT/web/src/federation/workspace.browser.mjs" \
+ATLAS_WORKSPACE_BINARY=/path/to/compiled-launcher \
+ATLAS_WORKSPACE_ASSETS="$ATLAS_CHECKOUT/web/dist" \
+PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs \
+PLAYWRIGHT_CHROMIUM_EXECUTABLE="$CHROMIUM_EXECUTABLE" \
 ATLAS_WORKSPACE_SCREENSHOT=/private/tmp/atlas-final-joint-browser.png \
-GOTOOLCHAIN=local /private/tmp/mu-phase2-go12610/go/bin/go test \
+GOTOOLCHAIN=local go test \
   ./internal/storage/postgres -run '^TestRuntimePostgresHTTP$' -count=1 -v \
   2>&1 | tee /private/tmp/atlas-final-joint-browser.log
 ```
