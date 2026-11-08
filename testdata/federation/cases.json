@@ -1,0 +1,875 @@
+{
+  "schema_version": "v1alpha1",
+  "cases": [
+    {
+      "name": "create-preserves-unicode",
+      "kind": "operation",
+      "input": {
+        "schema_version": "v1alpha1",
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "operation_id": "50000000-0000-4000-8000-000000000001",
+        "device_id": "60000000-0000-4000-8000-000000000001",
+        "page_id": "70000000-0000-4000-8000-000000000001",
+        "base_revision": 0,
+        "payload": {
+          "title": "Synthetic note",
+          "body": "Exact café é 中文 🧠\r\nsecond line",
+          "state": "active"
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "edit-exact-base",
+      "kind": "operation",
+      "input": {
+        "schema_version": "v1alpha1",
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "operation_id": "50000000-0000-4000-8000-000000000001",
+        "device_id": "60000000-0000-4000-8000-000000000001",
+        "page_id": "70000000-0000-4000-8000-000000000001",
+        "base_revision": 7,
+        "payload": {
+          "title": "Synthetic note",
+          "body": "Exact café é 中文 🧠\r\nsecond line",
+          "state": "active"
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "unknown-version",
+      "kind": "operation",
+      "input": {
+        "schema_version": "v2",
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "operation_id": "50000000-0000-4000-8000-000000000001",
+        "device_id": "60000000-0000-4000-8000-000000000001",
+        "page_id": "70000000-0000-4000-8000-000000000001",
+        "base_revision": 0,
+        "payload": {
+          "title": "Synthetic note",
+          "body": "Exact café é 中文 🧠\r\nsecond line",
+          "state": "active"
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "negative-base",
+      "kind": "operation",
+      "input": {
+        "schema_version": "v1alpha1",
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "operation_id": "50000000-0000-4000-8000-000000000001",
+        "device_id": "60000000-0000-4000-8000-000000000001",
+        "page_id": "70000000-0000-4000-8000-000000000001",
+        "base_revision": -1,
+        "payload": {
+          "title": "Synthetic note",
+          "body": "Exact café é 中文 🧠\r\nsecond line",
+          "state": "active"
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "unsafe-js-counter",
+      "kind": "operation",
+      "input": {
+        "schema_version": "v1alpha1",
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "operation_id": "50000000-0000-4000-8000-000000000001",
+        "device_id": "60000000-0000-4000-8000-000000000001",
+        "page_id": "70000000-0000-4000-8000-000000000001",
+        "base_revision": 9007199254740992,
+        "payload": {
+          "title": "Synthetic note",
+          "body": "Exact café é 中文 🧠\r\nsecond line",
+          "state": "active"
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "zero-page-id",
+      "kind": "operation",
+      "input": {
+        "schema_version": "v1alpha1",
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "operation_id": "50000000-0000-4000-8000-000000000001",
+        "device_id": "60000000-0000-4000-8000-000000000001",
+        "page_id": "00000000-0000-0000-0000-000000000000",
+        "base_revision": 0,
+        "payload": {
+          "title": "Synthetic note",
+          "body": "Exact café é 中文 🧠\r\nsecond line",
+          "state": "active"
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "blank-title",
+      "kind": "operation",
+      "input": {
+        "schema_version": "v1alpha1",
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "operation_id": "50000000-0000-4000-8000-000000000001",
+        "device_id": "60000000-0000-4000-8000-000000000001",
+        "page_id": "70000000-0000-4000-8000-000000000001",
+        "base_revision": 0,
+        "payload": {
+          "title": " ",
+          "body": "Exact café é 中文 🧠\r\nsecond line",
+          "state": "active"
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "no-implicit-publishing",
+      "kind": "operation",
+      "input": {
+        "schema_version": "v1alpha1",
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "operation_id": "50000000-0000-4000-8000-000000000001",
+        "device_id": "60000000-0000-4000-8000-000000000001",
+        "page_id": "70000000-0000-4000-8000-000000000001",
+        "base_revision": 0,
+        "payload": {
+          "title": "Synthetic note",
+          "body": "Exact café é 中文 🧠\r\nsecond line",
+          "state": "published"
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "client-actor-rejected",
+      "kind": "operation",
+      "input": {
+        "schema_version": "v1alpha1",
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "operation_id": "50000000-0000-4000-8000-000000000001",
+        "device_id": "60000000-0000-4000-8000-000000000001",
+        "page_id": "70000000-0000-4000-8000-000000000001",
+        "base_revision": 0,
+        "payload": {
+          "title": "Synthetic note",
+          "body": "Exact café é 中文 🧠\r\nsecond line",
+          "state": "active"
+        },
+        "actor_user_id": "30000000-0000-4000-8000-000000000001"
+      },
+      "expected": false
+    },
+    {
+      "name": "duplicate-key-rejected",
+      "kind": "operation",
+      "input": {
+        "schema_version": "v1alpha1",
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "operation_id": "50000000-0000-4000-8000-000000000001",
+        "device_id": "60000000-0000-4000-8000-000000000001",
+        "page_id": "70000000-0000-4000-8000-000000000001",
+        "base_revision": 0,
+        "payload": {
+          "title": "Synthetic note",
+          "body": "Exact café é 中文 🧠\r\nsecond line",
+          "state": "active"
+        },
+        "base_revision": 1
+      },
+      "expected": false
+    },
+    {
+      "name": "unpaired-unicode-rejected",
+      "kind": "operation",
+      "input": {
+        "schema_version": "v1alpha1",
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "operation_id": "50000000-0000-4000-8000-000000000001",
+        "device_id": "60000000-0000-4000-8000-000000000001",
+        "page_id": "70000000-0000-4000-8000-000000000001",
+        "base_revision": 0,
+        "payload": {
+          "title": "Synthetic note",
+          "body": "\ud800",
+          "state": "active"
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "private-brain",
+      "kind": "brain",
+      "input": {
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000002",
+        "kind": "private",
+        "name": "Synthetic private"
+      },
+      "expected": true
+    },
+    {
+      "name": "explicit-editor-can-write",
+      "kind": "access",
+      "input": {
+        "principal": {
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "team_ids": [
+            "40000000-0000-4000-8000-000000000001"
+          ],
+          "active": true
+        },
+        "grants": [
+          {
+            "organization_id": "10000000-0000-4000-8000-000000000001",
+            "brain_id": "20000000-0000-4000-8000-000000000001",
+            "subject_kind": "user",
+            "subject_id": "30000000-0000-4000-8000-000000000001",
+            "role": "editor",
+            "expires_at": null
+          }
+        ],
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "capability": "write",
+        "now": "2026-11-07T00:00:00Z"
+      },
+      "expected": true
+    },
+    {
+      "name": "private-brain-not-discoverable",
+      "kind": "access",
+      "input": {
+        "principal": {
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "team_ids": [
+            "40000000-0000-4000-8000-000000000001"
+          ],
+          "active": true
+        },
+        "grants": [
+          {
+            "organization_id": "10000000-0000-4000-8000-000000000001",
+            "brain_id": "20000000-0000-4000-8000-000000000001",
+            "subject_kind": "user",
+            "subject_id": "30000000-0000-4000-8000-000000000001",
+            "role": "editor",
+            "expires_at": null
+          }
+        ],
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000002",
+        "capability": "write",
+        "now": "2026-11-07T00:00:00Z"
+      },
+      "expected": false
+    },
+    {
+      "name": "cross-org-denied",
+      "kind": "access",
+      "input": {
+        "principal": {
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "team_ids": [
+            "40000000-0000-4000-8000-000000000001"
+          ],
+          "active": true
+        },
+        "grants": [
+          {
+            "organization_id": "10000000-0000-4000-8000-000000000001",
+            "brain_id": "20000000-0000-4000-8000-000000000001",
+            "subject_kind": "user",
+            "subject_id": "30000000-0000-4000-8000-000000000001",
+            "role": "editor",
+            "expires_at": null
+          }
+        ],
+        "organization_id": "10000000-0000-4000-8000-000000000002",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "capability": "write",
+        "now": "2026-11-07T00:00:00Z"
+      },
+      "expected": false
+    },
+    {
+      "name": "no-org-admin-content-bypass",
+      "kind": "access",
+      "input": {
+        "principal": {
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "team_ids": [
+            "40000000-0000-4000-8000-000000000001"
+          ],
+          "active": true
+        },
+        "grants": null,
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "capability": "write",
+        "now": "2026-11-07T00:00:00Z"
+      },
+      "expected": false
+    },
+    {
+      "name": "reviewer-cannot-write",
+      "kind": "access",
+      "input": {
+        "principal": {
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "team_ids": [
+            "40000000-0000-4000-8000-000000000001"
+          ],
+          "active": true
+        },
+        "grants": [
+          {
+            "organization_id": "10000000-0000-4000-8000-000000000001",
+            "brain_id": "20000000-0000-4000-8000-000000000001",
+            "subject_kind": "user",
+            "subject_id": "30000000-0000-4000-8000-000000000001",
+            "role": "reviewer",
+            "expires_at": null
+          }
+        ],
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "capability": "write",
+        "now": "2026-11-07T00:00:00Z"
+      },
+      "expected": false
+    },
+    {
+      "name": "reviewer-can-review",
+      "kind": "access",
+      "input": {
+        "principal": {
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "team_ids": [
+            "40000000-0000-4000-8000-000000000001"
+          ],
+          "active": true
+        },
+        "grants": [
+          {
+            "organization_id": "10000000-0000-4000-8000-000000000001",
+            "brain_id": "20000000-0000-4000-8000-000000000001",
+            "subject_kind": "user",
+            "subject_id": "30000000-0000-4000-8000-000000000001",
+            "role": "reviewer",
+            "expires_at": null
+          }
+        ],
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "capability": "review",
+        "now": "2026-11-07T00:00:00Z"
+      },
+      "expected": true
+    },
+    {
+      "name": "team-grant-can-write",
+      "kind": "access",
+      "input": {
+        "principal": {
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "team_ids": [
+            "40000000-0000-4000-8000-000000000001"
+          ],
+          "active": true
+        },
+        "grants": [
+          {
+            "organization_id": "10000000-0000-4000-8000-000000000001",
+            "brain_id": "20000000-0000-4000-8000-000000000001",
+            "subject_kind": "team",
+            "subject_id": "40000000-0000-4000-8000-000000000001",
+            "role": "editor",
+            "expires_at": null
+          }
+        ],
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "capability": "write",
+        "now": "2026-11-07T00:00:00Z"
+      },
+      "expected": true
+    },
+    {
+      "name": "expired-grant-denied-at-boundary",
+      "kind": "access",
+      "input": {
+        "principal": {
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "team_ids": [
+            "40000000-0000-4000-8000-000000000001"
+          ],
+          "active": true
+        },
+        "grants": [
+          {
+            "organization_id": "10000000-0000-4000-8000-000000000001",
+            "brain_id": "20000000-0000-4000-8000-000000000001",
+            "subject_kind": "team",
+            "subject_id": "40000000-0000-4000-8000-000000000001",
+            "role": "editor",
+            "expires_at": "2026-11-07T00:00:00Z"
+          }
+        ],
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "capability": "write",
+        "now": "2026-11-07T00:00:00Z"
+      },
+      "expected": false
+    },
+    {
+      "name": "revoked-user-denied",
+      "kind": "access",
+      "input": {
+        "principal": {
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "team_ids": [
+            "40000000-0000-4000-8000-000000000001"
+          ],
+          "active": false
+        },
+        "grants": [
+          {
+            "organization_id": "10000000-0000-4000-8000-000000000001",
+            "brain_id": "20000000-0000-4000-8000-000000000001",
+            "subject_kind": "team",
+            "subject_id": "40000000-0000-4000-8000-000000000001",
+            "role": "editor",
+            "expires_at": null
+          }
+        ],
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "capability": "write",
+        "now": "2026-11-07T00:00:00Z"
+      },
+      "expected": false
+    },
+    {
+      "name": "matching-cursor",
+      "kind": "cursor_binding",
+      "input": {
+        "cursor": {
+          "schema_version": "v1alpha1",
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "brain_id": "20000000-0000-4000-8000-000000000001",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "membership_epoch": 3,
+          "after_event_id": null,
+          "expires_at": "2026-11-08T00:00:00Z"
+        },
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "user_id": "30000000-0000-4000-8000-000000000001",
+        "membership_epoch": 3,
+        "now": "2026-11-07T00:00:00Z"
+      },
+      "expected": true
+    },
+    {
+      "name": "revocation-epoch-resets-cursor",
+      "kind": "cursor_binding",
+      "input": {
+        "cursor": {
+          "schema_version": "v1alpha1",
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "brain_id": "20000000-0000-4000-8000-000000000001",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "membership_epoch": 3,
+          "after_event_id": null,
+          "expires_at": "2026-11-08T00:00:00Z"
+        },
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "user_id": "30000000-0000-4000-8000-000000000001",
+        "membership_epoch": 4,
+        "now": "2026-11-07T00:00:00Z"
+      },
+      "expected": false
+    },
+    {
+      "name": "expired-cursor-resets",
+      "kind": "cursor_binding",
+      "input": {
+        "cursor": {
+          "schema_version": "v1alpha1",
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "brain_id": "20000000-0000-4000-8000-000000000001",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "membership_epoch": 3,
+          "after_event_id": null,
+          "expires_at": "2026-11-08T00:00:00Z"
+        },
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "brain_id": "20000000-0000-4000-8000-000000000001",
+        "user_id": "30000000-0000-4000-8000-000000000001",
+        "membership_epoch": 3,
+        "now": "2026-11-08T00:00:00Z"
+      },
+      "expected": false
+    },
+    {
+      "name": "source-instance-table-sysid",
+      "kind": "source",
+      "input": {
+        "provider": "servicenow",
+        "instance": "https://synthetic.service-now.example",
+        "table": "incident",
+        "source_id": "abcdef0123456789abcdef0123456789"
+      },
+      "expected": true
+    },
+    {
+      "name": "incident-number-not-source-id",
+      "kind": "source",
+      "input": {
+        "provider": "servicenow",
+        "instance": "https://synthetic.service-now.example",
+        "table": "incident",
+        "source_id": "INC0001234"
+      },
+      "expected": false
+    },
+    {
+      "name": "hidden-endpoint-hides-edge",
+      "kind": "edge_visibility",
+      "input": {
+        "edge": {
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "brain_id": "20000000-0000-4000-8000-000000000001",
+          "edge_id": "80000000-0000-4000-8000-000000000001",
+          "source": {
+            "brain_id": "20000000-0000-4000-8000-000000000001",
+            "entity_id": "70000000-0000-4000-8000-000000000001",
+            "kind": "incident"
+          },
+          "target": {
+            "brain_id": "20000000-0000-4000-8000-000000000002",
+            "entity_id": "70000000-0000-4000-8000-000000000002",
+            "kind": "change"
+          },
+          "kind": "reported_cause",
+          "evidence_revision_id": "90000000-0000-4000-8000-000000000001"
+        },
+        "principal": {
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "team_ids": [
+            "40000000-0000-4000-8000-000000000001"
+          ],
+          "active": true
+        },
+        "grants": [
+          {
+            "organization_id": "10000000-0000-4000-8000-000000000001",
+            "brain_id": "20000000-0000-4000-8000-000000000001",
+            "subject_kind": "user",
+            "subject_id": "30000000-0000-4000-8000-000000000001",
+            "role": "reader",
+            "expires_at": null
+          }
+        ],
+        "now": "2026-11-07T00:00:00Z"
+      },
+      "expected": false
+    },
+    {
+      "name": "both-endpoints-and-edge-readable",
+      "kind": "edge_visibility",
+      "input": {
+        "edge": {
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "brain_id": "20000000-0000-4000-8000-000000000001",
+          "edge_id": "80000000-0000-4000-8000-000000000001",
+          "source": {
+            "brain_id": "20000000-0000-4000-8000-000000000001",
+            "entity_id": "70000000-0000-4000-8000-000000000001",
+            "kind": "incident"
+          },
+          "target": {
+            "brain_id": "20000000-0000-4000-8000-000000000002",
+            "entity_id": "70000000-0000-4000-8000-000000000002",
+            "kind": "change"
+          },
+          "kind": "reported_cause",
+          "evidence_revision_id": "90000000-0000-4000-8000-000000000001"
+        },
+        "principal": {
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "team_ids": [
+            "40000000-0000-4000-8000-000000000001"
+          ],
+          "active": true
+        },
+        "grants": [
+          {
+            "organization_id": "10000000-0000-4000-8000-000000000001",
+            "brain_id": "20000000-0000-4000-8000-000000000001",
+            "subject_kind": "user",
+            "subject_id": "30000000-0000-4000-8000-000000000001",
+            "role": "reader",
+            "expires_at": null
+          },
+          {
+            "organization_id": "10000000-0000-4000-8000-000000000001",
+            "brain_id": "20000000-0000-4000-8000-000000000002",
+            "subject_kind": "user",
+            "subject_id": "30000000-0000-4000-8000-000000000001",
+            "role": "reader",
+            "expires_at": null
+          }
+        ],
+        "now": "2026-11-07T00:00:00Z"
+      },
+      "expected": true
+    },
+    {
+      "name": "accepted-receipt-matches",
+      "kind": "receipt",
+      "input": {
+        "operation": {
+          "schema_version": "v1alpha1",
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "brain_id": "20000000-0000-4000-8000-000000000001",
+          "operation_id": "50000000-0000-4000-8000-000000000001",
+          "device_id": "60000000-0000-4000-8000-000000000001",
+          "page_id": "70000000-0000-4000-8000-000000000001",
+          "base_revision": 0,
+          "payload": {
+            "title": "Synthetic note",
+            "body": "Exact café é 中文 🧠\r\nsecond line",
+            "state": "active"
+          }
+        },
+        "receipt": {
+          "schema_version": "v1alpha1",
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "brain_id": "20000000-0000-4000-8000-000000000001",
+          "operation_id": "50000000-0000-4000-8000-000000000001",
+          "device_id": "60000000-0000-4000-8000-000000000001",
+          "page_id": "70000000-0000-4000-8000-000000000001",
+          "request_sha256": "ac1b5137a3c312f98232b4ba48e6f5c31141944193451511394019385abe219a",
+          "outcome": "accepted",
+          "revision_id": "90000000-0000-4000-8000-000000000001",
+          "revision": 1,
+          "event_id": "a0000000-0000-4000-8000-000000000001",
+          "conflict": null
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "receipt-cannot-skip-revision",
+      "kind": "receipt",
+      "input": {
+        "operation": {
+          "schema_version": "v1alpha1",
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "brain_id": "20000000-0000-4000-8000-000000000001",
+          "operation_id": "50000000-0000-4000-8000-000000000001",
+          "device_id": "60000000-0000-4000-8000-000000000001",
+          "page_id": "70000000-0000-4000-8000-000000000001",
+          "base_revision": 0,
+          "payload": {
+            "title": "Synthetic note",
+            "body": "Exact café é 中文 🧠\r\nsecond line",
+            "state": "active"
+          }
+        },
+        "receipt": {
+          "schema_version": "v1alpha1",
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "brain_id": "20000000-0000-4000-8000-000000000001",
+          "operation_id": "50000000-0000-4000-8000-000000000001",
+          "device_id": "60000000-0000-4000-8000-000000000001",
+          "page_id": "70000000-0000-4000-8000-000000000001",
+          "request_sha256": "ac1b5137a3c312f98232b4ba48e6f5c31141944193451511394019385abe219a",
+          "outcome": "accepted",
+          "revision_id": "90000000-0000-4000-8000-000000000001",
+          "revision": 2,
+          "event_id": "a0000000-0000-4000-8000-000000000001",
+          "conflict": null
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "conflict-preserves-local-server",
+      "kind": "receipt",
+      "input": {
+        "operation": {
+          "schema_version": "v1alpha1",
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "brain_id": "20000000-0000-4000-8000-000000000001",
+          "operation_id": "50000000-0000-4000-8000-000000000001",
+          "device_id": "60000000-0000-4000-8000-000000000001",
+          "page_id": "70000000-0000-4000-8000-000000000001",
+          "base_revision": 0,
+          "payload": {
+            "title": "Synthetic note",
+            "body": "Exact café é 中文 🧠\r\nsecond line",
+            "state": "active"
+          }
+        },
+        "receipt": {
+          "schema_version": "v1alpha1",
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "brain_id": "20000000-0000-4000-8000-000000000001",
+          "operation_id": "50000000-0000-4000-8000-000000000001",
+          "device_id": "60000000-0000-4000-8000-000000000001",
+          "page_id": "70000000-0000-4000-8000-000000000001",
+          "request_sha256": "ac1b5137a3c312f98232b4ba48e6f5c31141944193451511394019385abe219a",
+          "outcome": "conflict",
+          "revision_id": null,
+          "revision": 0,
+          "event_id": null,
+          "conflict": {
+            "base": null,
+            "local": {
+              "title": "Synthetic note",
+              "body": "Exact café é 中文 🧠\r\nsecond line",
+              "state": "active"
+            },
+            "server": {
+              "revision_id": "90000000-0000-4000-8000-000000000001",
+              "revision": 1,
+              "content": {
+                "title": "Other synthetic writer",
+                "body": "Server version remains",
+                "state": "active"
+              }
+            }
+          }
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "conflict-cannot-replace-local",
+      "kind": "receipt",
+      "input": {
+        "operation": {
+          "schema_version": "v1alpha1",
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "brain_id": "20000000-0000-4000-8000-000000000001",
+          "operation_id": "50000000-0000-4000-8000-000000000001",
+          "device_id": "60000000-0000-4000-8000-000000000001",
+          "page_id": "70000000-0000-4000-8000-000000000001",
+          "base_revision": 0,
+          "payload": {
+            "title": "Synthetic note",
+            "body": "Exact café é 中文 🧠\r\nsecond line",
+            "state": "active"
+          }
+        },
+        "receipt": {
+          "schema_version": "v1alpha1",
+          "organization_id": "10000000-0000-4000-8000-000000000001",
+          "brain_id": "20000000-0000-4000-8000-000000000001",
+          "operation_id": "50000000-0000-4000-8000-000000000001",
+          "device_id": "60000000-0000-4000-8000-000000000001",
+          "page_id": "70000000-0000-4000-8000-000000000001",
+          "request_sha256": "ac1b5137a3c312f98232b4ba48e6f5c31141944193451511394019385abe219a",
+          "outcome": "conflict",
+          "revision_id": null,
+          "revision": 0,
+          "event_id": null,
+          "conflict": {
+            "base": null,
+            "local": {
+              "title": "Synthetic note",
+              "body": "Silently replaced",
+              "state": "active"
+            },
+            "server": {
+              "revision_id": "90000000-0000-4000-8000-000000000001",
+              "revision": 1,
+              "content": {
+                "title": "Other synthetic writer",
+                "body": "Server version remains",
+                "state": "active"
+              }
+            }
+          }
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "gold-exact-revision",
+      "kind": "gold",
+      "input": {
+        "schema_version": "v1alpha1",
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "manifest_id": "b0000000-0000-4000-8000-000000000001",
+        "audience_brain_ids": [
+          "20000000-0000-4000-8000-000000000001"
+        ],
+        "revisions": [
+          {
+            "brain_id": "20000000-0000-4000-8000-000000000001",
+            "page_id": "70000000-0000-4000-8000-000000000001",
+            "revision_id": "90000000-0000-4000-8000-000000000001"
+          }
+        ]
+      },
+      "expected": true
+    },
+    {
+      "name": "gold-one-revision-per-page",
+      "kind": "gold",
+      "input": {
+        "schema_version": "v1alpha1",
+        "organization_id": "10000000-0000-4000-8000-000000000001",
+        "manifest_id": "b0000000-0000-4000-8000-000000000001",
+        "audience_brain_ids": [
+          "20000000-0000-4000-8000-000000000001"
+        ],
+        "revisions": [
+          {
+            "brain_id": "20000000-0000-4000-8000-000000000001",
+            "page_id": "70000000-0000-4000-8000-000000000001",
+            "revision_id": "90000000-0000-4000-8000-000000000001"
+          },
+          {
+            "brain_id": "20000000-0000-4000-8000-000000000001",
+            "page_id": "70000000-0000-4000-8000-000000000001",
+            "revision_id": "90000000-0000-4000-8000-000000000001"
+          }
+        ]
+      },
+      "expected": false
+    }
+  ]
+}

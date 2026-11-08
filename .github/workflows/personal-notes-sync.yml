@@ -1,0 +1,30 @@
+name: Atlas personal notes sync
+
+on:
+  pull_request:
+    paths: ['go.mod', 'go.sum', 'internal/federation/**', 'tools/federation-*/**', 'testdata/federation/**', '.github/workflows/personal-notes-sync.yml']
+  push:
+    branches: [main]
+    paths: ['go.mod', 'go.sum', 'internal/federation/**', 'tools/federation-*/**', 'testdata/federation/**', '.github/workflows/personal-notes-sync.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-sqlite-and-http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CGO_ENABLED: '1'
+      CC: gcc
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - run: go mod verify
+      - run: go test -race ./internal/federation/... ./tools/federation-...
+      - run: go vet ./internal/federation/... ./tools/federation-...
+      - run: go run ./tools/federation-conformance -sha256 2c049db2a40b1db9047588c327e711c23e49d1f571386723d75ab7940d129101
+      - run: go build ./tools/federation-workspace ./tools/federation-replica-probe
