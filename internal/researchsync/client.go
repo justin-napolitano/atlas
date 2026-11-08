@@ -20,6 +20,7 @@ import (
 )
 
 var ErrConflict = errors.New("research conflict requires review")
+var ErrSuperseded = errors.New("research refresh superseded by a newer request")
 
 // HTTPError permits status-based recovery without exposing remote body content.
 type HTTPError struct{ Status int }
@@ -125,34 +126,87 @@ func (c Client) call(ctx context.Context, method, action string, payload []byte,
 	return json.Unmarshal(data, out)
 }
 
-// Refresh replaces only the server snapshot, preserving all pending operations.
+// Refresh allocates a durable read ticket before HTTP. Only the latest-started
+// request can replace the snapshot; pending operations remain untouched.
 func (c Client) Refresh(ctx context.Context) (v1.Snapshot, error) {
 	var s v1.Snapshot
-	e := c.call(ctx, "GET", "state", nil, &s)
+	if _, e := c.endpoint("state"); e != nil {
+		return s, e
+	}
+	var ticket int64
+	e := c.DB.QueryRowContext(ctx, `INSERT INTO research_read_epoch(scope,requested) VALUES(?,1) ON CONFLICT(scope) DO UPDATE SET requested=requested+1 RETURNING requested`, c.scope()).Scan(&ticket)
 	if e != nil {
 		return s, e
 	}
+	e = c.call(ctx, "GET", "state", nil, &s)
+	if e != nil {
+		return s, e
+	}
+	if e = c.validateSnapshot(s); e != nil {
+		return v1.Snapshot{}, e
+	}
+	b, e := json.Marshal(s)
+	if e != nil {
+		return v1.Snapshot{}, e
+	}
+	tx, e := c.DB.BeginTx(ctx, nil)
+	if e != nil {
+		return v1.Snapshot{}, e
+	}
+	defer tx.Rollback()
+	result, e := tx.ExecContext(ctx, `INSERT INTO research_state(scope,generation,snapshot) SELECT ?,?,? WHERE EXISTS(SELECT 1 FROM research_read_epoch WHERE scope=? AND requested=?) ON CONFLICT(scope) DO UPDATE SET generation=excluded.generation,snapshot=excluded.snapshot`, c.scope(), s.GenerationID, b, c.scope(), ticket)
+	if e != nil {
+		return v1.Snapshot{}, e
+	}
+	changed, e := result.RowsAffected()
+	if e != nil {
+		return v1.Snapshot{}, e
+	}
+	if changed == 1 {
+		if _, e = tx.ExecContext(ctx, `UPDATE research_read_epoch SET committed=? WHERE scope=? AND requested=?`, ticket, c.scope(), ticket); e != nil {
+			return v1.Snapshot{}, e
+		}
+	}
+	if e = tx.Commit(); e != nil {
+		return v1.Snapshot{}, e
+	}
+	// Never return this request's stale HTTP body. A superseded read can use a
+	// newer committed snapshot, but an uncommitted/failed successor is an error.
+	var requested, committed int64
+	var current []byte
+	e = c.DB.QueryRowContext(ctx, `SELECT e.requested,e.committed,s.snapshot FROM research_read_epoch e LEFT JOIN research_state s USING(scope) WHERE e.scope=?`, c.scope()).Scan(&requested, &committed, &current)
+	if e != nil {
+		return v1.Snapshot{}, e
+	}
+	if committed < ticket || (requested > ticket && committed <= ticket) {
+		return v1.Snapshot{}, ErrSuperseded
+	}
+	if json.Unmarshal(current, &s) != nil {
+		return v1.Snapshot{}, v1.ErrInvalid
+	}
+	if e = c.validateSnapshot(s); e != nil {
+		return v1.Snapshot{}, e
+	}
+	return s, nil
+}
+
+func (c Client) validateSnapshot(s v1.Snapshot) error {
 	if s.OrganizationID != c.OrganizationID || s.BrainID != c.BrainID || s.UserID != c.UserID || !v1.ValidID(s.GenerationID) || s.Items == nil || s.Total != len(s.Items) || len(s.Items) > 1000 {
-		return s, v1.ErrInvalid
+		return v1.ErrInvalid
 	}
 	seen := map[string]bool{}
 	for _, r := range s.Items {
 		if seen[r.ID] || r.Revision < 1 {
-			return s, v1.ErrInvalid
+			return v1.ErrInvalid
 		}
 		seen[r.ID] = true
 		r.Revision = 0
 		o := v1.Operation{OperationID: r.ID, GenerationID: s.GenerationID, Record: r}
 		if o.Validate() != nil {
-			return s, v1.ErrInvalid
+			return v1.ErrInvalid
 		}
 	}
-	b, e := json.Marshal(s)
-	if e != nil {
-		return s, e
-	}
-	_, e = c.DB.ExecContext(ctx, `INSERT INTO research_state VALUES(?,?,?) ON CONFLICT(scope) DO UPDATE SET generation=excluded.generation,snapshot=excluded.snapshot`, c.scope(), s.GenerationID, b)
-	return s, e
+	return nil
 }
 func (c Client) Cached(ctx context.Context) (v1.Snapshot, error) {
 	var s v1.Snapshot

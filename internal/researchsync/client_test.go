@@ -14,7 +14,9 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
+	"time"
 )
 
 const org = "00000000-0000-0000-0000-000000000001"
@@ -54,6 +56,124 @@ func TestDedicatedSidecar(t *testing.T) {
 		t.Fatal("owner database accepted")
 	}
 	_ = ctx
+}
+
+func TestRefreshPersistsLatestStartedReadAcrossHandles(t *testing.T) {
+	for _, newerSucceeds := range []bool{true, false} {
+		t.Run(fmt.Sprintf("newer_succeeds_%t", newerSucceeds), func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			snapshot := func(generation int, revision int64, title string) v1.Snapshot {
+				return v1.Snapshot{OrganizationID: org, BrainID: brain, UserID: alice, GenerationID: ident(generation), Total: 1, Items: []v1.Record{{ID: ident(980), Kind: "collection", Visibility: "shared", Title: title, Revision: revision}}}
+			}
+			baseline := snapshot(981, 5, "Synthetic cached baseline")
+			stale := snapshot(982, 1, "Synthetic old generation and revision")
+			newest := snapshot(983, 9, "Synthetic newest generation and revision")
+			oldStarted := make(chan struct{})
+			releaseOld := make(chan struct{})
+			var request atomic.Int32
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				switch request.Add(1) {
+				case 1:
+					_ = json.NewEncoder(w).Encode(baseline)
+				case 2:
+					close(oldStarted)
+					select {
+					case <-releaseOld:
+						_ = json.NewEncoder(w).Encode(stale)
+					case <-r.Context().Done():
+					}
+				case 3:
+					if newerSucceeds {
+						_ = json.NewEncoder(w).Encode(newest)
+					} else {
+						w.WriteHeader(503)
+					}
+				default:
+					w.WriteHeader(500)
+				}
+			}))
+			defer server.Close()
+			defer func() {
+				select {
+				case <-releaseOld:
+				default:
+					close(releaseOld)
+				}
+			}()
+			path := filepath.Join(t.TempDir(), "research.sqlite")
+			firstDB, e := Open(path)
+			if e != nil {
+				t.Fatal(e)
+			}
+			defer firstDB.Close()
+			first := Client{BaseURL: server.URL, OrganizationID: org, BrainID: brain, UserID: alice, DB: firstDB, HTTP: server.Client()}
+			if _, e = first.Refresh(ctx); e != nil {
+				t.Fatal(e)
+			}
+			// Independent handles exercise SQLite CAS rather than an in-process mutex.
+			secondDB, e := Open(path)
+			if e != nil {
+				t.Fatal(e)
+			}
+			defer secondDB.Close()
+			second := first
+			second.DB = secondDB
+			type result struct {
+				snapshot v1.Snapshot
+				err      error
+			}
+			oldResult := make(chan result, 1)
+			go func() { s, e := first.Refresh(ctx); oldResult <- result{s, e} }()
+			select {
+			case <-oldStarted:
+			case <-ctx.Done():
+				t.Fatal("older request never started")
+			}
+			latest, e := second.Refresh(ctx)
+			if newerSucceeds {
+				if e != nil || latest.GenerationID != newest.GenerationID {
+					t.Fatal("newer refresh failed", e)
+				}
+			} else {
+				var status *HTTPError
+				if !errors.As(e, &status) || status.Status != 503 {
+					t.Fatal("newer failure not surfaced", e)
+				}
+			}
+			close(releaseOld)
+			var old result
+			select {
+			case old = <-oldResult:
+			case <-ctx.Done():
+				t.Fatal("older request never finished")
+			}
+			expected := baseline
+			if newerSucceeds {
+				expected = newest
+				if old.err != nil || old.snapshot.GenerationID != newest.GenerationID || old.snapshot.Items[0].Revision != 9 {
+					t.Fatal("superseded read returned stale body", old.err)
+				}
+			} else if !errors.Is(old.err, ErrSuperseded) || old.snapshot.GenerationID != "" {
+				t.Fatal("uncommitted successor allowed stale return", old.err)
+			}
+			cached, e := first.Cached(ctx)
+			if e != nil || cached.GenerationID != expected.GenerationID || cached.Items[0].Revision != expected.Items[0].Revision {
+				t.Fatal("durable cache regressed", e)
+			}
+			var requested, committed int64
+			if e = secondDB.QueryRow(`SELECT requested,committed FROM research_read_epoch WHERE scope=?`, first.scope()).Scan(&requested, &committed); e != nil {
+				t.Fatal(e)
+			}
+			expectedCommitted := int64(1)
+			if newerSucceeds {
+				expectedCommitted = 3
+			}
+			if requested != 3 || committed != expectedCommitted {
+				t.Fatalf("read epoch not durable: %d/%d", requested, committed)
+			}
+		})
+	}
 }
 
 // TestSyntheticResearchAcceptance is launched only by the disposable MU fixture.
