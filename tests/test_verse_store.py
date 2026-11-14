@@ -5,6 +5,7 @@ import unittest
 import uuid
 
 from islam_research.quran_citations import AYAH_COUNTS
+from legacy_reader_fixture import synthetic_legacy_reader
 
 
 class VerseMaterialProfileTests(unittest.TestCase):
@@ -213,9 +214,12 @@ class VerseStoreTests(unittest.TestCase):
                 self.create(connection)
             self.assertEqual(connection.execute("SELECT count(*) AS n FROM research.verse_materials WHERE project_id=%s",(self.project,)).fetchone()["n"],0)
 
-    def test_actual_pilot_import_preserves_notice_exact_text_retry_and_pending_review(self):
+    @synthetic_legacy_reader()
+    def test_synthetic_legacy_import_preserves_notice_exact_text_retry_and_pending_review(self):
         from islam_research.quran_resources import pilot_resource
         resource=pilot_resource()
+        self.assertTrue(resource['resource_id'].startswith('synthetic:'))
+        self.assertIn('SYNTHETIC TEST DATA ONLY', resource['source_notice'])
         params=dict(request_uuid=str(uuid.uuid4()),project_id=self.project,chapter=4,ayah=59,rationale="Explicit identified pilot import",actor="owner")
         with self.db.connect(self.owner_dsn) as connection:
             first=self.store.import_pilot(connection,**params)

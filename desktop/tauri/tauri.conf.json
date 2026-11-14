@@ -2,8 +2,10 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Atlas",
   "version": "0.2.0",
-  "identifier": "org.researchatlas.desktop",
-  "build": { "frontendDist": "splash" },
+  "identifier": "org.atlasworkspace.desktop",
+  "build": {
+    "frontendDist": "splash"
+  },
   "app": {
     "windows": [],
     "withGlobalTauri": false,
@@ -14,8 +16,12 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app"],
+    "targets": [
+      "app"
+    ],
     "category": "Education",
-    "macOS": { "minimumSystemVersion": "11.0" }
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    }
   }
 }

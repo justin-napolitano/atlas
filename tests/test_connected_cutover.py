@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 import uuid
 from islam_research import database as db,notebook,workspace_store as workspace,workspace_graph as graph,passage_store
+from legacy_reader_fixture import synthetic_legacy_reader
 
 @unittest.skipUnless(os.environ.get('RESEARCH_TEST_DATABASE_URL'),'Requires isolated PostgreSQL migration owner')
 class ConnectedCutoverTests(unittest.TestCase):
@@ -46,6 +47,7 @@ class ConnectedCutoverTests(unittest.TestCase):
 
 @unittest.skipUnless(os.environ.get('RESEARCH_TEST_DATABASE_URL'),'Requires isolated PostgreSQL roles')
 class ConnectedPrivilegesTests(unittest.TestCase):
+    @synthetic_legacy_reader()
     def test_runtime_can_connect_and_retain_native_reading_but_cannot_rewrite_history_or_aliases(self):
         from psycopg import sql,errors
         from psycopg.conninfo import make_conninfo

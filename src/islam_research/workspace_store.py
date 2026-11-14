@@ -199,24 +199,18 @@ def search(connection,*,q,limit=20):
 
 def continuing(connection,*,limit=12):
     if type(limit) is not int or not 1<=limit<=20:raise ValueError('Invalid continue limit')
-    reading=connection.execute("""SELECT 'quran' AS reader,project_id,resource_key,chapter,ayah,NULL::int AS book_id,NULL::text AS version,NULL::int AS section,NULL::int AS position,updated_at FROM research.quran_places
-      UNION ALL SELECT 'quran',NULL,resource_key,chapter,ayah,NULL,NULL,NULL,NULL,updated_at FROM research.workspace_quran_places
-      UNION ALL SELECT 'gutenberg',project_id,NULL,NULL,NULL,book_id,version,section,position,updated_at FROM research.gutenberg_places
-      UNION ALL SELECT 'gutenberg',NULL,NULL,NULL,NULL,book_id,version,section,position,updated_at FROM research.workspace_gutenberg_places
+    reading=connection.execute("""SELECT 'gutenberg' AS reader,project_id,book_id,version,section,position,updated_at FROM research.gutenberg_places
+      UNION ALL SELECT 'gutenberg',NULL,book_id,version,section,position,updated_at FROM research.workspace_gutenberg_places
       ORDER BY updated_at DESC LIMIT %s""",(limit,)).fetchall()
     documents=connection.execute("""SELECT p.project_id,p.record_id,p.document_id,p.start_pos,p.updated_at,r.title,d.edition,d.locator
       FROM research.reading_desks p JOIN research.records r ON r.id=p.record_id LEFT JOIN research.reading_documents d ON d.id=p.document_id WHERE r.deleted_at IS NULL AND r.review_state<>'withdrawn'
       UNION ALL SELECT NULL,p.record_id,p.document_id,p.start_pos,p.updated_at,r.title,d.edition,d.locator
       FROM research.workspace_reading_desks p JOIN research.records r ON r.id=p.record_id LEFT JOIN research.reading_documents d ON d.id=p.document_id WHERE r.deleted_at IS NULL AND r.review_state<>'withdrawn'
       ORDER BY updated_at DESC LIMIT %s""",(limit,)).fetchall()
-    from . import gutenberg_store,quran_reader
+    from . import gutenberg_store
     for row in reading:
-        if row['reader']=='gutenberg':
-            book=gutenberg_store.snapshot(connection,row['book_id'],row['version'])
-            row['title']=(book['title'] if book else 'Unavailable Gutenberg #'+str(row['book_id']))+' · Section '+str(row['section']+1)
-        else:
-            resource=quran_reader._load(row['resource_key'])[1]
-            row['title']='Qur’an · '+str(row['chapter'])+':'+str(row['ayah'])+' · '+resource['label']
+        book=gutenberg_store.snapshot(connection,row['book_id'],row['version'])
+        row['title']=(book['title'] if book else 'Unavailable Gutenberg #'+str(row['book_id']))+' · Section '+str(row['section']+1)
     return dict(reading=reading,documents=documents,notes=notes(connection,limit=limit)['items'],drafts=drafts(connection,limit=limit))
 
 

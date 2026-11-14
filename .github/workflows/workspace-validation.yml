@@ -28,25 +28,13 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm test
       - run: npm run build
-      - run: node scripts/review-connected-workspace.mjs
-        env:
-          CHROME_PATH: /usr/bin/google-chrome
       - run: node scripts/review-workspace.mjs
-        env:
-          CHROME_PATH: /usr/bin/google-chrome
-      - run: node scripts/review-quran-reader.mjs
         env:
           CHROME_PATH: /usr/bin/google-chrome
       - run: node scripts/review-gutenberg.mjs
         env:
           CHROME_PATH: /usr/bin/google-chrome
       - run: node scripts/review-source-intake.mjs
-        env:
-          CHROME_PATH: /usr/bin/google-chrome
-      - run: node scripts/review-pilot-reader.mjs
-        env:
-          CHROME_PATH: /usr/bin/google-chrome
-      - run: node scripts/review-verse-links.mjs
         env:
           CHROME_PATH: /usr/bin/google-chrome
       - run: node scripts/review-notebook.mjs

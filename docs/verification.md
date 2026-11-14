@@ -26,3 +26,19 @@ hosted deployment were not verified by this extraction pass.
 Publication is a software-source release. It does not publish the original
 research, migrate an installed workspace, enable backup synchronization or
 deploy cloud infrastructure. Third-party reader resources retain their notices.
+
+## General-purpose Atlas update
+
+The built-in scripture reader, routes, text resources, collection UI and reader-specific
+examples were removed after the initial extraction. Historical storage tables and
+reference-profile metadata remain for saved-data compatibility. No owner database
+was rewritten or deleted.
+
+The updated source passed 484 Python tests (271 executed, 213 integration cases
+skipped), 160 frontend tests, a general-workspace headless browser check, generated
+API and SQLite schema checks, and copied frozen-service startup/restart/backup/restore
+checks. Reader URLs return 404 and retired UI links open the general library.
+
+The public Tauri app uses `org.atlasworkspace.desktop`, the
+`~/.local/share/atlas-open-source` workspace and a separate preferences directory.
+Its release shell was compiled with the pinned Rust 1.99.1 toolchain.

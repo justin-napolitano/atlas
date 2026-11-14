@@ -23,11 +23,7 @@ from .api_auth import IAPVerifier, IdentityUnavailable, InvalidIdentity
 from .api_store import PostgreSQLStore
 from .database import RevisionConflict
 from .graph_engine import rank, registered_policy
-from .quran_citations import PARSER_VERSION as QURAN_PARSER_VERSION, PROFILE_ID as QURAN_PROFILE_ID
-from .quran_resources import pilot_resource
-from .quran_reader_candidate import chapter_resource
-from .reader_collection import collection_resource
-from . import quran_reader, quran_words, gutenberg
+from . import gutenberg
 
 logger = logging.getLogger("research.api")
 Identifier = Annotated[str, Field(min_length=1, max_length=500, pattern=r"^[^\x00-\x1f\x7f]+$")]
@@ -879,74 +875,19 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None, d
         if rows is None: raise HTTPException(404,"No active reading place saved for this project")
         return {"items":rows[:limit],"next_before_revision":rows[limit-1]["revision"] if len(rows)>limit else None}
 
-    @router.get("/reading/collection")
-    def reading_collection():
-        return collection_resource()
 
-    @router.get("/quran/catalog")
-    def quran_catalog():
-        return quran_reader.catalog()
 
-    @router.get("/quran/chapter")
-    def quran_chapter(chapter: Annotated[int,Query(ge=1,le=114)], translation: Literal['itani-god'] = 'itani-god'):
-        return quran_reader.chapter(chapter,translation)
 
-    @router.get('/quran/words')
-    def quran_word_glosses(chapter: Annotated[int,Query(ge=1,le=114)], ayah: Annotated[int,Query(ge=1,le=286)]):
-        try:
-            # Keep invalid references distinct from an unavailable external source.
-            quran_reader.representation('tanzil-uthmani',chapter,ayah,ayah)
-        except ValueError:
-            raise HTTPException(422,'Choose an existing ayah.') from None
-        try:
-            return quran_words.lookup(chapter,ayah)
-        except Exception:
-            # Do not relay provider response bodies or internal network errors.
-            raise HTTPException(503,'Word translation is unavailable. Your reading and notes are unchanged.') from None
 
-    @router.get('/quran/progress')
-    def quran_progress(*, project_id: Identifier | None = None):
-        return {'project_id':project_id,'items':store.quran_progress(project_id)}
 
-    @router.put('/quran/progress')
-    def save_quran_progress(value: QuranProgress, actor: str=Depends(owner)):
-        quran_reader.reference(value.chapter,value.ayah)
-        return store.save_quran_progress(actor=actor,**value.model_dump(exclude={'owner_confirmed'}))
 
-    @router.post('/quran/binding',status_code=201)
-    def quran_binding(value: QuranBinding,actor: str=Depends(owner)):
-        return store.quran_binding(actor=actor,**value.model_dump(exclude={'owner_confirmed'}))
 
-    @router.get('/quran/binding')
-    def quran_existing(*, project_id: Identifier | None = None,resource_key: Literal['tanzil-uthmani','itani-god'],
-        chapter: Annotated[int,Query(ge=1,le=114)],ayah_start: Annotated[int,Query(ge=1,le=286)],ayah_end: Annotated[int,Query(ge=1,le=286)],note_scope: Literal['verse','surah','source'] = 'verse'):
-        return store.quran_existing(project_id=project_id,resource_key=resource_key,chapter=chapter,ayah_start=ayah_start,ayah_end=ayah_end,note_scope=note_scope)
 
-    @router.post('/quran/notes',status_code=201)
-    def quran_note(value: QuranNote,actor: str=Depends(owner)):
-        return store.quran_note(actor=actor,**value.model_dump(exclude={'owner_confirmed'}))
 
-    @router.get('/quran/marks')
-    def quran_marks(*, project_id: Identifier | None = None,chapter: Annotated[int,Query(ge=1,le=114)],cursor: Annotated[str,Query(max_length=500)]='',limit: Annotated[int,Query(ge=1,le=100)]=100):
-        items=store.quran_marks(project_id=project_id,chapter=chapter,cursor=cursor,limit=limit+1)
-        return {'items':items[:limit],'next_cursor':items[limit-1]['id'] if len(items)>limit else None}
 
-    @router.get('/quran/notes')
-    def quran_notes(*, project_id: Identifier | None = None,resource_key: Literal['tanzil-uthmani','itani-god'],chapter: Annotated[int,Query(ge=1,le=114)],note_scope: Literal['surah','source'],cursor: Annotated[str,Query(max_length=500)]='',limit: Annotated[int,Query(ge=1,le=25)]=25):
-        items=store.quran_notes(project_id=project_id,resource_key=resource_key,chapter=chapter,note_scope=note_scope,cursor=cursor,limit=limit+1)
-        return {'items':items[:limit],'next_cursor':items[limit-1]['id'] if len(items)>limit else None}
 
-    @router.get('/quran/place')
-    def quran_place(*, project_id: Identifier | None = None):
-        return store.quran_place(project_id)
 
-    @router.put('/quran/place')
-    def quran_place_save(value: QuranPlace,actor: str=Depends(owner)):
-        return store.save_quran_place(actor=actor,**value.model_dump(exclude={'owner_confirmed'}))
 
-    @router.post("/reading/link-collection",status_code=201)
-    def link_collection_reading(value: CollectionReadingLink,actor: str = Depends(owner)):
-        return store.link_collection_reading(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
 
     @router.get("/record-context")
     def record_context(project_id: Identifier, record_id: Identifier,
@@ -1068,11 +1009,6 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None, d
                     "retrieval":"case_insensitive_literal_match","ranking":"exact_title_then_title_prefix_then_literal_match",
                     "review_effect":"none","graph_effect":"none","publication_effect":"none"},
                 "notebook_network": {"scope":"owner_only","endpoint":"/v1/notebook/network","max_results":200,"authority":"current_active_private_notes","canonical_graph_effect":"none","publication_effect":"none"},
-                "scripture_references": {"profile_id":QURAN_PROFILE_ID,"parser_version":QURAN_PARSER_VERSION,
-                    "candidates":"/v1/reading/scripture-candidates","reverse_lookup":"/v1/reading/scripture-citations",
-                    "owner_resolution":"/v1/reading/scripture-citation","max_reverse_lookup_page":25,
-                    "scope":"owner_only","confirmation":"explicit_owner_decision_with_revision_and_rationale",
-                    "review_effect":"none","graph_effect":"none","publication_effect":"none"},
                 "lexicon": {"version":1,"scope":"owner_only","search":"/v1/lexicon/search","concept":"/v1/lexicon/concept",
                     "senses":"/v1/lexicon/senses","representations":"/v1/lexicon/representations",
                     "definitions":"/v1/lexicon/definitions","occurrences":"/v1/lexicon/occurrences",
@@ -1080,11 +1016,6 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None, d
                     "capture":"/v1/lexicon/captures","max_page":25,"max_search_results":30,
                     "review_effect":"none","graph_effect":"none","publication_effect":"none",
                     "retrieval":"versioned lexical normalization; no semantic equivalence inference"},
-                "verse_materials": {"version":1,"scope":"owner_only","pilot_resource":"/v1/verses/pilot",
-                    "materials":"/v1/verses/materials","material":"/v1/verses/material",
-                    "annotation_links":"/v1/verses/annotation-links","history":"/v1/verses/history","max_page":25,
-                    "review_effect":"none","graph_effect":"none","publication_effect":"none",
-                    "citation_changes":"retain original reference and flag for review"},
                 "execution": "typed_traversal_and_owner_observation_scoring_v1"}
 
     @router.get("/search")
@@ -1164,79 +1095,18 @@ def create_app(settings: Settings | None = None, *, store=None, verifier=None, d
     def update_reading_annotation(value: ReadingAnnotationUpdate, actor: str = Depends(owner)):
         return store.update_reading_annotation(actor=actor,**value.model_dump())
 
-    @router.get("/reading/scripture-candidates")
-    def scripture_candidates(project_id: Identifier, annotation_id: Identifier):
-        value = store.scripture_candidates(project_id,annotation_id)
-        if value is None:
-            raise HTTPException(404,"Reading annotation not found")
-        return value
 
-    @router.put("/reading/scripture-citation")
-    def resolve_scripture_citation(value: ScriptureResolutionInput, actor: str = Depends(owner)):
-        return store.resolve_scripture_citation(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
 
-    @router.get("/reading/scripture-citations")
-    def scripture_citations(project_id: Identifier, chapter: Annotated[int,Query(ge=1,le=114)],
-                            ayah_start: Annotated[int,Query(ge=1,le=286)],
-                            ayah_end: Annotated[int,Query(ge=1,le=286)],
-                            cursor: Annotated[str,Query(max_length=500)] = "",
-                            limit: Annotated[int,Query(ge=1,le=25)] = 25):
-        rows = store.scripture_citations(project_id,chapter,ayah_start,ayah_end,cursor,limit+1)
-        return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
 
-    @router.get("/verses/pilot")
-    def verse_pilot():
-        return pilot_resource()
 
-    @router.get("/quran/reader")
-    def quran_reader_candidate_resource(chapter: Annotated[int,Query(ge=1,le=114)],
-                     translation_key: Literal["english_saheeh", "english_rwwad"] = "english_saheeh"):
-        return chapter_resource(chapter, translation_key)
 
-    @router.post("/quran/reader-association",status_code=201)
-    def quran_reader_association(value: QuranReaderAssociation,actor: str = Depends(owner)):
-        return store.quran_reader_association(actor=actor,**value.model_dump())
 
-    @router.post("/verses/import-pilot",status_code=201)
-    def verse_import_pilot(value: VersePilotImport,actor: str = Depends(owner)):
-        return store.verse_import_pilot(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
 
-    @router.post("/verses/materials",status_code=201)
-    def create_verse_material(value: VerseMaterialInput,actor: str = Depends(owner)):
-        return store.verse_create(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
 
-    @router.put("/verses/material")
-    def update_verse_material(value: VerseMaterialUpdate,actor: str = Depends(owner)):
-        return store.verse_update(actor=actor,**value.model_dump(exclude={"owner_confirmed"}))
 
-    @router.get("/verses/material")
-    def verse_material(project_id: Identifier,material_id: Identifier):
-        value=store.verse_material(project_id,material_id)
-        if value is None: raise HTTPException(404,"Material not found in this project")
-        return value
 
-    @router.get("/verses/materials")
-    def verse_materials(project_id: Identifier,chapter: Annotated[int,Query(ge=1,le=114)],
-        ayah_start: Annotated[int,Query(ge=1,le=286)],ayah_end: Annotated[int,Query(ge=1,le=286)],
-        material_kind: Literal["arabic_text","translation","tafsir","linguistic_annotation","scholarship"] | None = None,
-        link_kind: Literal["representation","explicit_citation","discussion","interpretive_claim"] | None = None,
-        cursor: Annotated[str,Query(max_length=500)] = "",limit: Annotated[int,Query(ge=1,le=25)] = 25):
-        rows=store.verse_materials(project_id,chapter,ayah_start,ayah_end,material_kind,link_kind,cursor,limit+1)
-        return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
 
-    @router.get("/verses/annotation-links")
-    def verse_annotation_links(project_id: Identifier,annotation_id: Identifier,
-        cursor: Annotated[str,Query(max_length=500)] = "",limit: Annotated[int,Query(ge=1,le=25)] = 25):
-        rows=store.verse_annotation_links(project_id,annotation_id,cursor,limit+1)
-        if rows is None: raise HTTPException(404,"Source passage not found in this project")
-        return {"items":rows[:limit],"next_cursor":rows[limit-1]["id"] if len(rows)>limit else None}
 
-    @router.get("/verses/history")
-    def verse_history(project_id: Identifier,material_id: Identifier,
-        before_revision: Annotated[int,Query(ge=1)] | None = None,limit: Annotated[int,Query(ge=1,le=25)] = 25):
-        rows=store.verse_history(project_id,material_id,before_revision,limit+1)
-        if rows is None: raise HTTPException(404,"Material history not found in this project")
-        return {"items":rows[:limit],"next_before_revision":rows[limit-1]["revision"] if len(rows)>limit else None}
 
     @router.post("/lexicon/captures",status_code=201)
     def lexicon_capture(value: LexiconCaptureInput,actor: str = Depends(owner)):

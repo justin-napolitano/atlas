@@ -138,11 +138,12 @@ pub fn run(app: tauri::AppHandle, window: WebviewWindow, config: Config) {
             evaluate(&window, "[...document.querySelectorAll('.connected-nav button')].find(b=>b.textContent==='Library').click();true")?;
             until(
                 &window,
-                "!!document.querySelector('.working-surface:not([hidden]) .library-book-title')",
+                "!!document.querySelector('.working-surface:not([hidden]) .library-shelf')",
                 "Library did not load",
             )?;
-            evaluate(&window, "document.querySelector('.working-surface:not([hidden]) .library-book-title').click();true")?;
-            until(&window, "document.querySelectorAll('.working-surface:not([hidden]) [data-ayah]').length===176", "Complete Quran did not open")?;
+            if evaluate(&window, "document.querySelectorAll('.working-surface:not([hidden]) .library-book-title').length===0")? != true {
+                return Err("Empty library injected a built-in book".into());
+            }
             let manifest: serde_json::Value =
                 serde_json::from_slice(&std::fs::read(config.resources.join("build.json"))?)?;
             let sqlite = manifest["kind"] == "offline-local-sqlite";
@@ -153,7 +154,7 @@ pub fn run(app: tauri::AppHandle, window: WebviewWindow, config: Config) {
                 return Err("Synthetic SQLite storage selection did not match the bundle".into());
             }
             Ok(
-                serde_json::json!({"nativeTauri":true,"realPostgresql":!sqlite,"realSqlite":sqlite,"openingWindowMs":opening_ms,"workspaceReadyMs":ready_ms,"rendererIsolation":true,"dirtyCloseProtected":true,"unicodeWritingReloaded":true,"processRestart":restarted,"nativeExport":true,"externalNetworkDenied":true,"unsafePopupDenied":true,"completeQuran":true,"ownerDataModified":false}),
+                serde_json::json!({"nativeTauri":true,"realPostgresql":!sqlite,"realSqlite":sqlite,"openingWindowMs":opening_ms,"workspaceReadyMs":ready_ms,"rendererIsolation":true,"dirtyCloseProtected":true,"unicodeWritingReloaded":true,"processRestart":restarted,"nativeExport":true,"externalNetworkDenied":true,"unsafePopupDenied":true,"builtinReaderAbsent":true,"ownerDataModified":false}),
             )
         })();
         let success = result.is_ok();

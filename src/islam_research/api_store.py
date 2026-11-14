@@ -7,7 +7,6 @@ from . import passage_store
 from . import publication
 from . import citation_store
 from . import lexicon_store
-from . import verse_store
 from . import source_intake
 from . import reading_desk
 from . import record_context
@@ -15,10 +14,7 @@ from . import notebook
 from . import notebook_drafts
 from . import private_trash
 from . import reading_drafts
-from . import collection_link
 from . import research_search
-from . import quran_workspace
-from . import quran_progress
 from . import gutenberg, gutenberg_store
 from . import shared_library
 
@@ -143,32 +139,14 @@ class PostgreSQLStore:
                 return notebook.create(c,actor=actor,**fields)
             raise ValueError('Unsupported catalog note target')
 
-    def quran_progress(self, project_id):
-        with db.connect(self.dsn) as connection:return quran_progress.listing(connection,project_id)
 
-    def save_quran_progress(self, **values):
-        with db.connect(self.dsn) as connection:return quran_progress.save(connection,**values)
 
-    def quran_binding(self, **values):
-        with db.connect(self.dsn) as connection:return quran_workspace.binding(connection,**values)
 
-    def quran_existing(self, **values):
-        with db.connect(self.dsn) as connection:return quran_workspace.existing(connection,**values)
 
-    def quran_note(self, **values):
-        with db.connect(self.dsn) as connection:return quran_workspace.create_note(connection,**values)
 
-    def quran_marks(self, **values):
-        with db.connect(self.dsn) as connection:return quran_workspace.marks(connection,**values)
 
-    def quran_notes(self, **values):
-        with db.connect(self.dsn) as connection:return quran_workspace.notes(connection,**values)
 
-    def quran_place(self, project_id):
-        with db.connect(self.dsn) as connection:return quran_workspace.place(connection,project_id)
 
-    def save_quran_place(self, **values):
-        with db.connect(self.dsn) as connection:return quran_workspace.save_place(connection,**values)
 
     def research_search(self, project_id, query, limit):
         with db.connect(self.dsn) as connection:
@@ -178,8 +156,6 @@ class PostgreSQLStore:
         with db.connect(self.dsn) as connection:
             return research_search.library(connection,project_id,cursor,limit)
 
-    def link_collection_reading(self,**values):
-        with db.connect(self.dsn) as connection:return collection_link.link(connection,**values)
 
     def record_context(self, project_id, record_id, cursor, limit):
         with db.connect(self.dsn) as connection:
@@ -484,42 +460,16 @@ class PostgreSQLStore:
         with db.connect(self.dsn) as connection:
             return passage_store.update_annotation(connection,**values)
 
-    def scripture_candidates(self, project_id, annotation_id):
-        with db.connect(self.dsn) as connection:
-            return citation_store.candidates(connection,project_id,annotation_id)
 
-    def resolve_scripture_citation(self, **values):
-        with db.connect(self.dsn) as connection:
-            return citation_store.resolve(connection,**values)
 
-    def scripture_citations(self, project_id, chapter, ayah_start, ayah_end, cursor, limit):
-        with db.connect(self.dsn) as connection:
-            return citation_store.for_verse(connection,project_id,chapter,ayah_start,ayah_end,cursor,limit)
 
-    def verse_create(self, **values):
-        with db.connect(self.dsn) as connection: return verse_store.create(connection,**values)
 
-    def verse_import_pilot(self, **values):
-        with db.connect(self.dsn) as connection: return verse_store.import_pilot(connection,**values)
 
-    def quran_reader_association(self, **values):
-        from .quran_reader_candidate import associate_verse
-        with db.connect(self.dsn) as connection: return associate_verse(connection,**values)
 
-    def verse_update(self, **values):
-        with db.connect(self.dsn) as connection: return verse_store.update(connection,**values)
 
-    def verse_material(self, project_id, material_id):
-        with db.connect(self.dsn) as connection: return verse_store.get_material(connection,project_id,material_id)
 
-    def verse_materials(self, project_id, chapter, ayah_start, ayah_end, material_kind, link_kind, cursor, limit):
-        with db.connect(self.dsn) as connection: return verse_store.for_verse(connection,project_id,chapter,ayah_start,ayah_end,material_kind,link_kind,cursor,limit)
 
-    def verse_annotation_links(self, project_id, annotation_id, cursor, limit):
-        with db.connect(self.dsn) as connection: return verse_store.annotation_links(connection,project_id,annotation_id,cursor,limit)
 
-    def verse_history(self, project_id, material_id, before_revision, limit):
-        with db.connect(self.dsn) as connection: return verse_store.history(connection,project_id,material_id,before_revision,limit)
 
     def lexicon_capture(self, **values):
         with db.connect(self.dsn) as connection: return lexicon_store.capture(connection,**values)

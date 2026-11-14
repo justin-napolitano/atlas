@@ -55,12 +55,11 @@ implementation. These names do not restrict the subjects you can work on.
 
 The graph starts empty. An explicit synthetic example is available at
 `tests/fixtures/example-research.ttl`; it is never automatically imported.
-Reader demonstration material is labeled synthetic. The optional Qur’an reader
-retains attributed third-party reference texts; these are separate from the
-owner's research and from the software license.
+Atlas ships without a built-in scripture reader or bundled source texts. Add the
+sources you choose to your private library.
 
 ## License
 
 Atlas-authored code and synthetic examples are provided under the [MIT license](LICENSE).
-Third-party code, schemas and reference texts retain their respective licenses
+Third-party code and schemas retain their respective licenses
 and notices. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

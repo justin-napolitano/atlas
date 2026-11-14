@@ -1,9 +1,9 @@
 {
   "version": 1,
   "platform": "linux/amd64",
-  "base_image": "node:24-alpine@sha256:429bdfbc204b4eabc6438e6d34e4e9d8dd2ca1df8289bcd78cdd3c5db387b7a5",
+  "base_image": "node:24-alpine@sha256:a34ab6d7f6f4813f4d0c5469d74685604b962fbdbf5793a7bc7b4998ecb867c8",
   "base_source": "https://hub.docker.com/v2/namespaces/library/repositories/node/tags/24-alpine",
-  "verified_at": "2026-10-15",
+  "verified_at": "2026-11-08",
   "uid": 1000,
   "gid": 1000,
   "scanner": {

@@ -470,8 +470,8 @@ fn main() {
             let service = resources.join("offline/runtime/atlas-service/atlas-service");
             #[cfg(feature = "native-review")]
             let service = review.as_ref().map(|r| r.resources.join("runtime/atlas-service/atlas-service")).unwrap_or(service);
-            let state = home.join(".local/share/atlas");
-            let preferences = home.join("Library/Application Support/Atlas/window.json");
+            let state = home.join(".local/share/atlas-open-source");
+            let preferences = home.join("Library/Application Support/Atlas Open Source/window.json");
             #[cfg(feature = "native-review")]
             let (state, preferences) = review.as_ref().map(|r| (r.state.clone(), r.state.parent().unwrap().join("window.json"))).unwrap_or((state, preferences));
             let host = Arc::new(Host {

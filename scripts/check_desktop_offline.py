@@ -76,17 +76,8 @@ def main():
             result=client.post('/v1/workspace/notes',json=payload);assert result.status_code==201
             note=result.json();assert note['body']==body
             assert client.post('/v1/workspace/notes',json=payload).json()['id']==note['id']
-            for route,fields in [('progress',{'chapter':4,'ayah':59,'is_read':True}),('place',{'resource_key':'itani-god','chapter':4,'ayah':59})]:
-                assert client.put('/v1/quran/'+route,json={**fields,'expected_revision':0,'owner_confirmed':True}).status_code==200
-            result=client.post('/v1/quran/notes',json={'resource_key':'itani-god','chapter':4,'ayah_start':59,'ayah_end':59,
-                'request_uuid':str(uuid.uuid4()),'body':'Synthetic offline located note','owner_confirmed':True})
-            assert result.status_code==201
-            margin=result.json()
-            shelf=client.get('/v1/library/shelf').json();assert shelf['items']
-            item=shelf['items'][0]
-            target=client.get('/v1/library/resolve',params={'item_id':item['id'],'document_id':margin['binding']['document']['id']}).json()
-            assert client.put('/v1/library/item',json={'item_id':item['id'],'expected_revision':item['revision'],'on_shelf':True,
-                'reading_status':'reading','preferred_edition_id':target['edition_id'],'owner_confirmed':True}).status_code==200
+            for path in ['/v1/quran/catalog','/v1/quran/chapter','/v1/verses/pilot','/v1/reading/collection']:
+                assert client.get(path).status_code==404
             if args.tauri:
                 # Test overrides are compiled out of the installable release binary.
                 # This marker and bounded paths are checked by the native harness.
@@ -176,8 +167,6 @@ def main():
             assert (state/selected_config['artifact_namespace']/artifact['sha256']).read_bytes()==text
             assert client.post('/v1/desktop/files',json=file_request).json()['replayed'] is True
             assert client.get('/v1/library/shelf').json()['items']
-            assert client.get('/v1/quran/place').json()['ayah']==59
-            assert len([row for row in client.get('/v1/quran/progress').json()['items'] if row['is_read']])==1
             selected=json.loads((state/config_name).read_text())['database']
             stop()
             # An incomplete object archive fails before changing selected state.
@@ -193,7 +182,7 @@ def main():
             for file in [config_name,'local-session.json']:
                 assert (state/file).stat().st_mode&0o077==0
             print(json.dumps({'copied_bundle':True,'checkout_required':False,'fresh_database':True,'unicode_markdown':True,
-                'located_quran_notes':True,'library_and_progress':True,'restart':True,'conflict_rejected':True,
+                'builtin_reader_absent':True,'library_and_sources':True,'restart':True,'conflict_rejected':True,
                 'offline_tasks_restart_and_restore':True,'consistent_backup_and_restore':True,'original_files_restored':True,'reference_only_notes':True,
                 'corrupt_object_restore_rejected':True,'tampered_backup_rejected':True,'native_electron':args.electron,'native_tauri':bool(args.tauri),'owner_data_modified':False}))
         finally:

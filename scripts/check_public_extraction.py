@@ -33,14 +33,13 @@ def main():
     graph = (ROOT/'graph/research.ttl').read_text()
     if re.search(r'\s+a\s+ir:', graph):
         errors.append('Default graph must remain empty')
-    collection = json.loads((ROOT/'src/islam_research/resources/reading-collection-v1.json').read_text())
-    if collection.get('collection_id') != 'atlas-synthetic-readings-v1' or any(
-            source.get('rights', {}).get('status') != 'synthetic' for source in collection['sources']):
-        errors.append('Reader examples must remain explicitly synthetic')
+    for path in (ROOT/'src/islam_research/resources').glob('*'):
+        if path.suffix == '.txt' or path.name in {'quran-pilot-v1.json', 'quran-reader-arabic-v1.json', 'quran-surah-names-v1.json', 'reading-collection-v1.json'}:
+            errors.append('Removed bundled reader resource: '+path.name)
     if errors:
         raise SystemExit('\n'.join(errors))
     print(json.dumps({'checked_files': checked, 'private_data_findings': 0,
-                      'default_graph': 'empty', 'reader_examples': 'synthetic'}))
+                      'default_graph': 'empty', 'bundled_reader_resources': 'absent'}))
 
 
 if __name__ == '__main__':

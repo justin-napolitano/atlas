@@ -103,6 +103,19 @@ class APIBoundaryTests(unittest.TestCase):
                            self.key, algorithm="ES256", headers={"kid": "test-key"})
         return {"x-goog-iap-jwt-assertion": token, "x-research-write": "1", "origin": ORIGIN, **extra}
 
+    def test_removed_builtin_reader_has_no_routes_or_resource_payloads(self):
+        routes=set(self.app.openapi()['paths'])
+        removed=['/v1/quran/catalog','/v1/quran/chapter','/v1/quran/words','/v1/quran/notes','/v1/quran/progress','/v1/verses/pilot','/v1/reading/collection','/v1/reading/scripture-candidates']
+        for path in removed:
+            with self.subTest(path=path):
+                self.assertNotIn(path,routes)
+                self.assertEqual(self.client.get(path,headers=self.headers()).status_code,404)
+        from pathlib import Path
+        resources=Path(__file__).resolve().parents[1]/'src/islam_research/resources'
+        self.assertFalse(list(resources.glob('*.txt')))
+        self.assertFalse((resources/'quran-reader-arabic-v1.json').exists())
+        self.assertFalse((resources/'quran-pilot-v1.json').exists())
+
     def test_missing_config_and_unsigned_headers_fail_closed(self):
         with self.assertRaises(ValueError):
             Settings("synthetic-not-a-live-dsn")
@@ -128,24 +141,6 @@ class APIBoundaryTests(unittest.TestCase):
         self.assertEqual(public.post("/v1/source-intakes",json=value).status_code,404)
         self.assertEqual(public.get("/v1/source-intakes/candidates").status_code,404)
 
-    def test_quran_reader_is_owner_only_and_association_never_promotes_review(self):
-        from unittest.mock import patch
-        value={"project_id":"synthetic","chapter":4,"ayah":59,"resource_id":"synthetic:resource",
-               "text_sha256":"a"*64,"translation_key":"english_saheeh"}
-        self.assertEqual(self.client.get("/v1/quran/reader",params={"chapter":4}).status_code,401)
-        self.assertEqual(self.client.post("/v1/quran/reader-association",json=value).status_code,401)
-        self.assertEqual(self.client.post("/v1/quran/reader-association",json=value,headers=self.headers(sub="other")).status_code,403)
-        with patch("islam_research.api.chapter_resource",return_value={"chapter":4,"ayah_count":176,"arabic":{"verses":[]}}):
-            self.assertEqual(self.client.get("/v1/quran/reader",params={"chapter":4},headers=self.headers()).status_code,200)
-        result=self.client.post("/v1/quran/reader-association",json=value,headers=self.headers())
-        self.assertEqual(result.status_code,201)
-        self.assertEqual(result.json()["actor"],OWNER)
-        self.assertEqual(result.json()["publication_effect"],"none")
-        for changed in ({"review_state":"reviewed"},{"actor":"forged"},{"text_sha256":"bad"},{"chapter":115}):
-            self.assertEqual(self.client.post("/v1/quran/reader-association",json={**value,**changed},headers=self.headers()).status_code,422)
-        public=TestClient(create_app(Settings("synthetic",mode="public"),store=MemoryBoundaryStore()))
-        self.assertEqual(public.get("/v1/quran/reader").status_code,404)
-        self.assertEqual(public.post("/v1/quran/reader-association",json=value).status_code,404)
 
     def test_recovery_drafts_are_owner_only_strict_private_and_csrf_protected(self):
         value={"draft_uuid":str(uuid.uuid4()),"project_id":"synthetic","record_id":"synthetic:source","context_kind":"record_note","base_revision":0,"body":"SYNTHETIC unfinished writing","expected_revision":0}
@@ -164,49 +159,7 @@ class APIBoundaryTests(unittest.TestCase):
             self.assertEqual(public.get('/v1/reading/'+path).status_code,404)
         self.assertEqual(public.put(route,json=value).status_code,404)
 
-    def test_quran_reader_resources_and_notes_keep_owner_boundary(self):
-        public=TestClient(create_app(Settings('synthetic',mode='public'),store=MemoryBoundaryStore()))
-        for path in ('catalog','chapter','words','progress','binding','notes','marks','place'):
-            self.assertEqual(self.client.get('/v1/quran/'+path).status_code,401)
-            self.assertEqual(public.get('/v1/quran/'+path).status_code,404)
-        catalog=self.client.get('/v1/quran/catalog',headers=self.headers()).json()
-        self.assertEqual(len(catalog['chapters']),114)
-        chapter=self.client.get('/v1/quran/chapter',params={'chapter':4},headers=self.headers()).json()
-        self.assertEqual(len(chapter['verses']),176)
-        self.assertEqual(self.client.get('/v1/quran/chapter',params={'chapter':4,'translation':'khattab'},headers=self.headers()).status_code,422)
-        from unittest.mock import patch
-        with patch('islam_research.quran_words.lookup',return_value={'chapter':4,'ayah':59,'words':[]}) as lookup:
-            response=self.client.get('/v1/quran/words',params={'chapter':4,'ayah':59},headers=self.headers())
-            self.assertEqual(response.status_code,200);lookup.assert_called_once_with(4,59)
-            self.assertEqual(self.client.get('/v1/quran/words',params={'chapter':114,'ayah':7},headers=self.headers()).status_code,422)
-            self.assertEqual(lookup.call_count,1)
-        with patch('islam_research.quran_words.lookup',side_effect=RuntimeError('SYNTHETIC internal provider body')):
-            response=self.client.get('/v1/quran/words',params={'chapter':4,'ayah':59},headers=self.headers())
-            self.assertEqual(response.status_code,503);self.assertNotIn('SYNTHETIC internal',response.text)
-        payload=dict(project_id='synthetic',resource_key='itani-god',chapter=4,ayah_start=59,ayah_end=59,request_uuid=str(uuid.uuid4()),body='SYNTHETIC private Quran note',owner_confirmed=True)
-        self.assertEqual(self.client.post('/v1/quran/notes',json=payload).status_code,401)
-        self.assertEqual(public.post('/v1/quran/notes',json=payload).status_code,404)
-        headers=self.headers();headers.pop('x-research-write')
-        self.assertEqual(self.client.post('/v1/quran/notes',json=payload,headers=headers).status_code,403)
-        self.assertEqual(self.client.post('/v1/quran/notes',json=payload,headers=self.headers(origin='https://wrong.example.invalid')).status_code,403)
-        for patch in ({'actor':'forged'},{'chapter':True},{'owner_confirmed':False},{'resource_key':'https://example.invalid'},{'body':'x'*20001}):
-            response=self.client.post('/v1/quran/notes',json={**payload,**patch},headers=self.headers())
-            self.assertEqual(response.status_code,422)
 
-    def test_quran_progress_is_private_explicit_and_revision_bound(self):
-        route='/v1/quran/progress';value=dict(project_id='synthetic',chapter=4,ayah=59,is_read=True,expected_revision=0,owner_confirmed=True)
-        public=TestClient(create_app(Settings('synthetic',mode='public'),store=MemoryBoundaryStore()))
-        self.assertEqual(self.client.put(route,json=value).status_code,401)
-        self.assertEqual(public.put(route,json=value).status_code,404)
-        headers=self.headers();headers.pop('x-research-write')
-        self.assertEqual(self.client.put(route,json=value,headers=headers).status_code,403)
-        self.assertEqual(self.client.put(route,json=value,headers=self.headers(origin='https://wrong.example.invalid')).status_code,403)
-        self.assertEqual(self.client.get(route,params={'project_id':'synthetic'},headers=self.headers()).json(),{'project_id':'synthetic','items':[]})
-        response=self.client.put(route,json=value,headers=self.headers())
-        self.assertEqual(response.status_code,200);self.assertEqual(response.json()['actor'],OWNER)
-        for patch in ({'actor':'forged'},{'chapter':True},{'chapter':114,'ayah':7},{'owner_confirmed':False},{'is_read':1},{'is_read':'true'},{'expected_revision':-1},{'review_state':'reviewed'},{'resource_key':'itani-god'}):
-            self.assertEqual(self.client.put(route,json={**value,**patch},headers=self.headers()).status_code,422)
-            self.assertNotIn('SYNTHETIC private Quran note',response.text)
 
     def test_write_requires_csrf_boundary_and_owner(self):
         payload = {"record_id": "synthetic", "project_id": "synthetic", "note": "Synthetic private note"}
@@ -250,23 +203,6 @@ class APIBoundaryTests(unittest.TestCase):
         self.assertEqual(result.status_code, 413)
         self.assertEqual(result.headers["x-content-type-options"], "nosniff")
 
-    def test_scripture_resolution_requires_owner_csrf_and_literal_confirmation(self):
-        path="/v1/reading/scripture-citation"
-        payload=dict(project_id="synthetic",annotation_id="synthetic:annotation",candidate_key="manual",
-                     decision="confirmed",chapter=4,ayah_start=59,ayah_end=59,rationale="Private reference decision",
-                     expected_revision=0,owner_confirmed=True)
-        self.assertEqual(self.client.put(path,json=payload).status_code,401)
-        self.assertEqual(self.client.put(path,json=payload,headers=self.headers(sub="other")).status_code,403)
-        headers=self.headers();headers.pop("x-research-write")
-        self.assertEqual(self.client.put(path,json=payload,headers=headers).status_code,403)
-        result=self.client.put(path,json=payload,headers=self.headers())
-        self.assertEqual(result.status_code,200)
-        self.assertEqual(result.json()["actor"],OWNER)
-        for patch in [{"owner_confirmed":value} for value in [False,0,1,"true",None]] + [{"actor":"forged"},{"matched_text":"forged"},{"chapter":True}]:
-            self.assertEqual(self.client.put(path,json={**payload,**patch},headers=self.headers()).status_code,422)
-        route="/v1/reading/scripture-candidates?project_id=synthetic&annotation_id=synthetic"
-        self.assertEqual(self.client.get(route).status_code,401)
-        self.assertEqual(self.client.get(route,headers=self.headers()).status_code,200)
 
     def test_lexicon_mutations_require_owner_confirmation_and_reject_unreviewed_state_promotion(self):
         payload=dict(request_uuid=str(uuid.uuid4()),project_id="synthetic",annotation_id="synthetic:annotation",start=0,end=6,
@@ -299,29 +235,6 @@ class APIBoundaryTests(unittest.TestCase):
             self.assertEqual(public.put(path, json={}).status_code, 404)
             self.assertEqual(public.post(path, json={}).status_code, 404)
 
-    def test_verse_material_owner_boundary_and_licensed_pilot_resource(self):
-        path="/v1/verses/materials"
-        payload=dict(request_uuid=str(uuid.uuid4()),project_id="synthetic",annotation_id="synthetic:annotation",chapter=4,ayah_start=59,ayah_end=59,
-            material_kind="tafsir",link_kind="discussion",attribution="Synthetic commentator",source_scope="This passage only",rationale="Owner link",owner_confirmed=True)
-        self.assertEqual(self.client.post(path,json=payload).status_code,401)
-        self.assertEqual(self.client.post(path,json=payload,headers=self.headers(sub="other")).status_code,403)
-        headers=self.headers();headers.pop("x-research-write")
-        self.assertEqual(self.client.post(path,json=payload,headers=headers).status_code,403)
-        result=self.client.post(path,json=payload,headers=self.headers())
-        self.assertEqual(result.status_code,201);self.assertEqual(result.json()["actor"],OWNER)
-        for patch in [{"owner_confirmed":v} for v in [False,0,1,"true",None]]+[{"actor":"forged"},{"review_state":"reviewed"},{"chapter":True},{"citation_snapshot":{}}]:
-            self.assertEqual(self.client.post(path,json={**payload,**patch},headers=self.headers()).status_code,422)
-        self.assertEqual(self.client.get("/v1/verses/pilot").status_code,401)
-        resource=self.client.get("/v1/verses/pilot",headers=self.headers()).json()
-        self.assertEqual(len(resource["verses"]),2)
-        self.assertIn("copyright notice",resource["source_notice"].lower())
-        self.assertEqual(resource["attribution_url"],"https://tanzil.net/")
-        import_payload=dict(request_uuid=str(uuid.uuid4()),project_id="synthetic",chapter=4,ayah=59,rationale="Identified pilot import",owner_confirmed=True)
-        self.assertEqual(self.client.post("/v1/verses/import-pilot",json=import_payload).status_code,401)
-        imported=self.client.post("/v1/verses/import-pilot",json=import_payload,headers=self.headers())
-        self.assertEqual(imported.status_code,201);self.assertEqual(imported.json()["actor"],OWNER)
-        for patch in [{"owner_confirmed":False},{"actor":"forged"},{"text":"untrusted replacement"}]:
-            self.assertEqual(self.client.post("/v1/verses/import-pilot",json={**import_payload,**patch},headers=self.headers()).status_code,422)
 
     def test_graph_operations_are_owner_only_and_rank_inputs_are_explained(self):
         query = {"project_id": "synthetic", "record_id": "question", "profile_id": "question_evidence_trail"}
@@ -461,52 +374,7 @@ class APIDatabaseTests(unittest.TestCase):
         self.assertEqual(exported["web_annotation"]["ir:markStyle"],"none")
         self.assertEqual(second.get("/v1/reading/annotation",params={**identity,"project_id":"other"},headers=self.headers()).status_code,404)
 
-    def test_real_pilot_import_http_notice_retry_and_reading_source_return(self):
-        dsn=os.environ["RESEARCH_TEST_DATABASE_URL"]
-        with db.connect(dsn) as connection: db.migrate(connection)
-        settings=Settings(dsn,owner_subject=OWNER,iap_audience=AUDIENCE,owner_origin=ORIGIN)
-        first=TestClient(create_app(settings,verifier=self.verifier));second=TestClient(create_app(settings,verifier=self.verifier))
-        project="test:"+uuid.uuid4().hex
-        first.post("/v1/projects",json=dict(project_id=project,title="Actual attributed text pilot"),headers=self.headers()).raise_for_status()
-        payload=dict(request_uuid=str(uuid.uuid4()),project_id=project,chapter=4,ayah=59,rationale="Explicit import of identified pilot text",owner_confirmed=True)
-        response=first.post("/v1/verses/import-pilot",json=payload,headers=self.headers())
-        self.assertEqual(response.status_code,201);identity=response.json()
-        self.assertEqual(first.post("/v1/verses/import-pilot",json=payload,headers=self.headers()).json(),identity)
-        document=second.get("/v1/reading/document",params=dict(project_id=project,document_id=identity["document_id"]),headers=self.headers()).json()
-        resource=first.get("/v1/verses/pilot",headers=self.headers()).json()
-        self.assertEqual(document["text_body"],resource["verses"][0]["text"])
-        self.assertIn(resource["source_notice"],document["source_notice"])
-        bundle=second.get("/v1/reading/annotation",params=dict(project_id=project,annotation_id=identity["annotation_id"]),headers=self.headers()).json()
-        self.assertEqual(bundle["web_annotation"]["ir:sourceNotice"],document["source_notice"])
-        self.assertTrue(bundle["anchor"]["anchored"])
 
-    def test_verse_material_http_roundtrip_source_return_conflicts_and_history(self):
-        dsn=os.environ["RESEARCH_TEST_DATABASE_URL"]
-        with db.connect(dsn) as connection: db.migrate(connection)
-        settings=Settings(dsn,owner_subject=OWNER,iap_audience=AUDIENCE,owner_origin=ORIGIN)
-        first=TestClient(create_app(settings,verifier=self.verifier));second=TestClient(create_app(settings,verifier=self.verifier))
-        project,source="test:"+uuid.uuid4().hex,"test:"+uuid.uuid4().hex
-        first.post("/v1/projects",json=dict(project_id=project,title="Synthetic verse project"),headers=self.headers()).raise_for_status()
-        first.put("/v1/records",json=dict(record_id=source,project_id=project,kind="source",title="Synthetic commentary"),headers=self.headers()).raise_for_status()
-        document=first.post("/v1/reading/documents",json=dict(project_id=project,source_record_id=source,edition="Synthetic edition",locator="Paragraph 2",text="Discusses Q 4:59."),headers=self.headers()).json()
-        annotation=first.post("/v1/reading/annotations",json=dict(annotation_uuid=str(uuid.uuid4()),project_id=project,document_id=document["id"],text_sha256=document["text_sha256"],start=0,end=len("Discusses Q 4:59."),exact="Discusses Q 4:59."),headers=self.headers()).json()
-        payload=dict(request_uuid=str(uuid.uuid4()),project_id=project,annotation_id=annotation["id"],chapter=4,ayah_start=59,ayah_end=59,material_kind="tafsir",link_kind="discussion",
-            attribution="Synthetic commentator",source_scope="This selected commentary only",rationale="Owner located relation",owner_confirmed=True)
-        response=first.post("/v1/verses/materials",json=payload,headers=self.headers())
-        self.assertEqual(response.status_code,201);created=response.json()
-        self.assertEqual(first.post("/v1/verses/materials",json=payload,headers=self.headers()).json(),created)
-        identity=dict(project_id=project,material_id=created["id"])
-        row=second.get("/v1/verses/material",params=identity,headers=self.headers()).json()
-        self.assertEqual(row["selected_quote"],"Discusses Q 4:59.")
-        self.assertEqual(row["source_record_id"],source)
-        fields={key:row[key] for key in ["attribution","language_tag","source_scope","assertion_mode","assertion_text","reading_note","period_note","tradition_note","context_basis","rationale","state"]}
-        patch=dict(**identity,**{**fields,"reading_note":"Corrected context"},expected_revision=1,owner_confirmed=True)
-        revised=first.put("/v1/verses/material",json=patch,headers=self.headers())
-        self.assertEqual(revised.status_code,200)
-        self.assertEqual(first.put("/v1/verses/material",json=patch,headers=self.headers()).json()["revision"],2)
-        self.assertEqual(second.put("/v1/verses/material",json={**patch,"reading_note":"Stale other edit"},headers=self.headers()).status_code,409)
-        self.assertEqual(second.get("/v1/verses/history",params={**identity,"limit":1},headers=self.headers()).json()["next_before_revision"],2)
-        self.assertEqual(second.get("/v1/verses/material",params={**identity,"project_id":"other"},headers=self.headers()).status_code,404)
 
     def test_lexicon_http_capture_definition_conflict_history_and_source_roundtrip(self):
         dsn=os.environ["RESEARCH_TEST_DATABASE_URL"]
@@ -556,42 +424,6 @@ class APIDatabaseTests(unittest.TestCase):
         self.assertEqual(other.get("/v1/lexicon/entity",params=identity,headers=self.headers()).json()["revision"],2)
         self.assertEqual(other.get("/v1/lexicon/occurrences",params={**params,"project_id":"other"},headers=self.headers()).json()["items"],[])
 
-    def test_scripture_reference_roundtrip_detect_confirm_reload_reverse_and_export(self):
-        dsn=os.environ["RESEARCH_TEST_DATABASE_URL"]
-        with db.connect(dsn) as connection:
-            db.migrate(connection)
-        settings=Settings(dsn,owner_subject=OWNER,iap_audience=AUDIENCE,owner_origin=ORIGIN)
-        client=TestClient(create_app(settings,verifier=self.verifier))
-        project,source="test:"+uuid.uuid4().hex,"test:"+uuid.uuid4().hex
-        self.assertEqual(client.post("/v1/projects",json={"project_id":project,"title":"Synthetic reference project"},headers=self.headers()).status_code,201)
-        self.assertEqual(client.put("/v1/records",json=dict(record_id=source,project_id=project,kind="source",title="Synthetic citation source"),headers=self.headers()).status_code,200)
-        text="In the Qur’an: verses 59 and 83 of chapter 4 (sūrat al-Nisā’)."
-        response=client.post("/v1/reading/documents",json=dict(project_id=project,source_record_id=source,edition="Synthetic edition",locator="Abstract",text=text),headers=self.headers())
-        self.assertEqual(response.status_code,201);document=response.json()
-        response=client.post("/v1/reading/annotations",json=dict(annotation_uuid=str(uuid.uuid4()),project_id=project,
-            document_id=document["id"],text_sha256=document["text_sha256"],start=0,end=len(text),exact=text,capture_kind="citation_candidate"),headers=self.headers())
-        self.assertEqual(response.status_code,201);annotation=response.json()
-        params=dict(project_id=project,annotation_id=annotation["id"])
-        response=client.get("/v1/reading/scripture-candidates",params=params,headers=self.headers())
-        self.assertEqual(response.status_code,200);detected=response.json()
-        self.assertEqual({row["reference"]["ayah_start"] for row in detected["candidates"]},{59,83})
-        self.assertEqual(detected["resolutions"],[])
-        candidate=next(row for row in detected["candidates"] if row["reference"]["ayah_start"]==83)
-        payload={**params,"candidate_key":candidate["key"],"decision":"confirmed","chapter":4,"ayah_start":83,"ayah_end":83,
-                 "rationale":"Synthetic owner resolution; source interpretation unreviewed","expected_revision":0,"owner_confirmed":True}
-        response=client.put("/v1/reading/scripture-citation",json=payload,headers=self.headers())
-        self.assertEqual(response.status_code,200);self.assertEqual(response.json()["changed_by"],OWNER)
-        other=TestClient(create_app(settings,verifier=self.verifier))
-        reloaded=other.get("/v1/reading/scripture-candidates",params=params,headers=self.headers()).json()
-        self.assertEqual(reloaded["resolutions"][0]["revision"],1)
-        reverse=dict(project_id=project,chapter=4,ayah_start=83,ayah_end=83)
-        found=other.get("/v1/reading/scripture-citations",params=reverse,headers=self.headers()).json()
-        self.assertEqual(found["items"][0]["annotation_id"],annotation["id"])
-        self.assertEqual(found["items"][0]["source_record_id"],source)
-        self.assertEqual(other.get("/v1/reading/scripture-citations",params={**reverse,"project_id":"other"},headers=self.headers()).json()["items"],[])
-        self.assertEqual(other.get("/v1/reading/scripture-candidates",params={**params,"project_id":"other"},headers=self.headers()).status_code,404)
-        exported=other.get("/v1/reading/annotation",params=params,headers=self.headers()).json()["web_annotation"]
-        self.assertEqual(exported["ir:scriptureReferences"][0]["ir:resolvedReference"]["id"],"urn:research:quran:tanzil-structure-1.0:4:83-83")
 
     def test_real_sessions_persist_notes_and_reject_stale_updates(self):
         dsn = os.environ["RESEARCH_TEST_DATABASE_URL"]
