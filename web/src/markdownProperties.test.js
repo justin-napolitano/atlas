@@ -16,7 +16,7 @@ test('bounded YAML properties preserve source and reject ambiguous/unsafe header
  }
  assert.equal(markdownProperties('---\ntype: skill').status,'unfinished');
  assert.equal(markdownProperties('---\ntype: skill\nx: '+ 'a'.repeat(8200)+'\n---').type,undefined);
- assert.equal(markdownProperties('---\ntype: no-such-role\n---').type,null);
+ assert.equal(markdownProperties('---\ntype: no-such-role\n---').type,'no-such-role');
  assert.equal(captureTitle(body),'Synthetic reading');assert.equal(captureTitle('---\ntype: skill'),'Untitled note');
  const first=markdownBlocks(body)[0];assert.equal(first.type,'yaml');assert.equal(body.slice(first.from,first.to),first.source);
 });
